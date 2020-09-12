@@ -1,0 +1,110 @@
+{
+	"services": [
+		{
+			"name": "frontend",
+			"buffer_capacity_by_request_type": [
+				{
+					"request_type": "auth",
+					"capacity": 20
+				},
+				{
+					"request_type": "buy",
+					"capacity": 10
+				}
+			],
+			"threads_per_instance": 2,
+			"starting_instances_num": 1,
+			"state_mb": 0,
+			"next": ["appserver"],
+			"prev": []
+		},
+		{
+			"name": "appserver",
+			"buffer_capacity_by_request_type": [
+				{
+					"request_type": "auth",
+					"capacity": 20
+				},
+				{
+					"request_type": "buy",
+					"capacity": 10
+				}
+			],
+			"threads_per_instance": 4,
+			"starting_instances_num": 1,
+			"state_mb": 0,
+			"next": ["db"],
+			"prev": ["frontend"]
+		},
+		{
+			"name": "db",
+			"buffer_capacity_by_request_type": [
+				{
+					"request_type": "auth",
+					"capacity": 20
+				},
+				{
+					"request_type": "buy",
+					"capacity": 10
+				}
+			],
+			"threads_per_instance": 4,
+			"starting_instances_num": 1,
+			"state_mb": 1024,
+			"next": [],
+			"prev": ["appserver"]
+		}
+	],
+	"requests": [
+		{
+			"request_type": "auth",
+			"entry_service": "frontend",
+			"processing_times_ms": [
+				{
+					"service": "frontend",
+					"upstream": 10,
+					"downstream": 0
+				},
+				{
+					"service": "appserver",
+					"upstream": 50,
+					"downstream": 20
+				},
+				{
+					"service": "db",
+					"upstream": 10,
+					"downstream": 0
+				}
+			],
+			"timeout_ms": 300,
+			"request_size_b": 1024,
+			"response_size_b": 1024,
+			"operation_type": "rw"
+		},
+		{
+			"request_type": "buy",
+			"entry_service": "frontend",
+			"processing_times_ms": [
+				{
+					"service": "frontend",
+					"upstream": 10,
+					"downstream": 0
+				},
+				{
+					"service": "appserver",
+					"upstream": 100,
+					"downstream": 30
+				},
+				{
+					"service": "db",
+					"upstream": 20,
+					"downstream": 0
+				}
+			],
+			"timeout_ms": 400,
+			"request_size_b": 2048,
+			"response_size_b": 1024,
+			"operation_type": "rw"
+		}
+	]
+}

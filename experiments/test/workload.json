@@ -1,0 +1,25 @@
+{
+	"workloads_configs": [{
+			"request_type": "auth",
+			"workload_config": {
+				"ratio": 0.8,
+				"sliced_distribution": {
+					"type": "normal",
+					"params": [15, 3]
+				},
+				"seasonal_pattern_p_h": []
+			}
+		},
+		{
+			"request_type": "buy",
+			"workload_config": {
+				"ratio": 0.2,
+				"sliced_distribution": {
+					"type": "normal",
+					"params": [5, 1]
+				},
+				"seasonal_pattern_p_h": []
+			}
+		}
+	]
+}
