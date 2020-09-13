@@ -17,7 +17,12 @@
 			"starting_instances_num": 1,
 			"state_mb": 0,
 			"next": ["appserver"],
-			"prev": []
+			"prev": [],
+			"deployment": {
+				"provider": "aws",
+				"vm_type": "t3.xlarge",
+				"count": 1
+			}
 		},
 		{
 			"name": "appserver",
@@ -35,7 +40,12 @@
 			"starting_instances_num": 1,
 			"state_mb": 0,
 			"next": ["db"],
-			"prev": ["frontend"]
+			"prev": ["frontend"],
+			"deployment": {
+				"provider": "aws",
+				"vm_type": "t3.xlarge",
+				"count": 1
+			}
 		},
 		{
 			"name": "db",
@@ -53,7 +63,12 @@
 			"starting_instances_num": 1,
 			"state_mb": 1024,
 			"next": [],
-			"prev": ["appserver"]
+			"prev": ["appserver"],
+			"deployment": {
+				"provider": "aws",
+				"vm_type": "t3.xlarge",
+				"count": 1
+			}
 		}
 	],
 	"requests": [
