@@ -1,0 +1,63 @@
+{
+	"platform": [
+		{
+			"provider": "aws",
+			"decision_making_time_ms": 0,
+			"nodes": [
+				{
+					"type": "t3.nano",
+					"boot_up_ms": 50,
+					"tear_down_ms": 50
+				},
+				{
+					"type": "t3.micro",
+					"boot_up_ms": 50,
+					"tear_down_ms": 50
+				},
+				{
+					"type": "t3.small",
+					"boot_up_ms": 50,
+					"tear_down_ms": 50
+				},
+				{
+					"type": "t3.medium",
+					"boot_up_ms": 50,
+					"tear_down_ms": 50
+				},
+				{
+					"type": "t3.large",
+					"boot_up_ms": 50,
+					"tear_down_ms": 50
+				},
+				{
+					"type": "t3.xlarge",
+					"boot_up_ms": 50,
+					"tear_down_ms": 50
+				},
+				{
+					"type": "t3.2xlarge",
+					"boot_up_ms": 50,
+					"tear_down_ms": 50
+				}
+			],
+			"link_added_throughput_coef_per_vm": 1
+		}
+	],
+	"application": {
+		"decision_making_time_ms": 0,
+		"services": [
+			{
+				"name": "frontend",
+				"boot_up_ms": 10
+			},
+			{
+				"name": "appserver",
+				"boot_up_ms": 10
+			},
+			{
+				"name": "db",
+				"boot_up_ms": 50
+			}
+		]
+	}
+}
