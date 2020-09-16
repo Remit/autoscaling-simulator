@@ -1,3 +1,6 @@
+from platform_scaling_policies import *
+from service_scaling_policies import *
+
 class ServiceScalingPolicyHierarchy(ABC):
     """
     Wraps scaling policies for the service, both on the level of the service
@@ -16,10 +19,10 @@ class ServiceScalingPolicyHierarchy(ABC):
     whole available capacity with the service instances.
     """
     def __init__(self,
-                 infrastructure_scaling_policy,
+                 platform_scaling_policy,
                  service_scaling_policy):
 
-        self.infrastructure_scaling_policy = infrastructure_scaling_policy
+        self.platform_scaling_policy = platform_scaling_policy
         self.service_scaling_policy = service_scaling_policy
 
     @abstractmethod
@@ -42,10 +45,10 @@ class WorkloadCentricServiceScalingPolicyHierarchy(ServiceScalingPolicyHierarchy
         implement
     """
     def __init__(self,
-                 infrastructure_scaling_policy,
+                 platform_scaling_policy,
                  service_scaling_policy):
 
-        super().__init__(infrastructure_scaling_policy,
+        super().__init__(platform_scaling_policy,
                          service_scaling_policy)
 
     def reconcile_service_state(self,
@@ -65,19 +68,19 @@ class UtilizationCentricServiceScalingPolicyHierarchy(ServiceScalingPolicyHierar
     to maximize the use of the provided infra capacity since it is anyway paid for.
     """
     def __init__(self,
-                 infrastructure_scaling_policy,
+                 platform_scaling_policy,
                  service_scaling_policy):
 
-        super().__init__(infrastructure_scaling_policy,
+        super().__init__(platform_scaling_policy,
                          service_scaling_policy)
 
     def reconcile_service_state(self,
                                 cur_simulation_time_ms,
                                 service_state):
 
-        next_platform_state_ts_ms, node_info, future_node_instances = self.infrastructure_scaling_policy.reconcile_platform_state(cur_simulation_time_ms,
-                                                                                                                                  service_state.cur_node_instances,
-                                                                                                                                  service_state.tracked_metrics_util_vals)
+        next_platform_state_ts_ms, node_info, future_node_instances = self.platform_scaling_policy.reconcile_platform_state(cur_simulation_time_ms,
+                                                                                                                            service_state.cur_node_instances,
+                                                                                                                            service_state.tracked_metrics_util_vals)
 
         # If a scaling action should be perfomed on the infrastructure
         next_service_state = None

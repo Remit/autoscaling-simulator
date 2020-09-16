@@ -1,3 +1,6 @@
+import numpy as np
+from abc import ABC, abstractmethod
+
 class SlicedRequestsNumDistribution(ABC):
     """
     Abstract base class for generating the random number of requests

@@ -3,6 +3,9 @@ import pickle
 from datetime import datetime
 from tqdm import tqdm
 
+from ..application.application_model import ApplicationModel
+from ..workload.workload_model import WorkloadModel
+
 class Simulation:
     """
     Manages the high-level simulation process and stores all the simulation-relevant variables.

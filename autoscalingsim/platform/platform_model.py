@@ -1,3 +1,8 @@
+import json
+
+from node_info import NodeInfo
+from ..scaling.platform_scaling_model import PlatformScalingModel
+
 class PlatformModel:
     """
     Defines the hardware/virtual platform underlying the application. Acts as a centralized storage

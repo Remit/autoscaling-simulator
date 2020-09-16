@@ -2,10 +2,10 @@ import os
 import sys
 import json
 
-import * from joint_policies
-import * from service_scaling_policies
-import * from platform_scaling_policies
-import * from application_scaling_policies
+from joint_policies import *
+from service_scaling_policies import *
+from platform_scaling_policies import *
+from application_scaling_policies import * 
 
 CONF_JOINT_FILENAME = "joint.json"
 CONF_APP_SERVICE_FILENAME = "app_service.json"

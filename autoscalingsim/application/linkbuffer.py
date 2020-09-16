@@ -1,3 +1,7 @@
+from collections import deque
+
+from ..workload.request import Request, RequestProcessingInfo
+
 class LinkBuffer:
     """
     Combines link and the buffer. The requests in the link advance when the step method is called.

@@ -1,3 +1,8 @@
+import json
+
+from application_scaling_model import ApplicationScalingModel
+from platform_scaling_model import PlatformScalingModel
+
 class ScalingModel:
     """
     Defines the scaling behaviour that does not depend upon the scaling policy, i.e. represents

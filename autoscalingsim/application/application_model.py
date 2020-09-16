@@ -1,7 +1,10 @@
-# application model incorps params of the requests since it depends on the
-# structure and the processing logic of the app, whereas the workload model
-# quantifies the amount and the distribution of the requests in time/volume
-# so, propagation chain of the request goes into the app model
+import json
+
+from ..workload.request import RequestProcessingInfo
+from ..deployment.deployment_model import DeploymentModel
+from ..platform.platform_model import PlatformModel
+from service import Service
+
 class ApplicationModel:
     """
     """

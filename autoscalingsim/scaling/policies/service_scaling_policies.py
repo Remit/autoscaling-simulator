@@ -1,3 +1,7 @@
+import math
+
+from ...platform.node_info import NodeInfo
+
 class ReactiveServiceScalingPolicy:
     """
     Since the running nodes
