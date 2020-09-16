@@ -17,8 +17,8 @@ import math
 import numpy as np
 from abc import ABC, abstractmethod
 
-from scaling_policies_settings import PlatformScalingPolicyConfigs
-from ...platform.platform_model import PlatformModel
+from autoscalingsim.scaling.policies.scaling_policies_settings import *
+from autoscalingsim.infrastructure_platform.platform_model import PlatformModel
 
 # The below classes are supposed to be used on a *per service* basis
 class PlatformScalingPolicy(ABC):

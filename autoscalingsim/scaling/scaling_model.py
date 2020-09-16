@@ -1,7 +1,7 @@
 import json
 
-from application_scaling_model import ApplicationScalingModel
-from platform_scaling_model import PlatformScalingModel
+from .application_scaling_model import ApplicationScalingModel
+from .platform_scaling_model import PlatformScalingModel
 
 class ScalingModel:
     """

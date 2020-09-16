@@ -2,8 +2,8 @@ import json
 
 from ..workload.request import RequestProcessingInfo
 from ..deployment.deployment_model import DeploymentModel
-from ..platform.platform_model import PlatformModel
-from service import Service
+from ..infrastructure_platform.platform_model import PlatformModel
+from .service import Service
 
 class ApplicationModel:
     """

@@ -3,12 +3,14 @@ import sys
 import json
 from datetime import datetime
 
-from workload.workload_model import WorkloadModel
-from scaling.scaling_model import ScalingModel
-from platform.platform_model import PlatformModel
-from application.application_model import ApplicationModel
-from simulation.simulation import Simulation
-from scaling.policies.scaling_policies_settings import ScalingPoliciesSettings
+sys.path.append("..")
+
+from autoscalingsim.workload.workload_model import WorkloadModel
+from autoscalingsim.scaling.scaling_model import ScalingModel
+from autoscalingsim.infrastructure_platform.platform_model import PlatformModel
+from autoscalingsim.application.application_model import ApplicationModel
+from autoscalingsim.simulation.simulation import Simulation
+from autoscalingsim.scaling.policies.scaling_policies_settings import ScalingPoliciesSettings
 
 CONF_WORKLOAD_MODEL_KEY = "workload_model"
 CONF_SCALING_MODEL_KEY = "scaling_model"
@@ -57,12 +59,12 @@ class Simulator:
                  (not CONF_APPLICATION_MODEL_KEY in config):
                     sys.exit('The config listing file misses at least one key model.')
 
-                starting_time_ms = int(starting_time.timestamp() * 1000)
+                starting_time_ms = int(self.starting_time.timestamp() * 1000)
 
-                workload_model = WorkloadModel(simulation_step_ms,
+                workload_model = WorkloadModel(self.simulation_step_ms,
                                                filename = os.path.join(configs_dir, config[CONF_WORKLOAD_MODEL_KEY]))
 
-                scaling_model = ScalingModel(simulation_step_ms,
+                scaling_model = ScalingModel(self.simulation_step_ms,
                                              os.path.join(configs_dir, config[CONF_SCALING_MODEL_KEY]))
 
                 platform_model = PlatformModel(starting_time_ms,
@@ -86,7 +88,7 @@ class Simulator:
 
                 self.simulations[simulation_name] = sim
 
-            except JSONDecodeError:
+            except json.JSONDecodeError:
                 sys.exit('The config listing file is an invalid JSON.')
 
     def start_simulation(self,
@@ -112,12 +114,13 @@ if __name__ == "__main__":
                         help = 'simulation step in milliseconds (default: 10)')
     parser.add_argument('--start', dest = 'starting_time_str',
                         action = 'store', default = '1970-01-01 00:00:00',
-                        help = 'simulated start in form of a date and time string YYYY-MM-DD hh:mm:ss (default: 1970-01-01 00:00:00)')
+                        help = 'simulated start in form of a date and time string YYYY-MM-DDThh:mm:ss (default: 1970-01-01T00:00:00)')
     parser.add_argument('--simdays', dest = 'time_to_simulate_days',
                         action = 'store', default = 0.0005, type = float,
                         help = 'number of days to simulate (default: 0.0005 ~ 1 min)')
     parser.add_argument('--confdir', dest = 'config_dir',
-                        action = 'store', help = 'directory with the configuration files for the simulation')
+                        action = 'store', default = None,
+                        help = 'directory with the configuration files for the simulation')
     parser.add_argument('--results', dest = 'results_dir',
                         action = 'store', default = None,
                         help = 'path to the directory where the results should be stored')
@@ -126,9 +129,12 @@ if __name__ == "__main__":
 
     starting_time = datetime.now()
     try:
-        starting_time = datetime.strptime(args.starting_time_str, '%y-%m-%d %H:%M:%S')
+        starting_time = datetime.strptime(args.starting_time_str, '%Y-%m-%dT%H:%M:%S')
     except ValueError:
-        sys.exit('Incorrect format for the simulated start, should be YYYY-MM-DD hh:mm:ss')
+        sys.exit('Incorrect format for the simulated start, should be YYYY-MM-DDThh:mm:ss')
+
+    if args.config_dir is None:
+        sys.exit('No configuration directory specified.')
 
     if args.simulation_step_ms < 10:
         sys.exit('The simulation step value is too small, should be equal or more than 10 ms')

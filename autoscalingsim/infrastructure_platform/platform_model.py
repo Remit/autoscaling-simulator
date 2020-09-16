@@ -1,6 +1,6 @@
 import json
 
-from node_info import NodeInfo
+from .node_info import NodeInfo
 from ..scaling.platform_scaling_model import PlatformScalingModel
 
 class PlatformModel:

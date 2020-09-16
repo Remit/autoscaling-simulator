@@ -2,10 +2,10 @@ import os
 import sys
 import json
 
-from joint_policies import *
-from service_scaling_policies import *
-from platform_scaling_policies import *
-from application_scaling_policies import * 
+from .joint_policies import *
+from .service_scaling_policies import *
+from .platform_scaling_policies import *
+from .application_scaling_policies import *
 
 CONF_JOINT_FILENAME = "joint.json"
 CONF_APP_SERVICE_FILENAME = "app_service.json"
@@ -32,7 +32,7 @@ class JointServiceScalingPolicyConfigs(ScalingPolicyConfigs):
                 config = json.load(f)
                 super().__init__(config["policy_name"])
 
-            except JSONDecodeError:
+            except json.JSONDecodeError:
                 sys.exit('The config file {} is an invalid JSON.'.format(config_path))
 
 class ApplicationServiceScalingPolicyConfigs(ScalingPolicyConfigs):
@@ -45,7 +45,7 @@ class ApplicationServiceScalingPolicyConfigs(ScalingPolicyConfigs):
                 super().__init__(config["policy_name"])
                 self.config["service_instances_scaling_step"] = config["service_instances_scaling_step"]
 
-            except JSONDecodeError:
+            except json.JSONDecodeError:
                 sys.exit('The config file {} is an invalid JSON.'.format(config_path))
 
 class PlatformScalingPolicyConfigs(ScalingPolicyConfigs):
@@ -63,7 +63,7 @@ class PlatformScalingPolicyConfigs(ScalingPolicyConfigs):
                 self.config["cooldown_period_ms"] = config["cooldown_period_ms"]
                 self.config["past_observations_considered"] = config["past_observations_considered"]
 
-            except JSONDecodeError:
+            except json.JSONDecodeError:
                 sys.exit('The config file {} is an invalid JSON.'.format(config_path))
 
 class ApplicationScalingPolicyConfigs(ScalingPolicyConfigs):
@@ -80,27 +80,27 @@ class ScalingPoliciesSettings:
 
         # Reading configurations for the scaling policies
         policies_dirname = os.path.join(configs_dir, 'policies')
-        if not os.exists(policies_dirname):
+        if not os.path.exists(policies_dirname):
             sys.exit('No \'policies\' directory found in the configuration directory {}.'.format(configs_dir))
         else:
             joint_service_policy_config_filename = os.path.join(policies_dirname, CONF_JOINT_FILENAME)
-            if not os.isfile(joint_service_policy_config_filename):
+            if not os.path.isfile(joint_service_policy_config_filename):
                 sys.exit('No \'{}\' configuration file found in {}.'.format(CONF_JOINT_FILENAME, policies_dirname))
             else:
                 self.joint_service_policy_config = JointServiceScalingPolicyConfigs(joint_service_policy_config_filename)
 
             app_service_policy_config_filename = os.path.join(policies_dirname, CONF_APP_SERVICE_FILENAME)
-            if not os.isfile(app_service_policy_config_filename):
+            if not os.path.isfile(app_service_policy_config_filename):
                 sys.exit('No \'{}\' configuration file found in {}.'.format(CONF_APP_SERVICE_FILENAME, policies_dirname))
             else:
                 self.app_service_policy_config = ApplicationServiceScalingPolicyConfigs(app_service_policy_config_filename)
 
             platform_policy_config_filename = os.path.join(policies_dirname, CONF_PLATFORM_FILENAME)
-            if not os.isfile(platform_policy_config_filename):
+            if not os.path.isfile(platform_policy_config_filename):
                 sys.exit('No \'{}\' configuration file found in {}.'.format(CONF_PLATFORM_FILENAME, policies_dirname))
             else:
                 self.platform_policy_config = PlatformScalingPolicyConfigs(platform_policy_config_filename)
 
             app_policy_config_filename = os.path.join(policies_dirname, CONF_APP_FILENAME)
-            if os.isfile(app_policy_config_filename):
+            if os.path.isfile(app_policy_config_filename):
                 self.app_policy_config = ApplicationScalingPolicyConfigs(app_policy_config_filename)

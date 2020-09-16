@@ -1,8 +1,8 @@
 import json
 from datetime import datetime
 
-from requests_distributions import *
-from request import Request
+from .requests_distributions import *
+from .request import Request
 
 class WorkloadModel:
     """

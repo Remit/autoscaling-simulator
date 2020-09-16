@@ -2,13 +2,13 @@ import numpy as np
 
 from ..workload.request import Request
 from ..deployment.deployment_model import DeploymentModel
-from ..platform.node_info import NodeInfo
+from ..infrastructure_platform.node_info import NodeInfo
 from ..scaling.application_scaling_model import ApplicationScalingModel, ServiceScalingInfo
 from ..scaling.policies.scaling_policies_settings import *
 from ..scaling.policies.joint_policies import *
 from ..scaling.policies.service_scaling_policies import *
 from ..scaling.policies.platform_scaling_policies import *
-from linkbuffer import LinkBuffer
+from .linkbuffer import LinkBuffer
 
 class ServiceState:
     """
