@@ -13,7 +13,7 @@
 # - scaling step
 # - cooldown?
 #
-
+from scaling_policies_settings import PlatformScalingPolicyConfigs
 
 # The below classes are supposed to be used on a *per service* basis
 class PlatformScalingPolicy(ABC):
@@ -91,24 +91,20 @@ class CPUUtilizationBasedPlatformScalingPolicy(UtilizationBasedPlatformScalingPo
                  service_name,
                  provider,
                  node_info,
-                 node_capacity_in_metric_units = 1,
-                 utilization_target_ratio = 0.8,
-                 node_instances_scaling_step = 1,
-                 cooldown_period_ms = 0,
-                 past_observations_considered = 10):
+                 policy_configs):
 
         super().__init__(platform_model,
                          service_name,
                          provider,
                          node_info,
-                         node_instances_scaling_step,
-                         cooldown_period_ms,
-                         past_observations_considered)
+                         policy_configs["node_instances_scaling_step"],
+                         policy_configs["cooldown_period_ms"],
+                         policy_configs["past_observations_considered"])
 
         self.metric = "cpu"
         util_metric = UtilizationMetric(self.metric,
-                                        node_capacity_in_metric_units,
-                                        utilization_target_ratio)
+                                        policy_configs["node_capacity_in_metric_units"],
+                                        policy_configs["utilization_target_ratio"])
 
         self.utilization_metrics[self.metric] = util_metric
 

@@ -8,6 +8,7 @@ from scaling.scaling_model import ScalingModel
 from platform.platform_model import PlatformModel
 from application.application_model import ApplicationModel
 from simulation.simulation import Simulation
+from scaling.policies.scaling_policies_settings import ScalingPoliciesSettings
 
 CONF_WORKLOAD_MODEL_KEY = "workload_model"
 CONF_SCALING_MODEL_KEY = "scaling_model"
@@ -68,13 +69,11 @@ class Simulator:
                                                scaling_model.platform_scaling_model,
                                                os.path.join(configs_dir, config[CONF_PLATFORM_MODEL_KEY]))
 
-                # TODO: scaling policies grab from somewhere?
+                scaling_policies_settings = ScalingPoliciesSettings(configs_dir)
                 application_model = ApplicationModel(starting_time_ms,
                                                      platform_model,
                                                      scaling_model.application_scaling_model,
-                                                     UtilizationCentricServiceScalingPolicyHierarchy,
-                                                     CPUUtilizationBasedPlatformScalingPolicy,
-                                                     ReactiveServiceScalingPolicy,
+                                                     scaling_policies_settings,
                                                      os.path.join(configs_dir, config[CONF_APPLICATION_MODEL_KEY]))
 
                 sim = Simulation(workload_model,

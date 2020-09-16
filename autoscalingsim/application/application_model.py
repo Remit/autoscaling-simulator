@@ -9,9 +9,7 @@ class ApplicationModel:
                  starting_time_ms,
                  platform_model,
                  application_scaling_model,
-                 joint_scaling_policy = UtilizationCentricServiceScalingPolicyHierarchy,
-                 platform_scaling_policy = CPUUtilizationBasedPlatformScalingPolicy,
-                 service_instances_scaling_policy = ReactiveServiceScalingPolicy,
+                 scaling_policies_settings,
                  filename = None):
 
         # Dynamic state
@@ -110,9 +108,9 @@ class ApplicationModel:
                                       self.reqs_processing_infos,
                                       starting_instances_num,
                                       self.platform_model,
-                                      joint_scaling_policy,
-                                      platform_scaling_policy,
-                                      service_instances_scaling_policy,
+                                      scaling_policies_settings.joint_service_policy_config,
+                                      scaling_policies_settings.app_service_policy_config,
+                                      scaling_policies_settings.platform_policy_config,
                                       self.application_scaling_model,
                                       state_mb)
 

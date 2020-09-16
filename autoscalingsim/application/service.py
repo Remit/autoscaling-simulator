@@ -36,9 +36,9 @@ class Service:
                  request_processing_infos,
                  service_instances,
                  platform_model_access_point,
-                 joint_scaling_policy,
-                 platform_scaling_policy,
-                 service_instances_scaling_policy,
+                 joint_service_policy_config,
+                 app_service_policy_config,
+                 platform_policy_config,
                  application_scaling_model,
                  state_mb = 0,
                  res_util_metrics_avg_interval_ms = 500):
@@ -72,23 +72,19 @@ class Service:
         self.res_util_avg = {}
         self.res_util_avg["cpu"] = []
 
-        pl_scaling_pol = platform_scaling_policy(platform_model_access_point,
-                                                 self.service_name,
-                                                 deployment_model.provider,
-                                                 deployment_model.node_info,
-                                                 node_capacity_in_metric_units = 1,
-                                                 utilization_target_ratio = 0.4,
-                                                 node_instances_scaling_step = 1,
-                                                 cooldown_period_ms = 0,
-                                                 past_observations_considered = 10)
+        pl_scaling_pol = platform_policy_config.policy(platform_model_access_point,
+                                                       self.service_name,
+                                                       deployment_model.provider,
+                                                       deployment_model.node_info,
+                                                       platform_policy_config.config)
 
         boot_up_ms = application_scaling_model.get_service_scaling_params(self.service_name).boot_up_ms
         # TODO: consider adding service_instances_scaling_step = 1,
-        service_inst_scaling_policy = service_instances_scaling_policy(boot_up_ms,
+        service_inst_scaling_policy = app_service_policy_config.policy(boot_up_ms,
                                                                        threads_per_service_instance)
 
-        self.service_scaling_policy = joint_scaling_policy(pl_scaling_pol,
-                                                           service_inst_scaling_policy)
+        self.service_scaling_policy = joint_service_policy_config.policy(pl_scaling_pol,
+                                                                         service_inst_scaling_policy)
 
         # requests that are currently in simultaneous processing
         self.in_processing_simultaneous = []
