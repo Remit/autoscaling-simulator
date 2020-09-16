@@ -1,0 +1,6 @@
+{
+  "workload_model": "workload.json",
+  "scaling_model": "scaling.json",
+  "platform_model": "platform.json",
+  "application_model": "application.json"
+}
