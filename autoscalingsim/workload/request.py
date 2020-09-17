@@ -1,3 +1,5 @@
+import uuid
+
 class Request:
     def __init__(self,
                  request_type,

@@ -1,6 +1,6 @@
 import math
 
-from ...infrastructure_platform.node_info import NodeInfo
+from autoscalingsim.infrastructure_platform.node_info import NodeInfo
 
 class ReactiveServiceScalingPolicy:
     """

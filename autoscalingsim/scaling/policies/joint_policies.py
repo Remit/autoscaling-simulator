@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
-from autoscalingsim.scaling.policies.platform_scaling_policies import *
-from autoscalingsim.scaling.policies.service_scaling_policies import *
+from .platform_scaling_policies import *
+from .service_scaling_policies import *
 
 class ServiceScalingPolicyHierarchy(ABC):
     """
