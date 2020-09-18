@@ -1,4 +1,5 @@
 import argparse
+import sys
 from autoscalingsim import simulator
 from datetime import datetime
 
@@ -6,7 +7,7 @@ from datetime import datetime
 # Reference for Python's import challenges: https://stackoverflow.com/questions/14132789/relative-imports-in-python-2-7/14132912#14132912
 #
 # Sample command line execution:
-# python3.6 autoscalingsim-cl.py --step 10 --start "2020-09-17T00:00:00" --confdir "experiments/test"
+# python3.6 autoscalingsim-cl.py --step 10 --start "2020-09-17T10:00:00" --confdir "experiments/test" --simdays 0.001
 #
 parser = argparse.ArgumentParser(description = 'Simulating autoscalers for the cloud applications and platforms.')
 

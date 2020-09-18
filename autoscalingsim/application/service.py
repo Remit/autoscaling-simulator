@@ -130,10 +130,6 @@ class Service:
 
         while(processing_time_left_at_step > 0):
 
-            if (self.downstream_buf.size() == 0) and (self.upstream_buf.size() == 0):
-                processing_time_left_at_step = 0
-                continue
-
             if len(self.in_processing_simultaneous) > 0:
                 # Find minimal leftover duration, subtract it,
                 # and propagate the request
@@ -150,6 +146,7 @@ class Service:
                     else:
                         # Request is put into the out buffer to be
                         # processed further according to the app structure
+                        #self.in_processing_simultaneous.remove(req)
                         req.processing_left_ms = 0
                         self.out.append(req)
 
@@ -188,12 +185,17 @@ class Service:
                     if not req is None:
                         req.replies_expected = 1
                         self.in_processing_simultaneous.append(req)
-                        spare_capacity = self._compute_current_capacity_in_threads()
 
-                if self.upstream_buf.size() > 0:
+                spare_capacity = self._compute_current_capacity_in_threads()
+
+                if (self.upstream_buf.size() > 0) and (spare_capacity > 0):
                     req = self.upstream_buf.pop()
                     self.in_processing_simultaneous.append(req)
-                    spare_capacity = self._compute_current_capacity_in_threads()
+
+                spare_capacity = self._compute_current_capacity_in_threads()
+
+            if (self.downstream_buf.size() == 0) and (self.upstream_buf.size() == 0):
+                processing_time_left_at_step = 0
 
         # Increase the cumulative time for all the reqs left in the buffers waiting
         self.upstream_buf.add_cumulative_time(simulation_step_ms)

@@ -103,28 +103,27 @@ class LinkBuffer:
     def step(self, simulation_step_ms):
         """ Processing requests to bring them from the link into the buffer """
         for req in self.requests_in_transfer:
-            min_time_to_subtract_ms = min(req.processing_left_ms, simulation_step_ms)
-            req.processing_left_ms -= min_time_to_subtract_ms
-            if req.processing_left_ms <= 0:
-                capacity = self.capacity_by_request_type[req.request_type]
-                self.used_throughput_MBps -= self._req_occupied_MBps(req)
+            #min_time_to_subtract_ms = min(req.processing_left_ms, simulation_step_ms)
+            #req.processing_left_ms -= min_time_to_subtract_ms
+            #if req.processing_left_ms <= 0:
+            req.cumulative_time_ms += simulation_step_ms
+            capacity = self.capacity_by_request_type[req.request_type]
 
-                if self.reqs_cnt[req.request_type] == capacity:
-                    del req # dropping the request if no spare capacity
-                else:
-                    req.cumulative_time_ms += min_time_to_subtract_ms
-                    if req.cumulative_time_ms >= self.request_processing_infos[req.request_type].timeout_ms:
-                        del req
-                    else:
-                        self.requests.append(req)
-                        self.reqs_cnt[req.request_type] += 1
+            req.waiting_on_link_left_ms -= simulation_step_ms
+            if req.waiting_on_link_left_ms <= 0:
+                if (capacity > self.reqs_cnt[req.request_type]) and (req.cumulative_time_ms < self.request_processing_infos[req.request_type].timeout_ms):
+                    self.requests.append(req)
+                    self.used_throughput_MBps -= self._req_occupied_MBps(req)
+                    self.reqs_cnt[req.request_type] += 1
+
+                self.requests_in_transfer.remove(req)
 
     def put(self, req):
         req_size_b_MBps = self._req_occupied_MBps(req)
 
         if self.throughput_MBps - self.used_throughput_MBps >= req_size_b_MBps:
             self.used_throughput_MBps += req_size_b_MBps
-            req.processing_left_ms = self.latency_ms
+            req.waiting_on_link_left_ms = self.latency_ms
             self.requests_in_transfer.append(req)
         else:
             del req

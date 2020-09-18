@@ -197,7 +197,6 @@ class ApplicationModel:
                             self.response_times_by_request[req.request_type].append(req.cumulative_time_ms)
                         else:
                             self.response_times_by_request[req.request_type] = [req.cumulative_time_ms]
-                        del req
 
     def enter_requests(self, new_requests):
         self.new_requests = new_requests

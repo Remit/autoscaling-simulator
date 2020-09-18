@@ -18,7 +18,6 @@ class PlatformModel:
         consider comparing against the quota/budget before issuing new nodes in get_new_nodes
         consider introducing failure model here?
         consider cross-cloud support / federated cloud
-        consider adding the desired vs actual distinction in the vms counts
         consider introducing the randomization for the scaling times
     """
     def __init__(self,

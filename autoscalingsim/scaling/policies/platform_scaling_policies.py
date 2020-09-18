@@ -126,6 +126,7 @@ class CPUUtilizationBasedPlatformScalingPolicy(UtilizationBasedPlatformScalingPo
         past_cpu_util = tracked_metrics_util_vals[self.metric][-self.past_observations_considered:]
         stabilized_cpu_util = np.mean(past_cpu_util)
         delta_nodes = math.ceil(cur_node_instances * (stabilized_cpu_util / self.utilization_metrics[self.metric].utilization_target_ratio)) - cur_node_instances
+
         rounding_fn = None
         if delta_nodes < 0:
             rounding_fn = math.floor
@@ -133,6 +134,9 @@ class CPUUtilizationBasedPlatformScalingPolicy(UtilizationBasedPlatformScalingPo
             rounding_fn = math.ceil
 
         delta_nodes_adj = rounding_fn(delta_nodes / self.node_instances_scaling_step) * self.node_instances_scaling_step
+        # Do not undeploy the last node. TODO: consider migration?
+        if cur_node_instances == 1 and delta_nodes_adj < 0:
+            delta_nodes_adj = 0
         # TODO: consider distinguishing between reactive/predictive
         # currently only reactive policy
         desired_scaling_timestamp_ms = cur_simulation_time_ms
