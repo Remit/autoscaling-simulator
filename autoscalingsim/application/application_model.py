@@ -18,6 +18,8 @@ class ApplicationModel:
         # Dynamic state
         self.new_requests = []
         self.response_times_by_request = {}
+        self.network_times_by_request = {}
+        self.buffer_times_by_request = {}
         self.platform_model = platform_model
 
         # Static state
@@ -197,6 +199,19 @@ class ApplicationModel:
                             self.response_times_by_request[req.request_type].append(req.cumulative_time_ms)
                         else:
                             self.response_times_by_request[req.request_type] = [req.cumulative_time_ms]
+
+                        # Time spent transferring between the nodes
+                        if req.request_type in self.network_times_by_request:
+                            self.network_times_by_request[req.request_type].append(req.network_time_ms)
+                        else:
+                            self.network_times_by_request[req.request_type] = [req.network_time_ms]
+
+                        # Time spent waiting in the buffers
+                        if len(req.buffer_time_ms) > 0:
+                            if req.request_type in self.buffer_times_by_request:
+                                self.buffer_times_by_request[req.request_type].append(req.buffer_time_ms)
+                            else:
+                                self.buffer_times_by_request[req.request_type] = [req.buffer_time_ms]
 
     def enter_requests(self, new_requests):
         self.new_requests = new_requests

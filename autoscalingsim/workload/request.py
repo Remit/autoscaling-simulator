@@ -14,7 +14,11 @@ class Request:
         # Dynamic state
         self.processing_left_ms = 0
         self.waiting_on_link_left_ms = 0
+
         self.cumulative_time_ms = 0
+        self.network_time_ms = 0
+        self.buffer_time_ms = {}
+
         self.upstream = True
         self.replies_expected = 1 # to implement the fan-in on the level of service
 

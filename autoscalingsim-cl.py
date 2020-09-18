@@ -49,3 +49,5 @@ simulator.add_simulation(args.config_dir,
                          args.results_dir)
 
 simulator.start_simulation()
+
+print(list(simulator.simulations["test"].application_model.buffer_times_by_request['auth']))

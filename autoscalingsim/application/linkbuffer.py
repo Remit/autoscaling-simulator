@@ -110,6 +110,7 @@ class LinkBuffer:
             capacity = self.capacity_by_request_type[req.request_type]
 
             req.waiting_on_link_left_ms -= simulation_step_ms
+            req.network_time_ms += simulation_step_ms
             if req.waiting_on_link_left_ms <= 0:
                 if (capacity > self.reqs_cnt[req.request_type]) and (req.cumulative_time_ms < self.request_processing_infos[req.request_type].timeout_ms):
                     self.requests.append(req)
@@ -150,9 +151,16 @@ class LinkBuffer:
     def size(self):
         return len(self.requests)
 
-    def add_cumulative_time(self, delta):
+    def add_cumulative_time(self,
+                            delta,
+                            service_name):
+
         for req in self.requests:
             req.cumulative_time_ms += delta
+            if not service_name in req.buffer_time_ms:
+                req.buffer_time_ms[service_name] = delta
+            else:
+                req.buffer_time_ms[service_name] += delta
 
     def remove_by_id(self, request_id):
         for req in reversed(self.requests):

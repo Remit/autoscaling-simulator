@@ -198,8 +198,8 @@ class Service:
                 processing_time_left_at_step = 0
 
         # Increase the cumulative time for all the reqs left in the buffers waiting
-        self.upstream_buf.add_cumulative_time(simulation_step_ms)
-        self.downstream_buf.add_cumulative_time(simulation_step_ms)
+        self.upstream_buf.add_cumulative_time(simulation_step_ms, self.service_name)
+        self.downstream_buf.add_cumulative_time(simulation_step_ms, self.service_name)
 
         self._compute_res_util_cpu(simulation_step_ms)
 
