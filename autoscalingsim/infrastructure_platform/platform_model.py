@@ -103,25 +103,42 @@ class PlatformModel:
                                            num_removed,
                                            adjustment_ms)
 
-    def compute_usage(self,
-                      simulation_step_ms,
-                      simulation_end_ms):
-        # Converting the up/down changes in the number of vms into cur number per sim step
+    def compute_desired_node_count(self,
+                                   simulation_step_ms,
+                                   simulation_end_ms):
+
+        return self._compute_usage(self.desired_nodes_state,
+                                   simulation_step_ms,
+                                   simulation_end_ms)
+
+    def compute_actual_node_count(self,
+                                  simulation_step_ms,
+                                  simulation_end_ms):
+
+        return self._compute_usage(self.nodes_state,
+                                   simulation_step_ms,
+                                   simulation_end_ms)
+
+    def _compute_usage(self,
+                       states,
+                       simulation_step_ms,
+                       simulation_end_ms):
+        # Converting the up/down changes into cur number per sim step
         nodes_usage = {}
 
-        for node_type, delta_line in self.nodes_state.items():
+        for node_type, delta_line in states.items():
             if len(delta_line) > 1: # filtering only those node types that were used
                 nodes_usage[node_type] = {"timestamps": [], "count": []}
 
         for node_type in nodes_usage.keys():
             next_event_id = 1
-            next_timestamp = list(self.nodes_state[node_type].keys())[0]
-            latest_count = self.nodes_state[node_type][next_timestamp]
+            next_timestamp = list(states[node_type].keys())[0]
+            latest_count = states[node_type][next_timestamp]
             timestamp_cur = next_timestamp
 
             while timestamp_cur <= simulation_end_ms:
 
-                event_cnt = self.nodes_state[node_type].get(timestamp_cur)
+                event_cnt = states[node_type].get(timestamp_cur)
                 if not event_cnt is None:
                     latest_count += event_cnt
                     if latest_count < 0:
