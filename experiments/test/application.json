@@ -52,11 +52,11 @@
 			"buffer_capacity_by_request_type": [
 				{
 					"request_type": "auth",
-					"capacity": 20
+					"capacity": 10
 				},
 				{
 					"request_type": "buy",
-					"capacity": 10
+					"capacity": 5
 				}
 			],
 			"threads_per_instance": 4,
@@ -88,7 +88,7 @@
 				},
 				{
 					"service": "db",
-					"upstream": 10,
+					"upstream": 100,
 					"downstream": 0
 				}
 			],
@@ -113,7 +113,7 @@
 				},
 				{
 					"service": "db",
-					"upstream": 20,
+					"upstream": 110,
 					"downstream": 0
 				}
 			],
