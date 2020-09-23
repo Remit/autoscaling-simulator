@@ -1,5 +1,6 @@
 import numpy as np
 
+from ..scaling.policiesbuilder.scaledentity import *
 from ..workload.request import Request
 from ..deployment.deployment_model import DeploymentModel
 from ..infrastructure_platform.node_info import NodeInfo
@@ -33,7 +34,7 @@ class ServiceState:
         self.cur_node_instances = cur_node_instances
         self.tracked_metrics_util_vals = tracked_metrics_util_vals
 
-class Service:
+class Service(ScaledEntity):
     """
 
     TODO:
@@ -47,13 +48,18 @@ class Service:
                  deployment_model,
                  request_processing_infos,
                  service_instances,
-                 platform_model_access_point,
-                 joint_service_policy_config,
-                 app_service_policy_config,
-                 platform_policy_config,
-                 application_scaling_model,
+                 platform_model_access_point,# remove?
+                 joint_service_policy_config,# remove?
+                 app_service_policy_config,# remove?
+                 platform_policy_config,# remove?
+                 application_scaling_model,# remove?
+                 scaling_setting_for_service, # TODO
                  state_mb = 0,
                  res_util_metrics_avg_interval_ms = 500):
+
+        # Initializing scaling-related functionality in the superclass
+        super().__init__(self,
+                         scaling_setting_for_service)
 
         # Static state
         self.service_name = service_name
@@ -73,7 +79,7 @@ class Service:
                                          request_processing_infos,
                                          deployment_model.node_info.latency_ms,
                                          deployment_model.node_info.network_bandwidth_MBps)
-        # Scaling-related
+        # Scaling-related // TODO: remove below!
         self.promised_next_platform_state = {"next_ts": 0,
                                              "next_count": 0}
         self.promised_next_service_state = {"next_ts": 0,
@@ -204,18 +210,21 @@ class Service:
         self._compute_res_util_cpu(simulation_step_ms)
 
         at_least_metric_vals = self.res_util_metrics_avg_interval_ms // simulation_step_ms
-        # Reconciling the promised state based on what autoscaler says
-        if len(self.res_util_avg["cpu"]) >= at_least_metric_vals:
-            cur_service_state = ServiceState(self.service_name,
-                                             self.service_instances,
-                                             self.node_count,
-                                             self.res_util_avg)
 
-            next_service_state = self.service_scaling_policy.reconcile_service_state(simulation_time_ms,
-                                                                                     cur_service_state)
-            if not next_service_state is None:
-                self.promised_next_platform_state = next_service_state["node_instances"]
-                self.promised_next_service_state = next_service_state["service_instances"]
+        # Scaling if needed -- TODO: think of sync period?
+        self.reconcile_desired_state()
+        ## Reconciling the promised state based on what autoscaler says
+        #if len(self.res_util_avg["cpu"]) >= at_least_metric_vals:
+        #    cur_service_state = ServiceState(self.service_name,
+        #                                     self.service_instances,
+        #                                     self.node_count,
+        #                                     self.res_util_avg)
+        #
+        #    next_service_state = self.service_scaling_policy.reconcile_service_state(simulation_time_ms,
+        #                                                                             cur_service_state)
+        #    if not next_service_state is None:
+        #        self.promised_next_platform_state = next_service_state["node_instances"]
+        #        self.promised_next_service_state = next_service_state["service_instances"]
 
     def _compute_current_capacity_in_threads(self):
         return int(self.node_count * self.threads_per_node_instance - len(self.in_processing_simultaneous) * self.threads_per_service_instance)

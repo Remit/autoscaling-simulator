@@ -9,10 +9,11 @@ class MetricDescription:
     """
     Stores all the necessary information to create a scaling metric.
     """
-    
+
     def __init__(self,
                  metric_name,
-                 metric_source_in_entity,
+                 entity_name,
+                 entity_ref,
                  scaled_aspect_source,
                  values_filter_conf,
                  values_aggregator_conf,
@@ -27,7 +28,8 @@ class MetricDescription:
                  initial_entity_representation_in_metric):
 
         self.metric_name = metric_name
-        self.metric_source_in_entity = metric_source_in_entity
+        self.entity_name = entity_name
+        self.entity_ref = entity_ref
         self.scaled_aspect_source = scaled_aspect_source
         self.values_filter_conf = values_filter_conf
         self.values_aggregator_conf = values_aggregator_conf
@@ -45,7 +47,8 @@ class MetricDescription:
     def convert_to_metric(self):
 
         return ScalingMetric(self.metric_name,
-                             self.metric_source_in_entity,
+                             self.entity_name,
+                             self.entity_ref,
                              self.scaled_aspect_source,
                              self.values_filter_conf,
                              self.values_aggregator_conf,
@@ -70,7 +73,8 @@ class ScalingMetric:
 
     def __init__(self,
                  metric_name,
-                 metric_source_in_entity,
+                 entity_name,
+                 entity_ref,
                  scaled_aspect_source,
                  values_filter_conf,
                  values_aggregator_conf,
@@ -90,7 +94,8 @@ class ScalingMetric:
         # Information sources for metric-based scaling:
         # a property of a particular entity instance (object) that
         # stores the metric values.
-        self.metric_source_in_entity = metric_source_in_entity
+        self.entity_name = entity_name
+        self.entity_ref = entity_ref
 
         # source of the current value for the scaled aspect, i.e.
         # the characteristic that *may directly be changed* as the
@@ -138,7 +143,6 @@ class ScalingMetric:
         # forecaster.
         self.timing_type = timing_type
         self.forecaster = MetricForecaster(fhorizon_in_steps = forecaster_conf['fhorizon_in_steps'],
-                                           metric_source_in_entity = self.metric_source_in_entity,
                                            forecasting_model_name = forecaster_conf['name'],
                                            forecasting_model_params = forecaster_conf['config'],
                                            resolution_ms = forecaster_conf['resolution_ms'],
@@ -165,7 +169,7 @@ class ScalingMetric:
         # there is no universal correspondence for every app and every request type.
         self.entity_representation_in_metric = entity_representation_in_metric
 
-    def compute_desired_state(self):
+    def __call__(self):
 
         """
         Computes the desired state of the associated scaled entity (e.g. service)
@@ -175,7 +179,7 @@ class ScalingMetric:
         # Extracts available metric values in a form of pandas DataFrame
         # with the datetime index. Can be a single value or a sequence of
         # values (in this case, some metric history is incorporated)
-        metric_vals = self.metric_source_in_entity
+        metric_vals = self.entity_ref.get_metric_vals(self.metric_name)
         if self.timing_type == 'predictive':
             metric_vals = self.forecaster(cur_metric_vals)
 

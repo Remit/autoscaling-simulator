@@ -1,0 +1,53 @@
+{
+  "application": {
+    "structure": {},
+    "services": [
+      {
+        "service": "default",
+        "scaling_effect_aggregation_rule_name": "maxScale",
+        "metrics_descriptions": [
+          {
+            "metric_name": "cpu_utilization",
+            "entity_name": "Service",
+            "scaled_aspect_name": "count",
+            "values_filter_conf": {
+              "name": "defaultNA",
+              "config": {
+                "default_value": 0.0
+              }
+            },
+            "values_aggregator_conf": {
+              "name": "avgAggregator",
+              "config": {
+                "resolution_window_ms": 10
+              }
+            },
+            "target_value": 0.2,
+            "stabilizer_conf": {
+              "name": "maxStabilizer",
+              "config": {
+                "resolution_window_ms": 100
+              }
+            },
+            "timing_type": "predictive",
+            "forecaster_conf": {
+              "name": "simpleAvg",
+              "config": {
+                "averaging_interval": 10
+              },
+              "resolution_ms": 10,
+              "history_data_buffer_size": 20,
+              "fhorizon_in_steps": 5
+            },
+            "capacity_adaptation_type": "discrete",
+            "priority": 1,
+            "initial_max_limit": 15,
+            "initial_min_limit": 1,
+            "initial_entity_representation_in_metric": 1
+          }
+        ]
+      }
+    ]
+  },
+  "platform": {}
+}

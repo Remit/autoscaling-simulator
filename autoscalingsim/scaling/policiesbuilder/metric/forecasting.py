@@ -12,7 +12,6 @@ class MetricForecaster:
     """
     def __init__(self,
                  fhorizon_in_steps,
-                 metric_source_in_entity,
                  forecasting_model_name = None,
                  forecasting_model_params = None,
                  resolution_ms = 10,
@@ -20,7 +19,6 @@ class MetricForecaster:
 
         # Static State
         self.fhorizon_in_steps = fhorizon_in_steps
-        self.metric_source_in_entity = metric_source_in_entity
         self.resolution_ms = resolution_ms
         self.history_data_buffer_size = history_data_buffer_size
 
@@ -52,17 +50,16 @@ class MetricForecaster:
 
         return forecast
 
-    def _update(self):
+    def _update(self,
+                metric_vals):
 
         """
-        Takes the available metric values from the self.metric_source_in_entity
-        until the internal buffer of size self.history_data_buffer_size is full,
-        then it fits the forecasting model to the collected data. The model is
-        afterwards updated on each new observation if there was no interrupt in
-        data acquisition (determined by the timestamps).
+        Adds the available metric values until the internal buffer of size
+        self.history_data_buffer_size is full, then it fits the forecasting model
+        to the collected data. The model is afterwards updated on each new observation
+        if there was no interrupt in data acquisition (determined by the timestamps).
         """
 
-        metric_vals = self.metric_source_in_entity
         self.history_data_buffer = self.history_data_buffer.append(metric_vals)
         self.history_data_buffer = self.history_data_buffer.iloc[-self.history_data_buffer_size:,]
         if self.history_data_buffer.shape[0] >= self.history_data_buffer_size:
@@ -111,7 +108,7 @@ class SimpleAverage(ForecastingModel):
     def fit(self,
             data):
 
-        self.averaged_value = data.mean()[0]
+        self.averaged_value = data[-self.averaging_interval:].mean()[0]
 
     def predict(self,
                 metric_vals,

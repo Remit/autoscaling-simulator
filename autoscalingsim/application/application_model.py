@@ -12,7 +12,8 @@ class ApplicationModel:
                  starting_time_ms,
                  platform_model,
                  application_scaling_model,
-                 scaling_policies_settings,
+                 scaling_policies_settings,#remove
+                 services_scaling_settings,#TODO
                  filename = None):
 
         # Dynamic state
@@ -106,6 +107,12 @@ class ApplicationModel:
                     node_count = service_config["deployment"]["count"]
                     deployment_model = DeploymentModel(provider, node_info, node_count)
 
+                    service_scaling_settings = None
+                    if service_name in services_scaling_settings:
+                        service_scaling_settings = services_scaling_settings[service_name]
+                    elif 'default' in services_scaling_settings:
+                        service_scaling_settings = services_scaling_settings['default']
+
                     service = Service(service_name,
                                       threads_per_instance,
                                       buffer_capacity_by_request_type,
@@ -113,10 +120,11 @@ class ApplicationModel:
                                       self.reqs_processing_infos,
                                       starting_instances_num,
                                       self.platform_model,
-                                      scaling_policies_settings.joint_service_policy_config,
-                                      scaling_policies_settings.app_service_policy_config,
-                                      scaling_policies_settings.platform_policy_config,
-                                      self.application_scaling_model,
+                                      scaling_policies_settings.joint_service_policy_config,#
+                                      scaling_policies_settings.app_service_policy_config,#
+                                      scaling_policies_settings.platform_policy_config,#
+                                      self.application_scaling_model,#
+                                      service_scaling_settings,
                                       state_mb)
 
                     add_ts_ms, node_info, num_added = self.platform_model.get_new_nodes(starting_time_ms,
