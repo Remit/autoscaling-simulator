@@ -71,6 +71,12 @@ class ScalingMetric:
     could be the node (= VM).
     """
 
+    # First value in the list is the default
+    reference_configs_dict = {
+        'capacity_adaptation_type': ['discrete', 'continuous'],
+        'timing_type': ['reactive', 'predictive']
+    }
+
     def __init__(self,
                  metric_name,
                  entity_name,
@@ -222,3 +228,18 @@ class ScalingMetric:
         if not limiter is None:
             self.limiter.update_limits(new_min,
                                        new_max)
+
+    @staticmethod
+    def config_check(config_raw,
+                     name_to_check):
+
+        config_res = ScalingMetric.reference_configs_dict[name_to_check][0] # default
+        if name_to_check in config_raw:
+            if config_raw[name_to_check] in ScalingMetric.reference_configs_dict[name_to_check]:
+                config_res = config_raw[name_to_check]
+            else
+                raise ValueError('Value {} of the config parameter {} is unknown for class {}'.format(config_raw[name_to_check],
+                                                                                                      name_to_check,
+                                                                                                      __class__.__name__))
+
+        return config_res

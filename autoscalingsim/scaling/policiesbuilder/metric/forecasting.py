@@ -65,6 +65,13 @@ class MetricForecaster:
         if self.history_data_buffer.shape[0] >= self.history_data_buffer_size:
             self.model.fit(self.history_data_buffer)
 
+    @staticmethod
+    def config_check(config_raw):
+        keys_to_check = ['name', 'config', 'resolution_ms', 'history_data_buffer_size', 'fhorizon_in_steps']
+        for key in keys_to_check:
+            if not key in config_raw:
+                raise ValueError('Key {} not found in the configuration for {}'.format(key, __class__.__name__))
+
 class ForecastingModel(ABC):
     """
     Wraps the forecasting model used by MetricForecaster.

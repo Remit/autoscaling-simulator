@@ -18,6 +18,13 @@ class ValuesFilter(ABC):
                  values):
         pass
 
+    @staticmethod
+    def config_check(config_raw):
+        keys_to_check = ['name', 'config']
+        for key in keys_to_check:
+            if not key in config_raw:
+                raise ValueError('Key {} not found in the configuration for {}'.format(key, __class__.__name__))
+
 class DefaultNA(ValuesFilter):
 
     """
