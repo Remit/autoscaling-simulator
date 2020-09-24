@@ -1,4 +1,4 @@
-{
+{                                                 
   "application": {
     "structure": {},
     "services": [
@@ -7,9 +7,10 @@
         "scaling_effect_aggregation_rule_name": "maxScale",
         "metrics_descriptions": [
           {
-            "metric_name": "cpu_utilization",
-            "entity_name": "Service",
+            "scaled_entity_name": "Service",
             "scaled_aspect_name": "count",
+            "metric_source_name": "Service",
+            "metric_name": "cpu_utilization",
             "values_filter_conf": {
               "name": "defaultNA",
               "config": {

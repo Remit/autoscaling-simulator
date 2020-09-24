@@ -77,10 +77,10 @@ class ScalingPolicyConfiguration:
                                 initial_entity_representation_in_metric = self._conf_numeric_check(metric_description_json,
                                                                                                    'initial_entity_representation_in_metric')
 
-                                metric_descr = MetricDescription(metric_description_json['metric_name'],
-                                                                 metric_description_json['entity_name'],
-                                                                 entity_ref, # needed? maybe make a centralized call after everything is initialized and take from the list metric source ref
-                                                                 metric_description_json['scaled_aspect_name'], # ?
+                                metric_descr = MetricDescription(metric_description_json['scaled_entity_name'],
+                                                                 metric_description_json['scaled_aspect_name'],
+                                                                 metric_description_json['metric_source_name'],
+                                                                 metric_description_json['metric_name'],
                                                                  values_filter_conf,
                                                                  values_aggregator_conf,
                                                                  target_value,

@@ -11,10 +11,10 @@ class MetricDescription:
     """
 
     def __init__(self,
+                 scaled_entity_name,
+                 scaled_aspect_name,
+                 metric_source_name,
                  metric_name,
-                 entity_name,
-                 entity_ref,
-                 scaled_aspect_source,
                  values_filter_conf,
                  values_aggregator_conf,
                  target_value,
@@ -27,29 +27,28 @@ class MetricDescription:
                  initial_min_limit,
                  initial_entity_representation_in_metric):
 
+        self.scaled_entity_name = scaled_entity_name
+        self.scaled_aspect_name = scaled_aspect_name
+        self.metric_source_name = metric_source_name
         self.metric_name = metric_name
-        self.entity_name = entity_name
-        self.entity_ref = entity_ref
-        self.scaled_aspect_source = scaled_aspect_source
         self.values_filter_conf = values_filter_conf
         self.values_aggregator_conf = values_aggregator_conf
-        self.priority = priority
         self.target_value = target_value
         self.stabilizer_conf = stabilizer_conf
         self.timing_type = timing_type
         self.forecaster_conf = forecaster_conf
         self.capacity_adaptation_type = capacity_adaptation_type
-
+        self.priority = priority
         self.initial_max_limit = initial_max_limit
         self.initial_min_limit = initial_min_limit
         self.initial_entity_representation_in_metric = initial_entity_representation_in_metric
 
     def convert_to_metric(self):
 
-        return ScalingMetric(self.metric_name,
-                             self.entity_name,
-                             self.entity_ref,
-                             self.scaled_aspect_source,
+        return ScalingMetric(self.scaled_entity_name,
+                             self.scaled_aspect_name,
+                             self.metric_source_name,
+                             self.metric_name,
                              self.values_filter_conf,
                              self.values_aggregator_conf,
                              self.target_value,
@@ -68,7 +67,8 @@ class ScalingMetric:
     Abstract description of a metric used to determine by how much should the
     associated entity be scaled. For instance, the ScalingMetric could be the
     CPU utilization. The associated ScaledEntity that contains the metric
-    could be the node (= VM).
+    could be the node (= VM). Decouples scaling metric from the scaled aspect -
+    the metric can come from entirely different source, e.g. external.
     """
 
     # First value in the list is the default
@@ -78,10 +78,10 @@ class ScalingMetric:
     }
 
     def __init__(self,
+                 scaled_entity_name,
+                 scaled_aspect_name,
+                 metric_source_name,
                  metric_name,
-                 entity_name,
-                 entity_ref,
-                 scaled_aspect_source,
                  values_filter_conf,
                  values_aggregator_conf,
                  target_value,
@@ -94,20 +94,17 @@ class ScalingMetric:
                  min_limit,
                  entity_representation_in_metric):
         # Static state
+        # Description of the entity to scale, includes:
+        # - the name of the entity to scale, e.g. service name
+        # - the name of the entity's aspect to scale, e.g. instance count
+        self.scaled_entity_name = scaled_entity_name
+        self.scaled_aspect_name = scaled_aspect_name
 
+        # Description of the metric used for scaling, includes:
+        # - the name of the metric source, e.g. service name or the name of some external entity
+        # - the name of the metric in the metric source specified by the name above
+        self.metric_source_name = metric_source_name
         self.metric_name = metric_name
-
-        # Information sources for metric-based scaling:
-        # a property of a particular entity instance (object) that
-        # stores the metric values.
-        self.entity_name = entity_name
-        self.entity_ref = entity_ref
-
-        # source of the current value for the scaled aspect, i.e.
-        # the characteristic that *may directly be changed* as the
-        # result of the autoscaling process, e.g. entity instances count,
-        # entity size in terms of some resource (CPU shares)
-        self.scaled_aspect_source = scaled_aspect_source
 
         # Metric values preprocessing:
         # a filter that takes some of the metrics values depending
@@ -159,6 +156,11 @@ class ScalingMetric:
         self.capacity_adaptation_type = capacity_adaptation_type
 
         # Dynamic state
+        # reference to the metric manager that acts as an interface for all the values requests
+        # from the side of the ScalingMetric, both for scaling metric and scaled aspect
+        # Initialized and given to the ScalingMetric after its creation since it contains
+        # the list of references to all the relevant entities/informers.
+        self.metric_manager = None
 
         # current min-max limits on the post-scaling result for the
         # aspect of the scaled entity (count of scaled entities in case of horizontal scaling
@@ -207,6 +209,7 @@ class ScalingMetric:
         # desired amount of the scaled aspect is stabilized to avoid
         # oscillations in it that may cause too much overhead when scaling.
         metric_ratio = aggregated_metric_vals / self.target_value
+        # TODO: below
         desired_scaled_aspect = math.ceil(metric_ratio * self.entity_representation_in_metric * self.scaled_aspect_source)
         desired_scaled_aspect_stabilized = self.stabilizer(desired_scaled_aspect)
 

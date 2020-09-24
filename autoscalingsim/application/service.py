@@ -1,4 +1,6 @@
 import numpy as np
+import pandas as pd
+from datetime import timedelta
 
 from ..scaling.policiesbuilder.scaledentity import *
 from ..workload.request import Request
@@ -9,9 +11,10 @@ from ..scaling.policies.scaling_policies_settings import *
 from ..scaling.policies.joint_policies import *
 from ..scaling.policies.service_scaling_policies import *
 from ..scaling.policies.platform_scaling_policies import *
+from ..utils.state import State
 from .linkbuffer import LinkBuffer
 
-class ServiceState:
+class ServiceState(State):
     """
     Contains information relevant to conduct the scaling. The state should be
     updated at each simulation step and provided to the ServiceScalingPolicyHierarchy
@@ -24,30 +27,86 @@ class ServiceState:
         add properties for workload-based scaling + predictive
     """
     def __init__(self,
-                 service_name,
-                 cur_service_instances,
-                 cur_node_instances,
-                 tracked_metrics_util_vals):
+                 init_datetime,
+                 init_service_instances,
+                 init_keepalive_ms = -1):
 
-        self.service_name = service_name
-        self.cur_service_instances = cur_service_instances
-        self.cur_node_instances = cur_node_instances
-        self.tracked_metrics_util_vals = tracked_metrics_util_vals
+        # Untimed
+        self.count = init_service_instances
+        # the negative value of keepalive is used to keep the timed params indefinitely
+        self.keepalive = timedelta(init_keepalive_ms * 1000)
+
+        # Timed
+        default_ts_init = {'datetime': pd.Timestamp(init_datetime), 'value': 0.0}
+
+        self.cpu_utilization = pd.DataFrame(default_ts_init)
+        self.cpu_utilization = self.cpu_utilization.set_index('datetime')
+
+        self.mem_utilization = pd.DataFrame(default_ts_init)
+        self.mem_utilization = self.mem_utilization.set_index('datetime')
+
+        self.disk_utilization = pd.DataFrame(default_ts_init)
+        self.disk_utilization = self.disk_utilization.set_index('datetime')
+
+    def get_val(self,
+                attribute_name):
+
+        """
+        Currently, the only method defined in the parent abstract class (interface),
+        i.e. the contract that State establishes with others using it is that
+        of a uniform attribute getting access.
+        """
+
+        if not hasattr(self, attribute_name):
+            raise ValueError('Attribute {} not found in {}'.format(attribute_name, self.__class__.__name__))
+
+        return self.__getattribute__(attribute_name)
+
+    def update_val(self,
+                   attribute_name,
+                   cur_datetime,
+                   cur_val):
+
+        if not hasattr(self, attribute_name):
+            raise ValueError('Attribute {} not found in {}'.format(attribute_name, self.__class__.__name__))
+
+        old_attr_val = self.__getattribute__(attribute_name)
+        val_to_upd = cur_val
+        if isinstance(old_attr_val, pd.DataFrame):
+            cur_ts = pd.Timestamp(cur_datetime)
+            oldest_to_keep_ts = cur_ts - self.keepalive
+
+            # Discarding old observations
+            if oldest_to_keep_ts < cur_ts:
+                old_attr_val = old_attr_val[old_attr_val.index > oldest_to_keep_ts]
+
+            data_to_add = {'datetime': cur_ts,
+                           'value': cur_val}
+            df_to_add = pd.DataFrame(data_to_add)
+            df_to_add = df_to_add.set_index('datetime')
+            val_to_upd = old_attr_val.append(df_to_add)
+
+        self.__setattr__(attribute_name, val_to_upd)
 
 class Service(ScaledEntity):
+
     """
+
 
     TODO:
         implement simulation of the different OS scheduling disciplines like CFS, currently assuming
         that the request takes the thread and does not let it go until its processing is finished
     """
+
     def __init__(self,
+                 init_datetime,
                  service_name,
                  threads_per_service_instance,
                  buffer_capacity_by_request_type,
                  deployment_model,
                  request_processing_infos,
-                 service_instances,
+                 init_service_instances,
+                 init_keepalive_ms,
                  platform_model_access_point,# remove?
                  joint_service_policy_config,# remove?
                  app_service_policy_config,# remove?
@@ -58,7 +117,8 @@ class Service(ScaledEntity):
                  res_util_metrics_avg_interval_ms = 500):
 
         # Initializing scaling-related functionality in the superclass
-        super().__init__(self,
+        super().__init__(self.__class__.__name__,
+                         service_name,
                          scaling_setting_for_service)
 
         # Static state
@@ -70,6 +130,10 @@ class Service(ScaledEntity):
         self.state_mb = state_mb
 
         # Dynamic state
+        self.state = ServiceState(init_datetime,
+                                  init_service_instances,
+                                  init_keepalive_ms)
+
         # Upstream and downstream links/buffers of the service
         self.upstream_buf = LinkBuffer(buffer_capacity_by_request_type,
                                        request_processing_infos,
@@ -79,6 +143,8 @@ class Service(ScaledEntity):
                                          request_processing_infos,
                                          deployment_model.node_info.latency_ms,
                                          deployment_model.node_info.network_bandwidth_MBps)
+
+        self.state =
         # Scaling-related // TODO: remove below!
         self.promised_next_platform_state = {"next_ts": 0,
                                              "next_count": 0}

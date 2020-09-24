@@ -26,7 +26,8 @@ class ScaledEntity:
     """
 
     def __init__(self,
-                 derived_obj_ref,
+                 scaled_entity_class,
+                 scaled_entity_name,
                  scaling_setting_for_entity):
 
         if not scaling_setting_for_entity is None:
@@ -35,10 +36,14 @@ class ScaledEntity:
             metrics_by_priority = {}
             for metric_description in scaling_setting_for_entity.metrics_descriptions:
 
-                if metric_description.entity_name == derived_obj_ref.__class__.__name__:
-                    metric_description.entity_ref = derived_obj_ref
+                if metric_description.scaled_entity_name == scaled_entity_class:
+                    metric_description.scaled_entity_name = scaled_entity_name
+
+                if metric_description.metric_source_name == scaled_entity_class:
+                    metric_description.metric_source_name = scaled_entity_name
 
                 self.metrics_by_priority[metric_description.priority] = metric_description.convert_to_metric()
+                
             self.metrics_by_priority = collections.OrderedDict(sorted(metrics_by_priority.items()))
 
             # The rule that acts upon the results of individual metrics and aggregates
@@ -57,5 +62,15 @@ class ScaledEntity:
     def reconcile_desired_state(self):
         if not self.scaling_effect_aggregation_rule is None:
             self.desired_scaling_aspect_value = self.scaling_effect_aggregation_rule()
+
+    def set_metric_manager(self,
+                           metric_manager_ref):
+        """
+        Sets access point to the Metric Manager to query the relevant data for the ScalingMetric.
+        Can be set only after the manager is initialized with all the relevant metrics providers.
+        """
+
+        for _, metric in self.metrics_by_priority:
+            metric.metric_manager = metric_manager_ref
 
     # TODO: should contain something like CurrentState that contains Scaled aspect value available under scaled_aspect_source_name
