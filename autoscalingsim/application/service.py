@@ -27,7 +27,7 @@ class ServiceState(State):
         add properties for workload-based scaling + predictive
     """
     def __init__(self,
-                 init_datetime,
+                 init_timestamp,
                  init_service_instances,
                  init_keepalive_ms = -1):
 
@@ -37,7 +37,7 @@ class ServiceState(State):
         self.keepalive = timedelta(init_keepalive_ms * 1000)
 
         # Timed
-        default_ts_init = {'datetime': pd.Timestamp(init_datetime), 'value': 0.0}
+        default_ts_init = {'datetime': init_timestamp, 'value': 0.0}
 
         self.cpu_utilization = pd.DataFrame(default_ts_init)
         self.cpu_utilization = self.cpu_utilization.set_index('datetime')
@@ -99,7 +99,7 @@ class Service(ScaledEntity):
     """
 
     def __init__(self,
-                 init_datetime,
+                 init_timestamp,
                  service_name,
                  threads_per_service_instance,
                  buffer_capacity_by_request_type,
@@ -107,19 +107,16 @@ class Service(ScaledEntity):
                  request_processing_infos,
                  init_service_instances,
                  init_keepalive_ms,
-                 platform_model_access_point,# remove?
-                 joint_service_policy_config,# remove?
-                 app_service_policy_config,# remove?
-                 platform_policy_config,# remove?
-                 application_scaling_model,# remove?
-                 scaling_setting_for_service, # TODO
+                 scaling_setting_for_service,
+                 metric_manager,
                  state_mb = 0,
                  res_util_metrics_avg_interval_ms = 500):
 
         # Initializing scaling-related functionality in the superclass
         super().__init__(self.__class__.__name__,
                          service_name,
-                         scaling_setting_for_service)
+                         scaling_setting_for_service,
+                         metric_manager)
 
         # Static state
         self.service_name = service_name
@@ -130,7 +127,7 @@ class Service(ScaledEntity):
         self.state_mb = state_mb
 
         # Dynamic state
-        self.state = ServiceState(init_datetime,
+        self.state = ServiceState(init_timestamp,
                                   init_service_instances,
                                   init_keepalive_ms)
 
@@ -144,31 +141,30 @@ class Service(ScaledEntity):
                                          deployment_model.node_info.latency_ms,
                                          deployment_model.node_info.network_bandwidth_MBps)
 
-        self.state =
         # Scaling-related // TODO: remove below!
         self.promised_next_platform_state = {"next_ts": 0,
                                              "next_count": 0}
         self.promised_next_service_state = {"next_ts": 0,
                                             "next_count": 0}
-        self.service_instances = service_instances
-        self.node_count = deployment_model.node_count
-        self.res_util_tmp_buffer = []
-        self.res_util_avg = {}
-        self.res_util_avg["cpu"] = []
+        #self.service_instances = service_instances
+        #self.node_count = deployment_model.node_count
+        #self.res_util_tmp_buffer = []
+        #self.res_util_avg = {}
+        #self.res_util_avg["cpu"] = []
 
-        pl_scaling_pol = platform_policy_config.policy(platform_model_access_point,
-                                                       self.service_name,
-                                                       deployment_model.provider,
-                                                       deployment_model.node_info,
-                                                       platform_policy_config.config)
+        #pl_scaling_pol = platform_policy_config.policy(platform_model_access_point,
+        #                                               self.service_name,
+        #                                               deployment_model.provider,
+        #                                               deployment_model.node_info,
+        #                                               platform_policy_config.config)
 
-        boot_up_ms = application_scaling_model.get_service_scaling_params(self.service_name).boot_up_ms
+        #boot_up_ms = application_scaling_model.get_service_scaling_params(self.service_name).boot_up_ms
         # TODO: consider adding service_instances_scaling_step = 1,
-        service_inst_scaling_policy = app_service_policy_config.policy(boot_up_ms,
-                                                                       threads_per_service_instance)
+        #service_inst_scaling_policy = app_service_policy_config.policy(boot_up_ms,
+        #                                                               threads_per_service_instance)
 
-        self.service_scaling_policy = joint_service_policy_config.policy(pl_scaling_pol,
-                                                                         service_inst_scaling_policy)
+        #self.service_scaling_policy = joint_service_policy_config.policy(pl_scaling_pol,
+        #                                                                 service_inst_scaling_policy)
 
         # requests that are currently in simultaneous processing
         self.in_processing_simultaneous = []

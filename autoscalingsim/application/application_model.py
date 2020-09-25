@@ -1,72 +1,96 @@
 import json
+import operator
+import pandas as pd
 
 from ..workload.request import RequestProcessingInfo
 from ..deployment.deployment_model import DeploymentModel
 from ..infrastructure_platform.platform_model import PlatformModel
+from ..utils.error_check import ErrorChecker
+from ..utils.metricmanager import MetricManager
 from .service import Service
 
 class ApplicationModel:
+
     """
+    Wraps the application-level behaviour.
+    The application is perceived as consisting of services that each may have multiple
+    instances (not distinguisged on the app level) and linkbuffers that combine
+    the behaviour of network links with the service buffers of requests awaiting
+    processing. Each service has two buffers: one for the upstream requests (i.e.
+    requests originating at the entry service), and one for the downstream requests
+    also known as responses. The processed requests end up in the *out* buffer of
+    a service waiting to be grabbed for the transmission over the link.
+    Each service represents a scaling entity; in the technical terms that
+    corresponds to the pods/containers. The dynamic state of the application
+    is distributed between the application model (requests processing related)
+    and the services owned (service capacity and utilization related).
     """
+
     def __init__(self,
                  starting_time_ms,
                  platform_model,
-                 application_scaling_model,
-                 scaling_policies_settings,#remove
-                 services_scaling_settings,#TODO
-                 filename = None):
+                 scaling_policy,
+                 config_file):
 
         # Dynamic state
         self.new_requests = []
         self.response_times_by_request = {}
         self.network_times_by_request = {}
         self.buffer_times_by_request = {}
+        self.metric_manager = MetricManager()
         self.platform_model = platform_model
 
         # Static state
         self.name = None
-        self.application_scaling_model = application_scaling_model
+        self.scaling_policy = scaling_policy
         self.services = {}
         self.structure = {}
         self.reqs_processing_infos = {}
+        init_datetime = pd.Timestamp(starting_time_ms, unit = 'ms')
 
-        if filename is None:
-            raise ValueError('Configuration file not provided for the ApplicationModel.')
+        if not isinstance(config_file, str):
+            raise ValueError('Incorrect format of the path to the configuration file for the {}, should be string'.format(self.__class__.__name__))
         else:
-            with open(filename) as f:
+            if not os.path.isfile(config_file):
+                raise ValueError('No {} configuration file found under the path {}'.format(self.__class__.__name__, config_file))
+
+            with open(config_file) as f:
                 config = json.load(f)
 
-                self.name = config["app_name"]
+                self.name = ErrorChecker.key_check_and_load('app_name', config)
 
-                for request_info in config["requests"]:
-                    request_type = request_info["request_type"]
-                    entry_service = request_info["entry_service"]
+                # Parsing the configuration of requests for the application,
+                # the results are stored in the RequestProcessingInfo objects
+                request_confs = ErrorChecker.key_check_and_load('requests', config)
+                for request_info in request_confs:
 
+                    request_type = ErrorChecker.key_check_and_load('request_type', request_info, 'request')
+                    entry_service = ErrorChecker.key_check_and_load('entry_service', request_info, 'request_type', request_type)
+
+                    # By default treat the absence as instant processing, i.e. processing time equals 0
                     processing_times = {}
-                    for processing_time_service_entry in request_info["processing_times_ms"]:
-                        service_name = processing_time_service_entry["service"]
-                        upstream_time = processing_time_service_entry["upstream"]
-                        if upstream_time < 0:
-                            raise ValueError('The upstream time for the request {} when passing through the service {} is negative.'.format(request_type, service_name))
-                        downstream_time = processing_time_service_entry["downstream"]
-                        if downstream_time < 0:
-                            raise ValueError('The downstream time for the request {} when passing through the service {} is negative.'.format(request_type, service_name))
+                    processing_times_ms = ErrorChecker.key_check_and_load('processing_times_ms', request_info, 'request_type', request_type)
+                    for processing_time_service_entry in processing_times_ms:
+                        service_name = ErrorChecker.key_check_and_load('service', processing_time_service_entry, 'request_type', request_type)
+
+                        upstream_time = ErrorChecker.key_check_and_load('upstream', processing_time_service_entry, 'request_type', request_type)
+                        ErrorChecker.value_check('upstream_time', upstream_time, operator.ge, 0, ['request_type {}'.format(request_type), 'service {}'.format(service_name)])
+
+                        downstream_time = ErrorChecker.key_check_and_load('downstream', processing_time_service_entry, 'request_type', request_type)
+                        ErrorChecker.value_check('downstream_time', downstream_time, operator.ge, 0, ['request_type {}'.format(request_type), 'service {}'.format(service_name)])
 
                         processing_times[service_name] = [upstream_time, downstream_time]
 
-                    timeout_ms = request_info["timeout_ms"]
-                    if timeout_ms < 0:
-                        raise ValueError('The timeout value for the request {} is negative.'.format(request_type))
+                    timeout_ms = ErrorChecker.key_check_and_load('timeout_ms', request_info, 'request_type', request_type)
+                    ErrorChecker.value_check('timeout_ms', timeout_ms, operator.ge, 0, ['request_type {}'.format(request_type)])
 
-                    request_size_b = request_info["request_size_b"]
-                    if request_size_b < 0:
-                        raise ValueError('The request size value for the request {} is negative.'.format(request_type))
+                    request_size_b = ErrorChecker.key_check_and_load('request_size_b', request_info, 'request_type', request_type)
+                    ErrorChecker.value_check('request_size_b', request_size_b, operator.ge, 0, ['request_type {}'.format(request_type)])
 
-                    response_size_b = request_info["response_size_b"]
-                    if response_size_b < 0:
-                        raise ValueError('The response size value for the request {} is negative.'.format(request_type))
+                    response_size_b = ErrorChecker.key_check_and_load('response_size_b', request_info, 'request_type', request_type)
+                    ErrorChecker.value_check('response_size_b', response_size_b, operator.ge, 0, ['request_type {}'.format(request_type)])
 
-                    request_operation_type = request_info["operation_type"]
+                    request_operation_type = ErrorChecker.key_check_and_load('operation_type', request_info, 'request_type', request_type)
 
                     req_proc_info = RequestProcessingInfo(request_type,
                                                           entry_service,
@@ -77,56 +101,68 @@ class ApplicationModel:
                                                           request_operation_type)
                     self.reqs_processing_infos[request_type] = req_proc_info
 
-                for service_config in config["services"]:
-                    # Creating & adding the service:
-                    service_name = service_config["name"]
+                # Parsing the configuration of services and creating the Service objects
+                services_confs = ErrorChecker.key_check_and_load('services', config)
+                for service_config in services_confs:
 
+                    service_name = ErrorChecker.key_check_and_load('name', service_config, 'service')
+
+                    # By default treat the absence as unlimited buffers
                     buffer_capacity_by_request_type = {}
-                    for buffer_capacity_config in service_config["buffer_capacity_by_request_type"]:
-                        request_type = buffer_capacity_config["request_type"]
-                        capacity = buffer_capacity_config["capacity"]
-                        if capacity <= 0:
-                            raise ValueError('Buffer capacity is not positive for request type {} of service {}.'.format(request_type, service_name))
+                    buffer_capacity_by_request_type_raw = ErrorChecker.key_check_and_load('buffer_capacity_by_request_type', service_config, 'service', service_name)
+                    for buffer_capacity_config in buffer_capacity_by_request_type_raw:
+                        request_type = ErrorChecker.key_check_and_load('request_type', buffer_capacity_config, 'service', service_name)
+
+                        capacity = ErrorChecker.key_check_and_load('capacity', buffer_capacity_config, 'service', service_name)
+                        ErrorChecker.value_check('capacity', capacity, operator.gt, 0, ['request_type {}'.format(request_type), 'service {}'.format(service_name)])
+
                         buffer_capacity_by_request_type[request_type] = capacity
 
-                    threads_per_instance = service_config["threads_per_instance"]
-                    if threads_per_instance <= 0:
-                        raise ValueError('Threads per instance is not positive for the service {}.'.format(service_name))
+                    threads_per_service_instance = ErrorChecker.key_check_and_load('threads_per_service_instance', service_config, 'service', service_name)
+                    ErrorChecker.value_check('threads_per_service_instance', threads_per_service_instance, operator.gt, 0, ['service {}'.format(service_name)])
 
-                    starting_instances_num = service_config["starting_instances_num"]
-                    if starting_instances_num <= 0:
-                        raise ValueError('Number of service instances to start with is not positive for the service {}.'.format(service_name))
+                    init_service_instances = ErrorChecker.key_check_and_load('init_service_instances', service_config, 'service', service_name)
+                    ErrorChecker.value_check('init_service_instances', init_service_instances, operator.gt, 0, ['service {}'.format(service_name)])
 
-                    state_mb = service_config["state_mb"]
-                    if state_mb < 0:
-                        raise ValueError('The state size is negative for the service {}.'.format(service_name))
+                    state_mb = ErrorChecker.key_check_and_load('state_mb', service_config, 'service', service_name)
+                    ErrorChecker.value_check('state_mb', state_mb, operator.ge, 0, ['service {}'.format(service_name)])
 
-                    # Grabbing deployment model for the service
+                    # Value that is less than 0 for the keepalive interval of the metric means that it is not discarded at all
+                    init_metric_keepalive_ms = ErrorChecker.key_check_and_load('init_metric_keepalive_ms', service_config, 'service', service_name)
+
+                    # TODO: below, consider deleting if not needed
                     provider = service_config["deployment"]["provider"]
                     node_info = self.platform_model.node_types[service_config["deployment"]["vm_type"]]
                     node_count = service_config["deployment"]["count"]
                     deployment_model = DeploymentModel(provider, node_info, node_count)
 
+                    # Taking correct scaling settings for the service which is derived from a ScaledEntity
+                    services_scaling_settings = self.scaling_policy.get_services_scaling_settings()
                     service_scaling_settings = None
                     if service_name in services_scaling_settings:
                         service_scaling_settings = services_scaling_settings[service_name]
                     elif 'default' in services_scaling_settings:
                         service_scaling_settings = services_scaling_settings['default']
 
-                    service = Service(service_name,
-                                      threads_per_instance,
+                    # Initializing the service
+                    service = Service(init_datetime,
+                                      service_name,
+                                      threads_per_service_instance,
                                       buffer_capacity_by_request_type,
-                                      deployment_model,
+                                      deployment_model, #TODO: maybe decouple, platform-related?
                                       self.reqs_processing_infos,
-                                      starting_instances_num,
-                                      self.platform_model,
-                                      scaling_policies_settings.joint_service_policy_config,#
-                                      scaling_policies_settings.app_service_policy_config,#
-                                      scaling_policies_settings.platform_policy_config,#
-                                      self.application_scaling_model,#
+                                      init_service_instances,
+                                      self.platform_model,# TODO: needed??? maybe remove
+                                      init_keepalive_ms,
                                       service_scaling_settings,
+                                      self.metric_manager,
                                       state_mb)
 
+                    # Adding service as a metric source to the MetricManager
+                    self.metric_manager.add_source(service_name,
+                                                   service)
+
+                    # TODO: consider removing below
                     add_ts_ms, node_info, num_added = self.platform_model.get_new_nodes(starting_time_ms,
                                                                                         service_name,
                                                                                         starting_time_ms,

@@ -42,6 +42,7 @@ class MetricDescription:
         self.initial_max_limit = initial_max_limit
         self.initial_min_limit = initial_min_limit
         self.initial_entity_representation_in_metric = initial_entity_representation_in_metric
+        self.metric_manager = None
 
     def convert_to_metric(self):
 
@@ -59,7 +60,8 @@ class MetricDescription:
                              self.priority,
                              self.initial_max_limit,
                              self.initial_min_limit,
-                             self.initial_entity_representation_in_metric)
+                             self.initial_entity_representation_in_metric,
+                             self.metric_manager)
 
 class ScalingMetric:
 
@@ -92,7 +94,8 @@ class ScalingMetric:
                  priority,
                  max_limit,
                  min_limit,
-                 entity_representation_in_metric):
+                 entity_representation_in_metric,
+                 metric_manager):
         # Static state
         # Description of the entity to scale, includes:
         # - the name of the entity to scale, e.g. service name
@@ -160,7 +163,7 @@ class ScalingMetric:
         # from the side of the ScalingMetric, both for scaling metric and scaled aspect
         # Initialized and given to the ScalingMetric after its creation since it contains
         # the list of references to all the relevant entities/informers.
-        self.metric_manager = None
+        self.metric_manager = metric_manager
 
         # current min-max limits on the post-scaling result for the
         # aspect of the scaled entity (count of scaled entities in case of horizontal scaling

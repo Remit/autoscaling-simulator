@@ -1,6 +1,5 @@
 import os
 import json
-import sys
 import numbers
 
 from .scaledentity.scaled_entity import ScaledEntityScalingSettings
@@ -9,8 +8,6 @@ from .metric.forecasting import MetricForecaster
 from .metric.stabilizer import Stabilizer
 from .metric.valuesaggregator import ValuesAggregator
 from .metric.valuesfilter import ValuesFilter
-
-CONF_POLICY_FILENAME = "scaling_policy.json"
 
 class ScalingPolicyConfiguration:
     """
@@ -105,7 +102,7 @@ class ScalingPolicyConfiguration:
 
 
             except json.JSONDecodeError:
-                sys.exit('The config file {} is an invalid JSON.'.format(config_file))
+                raise ValueError('The config file {} is an invalid JSON.'.format(config_file))
 
     def _conf_numeric_check(self,
                             metric_description_json,
@@ -139,6 +136,7 @@ class ScalingPolicyConfiguration:
 
 # responsible for parsing the policy config file and building all the relevant parts from it
 class ScalingPolicy:
+
     """
     Defines the general structure of the scaling policy according to SCAPE process
     as comprising the steps:
@@ -169,9 +167,30 @@ class ScalingPolicy:
                of the simulation step.
 
     """
-    def __init__(self,
-                 state_ref,
-                 config_dir):
 
-        ff
-# file parsing and initialization + should get services and their names on init s.t. we can grab their metrics
+    def __init__(self,
+                 config_file,
+                 scaling_model):
+
+        if not os.path.isfile(config_file):
+            raise ValueError('No {} configuration file found under the path {}'.format(self.__class__.__name__, config_file))
+        else:
+            self.scaling_settings = ScalingPolicyConfiguration(config_file)
+
+        self.scaling_model = scaling_model
+
+    def reconcile_state(self):
+        pass
+        # Scale
+
+        # Combine
+
+        # Adjust
+
+        # Place
+
+        # Enforce
+
+    def get_services_scaling_settings(self):
+
+        return self.scaling_settings.services_scaling_config

@@ -10,11 +10,6 @@ from .application.application_model import ApplicationModel
 from .simulation.simulation import Simulation
 from .scaling.policies.scaling_policies_settings import ScalingPoliciesSettings
 
-CONF_WORKLOAD_MODEL_KEY = "workload_model"
-CONF_SCALING_MODEL_KEY = "scaling_model"
-CONF_PLATFORM_MODEL_KEY = "platform_model"
-CONF_APPLICATION_MODEL_KEY = "application_model"
-
 class Simulator:
     """
     Wraps multiple simulations sharing common timeline, i.e. simulation start,
@@ -23,6 +18,13 @@ class Simulator:
     started by calling the start_simulation method; if no simulation name
     is specified, then all the simulations of Simulator are started.
     """
+
+    CONF_WORKLOAD_MODEL_KEY = "workload_model"
+    CONF_PLATFORM_MODEL_KEY = "platform_model"
+    CONF_APPLICATION_MODEL_KEY = "application_model"
+    CONF_SCALING_MODEL_KEY = "scaling_model"
+    CONF_SCALING_POLICY_KEY = "scaling_policy"
+
     def __init__(self,
                  simulation_step_ms = 10,
                  starting_time = datetime.now(),
@@ -51,30 +53,33 @@ class Simulator:
             try:
                 config = json.load(f)
 
-                if (not CONF_WORKLOAD_MODEL_KEY in config) or \
-                 (not CONF_SCALING_MODEL_KEY in config) or \
-                 (not CONF_PLATFORM_MODEL_KEY in config) or \
-                 (not CONF_APPLICATION_MODEL_KEY in config):
-                    sys.exit('The config listing file misses at least one key model.')
+                if (not Simulator.CONF_WORKLOAD_MODEL_KEY in config) or \
+                 (not Simulator.CONF_SCALING_MODEL_KEY in config) or \
+                 (not Simulator.CONF_PLATFORM_MODEL_KEY in config) or \
+                 (not Simulator.CONF_SCALING_POLICY_KEY in config) or \
+                 (not Simulator.CONF_APPLICATION_MODEL_KEY in config):
+                    raise ValueError('The config listing file misses at least one key model.')
 
                 starting_time_ms = int(self.starting_time.timestamp() * 1000)
 
                 workload_model = WorkloadModel(self.simulation_step_ms,
-                                               filename = os.path.join(configs_dir, config[CONF_WORKLOAD_MODEL_KEY]))
+                                               filename = os.path.join(configs_dir, config[Simulator.CONF_WORKLOAD_MODEL_KEY]))
 
                 scaling_model = ScalingModel(self.simulation_step_ms,
-                                             os.path.join(configs_dir, config[CONF_SCALING_MODEL_KEY]))
+                                             os.path.join(configs_dir, config[Simulator.CONF_SCALING_MODEL_KEY]))
 
                 platform_model = PlatformModel(starting_time_ms,
                                                scaling_model.platform_scaling_model,
-                                               os.path.join(configs_dir, config[CONF_PLATFORM_MODEL_KEY]))
+                                               os.path.join(configs_dir, config[Simulator.CONF_PLATFORM_MODEL_KEY]))
 
-                scaling_policies_settings = ScalingPoliciesSettings(configs_dir)
+                #scaling_policies_settings = ScalingPoliciesSettings(configs_dir)
+                scaling_policy = ScalingPolicy(os.path.join(configs_dir, config[Simulator.CONF_SCALING_POLICY_KEY],
+                                               scaling_model)
+
                 application_model = ApplicationModel(starting_time_ms,
                                                      platform_model,
-                                                     scaling_model.application_scaling_model,
-                                                     scaling_policies_settings,
-                                                     os.path.join(configs_dir, config[CONF_APPLICATION_MODEL_KEY]))
+                                                     scaling_policy,
+                                                     os.path.join(configs_dir, config[Simulator.CONF_APPLICATION_MODEL_KEY]))
 
                 sim = Simulation(workload_model,
                                  application_model,
@@ -87,7 +92,7 @@ class Simulator:
                 self.simulations[simulation_name] = sim
 
             except json.JSONDecodeError:
-                sys.exit('The config listing file is an invalid JSON.')
+                raise ValueError('The config listing file is an invalid JSON.')
 
     def start_simulation(self,
                          simulation_name = None):
