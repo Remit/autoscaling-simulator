@@ -26,17 +26,32 @@ class ServiceState(State):
     TODO:
         add properties for workload-based scaling + predictive
     """
+
+    resource_utilization_types = [
+        'cpu_utilization',
+        'mem_utilization',
+        'disk_utilization'
+    ]
+
     def __init__(self,
                  init_timestamp,
                  init_service_instances,
+                 averaging_interval_ms,
                  init_keepalive_ms = -1):
 
         # Untimed
         self.count = init_service_instances
+        # The number of threads that the platform has allocated on different nodes
+        # for the instances of this service
+        self.platform_threads_available = 0
         # the negative value of keepalive is used to keep the timed params indefinitely
         self.keepalive = timedelta(init_keepalive_ms * 1000)
 
         # Timed
+        self.tmp_state = State.TempState(init_timestamp,
+                                         averaging_interval_ms,
+                                         ServiceState.resource_utilization_types)
+
         default_ts_init = {'datetime': init_timestamp, 'value': 0.0}
 
         self.cpu_utilization = pd.DataFrame(default_ts_init)
@@ -64,29 +79,57 @@ class ServiceState(State):
 
     def update_val(self,
                    attribute_name,
-                   cur_datetime,
-                   cur_val):
+                   attribute_val):
 
-        if not hasattr(self, attribute_name):
-            raise ValueError('Attribute {} not found in {}'.format(attribute_name, self.__class__.__name__))
+        """
+        Updates an untimed attribute (its past values are not interesting).
+        Should be called by an entity that computes the new value of the attribute, i.e.
+        it incorporates the formalized knowledge of how to compute it.
+        For instance, ScalingAspectManager is responsible for the updates
+        that happen during the scaling with the aspects, e.g. number of service
+        instances grows or shrinks; a scaling aspect is a variety of an updatable attribute.
+        """
 
-        old_attr_val = self.__getattribute__(attribute_name)
-        val_to_upd = cur_val
-        if isinstance(old_attr_val, pd.DataFrame):
-            cur_ts = pd.Timestamp(cur_datetime)
+        if (not hasattr(self, attribute_name)) or attribute_name in ServiceState.resource_utilization_types:
+            raise ValueError('Untimed attribute {} not found in {}'.format(aspect_name, self.__class__.__name__))
+
+        self.__setattr__(aspect_name, aspect_val)
+
+    def update_metric(self,
+                      metric_name,
+                      cur_ts,
+                      cur_val):
+
+        """
+        Updates a metric with help of the temporary state that bufferizes some observations
+        that are aggregated based on a moving average technique and returned as the actual
+        values stored in the ServiceState.
+        """
+
+        if not hasattr(self, metric_name):
+            raise ValueError('Metric {} not found in {}'.format(metric_name, self.__class__.__name__))
+
+        old_metric_val = self.__getattribute__(metric_name)
+
+        if isinstance(old_metric_val, pd.DataFrame):
+            if not isinstance(cur_ts, pd.Timestamp):
+                raise ValueError('Timestamp of unexpected type')
+
             oldest_to_keep_ts = cur_ts - self.keepalive
 
             # Discarding old observations
             if oldest_to_keep_ts < cur_ts:
-                old_attr_val = old_attr_val[old_attr_val.index > oldest_to_keep_ts]
+                old_metric_val = old_metric_val[old_metric_val.index > oldest_to_keep_ts]
 
-            data_to_add = {'datetime': cur_ts,
-                           'value': cur_val}
-            df_to_add = pd.DataFrame(data_to_add)
-            df_to_add = df_to_add.set_index('datetime')
-            val_to_upd = old_attr_val.append(df_to_add)
+            val_to_upd = self.tmp_state.update_and_get(self,
+                                                       cur_ts,
+                                                       cur_val)
 
-        self.__setattr__(attribute_name, val_to_upd)
+            val_to_upd = old_metric_val.append(val_to_upd)
+            self.__setattr__(metric_name, val_to_upd)
+        else:
+            raise ValueError('Unexpected metric type {}'.format(type(old_metric_val)))
+
 
 class Service(ScaledEntity):
 
@@ -103,14 +146,14 @@ class Service(ScaledEntity):
                  service_name,
                  threads_per_service_instance,
                  buffer_capacity_by_request_type,
-                 deployment_model,
+                 deployment_model,# TODO: required??
                  request_processing_infos,
                  init_service_instances,
                  init_keepalive_ms,
                  scaling_setting_for_service,
                  metric_manager,
                  state_mb = 0,
-                 res_util_metrics_avg_interval_ms = 500):
+                 averaging_interval_ms = 500):
 
         # Initializing scaling-related functionality in the superclass
         super().__init__(self.__class__.__name__,
@@ -120,51 +163,24 @@ class Service(ScaledEntity):
 
         # Static state
         self.service_name = service_name
-        self.threads_per_node_instance = deployment_model.node_info.vCPU
         self.threads_per_service_instance = threads_per_service_instance
-        self.res_util_metrics_avg_interval_ms = res_util_metrics_avg_interval_ms
-        # If state_mb is 0, then the service is stateless
-        self.state_mb = state_mb
+        self.state_mb = state_mb # If state_mb is 0, then the service is stateless TODO: consider moving to state
 
         # Dynamic state
         self.state = ServiceState(init_timestamp,
                                   init_service_instances,
+                                  averaging_interval_ms,
                                   init_keepalive_ms)
 
         # Upstream and downstream links/buffers of the service
         self.upstream_buf = LinkBuffer(buffer_capacity_by_request_type,
                                        request_processing_infos,
-                                       deployment_model.node_info.latency_ms,
-                                       deployment_model.node_info.network_bandwidth_MBps)
+                                       deployment_model.node_info.latency_ms,# TODO: make updatable from platform
+                                       deployment_model.node_info.network_bandwidth_MBps)# TODO: make updatable from platform
         self.downstream_buf = LinkBuffer(buffer_capacity_by_request_type,
                                          request_processing_infos,
-                                         deployment_model.node_info.latency_ms,
-                                         deployment_model.node_info.network_bandwidth_MBps)
-
-        # Scaling-related // TODO: remove below!
-        self.promised_next_platform_state = {"next_ts": 0,
-                                             "next_count": 0}
-        self.promised_next_service_state = {"next_ts": 0,
-                                            "next_count": 0}
-        #self.service_instances = service_instances
-        #self.node_count = deployment_model.node_count
-        #self.res_util_tmp_buffer = []
-        #self.res_util_avg = {}
-        #self.res_util_avg["cpu"] = []
-
-        #pl_scaling_pol = platform_policy_config.policy(platform_model_access_point,
-        #                                               self.service_name,
-        #                                               deployment_model.provider,
-        #                                               deployment_model.node_info,
-        #                                               platform_policy_config.config)
-
-        #boot_up_ms = application_scaling_model.get_service_scaling_params(self.service_name).boot_up_ms
-        # TODO: consider adding service_instances_scaling_step = 1,
-        #service_inst_scaling_policy = app_service_policy_config.policy(boot_up_ms,
-        #                                                               threads_per_service_instance)
-
-        #self.service_scaling_policy = joint_service_policy_config.policy(pl_scaling_pol,
-        #                                                                 service_inst_scaling_policy)
+                                         deployment_model.node_info.latency_ms,# TODO: make updatable from platform
+                                         deployment_model.node_info.network_bandwidth_MBps)# TODO: make updatable from platform
 
         # requests that are currently in simultaneous processing
         self.in_processing_simultaneous = []
@@ -179,16 +195,8 @@ class Service(ScaledEntity):
             self.downstream_buf.put(req)
 
     def step(self,
-             simulation_time_ms,
+             cur_timestamp,
              simulation_step_ms):
-
-        # Adjusting the service and platform capacity based on the
-        # autoscaler's scaling results.
-        if self.promised_next_platform_state["next_ts"] == simulation_time_ms:
-            self.node_count = self.promised_next_platform_state["next_count"]
-
-        if self.promised_next_service_state["next_ts"] == simulation_time_ms:
-            self.service_instances = self.promised_next_service_state["next_count"]
 
         processing_time_left_at_step = simulation_step_ms
 
@@ -265,38 +273,26 @@ class Service(ScaledEntity):
             if (self.downstream_buf.size() == 0) and (self.upstream_buf.size() == 0):
                 processing_time_left_at_step = 0
 
+        # Post-step maintenance actions
         # Increase the cumulative time for all the reqs left in the buffers waiting
         self.upstream_buf.add_cumulative_time(simulation_step_ms, self.service_name)
         self.downstream_buf.add_cumulative_time(simulation_step_ms, self.service_name)
-
-        self._compute_res_util_cpu(simulation_step_ms)
-
-        at_least_metric_vals = self.res_util_metrics_avg_interval_ms // simulation_step_ms
-
-        # Scaling if needed -- TODO: think of sync period?
-        self.reconcile_desired_state()
-        ## Reconciling the promised state based on what autoscaler says
-        #if len(self.res_util_avg["cpu"]) >= at_least_metric_vals:
-        #    cur_service_state = ServiceState(self.service_name,
-        #                                     self.service_instances,
-        #                                     self.node_count,
-        #                                     self.res_util_avg)
-        #
-        #    next_service_state = self.service_scaling_policy.reconcile_service_state(simulation_time_ms,
-        #                                                                             cur_service_state)
-        #    if not next_service_state is None:
-        #        self.promised_next_platform_state = next_service_state["node_instances"]
-        #        self.promised_next_service_state = next_service_state["service_instances"]
+        # Update metric values in the service state, e.g. utilization
+        self._recompute_metrics(cur_timestamp)
 
     def _compute_current_capacity_in_threads(self):
-        return int(self.node_count * self.threads_per_node_instance - len(self.in_processing_simultaneous) * self.threads_per_service_instance)
+        return int(self.state.platform_threads_available - len(self.in_processing_simultaneous) * self.threads_per_service_instance)
 
-    def _compute_res_util_cpu(self,
-                              simulation_step_ms):
+    def _recompute_metrics(self,
+                           cur_timestamp):
 
-        if len(self.res_util_tmp_buffer) == int(self.res_util_metrics_avg_interval_ms / simulation_step_ms):
-            self.res_util_avg["cpu"].append(np.mean(self.res_util_tmp_buffer))
-            self.res_util_tmp_buffer = []
+        # Updating metrics:
+        # - CPU utilization
+        cpu_utilization = (len(self.in_processing_simultaneous) * self.threads_per_service_instance) / self.state.platform_threads_available
+        self.state.update_metric('cpu_utilization',
+                                 cur_timestamp,
+                                 cpu_utilization)
 
-        thread_util_percentage = (len(self.in_processing_simultaneous) * self.threads_per_service_instance) / (self.node_count * self.threads_per_node_instance)
-        self.res_util_tmp_buffer.append(thread_util_percentage)
+        # TODO:
+        # - memory utilization
+        # - disk utilization

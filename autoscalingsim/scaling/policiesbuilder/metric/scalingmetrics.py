@@ -212,8 +212,8 @@ class ScalingMetric:
         # desired amount of the scaled aspect is stabilized to avoid
         # oscillations in it that may cause too much overhead when scaling.
         metric_ratio = aggregated_metric_vals / self.target_value
-        # TODO: below
-        desired_scaled_aspect = math.ceil(metric_ratio * self.entity_representation_in_metric * self.scaled_aspect_source)
+        cur_scaled_aspect_val = self.metric_manager.get_values(self.scaled_entity_name, self.scaled_aspect_name)
+        desired_scaled_aspect = math.ceil(metric_ratio * self.entity_representation_in_metric * cur_scaled_aspect_val)
         desired_scaled_aspect_stabilized = self.stabilizer(desired_scaled_aspect)
 
         # Limiting the produced values of the desired scaled aspect

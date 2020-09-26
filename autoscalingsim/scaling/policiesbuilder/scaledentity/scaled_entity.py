@@ -59,12 +59,14 @@ class ScaledEntity:
             if scaling_setting_for_entity.scaling_effect_aggregation_rule_name in scaling_aggregation_rules_registry:
                 self.scaling_effect_aggregation_rule = scaling_aggregation_rules_registry[scaling_setting_for_entity.scaling_effect_aggregation_rule_name](self.metrics_by_priority)
         else:
-            self.desired_scaling_aspect_value = None
             self.scaling_effect_aggregation_rule = None
 
     def reconcile_desired_state(self):
+        desired_state = None
         if not self.scaling_effect_aggregation_rule is None:
-            self.desired_scaling_aspect_value = self.scaling_effect_aggregation_rule()
+            desired_state = self.scaling_effect_aggregation_rule()
+
+        return desired_state
 
     def set_metric_manager(self,
                            metric_manager_ref):
@@ -75,5 +77,3 @@ class ScaledEntity:
 
         for _, metric in self.metrics_by_priority:
             metric.metric_manager = metric_manager_ref
-
-    # TODO: should contain something like CurrentState that contains Scaled aspect value available under scaled_aspect_source_name

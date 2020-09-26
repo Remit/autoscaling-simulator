@@ -1,4 +1,7 @@
-{                                                 
+{
+  "policy": {
+    "sync_period_ms": 20
+  },
   "application": {
     "structure": {},
     "services": [

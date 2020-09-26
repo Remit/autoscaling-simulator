@@ -6,7 +6,7 @@ from ..workload.request import RequestProcessingInfo
 from ..deployment.deployment_model import DeploymentModel
 from ..infrastructure_platform.platform_model import PlatformModel
 from ..utils.error_check import ErrorChecker
-from ..utils.metricmanager import MetricManager
+from ..utils.statemanagers import MetricManager, ScalingAspectManager
 from .service import Service
 
 class ApplicationModel:
@@ -39,10 +39,12 @@ class ApplicationModel:
         self.buffer_times_by_request = {}
         self.metric_manager = MetricManager()
         self.platform_model = platform_model
+        self.scaling_policy = scaling_policy
+        self.scaling_manager = ScalingManager()
+        self.scaling_policy.set_scaling_manager(self.scaling_manager)
 
         # Static state
         self.name = None
-        self.scaling_policy = scaling_policy
         self.services = {}
         self.structure = {}
         self.reqs_processing_infos = {}
@@ -158,9 +160,11 @@ class ApplicationModel:
                                       self.metric_manager,
                                       state_mb)
 
-                    # Adding service as a metric source to the MetricManager
+                    # Adding services as sources to the state managers
                     self.metric_manager.add_source(service_name,
                                                    service)
+                    self.scaling_manager.add_source(service_name,
+                                                    service)
 
                     # TODO: consider removing below
                     add_ts_ms, node_info, num_added = self.platform_model.get_new_nodes(starting_time_ms,
@@ -189,6 +193,8 @@ class ApplicationModel:
              cur_simulation_time_ms,
              simulation_step_ms):
 
+        cur_timestamp = pd.Timestamp(cur_simulation_time_ms, unit = 'ms')
+
         if len(self.new_requests) > 0:
             for req in self.new_requests:
                 entry_service = self.reqs_processing_infos[req.request_type].entry_service
@@ -203,7 +209,7 @@ class ApplicationModel:
         # processing to work correctly ~5-10 ms.
         for service_name, service in self.services.items():
             # Simulation step in service
-            service.step(cur_simulation_time_ms,
+            service.step(cur_timestamp,
                          simulation_step_ms)
 
             while len(service.out) > 0:
@@ -256,6 +262,9 @@ class ApplicationModel:
                                 self.buffer_times_by_request[req.request_type].append(req.buffer_time_ms)
                             else:
                                 self.buffer_times_by_request[req.request_type] = [req.buffer_time_ms]
+
+        # Calling scaling policy that determines the need to scale
+        self.scaling_policy.reconcile_state(cur_timestamp)
 
     def enter_requests(self, new_requests):
         self.new_requests = new_requests
