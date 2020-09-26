@@ -19,7 +19,7 @@ class StateManager:
         if not entity_name in self.entities:
             self.entities[entity_name] = entity_ref
 
-class MetricManager(StateManager):
+class StateReader(StateManager):
 
     """
     Acts as an access point to the scattered metrics associated with

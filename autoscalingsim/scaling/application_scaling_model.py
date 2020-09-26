@@ -1,10 +1,12 @@
+from datetime import timedelta
+
 class ServiceScalingInfo:
     """
     """
     def __init__(self,
-                 boot_up_ms):
+                 boot_up_delta):
 
-        self.boot_up_ms = boot_up_ms
+        self.boot_up_ms = boot_up_delta
 
 class ApplicationScalingModel:
     """
@@ -17,7 +19,7 @@ class ApplicationScalingModel:
         self.service_scaling_infos = {}
 
         for service_scaling_info_raw in service_scaling_infos_raw:
-            ssi = ServiceScalingInfo(service_scaling_info_raw["boot_up_ms"])
+            ssi = ServiceScalingInfo(service_scaling_info_raw["boot_up_ms"] * timedelta(microseconds = 1000))
 
             self.service_scaling_infos[service_scaling_info_raw["name"]] = ssi
 

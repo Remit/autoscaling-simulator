@@ -36,10 +36,12 @@ class ServiceState(State):
     def __init__(self,
                  init_timestamp,
                  init_service_instances,
+                 init_resource_requirements,
                  averaging_interval_ms,
                  init_keepalive_ms = -1):
 
         # Untimed
+        self.requirements = init_resource_requirements
         self.count = init_service_instances
         # The number of threads that the platform has allocated on different nodes
         # for the instances of this service
@@ -141,6 +143,21 @@ class Service(ScaledEntity):
         that the request takes the thread and does not let it go until its processing is finished
     """
 
+    class ResourceRequirements:
+
+        """
+        Container for all the resource requirements of the service instance.
+        """
+
+        def __init__(self,
+                     threads_per_service_instance,
+                     memory_per_service_instance = 0,
+                     disk_per_service_instance = 0):
+
+            self.threads_per_service_instance = threads_per_service_instance
+            self.memory_per_service_instance = memory_per_service_instance
+            self.disk_per_service_instance = disk_per_service_instance
+
     def __init__(self,
                  init_timestamp,
                  service_name,
@@ -153,6 +170,7 @@ class Service(ScaledEntity):
                  scaling_setting_for_service,
                  metric_manager,
                  state_mb = 0,
+                 memory_mb = 0,
                  averaging_interval_ms = 500):
 
         # Initializing scaling-related functionality in the superclass
@@ -163,12 +181,14 @@ class Service(ScaledEntity):
 
         # Static state
         self.service_name = service_name
-        self.threads_per_service_instance = threads_per_service_instance
-        self.state_mb = state_mb # If state_mb is 0, then the service is stateless TODO: consider moving to state
+        init_resource_requirements = Service.ResourceRequirements(threads_per_service_instance,
+                                                                  memory_mb,
+                                                                  state_mb)
 
         # Dynamic state
         self.state = ServiceState(init_timestamp,
                                   init_service_instances,
+                                  init_resource_requirements,
                                   averaging_interval_ms,
                                   init_keepalive_ms)
 
@@ -281,14 +301,14 @@ class Service(ScaledEntity):
         self._recompute_metrics(cur_timestamp)
 
     def _compute_current_capacity_in_threads(self):
-        return int(self.state.platform_threads_available - len(self.in_processing_simultaneous) * self.threads_per_service_instance)
+        return int(self.state.platform_threads_available - len(self.in_processing_simultaneous) * self.resource_requirements.threads_per_service_instance)
 
     def _recompute_metrics(self,
                            cur_timestamp):
 
         # Updating metrics:
         # - CPU utilization
-        cpu_utilization = (len(self.in_processing_simultaneous) * self.threads_per_service_instance) / self.state.platform_threads_available
+        cpu_utilization = (len(self.in_processing_simultaneous) * self.resource_requirements.threads_per_service_instance) / self.state.platform_threads_available
         self.state.update_metric('cpu_utilization',
                                  cur_timestamp,
                                  cpu_utilization)

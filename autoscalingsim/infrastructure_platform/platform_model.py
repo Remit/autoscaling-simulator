@@ -2,6 +2,8 @@ import json
 
 from .node_info import NodeInfo
 from ..scaling.platform_scaling_model import PlatformScalingModel
+from ..utils.error_check import ErrorChecker
+from ..scaling.policiesbuilder.adjustment import Adjuster.ScaledEntityContainer as ScaledEntityContainer
 
 class PlatformModel:
     """
@@ -20,33 +22,89 @@ class PlatformModel:
         consider cross-cloud support / federated cloud
         consider introducing the randomization for the scaling times
     """
+
+    class NodeInfo(ScaledEntityContainer):
+        """
+        Holds the static information about the node used to deploy the application, e.g. virtual machine.
+        NodeInfo is derived from the ScaledEntityContainer class to provide an
+        expected interface to the adjusters of the platform to the scaled services.
+
+        TODO:
+            consider more universal resource names and what performance can be shared?
+        """
+        def __init__(self,
+                     node_type,
+                     vCPU,
+                     memory,
+                     network_bandwidth_MBps,
+                     price_p_h = 0.0,
+                     cpu_credits_h = 0,
+                     latency_ms = 0):
+
+            self.node_type = node_type
+            self.vCPU = vCPU
+            self.memory = memory
+            self.network_bandwidth_MBps = network_bandwidth_MBps
+            self.price_p_h = price_p_h
+            self.cpu_credits_h = cpu_credits_h
+            self.latency_ms = latency_ms
+
+        def get_capacity(self):
+
+            capacity_dict = {'vCPU': self.vCPU,
+                             'memory': self.memory}
+
+            return capacity_dict
+
+        def get_cost_per_unit_time(self):
+
+            return self.price_p_h
+
+        def get_performance(self):
+
+            return 0
+
     def __init__(self,
                  starting_time_ms,
                  platform_scaling_model,
-                 config_filename = None):
+                 config_file = None):
 
         # Static state
         self.node_types = {}
         self.platform_scaling_model = platform_scaling_model
+        self.adjustment_policy = None
 
-        if config_filename is None:
-            raise ValueError('Configuration file not provided for the PlatformModel.')
+        if config_file is None:
+            raise ValueError('Configuration file not provided for the {}'.format(self.__class__.__name__))
         else:
-            with open(config_filename) as f:
-                config = json.load(f)
+            with open(config_file) as f:
+                try:
+                    config = json.load(f)
 
-                for vm_type in config["vm_types"]:
-                    type_name = vm_type["type"]
+                    vm_types_config = ErrorChecker.key_check_and_load('vm_types', config, self.__class__.__name__)
+                    for vm_type in vm_types_config:
+                        type_name = ErrorChecker.key_check_and_load('type', vm_type, self.__class__.__name__)
 
-                    self.node_types[type_name] = NodeInfo(type_name,
-                                                          vm_type["vCPU"],
-                                                          vm_type["memory"],
-                                                          vm_type["network_bandwidth_MBps"],
-                                                          vm_type["price_p_h"],
-                                                          vm_type["cpu_credits_h"],
-                                                          vm_type["latency_ms"])
+                        vCPU = ErrorChecker.key_check_and_load('vCPU', vm_type, type_name)
+                        memory = ErrorChecker.key_check_and_load('memory', vm_type, type_name)
+                        network_bandwidth_MBps = ErrorChecker.key_check_and_load('network_bandwidth_MBps', vm_type, type_name)
+                        price_p_h = ErrorChecker.key_check_and_load('price_p_h', vm_type, type_name)
+                        cpu_credits_h = ErrorChecker.key_check_and_load('cpu_credits_h', vm_type, type_name)
+                        latency_ms = ErrorChecker.key_check_and_load('latency_ms', vm_type, type_name)
+
+                        self.node_types[type_name] = NodeInfo(type_name,
+                                                              vCPU,
+                                                              memory,
+                                                              network_bandwidth_MBps,
+                                                              price_p_h,
+                                                              cpu_credits_h,
+                                                              latency_ms)
+
+                except json.JSONDecodeError:
+                    raise ValueError('The config file {} provided for {} is an invalid JSON.'.format(config_file, self.__class__.__name__))
 
         # Dynamic state
+        self.adjustment_policy = None
         # timeline that won't change
         self.nodes_state = {}
         for node_type, node_info in self.node_types.items():
@@ -63,6 +121,29 @@ class PlatformModel:
             self.desired_nodes_state[node_type][starting_time_ms] = 0
         self.scheduled_desired_nodes_state_per_service = {}
 
+    def adjust(self,
+               desired_states_to_process):
+
+        """
+        Adjusts the platform with help of Adjustment Policy.
+        """
+
+        self.adjustment_policy.adjust(desired_states_to_process,
+                                      self.node_types)
+
+
+
+    def set_adjustment_policy(self,
+                              adjustment_policy):
+
+        self.adjustment_policy = adjustment_policy
+
+    def set_placement_policy(self,
+                             placement_policy):
+
+        self.placement_policy = placement_policy
+
+    # TODO: remove
     def get_new_nodes(self,
                       simulation_timestamp_ms,
                       service_name,
@@ -83,6 +164,7 @@ class PlatformModel:
                                            num_added,
                                            adjustment_ms)
 
+    # TODO: remove
     def remove_nodes(self,
                      simulation_timestamp_ms,
                      service_name,

@@ -10,10 +10,14 @@ from .metric.forecasting import MetricForecaster
 from .metric.stabilizer import Stabilizer
 from .metric.valuesaggregator import ValuesAggregator
 from .metric.valuesfilter import ValuesFilter
+
+from .adjustment.adjustment_policy import AdjustmentPolicy
+
 from ...utils.error_check import ErrorChecker
 from ...utils.state import State
 
 class ScalingPolicyConfiguration:
+
     """
     Wraps the configuration of the scaling policy extracted from the configuration
     file.
@@ -36,6 +40,8 @@ class ScalingPolicyConfiguration:
 
                 # General policy settings
                 self.sync_period_timedelta = timedelta(ErrorChecker.key_check_and_load('sync_period_ms', policy_config, self.__class__.__name__) * 1000)
+                self.adjustment_goal = ErrorChecker.key_check_and_load('adjustment_goal', policy_config, self.__class__.__name__)
+                self.adjustment_preference = ErrorChecker.key_check_and_load('adjustment_preference', policy_config, self.__class__.__name__)
 
                 structure_config = ErrorChecker.key_check_and_load('structure', app_config, self.__class__.__name__)
                 services_config = ErrorChecker.key_check_and_load('services', app_config, self.__class__.__name__)
@@ -46,12 +52,13 @@ class ScalingPolicyConfiguration:
                 for service_config in services_config:
                     service_key = 'service'
                     service_name = ErrorChecker.key_check_and_load(service_key, service_config, self.__class__.__name__)
+                    scaled_entity_name = ErrorChecker.key_check_and_load('scaled_entity_name', service_config, service_key, service_name)
+                    scaled_aspect_name = ErrorChecker.key_check_and_load('scaled_aspect_name', service_config, service_key, service_name)
 
                     metrics_descriptions = []
                     metric_descriptions_json = ErrorChecker.key_check_and_load('metrics_descriptions', service_config, service_key, service_name)
                     for metric_description_json in metric_descriptions_json:
-                        scaled_entity_name = ErrorChecker.key_check_and_load('scaled_entity_name', metric_description_json, service_key, service_name)
-                        scaled_aspect_name = ErrorChecker.key_check_and_load('scaled_aspect_name', metric_description_json, service_key, service_name)
+
                         metric_source_name = ErrorChecker.key_check_and_load('metric_source_name', metric_description_json, service_key, service_name)
                         metric_name = ErrorChecker.key_check_and_load('metric_name', metric_description_json, service_key, service_name)
 
@@ -106,7 +113,9 @@ class ScalingPolicyConfiguration:
 
                     scaling_effect_aggregation_rule_name = ErrorChecker.key_check_and_load('scaling_effect_aggregation_rule_name', service_config, service_key, service_name)
                     self.services_scaling_config[service_name] = ScaledEntityScalingSettings(metrics_descriptions,
-                                                                                             scaling_effect_aggregation_rule_name)
+                                                                                             scaling_effect_aggregation_rule_name,
+                                                                                             scaled_entity_name,
+                                                                                             scaled_aspect_name)
 
                 # TODO: platform_config processing
 
@@ -202,17 +211,22 @@ class ScalingPolicy:
 
     def __init__(self,
                  config_file,
-                 scaling_model):
+                 scaling_model,
+                 platform_model):
 
         self.scaling_manager = None
         self.scaling_settings = None
-        self.scaling_model = scaling_model
+        self.platform_model = platform_model
+
         self.state = ScalingPolicy.ScalingState()
 
         if not os.path.isfile(config_file):
             raise ValueError('No {} configuration file found under the path {}'.format(self.__class__.__name__, config_file))
         else:
             self.scaling_settings = ScalingPolicyConfiguration(config_file)
+            adjustment_policy = AdjustmentPolicy(scaling_model,
+                                                 self.scaling_settings)
+            self.platform_model.set_adjustment_policy(adjustment_policy)
 
     def reconcile_state(self,
                         cur_timestamp):
@@ -227,9 +241,11 @@ class ScalingPolicy:
             if len(desired_states_to_process) > 0:
                 # Combine -> scaling app as a whole to remove bottlenecks
 
-                # Adjust -> adjusting the platform to the demands of the scaled app - to minimize the cost?
+                # Adjust -> adjusting the platform to the demands of the scaled app - to minimize the cost? specialized nodes vs balanced
+                self.platform_model.adjust(desired_states_to_process)
 
                 # Place -> placing service instances on the platform options and selecting the one with the max performance/res util?
+
 
             self.state.update_val('last_sync_timestamp', cur_timestamp)
 
@@ -237,6 +253,7 @@ class ScalingPolicy:
         # this part goes independent of the sync period since it's about
         # implementing the scaling decision which is e.g. in desired state, not taking it
         if not self.scaling_manager is None:
+            pass # TODO: remember updating platform_threads_available in the service state
 
     def get_services_scaling_settings(self):
 
@@ -246,3 +263,9 @@ class ScalingPolicy:
                             scaling_manager):
 
         self.scaling_manager = scaling_manager
+
+    def set_state_reader(self,
+                         state_reader):
+
+        self.state_reader = state_reader
+        self.adjustment_policy.set_state_reader(state_reader)

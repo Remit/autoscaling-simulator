@@ -6,7 +6,7 @@ from ..workload.request import RequestProcessingInfo
 from ..deployment.deployment_model import DeploymentModel
 from ..infrastructure_platform.platform_model import PlatformModel
 from ..utils.error_check import ErrorChecker
-from ..utils.statemanagers import MetricManager, ScalingAspectManager
+from ..utils.statemanagers import StateReader, ScalingAspectManager
 from .service import Service
 
 class ApplicationModel:
@@ -37,11 +37,12 @@ class ApplicationModel:
         self.response_times_by_request = {}
         self.network_times_by_request = {}
         self.buffer_times_by_request = {}
-        self.metric_manager = MetricManager()
+        self.state_reader = StateReader()
         self.platform_model = platform_model
         self.scaling_policy = scaling_policy
         self.scaling_manager = ScalingManager()
         self.scaling_policy.set_scaling_manager(self.scaling_manager)
+        self.scaling_policy.set_state_reader(self.state_reader)
 
         # Static state
         self.name = None
@@ -157,12 +158,12 @@ class ApplicationModel:
                                       self.platform_model,# TODO: needed??? maybe remove
                                       init_keepalive_ms,
                                       service_scaling_settings,
-                                      self.metric_manager,
+                                      self.state_reader,
                                       state_mb)
 
                     # Adding services as sources to the state managers
-                    self.metric_manager.add_source(service_name,
-                                                   service)
+                    self.self.state_reader.add_source(service_name,
+                                                      service)
                     self.scaling_manager.add_source(service_name,
                                                     service)
 
