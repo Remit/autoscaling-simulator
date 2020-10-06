@@ -4,14 +4,14 @@ import numbers
 import pandas as pd
 from datetime import timedelta
 
-from .scaledentity.scaled_entity import ScaledEntityScalingSettings
+from .scaledentity.scaledentity import ScaledEntityScalingSettings
 from .metric.scalingmetrics import MetricDescription
 from .metric.forecasting import MetricForecaster
 from .metric.stabilizer import Stabilizer
 from .metric.valuesaggregator import ValuesAggregator
 from .metric.valuesfilter import ValuesFilter
 
-from .adjustment.adjustment_policy import AdjustmentPolicy
+from .adjustmentplacement.policy import AdjustmentPolicy
 
 from ...utils.error_check import ErrorChecker
 from ...utils.state import State
@@ -135,7 +135,7 @@ class ScalingPolicyConfiguration:
             if not isinstance(numeric_conf, numbers.Number):
                 raise ValueError('{} is not a number: {}'.format(conf_key, numeric_conf))
 
-            if priority < 0:
+            if numeric_conf < 0:
                 raise ValueError('{} should be positive or zero, provided: {}'.format(conf_key, numeric_conf))
 
         return numeric_conf
@@ -247,6 +247,7 @@ class ScalingPolicy:
                 # Place -> placing service instances on the platform options and selecting the one with the max performance/res util?
 
 
+            # Updating the timestamp of the last state reconciliation
             self.state.update_val('last_sync_timestamp', cur_timestamp)
 
         # Enforce use scaling_aspect_manager
@@ -268,4 +269,4 @@ class ScalingPolicy:
                          state_reader):
 
         self.state_reader = state_reader
-        self.adjustment_policy.set_state_reader(state_reader)
+        #self.adjustment_policy.set_state_reader(state_reader)

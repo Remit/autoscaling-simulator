@@ -1,12 +1,13 @@
 import json
 import operator
 import pandas as pd
+import os
 
 from ..workload.request import RequestProcessingInfo
 from ..deployment.deployment_model import DeploymentModel
 from ..infrastructure_platform.platform_model import PlatformModel
 from ..utils.error_check import ErrorChecker
-from ..utils.statemanagers import StateReader, ScalingAspectManager
+from ..utils.statemanagers import StateReader, ScalingManager
 from .service import Service
 
 class ApplicationModel:
@@ -155,15 +156,14 @@ class ApplicationModel:
                                       deployment_model, #TODO: maybe decouple, platform-related?
                                       self.reqs_processing_infos,
                                       init_service_instances,
-                                      self.platform_model,# TODO: needed??? maybe remove
-                                      init_keepalive_ms,
+                                      init_metric_keepalive_ms,
                                       service_scaling_settings,
                                       self.state_reader,
                                       state_mb)
 
                     # Adding services as sources to the state managers
-                    self.self.state_reader.add_source(service_name,
-                                                      service)
+                    self.state_reader.add_source(service_name,
+                                                 service)
                     self.scaling_manager.add_source(service_name,
                                                     service)
 

@@ -10,6 +10,12 @@ class MetricDescription:
     Stores all the necessary information to create a scaling metric.
     """
 
+    # First value in the list is the default
+    reference_configs_dict = {
+        'capacity_adaptation_type': ['discrete', 'continuous'],
+        'timing_type': ['reactive', 'predictive']
+    }
+
     def __init__(self,
                  scaled_entity_name,
                  scaled_aspect_name,
@@ -63,6 +69,21 @@ class MetricDescription:
                              self.initial_entity_representation_in_metric,
                              self.metric_manager)
 
+    @staticmethod
+    def config_check(config_raw,
+                     name_to_check):
+
+        config_res = MetricDescription.reference_configs_dict[name_to_check][0] # default
+        if name_to_check in config_raw:
+            if config_raw[name_to_check] in MetricDescription.reference_configs_dict[name_to_check]:
+                config_res = config_raw[name_to_check]
+            else:
+                raise ValueError('Value {} of the config parameter {} is unknown for class {}'.format(config_raw[name_to_check],
+                                                                                                      name_to_check,
+                                                                                                      __class__.__name__))
+
+        return config_res
+
 class ScalingMetric:
 
     """
@@ -73,11 +94,7 @@ class ScalingMetric:
     the metric can come from entirely different source, e.g. external.
     """
 
-    # First value in the list is the default
-    reference_configs_dict = {
-        'capacity_adaptation_type': ['discrete', 'continuous'],
-        'timing_type': ['reactive', 'predictive']
-    }
+
 
     def __init__(self,
                  scaled_entity_name,
@@ -234,18 +251,3 @@ class ScalingMetric:
         if not limiter is None:
             self.limiter.update_limits(new_min,
                                        new_max)
-
-    @staticmethod
-    def config_check(config_raw,
-                     name_to_check):
-
-        config_res = ScalingMetric.reference_configs_dict[name_to_check][0] # default
-        if name_to_check in config_raw:
-            if config_raw[name_to_check] in ScalingMetric.reference_configs_dict[name_to_check]:
-                config_res = config_raw[name_to_check]
-            else
-                raise ValueError('Value {} of the config parameter {} is unknown for class {}'.format(config_raw[name_to_check],
-                                                                                                      name_to_check,
-                                                                                                      __class__.__name__))
-
-        return config_res

@@ -9,6 +9,7 @@ from .infrastructure_platform.platform_model import PlatformModel
 from .application.application_model import ApplicationModel
 from .simulation.simulation import Simulation
 from .scaling.policies.scaling_policies_settings import ScalingPoliciesSettings
+from .scaling.policiesbuilder.policy import ScalingPolicy
 
 class Simulator:
     """
@@ -72,8 +73,8 @@ class Simulator:
                                                scaling_model.platform_scaling_model,
                                                os.path.join(configs_dir, config[Simulator.CONF_PLATFORM_MODEL_KEY]))
 
-                #scaling_policies_settings = ScalingPoliciesSettings(configs_dir)
-                scaling_policy = ScalingPolicy(os.path.join(configs_dir, config[Simulator.CONF_SCALING_POLICY_KEY],
+                scaling_policies_settings = ScalingPoliciesSettings(configs_dir)
+                scaling_policy = ScalingPolicy(os.path.join(configs_dir, config[Simulator.CONF_SCALING_POLICY_KEY]),
                                                scaling_model,
                                                platform_model)
 

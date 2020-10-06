@@ -49,7 +49,7 @@ class ScaledEntity:
 
                 metric_description.metric_manager = metric_manager
 
-                self.metrics_by_priority[metric_description.priority] = metric_description.convert_to_metric()
+                metrics_by_priority[metric_description.priority] = metric_description.convert_to_metric()
 
             self.metrics_by_priority = collections.OrderedDict(sorted(metrics_by_priority.items()))
 

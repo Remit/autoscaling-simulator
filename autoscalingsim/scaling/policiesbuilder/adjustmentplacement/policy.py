@@ -50,7 +50,7 @@ class AdjustmentPolicy:
             scaled_aspect_name = self.services_scaling_config[scaled_entity_name_search_key].scaled_aspect_name
             cur_scaling_aspect_value = self.state_reader.get_values(scaled_entity_name, scaled_aspect_name)
 
-            # Computiny the Delta-representation of the desired state, i.e. in terms
+            # Computing the Delta-representation of the desired state, i.e. in terms
             # of changes that need to be applied
             desired_state_in_deltas = pd.DataFrame(columns = ['datetime', 'value'])
             desired_state_in_deltas = desired_state_in_deltas.set_index('datetime')

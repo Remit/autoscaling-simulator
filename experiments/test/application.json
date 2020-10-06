@@ -125,5 +125,6 @@
 			"response_size_b": 1024,
 			"operation_type": "rw"
 		}
-	]
+	],
+	"load_balancing": {}
 }

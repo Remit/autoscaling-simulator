@@ -1,11 +1,10 @@
 import numpy as np
 import pandas as pd
-from datetime import timedelta
 
-from ..scaling.policiesbuilder.scaledentity import *
+from ..scaling.policiesbuilder.scaledentity.scaledentity import *
 from ..workload.request import Request
 from ..deployment.deployment_model import DeploymentModel
-from ..infrastructure_platform.node_info import NodeInfo
+from ..infrastructure_platform.platform_model import NodeInfo
 from ..scaling.application_scaling_model import ApplicationScalingModel, ServiceScalingInfo
 from ..scaling.policies.scaling_policies_settings import *
 from ..scaling.policies.joint_policies import *
@@ -45,16 +44,16 @@ class ServiceState(State):
         self.count = init_service_instances
         # The number of threads that the platform has allocated on different nodes
         # for the instances of this service
-        self.platform_threads_available = 0
+        self.platform_threads_available = 4 # TODO: 0, it's a temp fix
         # the negative value of keepalive is used to keep the timed params indefinitely
-        self.keepalive = timedelta(init_keepalive_ms * 1000)
+        self.keepalive = pd.Timedelta(init_keepalive_ms, unit = 'ms')
 
         # Timed
         self.tmp_state = State.TempState(init_timestamp,
                                          averaging_interval_ms,
                                          ServiceState.resource_utilization_types)
 
-        default_ts_init = {'datetime': init_timestamp, 'value': 0.0}
+        default_ts_init = {'datetime': [init_timestamp], 'value': [0.0]}
 
         self.cpu_utilization = pd.DataFrame(default_ts_init)
         self.cpu_utilization = self.cpu_utilization.set_index('datetime')
@@ -123,7 +122,7 @@ class ServiceState(State):
             if oldest_to_keep_ts < cur_ts:
                 old_metric_val = old_metric_val[old_metric_val.index > oldest_to_keep_ts]
 
-            val_to_upd = self.tmp_state.update_and_get(self,
+            val_to_upd = self.tmp_state.update_and_get(metric_name,
                                                        cur_ts,
                                                        cur_val)
 
@@ -301,14 +300,14 @@ class Service(ScaledEntity):
         self._recompute_metrics(cur_timestamp)
 
     def _compute_current_capacity_in_threads(self):
-        return int(self.state.platform_threads_available - len(self.in_processing_simultaneous) * self.resource_requirements.threads_per_service_instance)
+        return int(self.state.platform_threads_available - len(self.in_processing_simultaneous) * self.state.requirements.threads_per_service_instance)
 
     def _recompute_metrics(self,
                            cur_timestamp):
 
         # Updating metrics:
         # - CPU utilization
-        cpu_utilization = (len(self.in_processing_simultaneous) * self.resource_requirements.threads_per_service_instance) / self.state.platform_threads_available
+        cpu_utilization = (len(self.in_processing_simultaneous) * self.state.requirements.threads_per_service_instance) / self.state.platform_threads_available
         self.state.update_metric('cpu_utilization',
                                  cur_timestamp,
                                  cpu_utilization)

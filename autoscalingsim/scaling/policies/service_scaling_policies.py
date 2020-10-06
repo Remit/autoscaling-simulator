@@ -1,6 +1,6 @@
 import math
 
-from ...infrastructure_platform.node_info import NodeInfo
+from ...infrastructure_platform.platform_model import NodeInfo
 
 class ReactiveServiceScalingPolicy:
     """
