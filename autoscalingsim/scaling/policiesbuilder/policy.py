@@ -239,13 +239,13 @@ class ScalingPolicy:
                 desired_states_to_process = self.scaling_manager.compute_desired_state()
 
             if len(desired_states_to_process) > 0:
-                # Combine -> scaling app as a whole to remove bottlenecks
+                # TODO: Combine -> scaling app as a whole to remove bottlenecks
 
-                # Adjust -> adjusting the platform to the demands of the scaled app - to minimize the cost? specialized nodes vs balanced
+                # Adjust /w placement constraints -> adjusting the platform
+                # to the demands of the scaled app while taking into account
+                # adjustment goals such as minimization of the cost of the
+                # platform resources used and obeying the placement constraints.
                 self.platform_model.adjust(desired_states_to_process)
-
-                # Place -> placing service instances on the platform options and selecting the one with the max performance/res util?
-
 
             # Updating the timestamp of the last state reconciliation
             self.state.update_val('last_sync_timestamp', cur_timestamp)
