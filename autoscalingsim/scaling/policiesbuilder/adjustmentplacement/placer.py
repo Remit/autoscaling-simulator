@@ -34,9 +34,11 @@ class Placer:
     """
 
     placement_hints = [
-        'specialized',
-        'balanced',
-        'existing_mixture' # try to use an existig mixture of services on nodes if possible
+        'existing_mixture', # try to use an existig mixture of entities in containers if possible
+        'balanced', # attempts to balance capacity consumption in the shared containers
+        'shared', # an arbitrary mixture of entities can be placed in the same container
+        'specialized', # entities only of a single type are put in the same container
+        'sole_instance' # a container is dedicated to a single instance of an entity
     ]
 
     def __init__(self,
@@ -60,8 +62,13 @@ class Placer:
         The algorithm tries to determine the placement options according to the
         the placement hint given. If the placement according to the given hint
         does not succeed, Placer proceeds to the try more relaxed hints to
-        generate the in-node placement constraints (options). The default last
-        resort for Placer is the 'specialized' placement, i.e. single scaled
+        generate the in-node placement constraints (options). The 'specialized'
+        and the 'sole_instance' options are included whenever any other option
+        is provided since the assumption is that the placement must succeed
+        at all costs, i.e. if there are no ideal solution, at least some
+        placement solution must be given, however bad it is (see 'sole_instance')
+
+        The default last resort for Placer is the 'sole_instance' placement, i.e. single scaled
         entity instance per container for scaled entities.
         """
 
@@ -71,47 +78,72 @@ class Placer:
             return self.cached_placement_options
 
         placement_options = {}
-        option_failed = False
+        consider_other_placement_options = False
         if self.placement_hint == 'existing_mixture':
-            placement_options = self._place_existing_mixture(scaled_entity_instance_requirements_by_entity,
-                                                             container_for_scaled_entities_types,
-                                                             dynamic_current_placement,
-                                                             dynamic_performance,
-                                                             dynamic_resource_utilization)
-            if len(placement_options) > 0:
-                return placement_options
-            else:
-                option_failed = True
+            placement_options_raw = self._place_existing_mixture(scaled_entity_instance_requirements_by_entity,
+                                                                 container_for_scaled_entities_types,
+                                                                 dynamic_current_placement,
+                                                                 dynamic_performance,
+                                                                 dynamic_resource_utilization)
+            placement_options = self._add_placement_options(placement_options,
+                                                            placement_options_raw)
 
-        if option_failed or (self.placement_hint == 'balanced'):
-            option_failed = False
-            placement_options = self._place_shared(scaled_entity_instance_requirements_by_entity,
-                                                   container_for_scaled_entities_types,
-                                                   dynamic_performance,
-                                                   dynamic_resource_utilization)
+            if len(placement_options) == 0:
+                consider_other_placement_options = True
+
+        if consider_other_placement_options or (self.placement_hint == 'balanced') or (self.placement_hint == 'shared'):
+
+            placement_options_raw = self._place_shared(scaled_entity_instance_requirements_by_entity,
+                                                       container_for_scaled_entities_types,
+                                                       dynamic_performance,
+                                                       dynamic_resource_utilization)
 
             if self.placement_hint == 'balanced':
-                placement_options = self._place_balanced(placement_options)
+                placement_options_raw = self._place_balanced(placement_options_raw)
 
-            if len(placement_options) > 0:
-                return placement_options
-            else:
-                option_failed = True
+            placement_options = self._add_placement_options(placement_options,
+                                                            placement_options_raw)
 
-        if option_failed or (self.placement_hint == 'specialized'):
-            option_failed = False
-            placement_options = self._place_specialized(scaled_entity_instance_requirements_by_entity,
-                                                        container_for_scaled_entities_types,
-                                                        dynamic_performance,
-                                                        dynamic_resource_utilization)
-            if len(placement_options) > 0:
-                return placement_options
-            else:
-                option_failed = True
+            consider_other_placement_options = True
+
+        if consider_other_placement_options or (self.placement_hint == 'specialized'):
+
+            placement_options_raw = self._place_specialized(scaled_entity_instance_requirements_by_entity,
+                                                            container_for_scaled_entities_types,
+                                                            dynamic_performance,
+                                                            dynamic_resource_utilization)
+            placement_options = self._add_placement_options(placement_options,
+                                                            placement_options_raw)
+
+            consider_other_placement_options = True
+
+        if consider_other_placement_options or (self.placement_hint == 'sole_instance'):
+            placement_options_raw = self._place_sole_instance(scaled_entity_instance_requirements_by_entity,
+                                                              container_for_scaled_entities_types,
+                                                              dynamic_performance,
+                                                              dynamic_resource_utilization)
+            placement_options = self._add_placement_options(placement_options,
+                                                            placement_options_raw)
 
         self.cached_placement_options = placement_options
 
         return placement_options
+
+    def _add_placement_options(self,
+                               cur_placement_options,
+                               placement_options_to_add):
+
+        """
+        Combines scaled entities placement options for containers. The placement
+        options were likely received by using different placement strategies (hints).
+        """
+
+        new_placement_options = cur_placement_options
+        for container_name in new_placement_options.keys():
+            if container_name in placement_options_to_add:
+                new_placement_options[container_name].extend(placement_options_to_add[container_name])
+
+        return new_placement_options
 
     def _place_existing_mixture(self,
                                 scaled_entity_instance_requirements_by_entity,
@@ -206,4 +238,63 @@ class Placer:
                            container_for_scaled_entities_types,
                            dynamic_performance = None,
                            dynamic_resource_utilization = None):
-        pass
+
+        placement_options = {}
+        for container_name, container_info in container_for_scaled_entities_types.items():
+            placement_options_per_container = []
+            single_placement_option_instances = {}
+
+            for scaled_entity, instance_requirements in scaled_entity_instance_requirements_by_entity.items():
+                fits, cap_taken = container_info.takes_capacity({scaled_entity: instance_requirements})
+                if fits:
+                    cumulative_capacity = cap_taken
+                    instances_count = 1
+
+                    while not cumulative_capacity.is_exhausted():
+                        cumulative_capacity += cap_taken
+                        instances_count += 1
+
+                    cumulative_capacity -= cap_taken
+                    instances_count -= 1
+
+                    single_placement_option_instances[scaled_entity] = instances_count
+
+                    single_placement_option = InContainerPlacement(container_name,
+                                                                   cumulative_capacity,
+                                                                   single_placement_option_instances)
+
+                    placement_options_per_container.append(single_placement_option)
+
+            if len(placement_options_per_container) > 0:
+                placement_options[container_name] = placement_options_per_container
+
+        return placement_options
+
+    def _place_sole_instance(self,
+                             scaled_entity_instance_requirements_by_entity,
+                             container_for_scaled_entities_types,
+                             dynamic_performance = None,
+                             dynamic_resource_utilization = None):
+
+        placement_options = {}
+        for container_name, container_info in container_for_scaled_entities_types.items():
+            placement_options_per_container = []
+            single_placement_option_instances = {}
+
+            for scaled_entity, instance_requirements in scaled_entity_instance_requirements_by_entity.items():
+                fits, cap_taken = container_info.takes_capacity({scaled_entity: instance_requirements})
+                if fits:
+                    cumulative_capacity = cap_taken
+                    instances_count = 1
+                    single_placement_option_instances[scaled_entity] = 1
+
+                    single_placement_option = InContainerPlacement(container_name,
+                                                                   cap_taken,
+                                                                   single_placement_option_instances)
+
+                    placement_options_per_container.append(single_placement_option)
+
+            if len(placement_options_per_container) > 0:
+                placement_options[container_name] = placement_options_per_container
+
+        return placement_options

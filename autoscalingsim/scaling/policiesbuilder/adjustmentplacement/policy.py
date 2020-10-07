@@ -26,6 +26,7 @@ class AdjustmentPolicy:
         self.services_scaling_config = scaling_settings.services_scaling_config
 
     def adjust(self,
+               cur_timestamp,
                desired_state_per_scaled_entity,
                container_for_scaled_entities_types,
                scaled_entity_instance_requirements):
@@ -88,11 +89,6 @@ class AdjustmentPolicy:
                              container_for_scaled_entities_types,
                              scaled_entity_instance_requirements_by_entity)
 
-
-        # Returns several configurations with the 'fallback' option of a service per node
-        # i.e. taking the smallest possible node type in terms of its allocation capacity.
-        # The placement step will fallback to this option if it cannot allocate the
-        # services on the better options provided.
         # TODO also return adjusted_desired_scaled_entities_scaling_events
 
     def set_state_reader(self,
