@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import pandas as pd
 
 from .placer import Placer
+from .combiners import *
 
 class ScaledEntityContainer(ABC):
 
@@ -51,7 +52,8 @@ class Adjuster(ABC):
 
     @abstractmethod
     def __init__(self,
-                 placement_hint):
+                 placement_hint : str,
+                 combiner_type : str):
         pass
 
     @abstractmethod
@@ -70,9 +72,13 @@ class CostMinimizer(Adjuster):
     """
 
     def __init__(self,
-                 placement_hint = 'shared'):
+                 placement_hint = 'shared',
+                 combiner_type = 'windowed'):
 
         self.placer = Placer(placement_hint)
+        if not combiner_type in combiners_registry:
+            raise ValueError('No Combiner of type {} found'.format(combiner_type))
+        self.combiner = combiners_registry[combiner_type]
         self.safety_placement_interval = pd.Timedelta(100, unit = 'ms') # TODO: consider making a parameter
 
     def adjust(self,
@@ -80,7 +86,8 @@ class CostMinimizer(Adjuster):
                desired_scaled_entities_scaling_events,
                container_for_scaled_entities_types,
                scaled_entity_instance_requirements_by_entity,
-               current_state):
+               current_state,
+               acceleration_factor_predictor = None): # TODO: consider implementing as a smart component
 
         # Produces changes in terms of homogeneous container groups.
         # For instance, if it was decided to place the service on some existing
@@ -124,9 +131,20 @@ class CostMinimizer(Adjuster):
         timestamped_region_groups_deltas, timestamped_unmet_changes = current_state.compute_soft_adjustment_timeline(scaled_entity_adjustment_in_existing_containers,
                                                                                                                      scaled_entity_instance_requirements_by_entity)
 
-# TODO: incorporate timestamped_unmet_changes into scaled_entity_adjustment_for_state_restructure
+        for timestamp, entities_unmet_changes in timestamped_unmet_changes.items():
+            for scaled_entity, unmet_change in services_unmet_changes.items():
+                data_to_add = {'datetime': [timestamp],
+                               'value': [unmet_change]}
+                df_to_add = pd.DataFrame(data_to_add)
+                df_to_add = df_to_add.set_index('datetime')
+
+                if scaled_entity in scaled_entity_adjustment_for_state_restructure:
+                    scaled_entity_adjustment_for_state_restructure[scaled_entity] = scaled_entity_adjustment_for_state_restructure[scaled_entity].append(df_to_add)
+                else:
+                    scaled_entity_adjustment_for_state_restructure[scaled_entity] = df_to_add
+
         # 2. Scale up if the desired scaled entities cannot be allocated ---> changes into state restructuring after the time horizon
-        if len(scaled_entities_to_accommodate) > 0: # todo
+        if len(scaled_entity_adjustment_for_state_restructure) > 0: # todo
             # 2.1. Computing the placement options that act as constraints for
             #      the further adjustment of the platform
             # TODO: think of making this step common for different adjusters
@@ -135,23 +153,38 @@ class CostMinimizer(Adjuster):
                                                                       dynamic_current_placement = None,
                                                                       dynamic_performance = None,
                                                                       dynamic_resource_utilization = None)
-
+            # placement_options[container_name][entity_name] -- > instances_count
             # 2.2. Scale up according to the strategy within the placement options
             # Produces: nothing or *boot up-delayed* delta -- some positive?
+            # todo: push scaled_entity_adjustment_for_state_restructure into the combiner
+            # that tries to smooth the platform adjustment based on its own logic, e.g.
+            # using windowing -- adjustments occuring in the same window are considered jointly.
+            # the results is the unified timeline of the anticipated/desired entities counts.
+            # This unified timeline is then considered timestamp by timestamp in the strategy
+            # and the placement options are probed on each timestamp + considering the
+            # actual acceleration_factor_predictor if it is given (it should influence the
+            # processing times, and, demand for entities as a consequence).
+            unified_scaled_entity_adjustment = self.combiner.combine(scaled_entity_adjustment_for_state_restructure,
+                                                                     cur_timestamp)
+            # format above: {<timestamp>: {<entity_name>:<cumulative_change>}}
 
+
+            # todo: return, remember timestamped_region_groups_deltas from the existing cluster
 
 
 class PerformanceMaximizer(Adjuster):
 
     def __init__(self,
-                 placement_hint = 'sole_instance'):
+                 placement_hint = 'sole_instance',
+                 combiner_type = 'windowed'):
 
         self.placer = Placer(placement_hint)
 
 class UtilizationMaximizer(Adjuster):
 
     def __init__(self,
-                 placement_hint = 'balanced'):
+                 placement_hint = 'balanced',
+                 combiner_type = 'windowed'):
 
         self.placer = Placer(placement_hint)
 

@@ -157,9 +157,6 @@ class PlatformState:
 
         self.regions = {}
 
-# make more general:
-# - add or remove
-# - consider time and booting as parameter to group
     def compute_soft_adjustment_timeline(self,
                                          scaled_entity_adjustment_in_existing_containers,
                                          scaled_entity_instance_requirements_by_entity,
@@ -173,7 +170,7 @@ class PlatformState:
         """
 
         unmet_scaled_entity_adjustment = scaled_entity_adjustment_in_existing_containers.copy()
-        region_groups_deltas = { region_name: [] }
+        region_groups_deltas = {}
 
         if region_name in self.regions:
             region_groups_deltas, unmet_scaled_entity_adjustment = self.regions[region_name].compute_soft_adjustment_with_entities(scaled_entity_adjustment_in_existing_containers,

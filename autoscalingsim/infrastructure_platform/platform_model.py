@@ -22,6 +22,7 @@ class NodeInfo(ScaledEntityContainer):
                  price_p_h = 0.0,
                  cpu_credits_h = 0,
                  latency_ms = 0,
+                 requests_acceleration_factor = 1.0,
                  labels = []):
 
         self.node_type = node_type
@@ -31,6 +32,7 @@ class NodeInfo(ScaledEntityContainer):
         self.price_p_h = price_p_h
         self.cpu_credits_h = cpu_credits_h
         self.latency_ms = latency_ms
+        self.requests_acceleration_factor = requests_acceleration_factor
         self.labels = labels
 
     def get_name(self):
@@ -134,6 +136,7 @@ class PlatformModel:
                         price_p_h = ErrorChecker.key_check_and_load('price_p_h', vm_type, type_name)
                         cpu_credits_h = ErrorChecker.key_check_and_load('cpu_credits_h', vm_type, type_name)
                         latency_ms = ErrorChecker.key_check_and_load('latency_ms', vm_type, type_name)
+                        requests_acceleration_factor = ErrorChecker.key_check_and_load('requests_acceleration_factor', vm_type, type_name)
 
                         self.node_types[type_name] = NodeInfo(type_name,
                                                               vCPU,
@@ -141,7 +144,8 @@ class PlatformModel:
                                                               network_bandwidth_MBps,
                                                               price_p_h,
                                                               cpu_credits_h,
-                                                              latency_ms)
+                                                              latency_ms,
+                                                              requests_acceleration_factor)
 
                 except json.JSONDecodeError:
                     raise ValueError('The config file {} provided for {} is an invalid JSON.'.format(config_file, self.__class__.__name__))

@@ -8,7 +8,8 @@
 			"memory": 0.5,
 			"network_bandwidth_MBps": 625,
 			"price_p_h": 0.0052,
-			"latency_ms": 10
+			"latency_ms": 10,
+			"requests_acceleration_factor": 1.0
 		},
 		{
 			"type": "t3.micro",
@@ -17,7 +18,8 @@
 			"memory": 1,
 			"network_bandwidth_MBps": 625,
 			"price_p_h": 0.0104,
-			"latency_ms": 10
+			"latency_ms": 10,
+			"requests_acceleration_factor": 1.1
 		},
 		{
 			"type": "t3.small",
@@ -26,7 +28,8 @@
 			"memory": 2,
 			"network_bandwidth_MBps": 625,
 			"price_p_h": 0.0209,
-			"latency_ms": 10
+			"latency_ms": 10,
+			"requests_acceleration_factor": 1.1
 		},
 		{
 			"type": "t3.medium",
@@ -35,7 +38,8 @@
 			"memory": 4,
 			"network_bandwidth_MBps": 625,
 			"price_p_h": 0.0418,
-			"latency_ms": 10
+			"latency_ms": 10,
+			"requests_acceleration_factor": 1.1
 		},
 		{
 			"type": "t3.large",
@@ -44,7 +48,8 @@
 			"memory": 8,
 			"network_bandwidth_MBps": 625,
 			"price_p_h": 0.0835,
-			"latency_ms": 10
+			"latency_ms": 10,
+			"requests_acceleration_factor": 1.1
 		},
 		{
 			"type": "t3.xlarge",
@@ -53,7 +58,8 @@
 			"memory": 16,
 			"network_bandwidth_MBps": 625,
 			"price_p_h": 0.1670,
-			"latency_ms": 10
+			"latency_ms": 10,
+			"requests_acceleration_factor": 1.5
 		},
 		{
 			"type": "t3.2xlarge",
@@ -62,7 +68,8 @@
 			"memory": 32,
 			"network_bandwidth_MBps": 625,
 			"price_p_h": 0.3341,
-			"latency_ms": 10
+			"latency_ms": 10,
+			"requests_acceleration_factor": 1.7
 		}
 	]
 }
