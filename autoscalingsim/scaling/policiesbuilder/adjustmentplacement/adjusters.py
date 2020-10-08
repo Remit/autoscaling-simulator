@@ -112,18 +112,22 @@ class CostMinimizer(Adjuster):
             scaled_entity_adjustment_in_existing_containers[scaled_entity] = scaling_events_timeline[(scaling_events_timeline.index - cur_timestamp) < self.safety_placement_interval]
             scaled_entity_adjustment_for_state_restructure[scaled_entity] = scaling_events_timeline[~(scaled_entity_adjustment_in_existing_containers[scaled_entity].index)]
 
-# change into more general-purpose -> generate_delta_update_for_entities -> both to accommodate and take off
-# consider providing a set of timed desired counts considered separately -> timing needs to be considered when starting services ...
-        region_groups_deltas, scaled_entities_to_accommodate = current_state.compute_soft_adjustment_timeline(scaled_entity_adjustment_in_existing_containers,
-                                                                                                              scaled_entity_instance_requirements_by_entity)
+        # Provides region container groups deltas timestamped by the desired timestamp.
+        # It must be noted that the timestamps need to be adjusted when the deltas
+        # are actually being put into effect. In particular, the adjustment by
+        # start-up or termination time for entities is determined based on
+        # delta.container_group.in_change_entities_instances_counts --
+        # a negative value means that the corresponding entity instances count should be
+        # terminated, whereas the positive means that it should be started.
+        # Analogously, the delta might mean the scale down. In this case, delta.to_be_scaled_down
+        # returns True. The amount of scale-down is determined by the delta.container_group.containers_count.
+        timestamped_region_groups_deltas, timestamped_unmet_changes = current_state.compute_soft_adjustment_timeline(scaled_entity_adjustment_in_existing_containers,
+                                                                                                                     scaled_entity_instance_requirements_by_entity)
 
-        # 2. Scale down if there is free room, merge homogeneous groups / Migration? ---> incorporated in above????
-        # Strategy dependent step, but might profit from being implemented separately and called here
-        # Produces: nothing or *cool down-delayed* delta -- at most one negative
-
-        # 3. Scale up if the desired scaled entities cannot be allocated ---> changes into state restructuring after the time horizon
-        if len(scaled_entities_to_accommodate) > 0:
-            # 3.1. Computing the placement options that act as constraints for
+# TODO: incorporate timestamped_unmet_changes into scaled_entity_adjustment_for_state_restructure
+        # 2. Scale up if the desired scaled entities cannot be allocated ---> changes into state restructuring after the time horizon
+        if len(scaled_entities_to_accommodate) > 0: # todo
+            # 2.1. Computing the placement options that act as constraints for
             #      the further adjustment of the platform
             # TODO: think of making this step common for different adjusters
             placement_options = self.placer.compute_placement_options(scaled_entity_instance_requirements_by_entity,
@@ -132,7 +136,7 @@ class CostMinimizer(Adjuster):
                                                                       dynamic_performance = None,
                                                                       dynamic_resource_utilization = None)
 
-            # 3.2. Scale up according to the strategy
+            # 2.2. Scale up according to the strategy within the placement options
             # Produces: nothing or *boot up-delayed* delta -- some positive?
 
 

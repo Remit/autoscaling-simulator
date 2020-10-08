@@ -24,7 +24,21 @@ class Capacity(ABC):
         pass
 
     @abstractmethod
+    def __sub__(self,
+                cap_to_sub):
+        pass
+
+    @abstractmethod
+    def __mul__(self,
+                scalar):
+        pass
+
+    @abstractmethod
     def is_exhausted(self):
+        pass
+
+    @abstractmethod
+    def is_empty(self):
         pass
 
     @abstractmethod

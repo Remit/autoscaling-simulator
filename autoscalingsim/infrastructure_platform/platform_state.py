@@ -75,6 +75,7 @@ class Region:
             homogeneous_groups_sorted_increasing = OrderedDict(sorted(cur_groups,
                                                                       key = lambda elem: elem.system_capacity.collapse()))
 
+            # TODO: process scale_down_by and in_change_entities_instances_counts
             for group in homogeneous_groups_sorted_increasing:
                 if len(unmet_cumulative_reduction_on_ts) > 0:
                     new_groups, unmet_cumulative_reduction_on_ts = group.compute_soft_adjustment_with_entities(unmet_cumulative_reduction_on_ts,

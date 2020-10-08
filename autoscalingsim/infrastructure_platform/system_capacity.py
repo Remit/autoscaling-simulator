@@ -62,6 +62,19 @@ class SystemCapacity(Capacity):
         return SystemCapacity(self.node_type,
                               red_system_capacity)
 
+    def __mul__(self,
+                scalar):
+
+        if not isinstance(scalar, int):
+            raise ValueError('An attempt to mutiply the {} by non-int'.format(self.__class__.__name__))
+
+        mult_system_capacity = {}
+        for cap_name, self_cap in self.system_capacity.items():
+            mult_system_capacity[cap_name] = scalar * self_cap
+
+        return SystemCapacity(self.node_type,
+                              mult_system_capacity)
+
     def is_exhausted(self):
 
         """
@@ -70,6 +83,18 @@ class SystemCapacity(Capacity):
 
         for sys_cap_type, sys_cap in self.system_capacity:
             if sys_cap > 1:
+                return True
+
+        return False
+
+    def is_empty(self):
+
+        """
+        Checking whether no capacity is taken.
+        """
+
+        for sys_cap_type, sys_cap in self.system_capacity:
+            if sys_cap < 0:
                 return True
 
         return False
