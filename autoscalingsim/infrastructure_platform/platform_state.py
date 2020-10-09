@@ -1,5 +1,6 @@
 from .system_capacity import SystemCapacity
 from .container_group import HomogeneousContainerGroup, ContainerGroupDelta, HomogeneousContainerGroupSet
+from .entity_group import EntityGroup
 from ..utils.error_check import ErrorChecker
 
 class Region:
@@ -75,7 +76,6 @@ class Region:
             homogeneous_groups_sorted_increasing = OrderedDict(sorted(cur_groups,
                                                                       key = lambda elem: elem.system_capacity.collapse()))
 
-            # TODO: process scale_down_by and in_change_entities_instances_counts
             for group in homogeneous_groups_sorted_increasing:
                 if len(unmet_cumulative_reduction_on_ts) > 0:
                     new_groups, unmet_cumulative_reduction_on_ts = group.compute_soft_adjustment_with_entities(unmet_cumulative_reduction_on_ts,
@@ -134,6 +134,31 @@ class Region:
         for group_delta in homogeneous_groups_deltas:
             self.homogeneous_groups += group_delta
 
+    def finish_change_for_entities(self,
+                                   entities_booting_period_expired,
+                                   entities_termination_period_expired):
+
+        """
+        Transfers in-change entities (booting/terminating) into the ready state by
+        modifying in_change_entities_instances_counts and entities_instances_counts
+        of the container_group.
+
+        Changes the state.
+        """
+
+        for group in self.homogeneous_groups:
+            new_group = group.finish_change_for_entities(entities_booting_period_expired,
+                                                         entities_termination_period_expired)
+            self.homogeneous_groups.remove_group_by_id(group.id)
+            self.homogeneous_groups.add_group(new_group)
+
+    def extract_collective_entity_state(self):
+
+        region_collective_entity_state = EntityGroup()
+        for group in self.homogeneous_groups:
+            region_collective_entity_state += group.entities_state
+
+        return region_collective_entity_state
 
 class PlatformState:
 
@@ -153,9 +178,10 @@ class PlatformState:
     container replicas in the group.
     """
 
-    def __init__(self):
+    def __init__(self,
+                 regions = {}):
 
-        self.regions = {}
+        self.regions = regions
 
     def compute_soft_adjustment_timeline(self,
                                          scaled_entity_adjustment_in_existing_containers,
@@ -178,24 +204,65 @@ class PlatformState:
 
         return (region_groups_deltas, unmet_scaled_entity_adjustment)
 
+    def update_virtually(self,
+                         region_groups_deltas):
+
+        """
+        Computes the new platform state after applying the update provided
+        as a parameter region_groups_deltas. The timestamp of the update is also provided
+        to account for the scale up and scale down delays.
+
+        Returns a new state. Does not change the current state object.
+        """
+
+        return self.update(region_groups_deltas,
+                           True)
+
     def update(self,
-               homogeneous_groups_deltas_per_region):
+               homogeneous_groups_deltas_per_region,
+               is_virtual = False):
 
         """
         Invokes updates of homogeneous groups for each region present in the state.
         If the region is not yet in this state, then it is created from the given
         homogeneous groups.
 
-        Changes the state.
+        Changes the state if is_virtual == False.
         """
 
+        state_to_update = self
+        if is_virtual:
+            state_to_update = PlatformState(self.regions.copy())
+
         for region_name, homogeneous_groups_deltas in homogeneous_groups_deltas_per_region:
-            if region_name in self.regions:
-                self.regions[region_name].update_groups(homogeneous_groups_deltas)
+            if region_name in state_to_update.regions:
+                state_to_update.regions[region_name].update_groups(homogeneous_groups_deltas)
             else:
                 # Adding a new region
-                self.regions[region_name] = Region(region_name,
-                                                   homogeneous_groups_deltas)
+                state_to_update.regions[region_name] = Region(region_name,
+                                                              homogeneous_groups_deltas)
+
+        return state_to_update
+
+    def finish_change_for_entities(self,
+                                   entities_booting_period_expired,
+                                   entities_termination_period_expired):
+
+        """
+        Advances in-change entities for all the regions s.t. each region has new
+        container groups with current entities updated by the applied change.
+        """
+
+        for region_name, region in self.regions.items():
+            region.finish_change_for_entities(entities_booting_period_expired,
+                                              entities_termination_period_expired)
+
+    def extract_collective_entity_state(self):
+        collective_entity_state = EntityGroup()
+        for region_name, region in self.regions.items():
+            collective_entity_state += region.extract_collective_entity_state()
+
+        return collective_entity_state
 
     def scale_down_if_possible(self):
         pass

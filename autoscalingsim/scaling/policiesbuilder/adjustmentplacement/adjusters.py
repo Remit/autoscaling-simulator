@@ -52,6 +52,7 @@ class Adjuster(ABC):
 
     @abstractmethod
     def __init__(self,
+                 application_scaling_model : ApplicationScalingModel,
                  placement_hint : str,
                  combiner_type : str):
         pass
@@ -72,6 +73,7 @@ class CostMinimizer(Adjuster):
     """
 
     def __init__(self,
+                 application_scaling_model : ApplicationScalingModel,
                  placement_hint = 'shared',
                  combiner_type = 'windowed'):
 
@@ -80,6 +82,7 @@ class CostMinimizer(Adjuster):
             raise ValueError('No Combiner of type {} found'.format(combiner_type))
         self.combiner = combiners_registry[combiner_type]
         self.safety_placement_interval = pd.Timedelta(100, unit = 'ms') # TODO: consider making a parameter
+        self.application_scaling_model = application_scaling_model
 
     def adjust(self,
                cur_timestamp,
@@ -143,6 +146,21 @@ class CostMinimizer(Adjuster):
                 else:
                     scaled_entity_adjustment_for_state_restructure[scaled_entity] = df_to_add
 
+        # Compute the closest state of minimal change by applying the deltas to the
+        # current state.
+        timestamped_adjusted_closest_states = {}
+        previous_ts = cur_timestamp
+        for timestamp, region_groups_deltas in timestamped_region_groups_deltas.items():
+            adjusted_state = current_state.update_virtually(region_groups_deltas)
+            passed_from_last_event = timestamp - previous_ts
+            entities_booting_period_expired, entities_termination_period_expired = self.application_scaling_model.get_entities_with_expired_scaling_period(passed_from_last_event)
+            adjusted_state.finish_change_for_entities(entities_booting_period_expired, entities_termination_period_expired)
+            timestamped_adjusted_closest_states[timestamp] = adjusted_state
+            current_state = adjusted_state.copy()
+            previous_ts = timestamp
+
+        latest_state = timestamped_adjusted_closest_states[list(timestamped_adjusted_closest_states.keys())[len(timestamped_adjusted_closest_states) - 1]]
+
         # 2. Scale up if the desired scaled entities cannot be allocated ---> changes into state restructuring after the time horizon
         if len(scaled_entity_adjustment_for_state_restructure) > 0: # todo
             # 2.1. Computing the placement options that act as constraints for
@@ -167,6 +185,45 @@ class CostMinimizer(Adjuster):
             unified_scaled_entity_adjustment = self.combiner.combine(scaled_entity_adjustment_for_state_restructure,
                                                                      cur_timestamp)
             # format above: {<timestamp>: {<entity_name>:<cumulative_change>}}
+            interval_end = cur_timestamp
+            for interval, entities_count_changes_on_ts in unified_scaled_entity_adjustment.items():
+
+                # Pooling and joining the entity states, both running and booting/terminating
+                # to use for nodes calculation in the new platform state.
+                latest_collective_entity_state = latest_state.extract_collective_entity_state()
+                entities_state_delta = EntityGroup({}, entities_count_changes_on_ts)
+                latest_collective_entity_state += entities_state_delta
+
+                # Computing coverage of services by the placement options.
+                containers_required = {}
+                for container_name, placement_options_per_container in placement_options.items():
+                    container_count_required_per_option = {}
+                    for placement_option in placement_options_per_container:
+                        placement_entity_representation = EntityGroup(placement_option)
+                        containers_required, remainder = latest_collective_entity_state / placement_entity_representation
+
+
+
+
+                # make state
+                # apply expiration
+                # repeat
+
+
+                interval_begin = interval[0]
+                interval_end = interval[1]
+                passed_from_last_event = interval_end - interval_begin
+                entities_booting_period_expired, entities_termination_period_expired = self.application_scaling_model.get_entities_with_expired_scaling_period()
+                # TODO: start by adjusting the previous state if the booting times can be applied
+                current_state.finish_change_for_entities(entities_booting_period_expired, entities_termination_period_expired)
+
+
+
+                # sort placement options by increasing price?
+                # placement_options[container_name][entity_name] -- > instances_count
+                # remember that the state existis during the interval of time and the payment is also for the interval of time
+
+                # TODO: update latest_state
 
 
             # todo: return, remember timestamped_region_groups_deltas from the existing cluster

@@ -2,7 +2,7 @@
   "policy": {
     "sync_period_ms": 20,
     "adjustment_goal": "cost_minimization",
-    "adjustment_preference": "balanced_nodes"
+    "adjustment_preference": "balanced"
   },
   "application": {
     "structure": {},

@@ -1,4 +1,5 @@
 from .system_capacity import SystemCapacity
+from .entity_group import EntityGroup
 from collections import OrderedDict
 
 class HomogeneousContainerGroup:
@@ -20,16 +21,13 @@ class HomogeneousContainerGroup:
         self.container_name = container_info.get_name()
         self.container_info = container_info
         self.containers_count = containers_count
-        self.entities_instances_counts = entities_instances_counts
-        # Booting are positive, terminating are negative
-        self.in_change_entities_instances_counts = in_change_entities_instances_counts
+        self.entities_state = EntityGroup(entities_instances_counts, in_change_entities_instances_counts)
         if not isinstance(system_capacity, SystemCapacity):
             raise ValueError('Provided argument is not of a {} class'.format(SystemCapacity.__name__))
         self.system_capacity = system_capacity
         self.id = hash(self.container_name + \
                        str(self.containers_count) + \
-                       str(self.entities_instances_counts) + \
-                       str(self.in_change_entities_instances_counts))
+                       str(self.entities_state))
 
     def __init__(self,
                  group_conf):
@@ -46,7 +44,6 @@ class HomogeneousContainerGroup:
                       in_change_entities_instances_counts,
                       system_capacity)
 
-    # TODO: adapt to negative values as well
     def compute_soft_adjustment_with_entities(self,
                                               scaled_entity_adjustment_in_existing_containers : dict,
                                               scaled_entity_instance_requirements_by_entity : dict):
@@ -87,7 +84,7 @@ class HomogeneousContainerGroup:
             # Starting with the largest entity and proceeding to the smallest one in terms of
             # capacity requirements. This is made to reduce the capacity fragmentation.
             temp_change = {}
-            dynamic_entities_instances_count = self.entities_instances_counts.copy()
+            dynamic_entities_instances_count = self.entities_state.entities_instances_counts.copy()
             for entity_name, instance_cap_to_take in container_capacity_taken_by_entity_sorted.items():
                 if entity_name in unmet_changes:
 
@@ -129,8 +126,8 @@ class HomogeneousContainerGroup:
             # in the container name.
             if (min_containers_needed > 0) and (min_containers_needed < self.containers_count):
 
-                new_entities_instances_counts = self.entities_instances_counts.copy()
-                in_change_entities_instances_counts = self.in_change_entities_instances_counts.copy()
+                new_entities_instances_counts = self.entities_state.entities_instances_counts.copy()
+                in_change_entities_instances_counts = self.entities_state.in_change_entities_instances_counts.copy()
                 for entity_name, count_in_solution in temp_change.items():
                     if entity_name in in_change_entities_instances_counts:
                         in_change_entities_instances_counts[entity_name] += count_in_solution
@@ -160,6 +157,37 @@ class HomogeneousContainerGroup:
         unmet_changes_res = [{entity_name: count} for entity_name, count in unmet_changes if count != 0]
         return (new_groups, unmet_changes_res)
 
+    def finish_change_for_entities(self,
+                                   entities_booting_period_expired,
+                                   entities_termination_period_expired):
+
+        """
+        Produces a new container group with the changes applied.
+
+        The given container group does not change.
+        """
+
+        new_entities_instances_counts = self.entities_state.entities_instances_counts.copy()
+        new_in_change_entities_instances_counts = self.entities_state.in_change_entities_instances_counts.copy()
+        for entity_name, change_to_apply in self.entities_state.in_change_entities_instances_counts.items():
+
+            if ((entity_name in entities_booting_period_expired) and (change_to_apply > 0)) or \
+               ((entity_name in entities_termination_period_expired) and (change_to_apply < 0))
+
+                de_facto_change = 0
+                if entity_name in new_entities_instances_counts:
+                    old_instances_count = new_entities_instances_counts[entity_name]
+                    new_entities_instances_counts[entity_name] = max(0, new_entities_instances_counts[entity_name] + change_to_apply)
+                    de_facto_change = new_entities_instances_counts[entity_name] - old_instances_count
+
+                new_in_change_entities_instances_counts[entity_name] -= de_facto_change
+
+        return HomogeneousContainerGroup(self.container_info,
+                                         self.containers_count,
+                                         new_entities_instances_counts,
+                                         new_in_change_entities_instances_counts,
+                                         self.system_capacity) # TODO: check whether in-change services are considered to be taking capacity, if yes, no change required
+
 class ContainerGroupDelta:
 
     """
@@ -182,9 +210,9 @@ class ContainerGroupDelta:
     def to_be_scaled_down(self):
 
         entities_instances_counts_after_change = {}
-        if self.container_group.entities_instances_counts.keys() == self.container_group.in_change_entities_instances_counts.keys():
-            for entity_instances_count, in_change_entity_instances_count in zip(self.container_group.entities_instances_counts.items(),
-                                                                                self.container_group.in_change_entities_instances_counts.items()):
+        if self.container_group.entities_state.entities_instances_counts.keys() == self.container_group.entities_state.in_change_entities_instances_counts.keys():
+            for entity_instances_count, in_change_entity_instances_count in zip(self.container_group.entities_state.entities_instances_counts.items(),
+                                                                                self.container_group.entities_state.in_change_entities_instances_counts.items()):
                 entities_instances_counts_after_change[entity_instances_count[0]] = entity_instances_count[1] + in_change_entity_instances_count[1]
 
         if len(entities_instances_counts_after_change) > 0:
@@ -202,7 +230,7 @@ class HomogeneousContainerGroupSet:
     def __init__(self,
                  homogeneous_groups = {}):
 
-        self.homogeneous_groups = homogeneous_groups
+        self._homogeneous_groups = homogeneous_groups
 
     def __add__(self,
                 homogeneous_group_delta):
@@ -212,9 +240,9 @@ class HomogeneousContainerGroupSet:
                                                                                        self.__class__.__name__))
 
         if homogeneous_group_delta.sign > 0:
-            self.homogeneous_groups[homogeneous_group_delta.container_group.id] = homogeneous_group_delta.container_group
+            self._homogeneous_groups[homogeneous_group_delta.container_group.id] = homogeneous_group_delta.container_group
         elif homogeneous_group_delta.sign < 0:
-            del self.homogeneous_groups[homogeneous_group_delta.container_group.id]
+            del self._homogeneous_groups[homogeneous_group_delta.container_group.id]
 
     def __sub__(self,
                 homogeneous_group_delta):
@@ -226,5 +254,34 @@ class HomogeneousContainerGroupSet:
         homogeneous_group_delta.sign *= -1
         self.__add__(homogeneous_group_delta)
 
+    def __iter__(self):
+        return HomogeneousContainerGroupSetIterator(self)
+
     def get(self):
-        return list(self.homogeneous_groups.values())
+        return list(self._homogeneous_groups.values())
+
+    def remove_group_by_id(self,
+                           id_to_remove):
+
+        if id_to_remove in self._homogeneous_groups:
+            del self._homogeneous_groups[id_to_remove]
+
+    def add_group(self,
+                  group_to_add):
+
+        self._homogeneous_groups[group_to_add.id] = group_to_add
+
+class HomogeneousContainerGroupSetIterator:
+
+    def __init__(self, container_group):
+        self._index = 0
+        self._container_group = container_group
+
+    def __next__(self):
+
+        if self._index < len(self._container_group._homogeneous_groups):
+            group = self._container_group._homogeneous_groups[self._container_group._homogeneous_groups.keys()[self._index]]
+            self._index += 1
+            return group
+
+        raise StopIteration

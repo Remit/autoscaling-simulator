@@ -45,7 +45,7 @@ class Placer:
                  placement_hint = 'specialized'):
 
         if not placement_hint in Placer.placement_hints:
-            raise ValueError('Adjustment preference {} currently not supported in {}'.(placement_hint, self.__class__.__name__))
+            raise ValueError('Adjustment preference {} currently not supported in {}'.format(placement_hint, self.__class__.__name__))
 
         self.placement_hint = placement_hint
         self.cached_placement_options = {}

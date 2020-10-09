@@ -74,16 +74,16 @@ class WindowedCombiner(Combiner):
             for scaled_entity, scaled_entity_adjustment_timeline in scaled_entities_adjustments.items():
                 entity_adjustments_in_window = scaled_entity_adjustment_timeline[(scaled_entity_adjustment_timeline.index >= cur_begin) and (scaled_entity_adjustment_timeline.index < cur_end)]
                 cumulative_entity_adjustment_in_window = self.aggregation_operation(entity_adjustments_in_window['value'])
-                unified_timeline_of_adjustments[cur_begin][scaled_entity] = cumulative_entity_adjustment_in_window
+                unified_timeline_of_adjustments[(cur_begin, cur_end)][scaled_entity] = cumulative_entity_adjustment_in_window
                 scaled_entities_adjustments[scaled_entity] = scaled_entity_adjustment_timeline[scaled_entity_adjustment_timeline.index >= cur_end]
 
-            scaled_entities_adjustments = {scaled_entity, scaled_entity_adjustment_timeline for scaled_entity, scaled_entity_adjustment_timeline in scaled_entities_adjustments.items() if len(scaled_entity_adjustment_timeline) > 0}
+            scaled_entities_adjustments = {(scaled_entity, scaled_entity_adjustment_timeline) for scaled_entity, scaled_entity_adjustment_timeline in scaled_entities_adjustments.items() if len(scaled_entity_adjustment_timeline) > 0 }
 
             cur_begin = cur_end
             cur_end += self.window
 
         unified_timeline_of_adjustments = OrderedDict(sorted(unified_timeline_of_adjustments.items(),
-                                                             key = lambda elem: elem[0]))
+                                                             key = lambda elem: elem[0][0]))
         return unified_timeline_of_adjustments
 
 combiners_registry = {
