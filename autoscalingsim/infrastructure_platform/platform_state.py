@@ -27,6 +27,27 @@ class Region:
             if not group_delta is None:
                 self.homogeneous_groups += group_delta
 
+    def __init__(self,
+                 region_name : str,
+                 container_info : NodeInfo,
+                 containers_count : int,
+                 selected_placement_entity_representation : dict,
+                 entities_state : dict,
+                 scaled_entity_instance_requirements_by_entity : dict):
+
+        """
+        Alternative Region initialization. Useful for creation of the temporary
+        platform state when computing the rolling adjustments.
+        """
+
+        self.region_name = region_name
+        self.homogeneous_groups = HomogeneousContainerGroupSet(container_info,
+                                                               containers_count,
+                                                               selected_placement_entity_representation,
+                                                               entities_state,
+                                                               scaled_entity_instance_requirements_by_entity)
+
+
     def compute_soft_adjustment_with_entities(self,
                                               scaled_entity_adjustment_in_existing_containers,
                                               scaled_entity_instance_requirements_by_entity):
@@ -258,8 +279,10 @@ class PlatformState:
                                               entities_termination_period_expired)
 
     def extract_collective_entity_state(self):
-        collective_entity_state = EntityGroup()
+        collective_entity_state = {}
         for region_name, region in self.regions.items():
+            if not region_name in collective_entity_state:
+                collective_entity_state[region_name] = EntityGroup()
             collective_entity_state += region.extract_collective_entity_state()
 
         return collective_entity_state

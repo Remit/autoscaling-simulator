@@ -77,12 +77,12 @@ class CostMinimizer(Adjuster):
                  placement_hint = 'shared',
                  combiner_type = 'windowed'):
 
+        self.application_scaling_model = application_scaling_model
         self.placer = Placer(placement_hint)
         if not combiner_type in combiners_registry:
             raise ValueError('No Combiner of type {} found'.format(combiner_type))
         self.combiner = combiners_registry[combiner_type]
         self.safety_placement_interval = pd.Timedelta(100, unit = 'ms') # TODO: consider making a parameter
-        self.application_scaling_model = application_scaling_model
 
     def adjust(self,
                cur_timestamp,
@@ -187,26 +187,73 @@ class CostMinimizer(Adjuster):
             # format above: {<timestamp>: {<entity_name>:<cumulative_change>}}
             interval_end = cur_timestamp
             for interval, entities_count_changes_on_ts in unified_scaled_entity_adjustment.items():
+                state_duration_h = (interval[1] - interval[0]) / pd.Timedelta(hours = 1)
 
                 # Pooling and joining the entity states, both running and booting/terminating
                 # to use for nodes calculation in the new platform state.
-                latest_collective_entity_state = latest_state.extract_collective_entity_state()
+                latest_collective_entity_state_per_region = latest_state.extract_collective_entity_state()
                 entities_state_delta = EntityGroup({}, entities_count_changes_on_ts)
                 latest_collective_entity_state += entities_state_delta
 
                 # Computing coverage of services by the placement options.
-                containers_required = {}
-                for container_name, placement_options_per_container in placement_options.items():
-                    container_count_required_per_option = {}
-                    for placement_option in placement_options_per_container:
-                        placement_entity_representation = EntityGroup(placement_option)
-                        containers_required, remainder = latest_collective_entity_state / placement_entity_representation
+                regions = {}
+                for region_name, latest_collective_entity_state in latest_collective_entity_state_per_region.items():
+                    containers_required = {}
+                    for container_name, placement_options_per_container in placement_options.items():
+                        container_count_required_per_option = []
+                        for placement_option in placement_options_per_container:
+                            placement_entity_representation = EntityGroup(placement_option)
+                            containers_required = latest_collective_entity_state / placement_entity_representation
+                            container_count_required_per_option.append({'placement_entity_representation': placement_entity_representation,
+                                                                        'containers': containers_required})
+
+                        if len(container_count_required_per_option) > 0:
+                            selected_containers_required_per_cont = container_count_required_per_option[0]['containers']
+                            selected_placement_per_cont = container_count_required_per_option[0]['placement_entity_representation']
+                            for container_count_required in container_count_required_per_option:
+                                if container_count_required['containers'] < selected_containers_required_per_cont:
+                                    selected_containers_required_per_cont = container_count_required['containers']
+                                    selected_placement_per_cont = container_count_required['placement_entity_representation']
+
+                            containers_required[container_name] = {'count': selected_containers_required_per_cont,
+                                                                   'placement_entity_representation': selected_placement_per_cont}
+
+                    # Evaluating the cost of every option and selecting the cheapest to make the state
+                    # Regions are treated independently in this evaluation
+                    interval_prices_options = {}
+                    for container_name, containers_count_and_placement in containers_required.items():
+                        if not container_name in container_for_scaled_entities_types:
+                            raise ValueError('Non-existent container type - {}'.format(container_name))
+                        interval_price = { 'price': state_duration_h * containers_count_and_placement['count'] * container_for_scaled_entities_types[container_name].price_p_h,
+                                           'count': containers_count_and_placement['count'],
+                                           'placement_entity_representation': containers_count_and_placement['placement_entity_representation']}
+                        # TODO: consider taking cpu_credits_h into account
+                        interval_prices_options[container_name] = interval_price
+
+                    selected_container_name = list(interval_prices_options.keys())[0]
+                    selected_price = list(interval_prices_options.values())[0]['price']
+                    selected_containers_count = list(interval_prices_options.values())[0]['count']
+                    selected_placement_entity_representation = list(interval_prices_options.values())[0]['placement_entity_representation']
+                    for container_name, interval_price in interval_prices_options.items():
+                        if interval_price['price'] < selected_price:
+                            selected_container_name = container_name
+                            selected_price = interval_price['price']
+                            selected_containers_count = interval_price['count']
+                            selected_placement_entity_representation = interval_price['placement_entity_representation']
+
+                    regions[region_name] = Region(region_name,
+                                                  container_for_scaled_entities_types[selected_container_name],
+                                                  selected_containers_count,
+                                                  selected_placement_entity_representation,
+                                                  latest_collective_entity_state,
+                                                  scaled_entity_instance_requirements_by_entity)
 
 
+                # Building the new state based on the selected container type and
+                # entities state
+                latest_state = PlatformState(regions)
 
-
-                # make state
-                # apply expiration
+                # apply virtual expiration
                 # repeat
 
 
@@ -216,12 +263,6 @@ class CostMinimizer(Adjuster):
                 entities_booting_period_expired, entities_termination_period_expired = self.application_scaling_model.get_entities_with_expired_scaling_period()
                 # TODO: start by adjusting the previous state if the booting times can be applied
                 current_state.finish_change_for_entities(entities_booting_period_expired, entities_termination_period_expired)
-
-
-
-                # sort placement options by increasing price?
-                # placement_options[container_name][entity_name] -- > instances_count
-                # remember that the state existis during the interval of time and the payment is also for the interval of time
 
                 # TODO: update latest_state
 

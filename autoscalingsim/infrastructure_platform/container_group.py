@@ -1,6 +1,7 @@
 from .system_capacity import SystemCapacity
 from .entity_group import EntityGroup
 from collections import OrderedDict
+import numpy as np
 
 class HomogeneousContainerGroup:
 
@@ -228,9 +229,81 @@ class HomogeneousContainerGroupSet:
     """
 
     def __init__(self,
-                 homogeneous_groups = {}):
+                 homogeneous_groups = []):
 
-        self._homogeneous_groups = homogeneous_groups
+        self._homogeneous_groups = {}
+        for group in homogeneous_groups:
+            self._homogeneous_groups[group.id] = group
+
+    def __init__(self,
+                 container_info,
+                 containers_count,
+                 cumulative_entities_state,
+                 selected_placement_entity_representation,
+                 scaled_entity_instance_requirements_by_entity):
+
+        """
+        """
+
+        self._homogeneous_groups = {}
+
+        in_change_entity_count_applied_to_all_containers = {}
+        containers_count_with_unit_change_applied = {}
+        for entity_name, in_change_entity_count in cumulative_entities_state.in_change_entities_instances_counts.items():
+            in_change_entity_count_applied_to_all_containers[entity_name] = in_change_entity_count // containers_count
+            containers_count_with_unit_change_applied[entity_name] = in_change_entity_count % containers_count
+
+        groups_configs = {} # by hash
+        for _ in range(containers_count):
+            container_config = {}
+            for entity_name, entity_count in cumulative_entities_state.entities_instances_counts.items():
+                unit_delta = 0
+                if containers_count_with_unit_change_applied[entity_name] > 0:
+                    unit_delta = np.sign(in_change_entity_count_applied_to_all_containers[entity_name])
+                    containers_count_with_unit_change_applied[entity_name] -= 1
+
+                cumulative_change_on_container = in_change_entity_count_applied_to_all_containers[entity_name] + unit_delta
+                to_allocate_with_changes_accounted_for = selected_placement_entity_representation[entity_name] - \
+                                                         cumulative_change_on_container
+
+                if entity_count > 0:
+                    container_config[entity_name] = {'entities_instances_counts': to_allocate_with_changes_accounted_for,
+                                                     'in_change_entities_instances_counts': cumulative_change_on_container}
+                    hashed_conf_name = hash(entity_name + str(to_allocate_with_changes_accounted_for))
+
+                    cumulative_change_on_container
+                    cumulative_entities_state.entities_instances_counts[entity_name] -= to_allocate_with_changes_accounted_for
+
+            id = hash(str(container_config))
+            if id in groups_configs:
+                groups_configs[id]['container_count'] += 1
+            else:
+                groups_configs[is] = { 'group_config': container_config,
+                                       'container_count': 1 }
+
+        for id, group_config in groups_configs.items():
+
+            system_capacity_taken = SystemCapacity(container_info.node_type)
+            entities_instances_counts_per_group = group_config['container_count']['group_config']['entities_instances_counts']
+            in_change_entities_instances_counts_per_group = group_config['container_count']['group_config']['in_change_entities_instances_counts']
+
+            for entity_name, entity_instances_count in entities_instances_counts_per_group.items():
+                total_entity_count = entity_instances_count
+                if entity_name in in_change_entities_instances_counts_per_group:
+                    total_entity_count += in_change_entities_instances_counts_per_group[entity_name]
+
+                fits, cap_taken = container_info.takes_capacity({entity_name: scaled_entity_instance_requirements_by_entity[entity_name]})
+                if not fits:
+                    raise ValueError('Attempt to fit an entity {} on the container {} when it cannot fit'.format(entity_name, container_info.node_type))
+                system_capacity_taken += total_entity_count * cap_taken
+
+            hcg = HomogeneousContainerGroup(container_info,
+                                            group_config['container_count'],
+                                            entities_instances_counts_per_group,
+                                            in_change_entities_instances_counts_per_group,
+                                            system_capacity_taken)
+
+            self._homogeneous_groups[hcg.id] = hcg
 
     def __add__(self,
                 homogeneous_group_delta):
@@ -285,3 +358,7 @@ class HomogeneousContainerGroupSetIterator:
             return group
 
         raise StopIteration
+
+class ContainerConfig:
+
+    def __init__(self,)

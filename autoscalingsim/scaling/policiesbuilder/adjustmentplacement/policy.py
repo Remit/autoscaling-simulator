@@ -26,7 +26,7 @@ class AdjustmentPolicy:
         self.services_scaling_config = scaling_settings.services_scaling_config
 
     def adjust(self,
-               cur_timestamp,
+               cur_timestamp,#TODO: propagate
                desired_state_per_scaled_entity,
                container_for_scaled_entities_types,
                scaled_entity_instance_requirements):
