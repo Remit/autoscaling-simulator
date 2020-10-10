@@ -4,6 +4,7 @@ from ..scaling.platform_scaling_model import PlatformScalingModel
 from ..utils.error_check import ErrorChecker
 from ..scaling.policiesbuilder.adjustmentplacement.adjusters import ScaledEntityContainer
 from .system_capacity import SystemCapacity
+from .platform_state import PlatformState
 
 class NodeInfo(ScaledEntityContainer):
     """
@@ -151,6 +152,7 @@ class PlatformModel:
                     raise ValueError('The config file {} provided for {} is an invalid JSON.'.format(config_file, self.__class__.__name__))
 
         # Dynamic state
+        self.state = PlatformState() # consider regions -- they might be specified in config file
         self.adjustment_policy = None
         # timeline that won't change
         self.nodes_state = {}
@@ -168,18 +170,18 @@ class PlatformModel:
             self.desired_nodes_state[node_type][starting_time_ms] = 0
         self.scheduled_desired_nodes_state_per_service = {}
 
-# TODO: parameters in the call to adjust
     def adjust(self,
+               cur_timestamp,
                desired_states_to_process):
 
         """
         Adjusts the platform with help of Adjustment Policy.
         """
 
-        self.adjustment_policy.adjust(desired_states_to_process,
-                                      self.node_types)
-
-
+        self.adjustment_policy.adjust(cur_timestamp,
+                                      desired_states_to_process,
+                                      self.node_types,
+                                      self.state)
 
     def set_adjustment_policy(self,
                               adjustment_policy):

@@ -26,10 +26,10 @@ class AdjustmentPolicy:
         self.services_scaling_config = scaling_settings.services_scaling_config
 
     def adjust(self,
-               cur_timestamp,#TODO: propagate
+               cur_timestamp,
                desired_state_per_scaled_entity,
                container_for_scaled_entities_types,
-               scaled_entity_instance_requirements):
+               platform_state):
 
         """
         Wraps the adjusting steps.
@@ -85,11 +85,16 @@ class AdjustmentPolicy:
                                                                                'requirements')
             scaled_entity_instance_requirements_by_entity[scaled_entity_name] = scaled_entity_instance_requirements
 
-        self.adjuster.adjust(desired_scaled_entities_scaling_events,
+        self.adjuster.adjust(cur_timestamp,
+                             desired_scaled_entities_scaling_events,
                              container_for_scaled_entities_types,
-                             scaled_entity_instance_requirements_by_entity)
+                             scaled_entity_instance_requirements_by_entity,
+                             platform_state)
 
-        # TODO also return adjusted_desired_scaled_entities_scaling_events
+
+        # TODO: above, we return the platform states -- they should be integrated into the platform model's
+        # own timeline, perhaps, invalidating older states. Then, when the time comes, they are enforced.
+        # TODO: also return adjusted_desired_scaled_entities_scaling_events
 
     def set_state_reader(self,
                          state_reader):

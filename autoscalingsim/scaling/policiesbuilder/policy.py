@@ -245,7 +245,8 @@ class ScalingPolicy:
                 # to the demands of the scaled app while taking into account
                 # adjustment goals such as minimization of the cost of the
                 # platform resources used and obeying the placement constraints.
-                self.platform_model.adjust(desired_states_to_process)
+                self.platform_model.adjust(cur_timestamp,
+                                           desired_states_to_process)
 
             # Updating the timestamp of the last state reconciliation
             self.state.update_val('last_sync_timestamp', cur_timestamp)

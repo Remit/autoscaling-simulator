@@ -150,7 +150,9 @@ class CostMinimizer(Adjuster):
         # current state.
         timestamped_adjusted_closest_states = {}
         previous_ts = cur_timestamp
-        for timestamp, region_groups_deltas in timestamped_region_groups_deltas.items():
+        timestamped_region_groups_deltas_before_last_ts = list(timestamped_region_groups_deltas.keys())[:(len(timestamped_region_groups_deltas) - 1)]
+        for timestamp in timestamped_region_groups_deltas_before_last_ts:
+            region_groups_deltas = timestamped_region_groups_deltas[timestamp]
             adjusted_state = current_state.update_virtually(region_groups_deltas)
             passed_from_last_event = timestamp - previous_ts
             entities_booting_period_expired, entities_termination_period_expired = self.application_scaling_model.get_entities_with_expired_scaling_period(passed_from_last_event)
@@ -159,7 +161,9 @@ class CostMinimizer(Adjuster):
             current_state = adjusted_state.copy()
             previous_ts = timestamp
 
-        latest_state = timestamped_adjusted_closest_states[list(timestamped_adjusted_closest_states.keys())[len(timestamped_adjusted_closest_states) - 1]]
+        last_ts = list(timestamped_region_groups_deltas.keys())[len(timestamped_region_groups_deltas) - 1]
+        region_groups_deltas = timestamped_region_groups_deltas[last_ts]
+        latest_state = current_state.update_virtually(region_groups_deltas)
 
         # 2. Scale up if the desired scaled entities cannot be allocated ---> changes into state restructuring after the time horizon
         if len(scaled_entity_adjustment_for_state_restructure) > 0: # todo
@@ -187,6 +191,11 @@ class CostMinimizer(Adjuster):
             # format above: {<timestamp>: {<entity_name>:<cumulative_change>}}
             interval_end = cur_timestamp
             for interval, entities_count_changes_on_ts in unified_scaled_entity_adjustment.items():
+                # Adjusting the previous state prior to using it
+                passed_from_last_event = interval[0] - last_ts
+                entities_booting_period_expired, entities_termination_period_expired = self.application_scaling_model.get_entities_with_expired_scaling_period(passed_from_last_event)
+                latest_state.finish_change_for_entities(entities_booting_period_expired, entities_termination_period_expired)
+
                 state_duration_h = (interval[1] - interval[0]) / pd.Timedelta(hours = 1)
 
                 # Pooling and joining the entity states, both running and booting/terminating
@@ -252,23 +261,11 @@ class CostMinimizer(Adjuster):
                 # Building the new state based on the selected container type and
                 # entities state
                 latest_state = PlatformState(regions)
+                last_ts = interval[1]
 
-                # apply virtual expiration
-                # repeat
-
-
-                interval_begin = interval[0]
-                interval_end = interval[1]
-                passed_from_last_event = interval_end - interval_begin
-                entities_booting_period_expired, entities_termination_period_expired = self.application_scaling_model.get_entities_with_expired_scaling_period()
-                # TODO: start by adjusting the previous state if the booting times can be applied
-                current_state.finish_change_for_entities(entities_booting_period_expired, entities_termination_period_expired)
-
-                # TODO: update latest_state
-
-
-            # todo: return, remember timestamped_region_groups_deltas from the existing cluster
-
+                # todo: store the states before applying finish_change_for_entities and
+                # after with the corresponding change in timestamp. Return the resulting timeline
+                # Platform should simply execute the states when the time comes (enforce)
 
 class PerformanceMaximizer(Adjuster):
 
