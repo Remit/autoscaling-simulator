@@ -74,10 +74,12 @@ class CostMinimizer(Adjuster):
 
     def __init__(self,
                  application_scaling_model : ApplicationScalingModel,
+                 platform_scaling_model : PlatformScalingModel,
                  placement_hint = 'shared',
                  combiner_type = 'windowed'):
 
         self.application_scaling_model = application_scaling_model
+        self.platform_scaling_model = platform_scaling_model
         self.placer = Placer(placement_hint)
         if not combiner_type in combiners_registry:
             raise ValueError('No Combiner of type {} found'.format(combiner_type))
@@ -135,6 +137,10 @@ class CostMinimizer(Adjuster):
                                                                                                                      scaled_entity_instance_requirements_by_entity)
 
         for timestamp, entities_unmet_changes in timestamped_unmet_changes.items():
+            # TODO: check if the timestamp should be changed to postpone these
+            # unmet changes to the later point in time, i.e. after the current
+            # state was used to accommodate new entities/ remove old. --> ok, implement
+            # TODO: consider dropping unmet negative changes?
             for scaled_entity, unmet_change in services_unmet_changes.items():
                 data_to_add = {'datetime': [timestamp],
                                'value': [unmet_change]}
@@ -145,6 +151,23 @@ class CostMinimizer(Adjuster):
                     scaled_entity_adjustment_for_state_restructure[scaled_entity] = scaled_entity_adjustment_for_state_restructure[scaled_entity].append(df_to_add)
                 else:
                     scaled_entity_adjustment_for_state_restructure[scaled_entity] = df_to_add
+
+        # TODO: go over timestamped_region_groups_deltas and introduce the
+        # timestamped deltas to the grand timeline. Also, make delayed deltas
+        # and introduce them to the grand timeline as well.
+        # While doing so, update the current state on each such iteration s.t.
+        # it will be 'actual' by the time it is used.
+        # Next, use the current state and iterate over the leftover adjustments
+        # -- compute deltas for them, store into the grand timeline, and apply to the cur.
+        # state while not forgetting the delaying operation.
+        # TODO: consider assymetry of the multilayer enforcing operation
+
+        # new current state = current state + what is considered enforced by now. Merge states op??? or state + delta
+        # if this thing unwraps in the same loop???:
+        # - add deltas to the grand timeline
+        # - for the next timestamp - find min timestamp that is larger than the current one
+        # - continue till runs out of timestmaps
+
 
         # Compute the closest state of minimal change by applying the deltas to the
         # current state.
@@ -193,6 +216,9 @@ class CostMinimizer(Adjuster):
             for interval, entities_count_changes_on_ts in unified_scaled_entity_adjustment.items():
                 # Adjusting the previous state prior to using it
                 passed_from_last_event = interval[0] - last_ts
+                # TODO: consider changing scheme such that a timeline of states is returned with
+                # new states introduced for start/end events of entities/containers and the latest state
+                # assuming the last state with all the needed changes completed // would probably require the delta of simulation
                 entities_booting_period_expired, entities_termination_period_expired = self.application_scaling_model.get_entities_with_expired_scaling_period(passed_from_last_event)
                 latest_state.finish_change_for_entities(entities_booting_period_expired, entities_termination_period_expired)
 
@@ -200,6 +226,15 @@ class CostMinimizer(Adjuster):
 
                 # Pooling and joining the entity states, both running and booting/terminating
                 # to use for nodes calculation in the new platform state.
+
+
+                # TODO: consider computing desired delta in terms of entities, then desired
+                # delta in terms of accommodating containers trying to max/min depending
+                # on the sign of the delta, then pack them into single delta and schedule it on the
+                # timeline s.t. it could be enforced virtually later on and used on the next step
+                # if possible (or e.g. enforcing on the next step all the deltas that
+                # come before the considered interval)
+
                 latest_collective_entity_state_per_region = latest_state.extract_collective_entity_state()
                 entities_state_delta = EntityGroup({}, entities_count_changes_on_ts)
                 latest_collective_entity_state += entities_state_delta
@@ -260,12 +295,15 @@ class CostMinimizer(Adjuster):
 
                 # Building the new state based on the selected container type and
                 # entities state
+                # TODO: here we deal with the desired state again, therefore we
+                # need to take into account that the containers will be 'in-change' here
                 latest_state = PlatformState(regions)
                 last_ts = interval[1]
 
                 # todo: store the states before applying finish_change_for_entities and
                 # after with the corresponding change in timestamp. Return the resulting timeline
                 # Platform should simply execute the states when the time comes (enforce)
+                # delta_ts??
 
 class PerformanceMaximizer(Adjuster):
 

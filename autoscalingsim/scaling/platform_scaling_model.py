@@ -1,5 +1,7 @@
 import math
 import numpy as np
+import pandas as pd
+from ..infrastructure_platform.generalized_delta import GeneralizedDelta
 
 class NodeScalingInfo:
     """
@@ -29,11 +31,12 @@ class PlatformScalingInfo:
 
         for node_scaling_info_raw in node_scaling_infos_raw:
             nsi = NodeScalingInfo(node_scaling_info_raw["type"],
-                                  node_scaling_info_raw["boot_up_ms"],
-                                  node_scaling_info_raw["tear_down_ms"])
+                                  pd.Timedelta(node_scaling_info_raw["boot_up_ms"], unit = 'ms'),
+                                  pd.Timedelta(node_scaling_info_raw["tear_down_ms"], unit = 'ms'))
             self.node_scaling_infos[node_scaling_info_raw["type"]] = nsi
 
 class PlatformScalingModel:
+
     """
     Wraps the logic of the platform's nodes scaling by providing the relevant
     scaling parameters when queried s.a. booting and tear down times. The
@@ -42,6 +45,7 @@ class PlatformScalingModel:
     distribution with the mu coefficient corresponding to the parameter
     defined in the scaling configuration file.
     """
+
     def __init__(self,
                  simulation_step_ms,
                  sigma_ms = 10):
@@ -62,6 +66,7 @@ class PlatformScalingModel:
                                   node_scaling_infos_raw)
         self.platform_scaling_infos[provider] = psi
 
+    # TODO: remove
     def get_boot_up_ms(self,
                        provider,
                        node_type):
@@ -74,6 +79,7 @@ class PlatformScalingModel:
 
         return boot_up_ms
 
+    # TODO: remove
     def get_tear_down_ms(self,
                          provider,
                          node_type):
@@ -85,3 +91,29 @@ class PlatformScalingModel:
             tear_down_ms = int(math.ceil(raw_tear_down_ms / self.simulation_step_ms)) * self.simulation_step_ms
 
         return tear_down_ms
+
+    def delay(self,
+              delta_timestamp,
+              generalized_delta):
+
+        """
+        Implements the delay operation on the platform level. Returns the timestamped
+        delayed group. Since the delta contains only one group which is homogeneous,
+        then the application of the delay yields another single group.
+        """
+
+        provider = generalized_delta.container_group_delta.get_provider()
+        container_type = generalized_delta.container_group_delta.get_container_type()
+        timestamp_adjustment = pd.Timedelta(0, unit = 'ms')
+        if generalized_delta.container_group_delta.sign < 0:
+            timestamp_adjustment = self.platform_scaling_infos[provider].node_scaling_infos[container_type].tear_down_ms
+        elif generalized_delta.container_group_delta.sign > 0:
+            timestamp_adjustment = self.platform_scaling_infos[provider].node_scaling_infos[container_type].boot_up_ms
+        timestamp_adjustment *= generalized_delta.container_group_delta.sign
+        timestamp_after_applying_delay = delta_timestamp + timestamp_adjustment
+
+        enforced_container_group_delta = generalized_delta.container_group_delta.enforce()
+        enforced_generalized_delta = GeneralizedDelta(enforced_container_group_delta,
+                                                      generalized_delta.entity_group_delta)
+
+        return {timestamp_after_applying_delay: enforced_generalized_delta}

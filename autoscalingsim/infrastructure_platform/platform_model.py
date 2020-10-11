@@ -26,6 +26,7 @@ class NodeInfo(ScaledEntityContainer):
                  requests_acceleration_factor = 1.0,
                  labels = []):
 
+        self.provider = 'default' # make a parameter
         self.node_type = node_type
         self.vCPU = vCPU
         self.memory = memory
