@@ -41,6 +41,106 @@ class ScaledEntityContainer(ABC):
                        requirements_by_entity):
         pass
 
+class TimelineOfDesiredEntitiesChanges:
+
+    """
+    Wraps the functions to work with the timeline of entities raw changes (in numbers).
+    """
+
+    def __init__(self,
+                 combiner : Combiner,
+                 scaling_events_timelines_per_entity : dict,
+                 cur_timestamp : pd.Timestamp):
+
+        self.combiner = combiner
+        self.current_timestamp = None
+        self.current_index = 0
+        self.timeline_of_entities_changes = self.combiner.combine(scaling_events_timelines_per_entity,
+                                                                  cur_timestamp)
+
+        if len(self.timeline_of_entities_changes) > 0:
+            self.current_timestamp = list(self.timeline_of_entities_changes.keys())[self.current_index]
+
+    def next(self):
+
+        if (not self.current_timestamp is None) and (self.current_timestamp in self.timeline_of_entities_changes):
+            entities_scalings_on_ts = self.timeline_of_entities_changes[self.current_timestamp]
+            if self.current_index + 1 < len(self.timeline_of_entities_changes):
+                self.current_index += 1
+                self.current_timestamp = list(self.timeline_of_entities_changes.keys())[self.current_index]
+
+            return (self.current_timestamp, entities_scalings_on_ts)
+        else:
+            return (None, None)
+
+    def overwrite(self,
+                  timestamp,
+                  unmet_change):
+
+        if len(unmet_change) > 0:
+            self.current_timestamp = timestamp
+            self.current_index = list(self.timeline_of_entities_changes.keys()).index(self.current_timestamp)
+
+        if timestamp in self.timeline_of_entities_changes:
+            self.timeline_of_entities_changes[timestamp] = unmet_change
+
+class DeltaTimeline:
+
+    """
+    Maintains all the generalized deltas as a solid timeline. Allows to enforce
+    generalized deltas if a particular time arrived.
+    """
+
+    def __init__(self,
+                 platform_scaling_model : PlatformScalingModel,
+                 application_scaling_model : ApplicationScalingModel,
+                 current_state : PlatformState):
+
+        self.platform_scaling_model = platform_scaling_model
+        self.application_scaling_model = application_scaling_model
+        self.actual_state = current_state.copy()
+        self.timeline = {}
+        self.time_of_last_state_update = pd.Timestamp(0)
+
+    def add_deltas(self,
+                   timestamp : pd.Timestamp,
+                   deltas : []):
+
+        if len(deltas) > 0:
+            if not timestamp in self.timeline:
+                self.timeline[timestamp] = []
+
+            self.timeline[timestamp].extend(deltas)
+
+    def roll_out_the_deltas(self,
+                            borderline_ts_for_updates : pd.Timestamp):
+
+        if borderline_ts_for_updates > self.time_of_last_state_update:
+            decision_interval = borderline_ts_for_updates - self.time_of_last_state_update
+
+            # Enforcing deltas if needed and updating the timeline with them
+            timeline_to_consider = { (timestamp, deltas) for timestamp, deltas in self.timeline.items() if (timestamp - self.time_of_last_state_update <= decision_interval) }
+            for timestamp, deltas in timeline_to_consider.items():
+                for delta in deltas:
+                    new_timestamped_deltas = delta.delay(self.platform_scaling_model,
+                                                         self.application_scaling_model,
+                                                         timestamp)
+                    if len(new_timestamped_deltas) > 0:
+                        for timestamp, new_deltas in new_timestamped_deltas.items():
+                            if not timestamp in self.timeline:
+                                self.timeline[timestamp] = []
+                            self.timeline[timestamp].extend(new_deltas)
+
+            # Updating the actual state using the enforced deltas
+            timeline_to_consider = { (timestamp, deltas) for timestamp, deltas in self.timeline.items() if (timestamp - self.time_of_last_state_update <= decision_interval) }
+            for timestamp, deltas in timeline_to_consider.items():
+                for delta in deltas:
+                    self.actual_state += delta
+
+            self.time_of_last_state_update = borderline_ts_for_updates
+
+        return self.actual_state
+
 class Adjuster(ABC):
 
     """
@@ -86,12 +186,132 @@ class CostMinimizer(Adjuster):
         self.combiner = combiners_registry[combiner_type]
         self.safety_placement_interval = pd.Timedelta(100, unit = 'ms') # TODO: consider making a parameter
 
+    # NEW:
     def adjust(self,
                cur_timestamp,
                desired_scaled_entities_scaling_events,
                container_for_scaled_entities_types,
                scaled_entity_instance_requirements_by_entity,
                current_state,
+               region = 'default', # TODO: level up to multiple regions?
+               acceleration_factor_predictor = None): # TODO: consider implementing as a smart component
+
+        timeline_of_unmet_changes = TimelineOfDesiredEntitiesChanges(self.combiner,
+                                                                     desired_scaled_entities_scaling_events,
+                                                                     cur_timestamp)
+        timeline_of_deltas = DeltaTimeline(self.platform_scaling_model,
+                                           self.application_scaling_model,
+                                           current_state)
+        ts_of_unmet_change, unmet_change = timeline_of_unmet_changes.next()
+        in_work_state = current_state
+
+        while not unmet_change is None:
+            # 1. We try to accommodate the unmet_change on the existing containers.
+            # This may result in the scale down. The scale down is performed in such
+            # a way that the largest possible group of unused containers is removed.
+            # Otherwise, only the number of entities is affected.
+            deltas, unmet_change = in_work_state.compute_soft_adjustment(unmet_change,
+                                                                         scaled_entity_instance_requirements_by_entity,
+                                                                         region)
+            timeline_of_deltas.add_deltas(ts_of_unmet_change, deltas)
+
+            # If we failed to accommodate the negative change in services counts, then
+            # we discard them (no such services to delete, first must add these)
+            unmet_change = {(service_name, change) for service_name, change in unmet_change if change > 0}
+
+            # 2. If an unmet positive change is left after we tried to accommodate
+            # the changes on the considered timestamp, we need to consider the
+            # alternatives: either to add new containers to accommodate the change
+            # or to start a new cluster and migrate services there.
+            if len(unmet_change) > 0:
+                in_work_collective_entity_state = in_work_state.extract_collective_entity_state(region)
+
+                # 2.a: Addition of new containers
+                # TODO: implement computations in terms of EntitiesStates
+
+                # 2.b: New cluster and migration
+
+                unmet_change_delta = EntitiesGroupDelta(unmet_change)
+                in_work_collective_entity_state += unmet_change_delta # TODO: new var?
+                # TODO: consider using unmet_change + in_work_state's entities with the procedure from above
+
+                # TODO: Comparing and selecting
+                # TODO: adding deltas to timeline_of_deltas
+
+                # change in_work_state
+                in_work_state = timeline_of_deltas.roll_out_the_deltas(ts_of_unmet_change)
+
+            # If by this time len(unmet_change) > 0, then there were not enough
+            # resources or budget.
+            timeline_of_unmet_changes.overwrite(ts_of_unmet_change, unmet_change)
+
+        return timeline_of_deltas# ?
+
+
+
+
+
+
+# Computing coverage of services by the placement options.
+#regions = {}
+#for region_name, latest_collective_entity_state in latest_collective_entity_state_per_region.items():
+
+
+# TODO: below make repeatable procedure + try to make flexible in terms of decision criteria like cost
+    containers_required = {}
+    for container_name, placement_options_per_container in placement_options.items():
+        container_count_required_per_option = []
+        for placement_option in placement_options_per_container:
+            placement_entity_repr = EntitiesState(placement_option)
+            containers_required = in_work_collective_entity_state / placement_entity_repr
+            container_count_required_per_option.append({'placement_entity_representation': placement_entity_repr,
+                                                        'containers': containers_required})
+
+        if len(container_count_required_per_option) > 0:
+            selected_containers_required_per_cont = container_count_required_per_option[0]['containers']
+            selected_placement_per_cont = container_count_required_per_option[0]['placement_entity_representation']
+            for container_count_required in container_count_required_per_option:
+                if container_count_required['containers'] < selected_containers_required_per_cont:
+                    selected_containers_required_per_cont = container_count_required['containers']
+                    selected_placement_per_cont = container_count_required['placement_entity_representation']
+
+            containers_required[container_name] = {'count': selected_containers_required_per_cont,
+                                                   'placement_entity_representation': selected_placement_per_cont}
+
+    # Evaluating the cost of every option and selecting the cheapest to make the state
+    # Regions are treated independently in this evaluation
+    # TODO: below try to make independet and flexible like criteria func?
+    interval_prices_options = {}
+    for container_name, containers_count_and_placement in containers_required.items():
+        if not container_name in container_for_scaled_entities_types:
+            raise ValueError('Non-existent container type - {}'.format(container_name))
+        interval_price = { 'price': state_duration_h * containers_count_and_placement['count'] * container_for_scaled_entities_types[container_name].price_p_h,
+                           'count': containers_count_and_placement['count'],
+                           'placement_entity_representation': containers_count_and_placement['placement_entity_representation']}
+        # TODO: consider taking cpu_credits_h into account
+        interval_prices_options[container_name] = interval_price
+
+    selected_container_name = list(interval_prices_options.keys())[0]
+    selected_price = list(interval_prices_options.values())[0]['price']
+    selected_containers_count = list(interval_prices_options.values())[0]['count']
+    selected_placement_entity_representation = list(interval_prices_options.values())[0]['placement_entity_representation']
+    for container_name, interval_price in interval_prices_options.items():
+        if interval_price['price'] < selected_price:
+            selected_container_name = container_name
+            selected_price = interval_price['price']
+            selected_containers_count = interval_price['count']
+            selected_placement_entity_representation = interval_price['placement_entity_representation']
+
+
+
+
+    def adjust(self,
+               cur_timestamp,
+               desired_scaled_entities_scaling_events,
+               container_for_scaled_entities_types,
+               scaled_entity_instance_requirements_by_entity,
+               current_state,
+               region = 'default',
                acceleration_factor_predictor = None): # TODO: consider implementing as a smart component
 
         # Produces changes in terms of homogeneous container groups.
@@ -133,25 +353,122 @@ class CostMinimizer(Adjuster):
         # terminated, whereas the positive means that it should be started.
         # Analogously, the delta might mean the scale down. In this case, delta.to_be_scaled_down
         # returns True. The amount of scale-down is determined by the delta.container_group.containers_count.
-        timestamped_region_groups_deltas, timestamped_unmet_changes = current_state.compute_soft_adjustment_timeline(scaled_entity_adjustment_in_existing_containers,
-                                                                                                                     scaled_entity_instance_requirements_by_entity)
+        timestamped_region_groups_deltas, timestamped_region_unmet_changes = current_state.compute_soft_adjustment_timeline(scaled_entity_adjustment_in_existing_containers,
+                                                                                                                            scaled_entity_instance_requirements_by_entity,
+                                                                                                                            region)
 
-        for timestamp, entities_unmet_changes in timestamped_unmet_changes.items():
-            # TODO: check if the timestamp should be changed to postpone these
-            # unmet changes to the later point in time, i.e. after the current
-            # state was used to accommodate new entities/ remove old. --> ok, implement
-            # TODO: consider dropping unmet negative changes?
+        scaled_entity_adjustment_for_added_to_existing_containers = {}
+        for timestamp, entities_unmet_changes in timestamped_region_unmet_changes.items():
             for scaled_entity, unmet_change in services_unmet_changes.items():
-                data_to_add = {'datetime': [timestamp],
-                               'value': [unmet_change]}
-                df_to_add = pd.DataFrame(data_to_add)
-                df_to_add = df_to_add.set_index('datetime')
+                # We do not include the negative unmet changes since logically
+                # they would have been met if these entities were present in the
+                # existing state. Since there were not enough entities to get rid of,
+                # we simply drop such unmet changes.
+                if unmet_change > 0:
+                    data_to_add = {'datetime': [timestamp],
+                                   'value': [unmet_change]}
+                    df_to_add = pd.DataFrame(data_to_add)
+                    df_to_add = df_to_add.set_index('datetime')
 
-                if scaled_entity in scaled_entity_adjustment_for_state_restructure:
-                    scaled_entity_adjustment_for_state_restructure[scaled_entity] = scaled_entity_adjustment_for_state_restructure[scaled_entity].append(df_to_add)
-                else:
-                    scaled_entity_adjustment_for_state_restructure[scaled_entity] = df_to_add
+                    if scaled_entity in scaled_entity_adjustment_for_added_to_existing_containers:
+                        scaled_entity_adjustment_for_added_to_existing_containers[scaled_entity] = scaled_entity_adjustment_for_added_to_existing_containers[scaled_entity].append(df_to_add)
+                    else:
+                        scaled_entity_adjustment_for_added_to_existing_containers[scaled_entity] = df_to_add
 
+        if len(scaled_entity_adjustment_for_added_to_existing_containers) > 0:
+            # If there were unmet positive changes in the number of entities
+            # instances during the safety_placement_interval, then these should
+            # be accommodated separately by adding new containers according to
+            # the adjuster.
+            unified_scaled_entity_adjustment_for_added_to_existing_containers = self.combiner.combine(scaled_entity_adjustment_for_added_to_existing_containers,
+                                                                                                      cur_timestamp)
+
+            placement_options = self.placer.compute_placement_options(scaled_entity_instance_requirements_by_entity,
+                                                                      container_for_scaled_entities_types,
+                                                                      dynamic_current_placement = None,
+                                                                      dynamic_performance = None,
+                                                                      dynamic_resource_utilization = None)
+
+            scale_out_to_existing_containers_state = PlatformState()
+            i = 0
+            timeline_of_changes = sorted(list(unified_scaled_entity_adjustment_for_added_to_existing_containers[keys]))
+            avg_state_duration = np.sum(np.diff(timeline_of_changes)) / (len(timeline_of_changes) * pd.Timedelta(hours = 1))
+            while i < len(timeline_of_changes):
+                # TODO: update state with everything that happened before? on the other timeline timestamped_region_groups_deltas
+                change_start_ts = timeline_of_changes[i]
+                entities_count_changes_on_ts = unified_scaled_entity_adjustment_for_added_to_existing_containers[change_start_ts]
+                approximate_state_duration_h = avg_state_duration
+                if i + 1 < len(timeline_of_changes):
+                    approximate_state_duration_h = (timeline_of_changes[i + 1] - change_start_ts) / pd.Timedelta(hours = 1)
+
+
+# new current state = current state + what is considered enforced by now. Merge states op??? or state + delta
+# if this thing unwraps in the same loop???:
+# - add deltas to the grand timeline
+# - for the next timestamp - find min timestamp that is larger than the current one
+# - continue till runs out of timestmaps
+
+                latest_collective_entity_state_per_region = latest_state.extract_collective_entity_state()
+                entities_state_delta = EntityGroup({}, entities_count_changes_on_ts)
+                latest_collective_entity_state += entities_state_delta
+
+                # Computing coverage of services by the placement options.
+                regions = {}
+                for region_name, latest_collective_entity_state in latest_collective_entity_state_per_region.items():
+                    containers_required = {}
+                    for container_name, placement_options_per_container in placement_options.items():
+                        container_count_required_per_option = []
+                        for placement_option in placement_options_per_container:
+                            placement_entity_representation = EntityGroup(placement_option)
+                            containers_required = latest_collective_entity_state / placement_entity_representation
+                            container_count_required_per_option.append({'placement_entity_representation': placement_entity_representation,
+                                                                        'containers': containers_required})
+
+                        if len(container_count_required_per_option) > 0:
+                            selected_containers_required_per_cont = container_count_required_per_option[0]['containers']
+                            selected_placement_per_cont = container_count_required_per_option[0]['placement_entity_representation']
+                            for container_count_required in container_count_required_per_option:
+                                if container_count_required['containers'] < selected_containers_required_per_cont:
+                                    selected_containers_required_per_cont = container_count_required['containers']
+                                    selected_placement_per_cont = container_count_required['placement_entity_representation']
+
+                            containers_required[container_name] = {'count': selected_containers_required_per_cont,
+                                                                   'placement_entity_representation': selected_placement_per_cont}
+
+                    # Evaluating the cost of every option and selecting the cheapest to make the state
+                    # Regions are treated independently in this evaluation
+                    interval_prices_options = {}
+                    for container_name, containers_count_and_placement in containers_required.items():
+                        if not container_name in container_for_scaled_entities_types:
+                            raise ValueError('Non-existent container type - {}'.format(container_name))
+                        interval_price = { 'price': state_duration_h * containers_count_and_placement['count'] * container_for_scaled_entities_types[container_name].price_p_h,
+                                           'count': containers_count_and_placement['count'],
+                                           'placement_entity_representation': containers_count_and_placement['placement_entity_representation']}
+                        # TODO: consider taking cpu_credits_h into account
+                        interval_prices_options[container_name] = interval_price
+
+                    selected_container_name = list(interval_prices_options.keys())[0]
+                    selected_price = list(interval_prices_options.values())[0]['price']
+                    selected_containers_count = list(interval_prices_options.values())[0]['count']
+                    selected_placement_entity_representation = list(interval_prices_options.values())[0]['placement_entity_representation']
+                    for container_name, interval_price in interval_prices_options.items():
+                        if interval_price['price'] < selected_price:
+                            selected_container_name = container_name
+                            selected_price = interval_price['price']
+                            selected_containers_count = interval_price['count']
+                            selected_placement_entity_representation = interval_price['placement_entity_representation']
+
+                    regions[region_name] = Region(region_name,
+                                                  container_for_scaled_entities_types[selected_container_name],
+                                                  selected_containers_count,
+                                                  selected_placement_entity_representation,
+                                                  latest_collective_entity_state,
+                                                  scaled_entity_instance_requirements_by_entity)
+
+                # upd timeline_of_changes
+                # upd unified_scaled_entity_adjustment_for_added_to_existing_containers
+                scale_out_to_existing_containers_state +=
+                i += 1
         # TODO: go over timestamped_region_groups_deltas and introduce the
         # timestamped deltas to the grand timeline. Also, make delayed deltas
         # and introduce them to the grand timeline as well.

@@ -49,9 +49,9 @@ class Region:
                                                                scaled_entity_instance_requirements_by_entity)
 
 
-    def compute_soft_adjustment_with_entities(self,
-                                              scaled_entity_adjustment_in_existing_containers,
-                                              scaled_entity_instance_requirements_by_entity):
+    def compute_soft_adjustment(self,
+                                entities_deltas,
+                                scaled_entity_instance_requirements_by_entity):
 
         """
         Tries to place the entities onto the existing nodes and returns
@@ -62,125 +62,111 @@ class Region:
         Does not result in changing the homogeneous groups in region.
         """
 
-        unmet_scaled_entity_adjustment = scaled_entity_adjustment_in_existing_containers.copy()
-
-        # Making a timeline-based representation for the convenience of the further processing
-        joint_timeline = {}
-        for entity_name, scaling_events_timeline in scaled_entity_adjustment_in_existing_containers:
-            for timestamp, row in scaling_events_timeline.iterrows():
-                entity_delta = row['value']
-                if not timestamp in joint_timeline:
-                    joint_timeline[timestamp] = {}
-                joint_timeline[timestamp][entity_name] = entity_delta
-
-        joint_timeline = OrderedDict(sorted(joint_timeline.items(),
-                                            key = lambda elem: elem[0]))
 
         cur_groups = self.homogeneous_groups.get()
-        timestamped_region_groups_deltas = {}
-        timestamped_unmet_changes = {}
-        for timestamp, entities_deltas in joint_timeline.items():
-            new_deltas_per_ts = []
+        new_deltas_per_ts = []
 
-            entities_deltas_sorted = OrderedDict(sorted(entities_deltas.items(),
-                                                        key = lambda elem: elem[1]))
+        entities_deltas_sorted = OrderedDict(sorted(entities_deltas.items(),
+                                                    key = lambda elem: elem[1]))
 
-            unmet_cumulative_reduction_on_ts = {}
-            unmet_cumulative_increase_on_ts = {}
-            for entity_name, entity_delta in entities_deltas_sorted:
-                if entity_delta < 0:
-                    unmet_cumulative_reduction_on_ts[entity_name] = entity_delta
-                elif entity_delta > 0:
-                    unmet_cumulative_increase_on_ts[entity_name] = entity_delta
+        unmet_cumulative_reduction_on_ts = {}
+        unmet_cumulative_increase_on_ts = {}
+        for entity_name, entity_delta in entities_deltas_sorted:
+            if entity_delta < 0:
+                unmet_cumulative_reduction_on_ts[entity_name] = entity_delta
+            elif entity_delta > 0:
+                unmet_cumulative_increase_on_ts[entity_name] = entity_delta
 
-            non_enforced_scale_down_deltas = []
+        non_enforced_scale_down_deltas = []
 
-            # try to remove the entities from the groups sorted
-            # in the order increasing by capacity used (decomission-fastest)
-            homogeneous_groups_sorted_increasing = OrderedDict(sorted(cur_groups,
-                                                                      key = lambda elem: elem.system_capacity.collapse()))
+        # try to remove the entities from the groups sorted
+        # in the order increasing by capacity used (decomission-fastest)
+        homogeneous_groups_sorted_increasing = OrderedDict(sorted(cur_groups,
+                                                                  key = lambda elem: elem.system_capacity.collapse()))
 
-            for group in homogeneous_groups_sorted_increasing:
-                if len(unmet_cumulative_reduction_on_ts) > 0:
-                    generalized_deltas_lst, unmet_cumulative_reduction_on_ts = group.compute_soft_adjustment_with_entities(unmet_cumulative_reduction_on_ts,
-                                                                                                                           scaled_entity_instance_requirements_by_entity)
-                    if len(generalized_deltas_lst) > 0:
-                        for gd in generalized_deltas_lst:
-                            if gd.container_group_delta.sign < 0:
-                                non_enforced_scale_down_deltas.append(gd)
-                            else:
-                                if not timestamp in timestamped_region_groups_deltas:
-                                    timestamped_region_groups_deltas[timestamp] = []
-                                timestamped_region_groups_deltas[timestamp].append(gd)
-
-                                cur_groups.append(gd.container_group_delta.container_group)
-
-                        cur_groups.remove(group)
-                        new_deltas_per_ts.extend(generalized_deltas_lst)
-
-            # try to accommodate the entities in the groups sorted
-            # in the order decreasing by capacity used (fill-fastest)
-            homogeneous_groups_sorted_decreasing = OrderedDict(reversed(sorted(cur_groups,
-                                                                               key = lambda elem: elem.system_capacity.collapse())))
-
-            for group in homogeneous_groups_sorted_decreasing:
-                if len(unmet_cumulative_increase_on_ts) > 0:
-                    generalized_deltas_lst, unmet_cumulative_increase_on_ts = group.compute_soft_adjustment_with_entities(unmet_cumulative_increase_on_ts,
-                                                                                                                          scaled_entity_instance_requirements_by_entity)
-
-                    if len(generalized_deltas_lst) > 0:
-                        for gd in generalized_deltas_lst:
+        for group in homogeneous_groups_sorted_increasing:
+            if len(unmet_cumulative_reduction_on_ts) > 0:
+                generalized_deltas_lst, unmet_cumulative_reduction_on_ts = group.compute_soft_adjustment(unmet_cumulative_reduction_on_ts,
+                                                                                                         scaled_entity_instance_requirements_by_entity,
+                                                                                                         self.region_name)
+                if len(generalized_deltas_lst) > 0:
+                    for gd in generalized_deltas_lst:
+                        if gd.container_group_delta.sign < 0:
+                            non_enforced_scale_down_deltas.append(gd)
+                        else:
                             if not timestamp in timestamped_region_groups_deltas:
                                 timestamped_region_groups_deltas[timestamp] = []
                             timestamped_region_groups_deltas[timestamp].append(gd)
+
                             cur_groups.append(gd.container_group_delta.container_group)
 
-                        cur_groups.remove(group)
-                        new_deltas_per_ts.extend(generalized_deltas_lst)
+                    cur_groups.remove(group)
+                    new_deltas_per_ts.extend(generalized_deltas_lst)
 
-            # separately processing the to-be-scaled-down groups and trying to
-            # save them by trying to accommodate unmet_cumulative_increase_on_ts
-            remaining_non_enforced_scale_down_deltas = []
+        # try to accommodate the entities in the groups sorted
+        # in the order decreasing by capacity used (fill-fastest)
+        homogeneous_groups_sorted_decreasing = OrderedDict(reversed(sorted(cur_groups,
+                                                                           key = lambda elem: elem.system_capacity.collapse())))
+
+        for group in homogeneous_groups_sorted_decreasing:
             if len(unmet_cumulative_increase_on_ts) > 0:
-                for non_enforced_gd in non_enforced_scale_down_deltas:
-                    group = non_enforced_gd.container_group_delta.container_group.copy()
-                    generalized_deltas_lst, unmet_cumulative_increase_on_ts = group.compute_soft_adjustment_with_entities(unmet_cumulative_increase_on_ts,
-                                                                                                                          scaled_entity_instance_requirements_by_entity)
+                generalized_deltas_lst, unmet_cumulative_increase_on_ts = group.compute_soft_adjustment(unmet_cumulative_increase_on_ts,
+                                                                                                        scaled_entity_instance_requirements_by_entity,
+                                                                                                        self.region_name)
 
-                    if len(generalized_deltas_lst) > 0:
-                        for gd in generalized_deltas_lst:
-                            if not timestamp in timestamped_region_groups_deltas:
-                                timestamped_region_groups_deltas[timestamp] = []
-                            timestamped_region_groups_deltas[timestamp].append(gd)
-                            cur_groups.append(gd.container_group_delta.container_group)
+                if len(generalized_deltas_lst) > 0:
+                    for gd in generalized_deltas_lst:
+                        if not timestamp in timestamped_region_groups_deltas:
+                            timestamped_region_groups_deltas[timestamp] = []
+                        timestamped_region_groups_deltas[timestamp].append(gd)
+                        cur_groups.append(gd.container_group_delta.container_group)
 
-                        # Compensating with virtual events for the scaled down
-                        # that did not happen -- still, the associated
-                        # entities should be terminated.
-                        generalized_deltas_lst.append(GeneralizedDelta(non_enforced_gd.container_group_delta.enforce(),
-                                                                       non_enforced_gd.entities_group_delta))
-                        virtual_cgd = non_enforced_gd.container_group_delta.enforce()
-                        virtual_cgd.sign = 1
-                        generalized_deltas_lst.append(GeneralizedDelta(virtual_cgd, None))
+                    cur_groups.remove(group)
+                    new_deltas_per_ts.extend(generalized_deltas_lst)
 
-                        new_deltas_per_ts.extend(generalized_deltas_lst)
-                    else:
-                        remaining_non_enforced_scale_down_deltas.append(non_enforced_gd)
+        # separately processing the to-be-scaled-down groups and trying to
+        # save them by trying to accommodate unmet_cumulative_increase_on_ts
+        remaining_non_enforced_scale_down_deltas = []
+        if len(unmet_cumulative_increase_on_ts) > 0:
+            for non_enforced_gd in non_enforced_scale_down_deltas:
+                group = non_enforced_gd.container_group_delta.container_group.copy()
+                generalized_deltas_lst, unmet_cumulative_increase_on_ts = group.compute_soft_adjustment(unmet_cumulative_increase_on_ts,
+                                                                                                        scaled_entity_instance_requirements_by_entity,
+                                                                                                        self.region_name)
 
-            new_deltas_per_ts.extend(remaining_non_enforced_scale_down_deltas)
+                if len(generalized_deltas_lst) > 0:
+                    for gd in generalized_deltas_lst:
+                        if not timestamp in timestamped_region_groups_deltas:
+                            timestamped_region_groups_deltas[timestamp] = []
+                        timestamped_region_groups_deltas[timestamp].append(gd)
+                        cur_groups.append(gd.container_group_delta.container_group)
 
-            if len(new_deltas_per_ts) > 0:
-                if not timestamp in timestamped_region_groups_deltas:
-                    timestamped_region_groups_deltas[timestamp] = new_deltas_per_ts
+                    # TODO: check logic below
+                    # Compensating with virtual events for the scaled down
+                    # that did not happen -- still, the associated
+                    # entities should be terminated.
+                    generalized_deltas_lst.append(GeneralizedDelta(non_enforced_gd.container_group_delta.enforce(),
+                                                                   non_enforced_gd.entities_group_delta,
+                                                                   self.region_name))
+                    virtual_cgd = non_enforced_gd.container_group_delta.enforce()
+                    virtual_cgd.sign = 1
+                    generalized_deltas_lst.append(GeneralizedDelta(virtual_cgd,
+                                                                   None,
+                                                                   self.region_name))
 
-            unmet_changes_on_ts = {**unmet_cumulative_reduction_on_ts, **unmet_cumulative_increase_on_ts}
-            if len(unmet_changes_on_ts) > 0:
-                timestamped_unmet_changes[timestamp] = unmet_changes_on_ts
+                    new_deltas_per_ts.extend(generalized_deltas_lst)
+                else:
+                    remaining_non_enforced_scale_down_deltas.append(non_enforced_gd)
 
-        return (timestamped_region_groups_deltas, timestamped_unmet_changes)
+        new_deltas_per_ts.extend(remaining_non_enforced_scale_down_deltas)
 
-    def update_groups(self,
-                      homogeneous_groups_deltas):
+        unmet_changes_on_ts = {**unmet_cumulative_reduction_on_ts, **unmet_cumulative_increase_on_ts}
+
+        return (new_deltas_per_ts, unmet_changes_on_ts)
+
+    # ToDO: consider deleting
+    def update_container_groups(self,
+                                homogeneous_groups_deltas : list):
 
         """
         If the groups to be added are already present among the self.homogeneous_groups,
@@ -189,8 +175,25 @@ class Region:
         Changes the homogeneous groups in region.
         """
 
-        for group_delta in homogeneous_groups_deltas:
-            self.homogeneous_groups += group_delta
+        try:
+            for group_delta in homogeneous_groups_deltas:
+                self.homogeneous_groups += group_delta
+        except TypeError:
+            raise TypeError('An operand is not iterable for {}'.format(self.__class__.__name__))
+
+    # ToDO: consider deleting
+    def update_entities(self,
+                        container_group_id : int,
+                        entities_group_delta : EntitiesGroupDelta):
+
+        self.homogeneous_groups.update_entities(container_group_id,
+                                                entities_group_delta)
+
+    def __add__(self,
+                operand_to_add):
+
+        if isinstance(operand_to_add, GeneralizedDelta):
+            self.homogeneous_groups += operand_to_add
 
     def finish_change_for_entities(self,
                                    entities_booting_period_expired,
@@ -212,7 +215,7 @@ class Region:
 
     def extract_collective_entity_state(self):
 
-        region_collective_entity_state = EntityGroup()
+        region_collective_entity_state = EntitiesState()
         for group in self.homogeneous_groups:
             region_collective_entity_state += group.entities_state
 
@@ -241,10 +244,31 @@ class PlatformState:
 
         self.regions = regions
 
-    def compute_soft_adjustment_timeline(self,
-                                         scaled_entity_adjustment_in_existing_containers,
-                                         scaled_entity_instance_requirements_by_entity,
-                                         region_name = 'default'):
+    def __add__(self,
+                generalized_delta : GeneralizedDelta):
+
+        modified_state = self.copy()
+        if not generalized_delta is None:
+            if not isinstance(generalized_delta, GeneralizedDelta):
+                raise TypeError('An attempt to add an entity of type {} to the {}'.format(generalized_delta.__class__.__name__, self.__class__.__name__))
+
+            if not container_group_delta.in_change:
+                if not generalized_delta.region in self.regions:
+                    self.regions[generalized_delta.region] = Region(generalized_delta.region)
+
+                self.regions[generalized_delta.region] += generalized_delta
+
+        return modified_state
+
+    def copy(self):
+
+        return PlatformState(self.regions.copy())
+
+
+    def compute_soft_adjustment(self,
+                                scaled_entity_adjustment_in_existing_containers,
+                                scaled_entity_instance_requirements_by_entity,
+                                region_name = 'default'):
         """
         Attempts to place the entities in the existing containers (nodes).
         Returns the deltas of homogeneous groups in regions (or none) and
@@ -257,11 +281,12 @@ class PlatformState:
         region_groups_deltas = {}
 
         if region_name in self.regions:
-            region_groups_deltas, unmet_scaled_entity_adjustment = self.regions[region_name].compute_soft_adjustment_with_entities(scaled_entity_adjustment_in_existing_containers,
-                                                                                                                                   scaled_entity_instance_requirements_by_entity)
+            region_groups_deltas, unmet_scaled_entity_adjustment = self.regions[region_name].compute_soft_adjustment(scaled_entity_adjustment_in_existing_containers,
+                                                                                                                     scaled_entity_instance_requirements_by_entity)
 
         return (region_groups_deltas, unmet_scaled_entity_adjustment)
 
+    # TODO: consider deleting
     def update_virtually(self,
                          region_groups_deltas):
 
@@ -276,6 +301,7 @@ class PlatformState:
         return self.update(region_groups_deltas,
                            True)
 
+    # TODO: consider deleting
     def update(self,
                homogeneous_groups_deltas_per_region,
                is_virtual = False):
@@ -302,6 +328,7 @@ class PlatformState:
 
         return state_to_update
 
+    # TODO: consider deleting
     def finish_change_for_entities(self,
                                    entities_booting_period_expired,
                                    entities_termination_period_expired):
@@ -315,19 +342,11 @@ class PlatformState:
             region.finish_change_for_entities(entities_booting_period_expired,
                                               entities_termination_period_expired)
 
-    def extract_collective_entity_state(self):
-        collective_entity_state = {}
-        for region_name, region in self.regions.items():
-            if not region_name in collective_entity_state:
-                collective_entity_state[region_name] = EntityGroup()
+    def extract_collective_entity_state(self,
+                                        region):
+
+        collective_entity_state = EntitiesState()
+        if region_name in collective_entity_state:
             collective_entity_state += region.extract_collective_entity_state()
 
         return collective_entity_state
-
-    def scale_down_if_possible(self):
-        pass
-        # scales down with migration
-
-    def allocate_nodes(self):
-        pass
-    # to support scale up potentially with changing old nodes

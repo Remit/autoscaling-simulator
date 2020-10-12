@@ -14,9 +14,66 @@ class EntitiesState:
             self.entities_instances_counts[entity_name] = EntityGroup(entity_name,
                                                                       instances_count)
 
-    def __str__(self):
+    def __add__(self,
+                entities_to_add):
 
-        return str(self.entities_instances_counts)
+        new_entities_instances_counts = {}
+        if isinstance(entities_to_add, EntitiesGroupDelta):
+            for entity_name, entity_delta in entities_to_add.deltas.items():
+
+                if entity_name in self.entities_instances_counts:
+                    new_entities_instances_counts[entity_name] = self.entities_instances_counts[entity_name] + entity_delta.sign * entity_delta.entity_group
+                elif (not entity_name in self.entities_instances_counts) and (entity_delta.sign > 0):
+                    new_entities_instances_counts[entity_name] = entity_delta.entity_group
+
+        elif isinstance(entities_to_add, EntitiesState):
+            for entity_name, entity_group_to_add in entities_to_add.items():
+                if entity_name in self.entities_instances_counts:
+                    new_entities_instances_counts[entity_name] = self.entities_instances_counts[entity_name] + entity_group_to_add
+                else:
+                    new_entities_instances_counts[entity_name] = entity_group_to_add
+        else:
+            raise TypeError('An attempt to add the operand of type {} to the {} when expecting type EntitiesGroupDelta or EntitiesState'.format(entities_to_add.__class__.__name__,
+                                                                                                                                                self.__class__.__name__))
+
+        return EntitiesState(new_entities_instances_counts)
+
+    def __truediv__(self,
+                    other_entities_state):
+
+        """
+        Defines the division of one entities state by another. Allows to figure out, how
+        many replicas of the argument state can be hosted within the original
+        state. Essentially, with the argument other_entities_state representing a
+        particular placement, the result of such division would be the count of
+        containers to host the entities of the current state.
+
+        Returns a ceiling of the division result.
+        """
+
+        if not isinstance(other_entities_state, self.__class__):
+            raise TypeError('Incorrect type of operand to divide {} by: {}'.format(self.__class__.__name__,
+                                                                                   other_entities_state.__class__.__name__))
+
+        original_counts = self.to_dict()
+        other_counts = other_entities_state.to_dict()
+
+        division_result_raw = {}
+        for entity_name, count in original_counts.items():
+            if not entity_name in other_counts:
+                return 0
+            else:
+                division_result_raw[entity_name] = math.ceil(count / other_counts[entity_name])
+
+        return max(division_result_raw.values())
+
+    def to_dict(self):
+
+        dict_representation = {}
+        for entity_name, group in self.entities_instances_counts.items():
+            dict_representation[entity_name] = group.entity_instances_count
+
+        return dict_representation
 
 class EntityGroup:
 
@@ -35,66 +92,30 @@ class EntityGroup:
         self.entity_instances_count = entity_instances_count
         self.entity_name = entity_name
 
-    # TODO: consider deleting
     def __add__(self,
                 other_entity_group):
 
         if not isinstance(other_entity_group, self.__class__):
             raise TypeError('Incorrect type of operand to add to {}: {}'.format(self.__class__.__name__, other_entity_group.__class__.__name__))
 
-        new_entities_instances_counts = self.entities_instances_counts.copy()
-        for entity_name, entity_instances_count in other_entity_group.entities_instances_counts.items():
-            if not entity_name in new_entities_instances_counts:
-                new_entities_instances_counts[entity_name] = 0
-            new_entities_instances_counts[entity_name] += entity_instances_count
+        if self.entity_name != other_entity_group.entity_name:
+            raise ValueError('Non-matching names of EntityGroups to add: {} and {}'.format(self.entity_name, other_entity_group.entity_name))
 
-        new_in_change_entities_instances_counts = self.in_change_entities_instances_counts.copy()
-        for entity_name, entity_in_change_instances_count in other_entity_group.in_change_entities_instances_counts.items():
-            if not entity_name in new_in_change_entities_instances_counts:
-                new_in_change_entities_instances_counts[entity_name] = 0
-            new_in_change_entities_instances_counts[entity_name] += entity_in_change_instances_count
+        sum_result = self.entity_instances_count + other_entity_group.entity_instances_count
+        if sum_result < 0:
+            sum_result = 0
 
-        return EntityGroup(new_entities_instances_counts, new_in_change_entities_instances_counts)
+        return EntityGroup(self.entity_name, sum_result)
 
-    def __truediv__(self,
-                    other_entity_group):
+    def __mul__(self,
+                multiplier : int):
 
-        """
-        Defines the division of one group by another. Allows to figure out, how
-        many replicas of the argument group can be hosted within the original
-        group. Essentially, with the argument other_entity_group representing a
-        particular placement, the result of such division would be the count of
-        containers to host the entities of the current group.
+        if not isinstance(multiplier, int):
+            raise TypeError('Incorrect type of mulitiplier to multiply {} by: {}'.format(self.__class__.__name__, multiplier.__class__.__name__))
 
-        Returns a ceiling of the division result.
-        """
+        new_entities_instances_count = self.entity_instances_count * multiplier
 
-        if not isinstance(other_entity_group, self.__class__):
-            raise TypeError('Incorrect type of operand to divide {} by: {}'.format(self.__class__.__name__, other_entity_group.__class__.__name__))
-
-        original_sum = self.sum_entities()
-        other_sum = other_entity_group.sum_entities()
-
-        division_result_raw = {}
-        for entity_name, count in original_sum.items():
-            if not entity_name in other_sum:
-                return 0
-            else:
-                division_result_raw[entity_name] = math.ceil(count / other_sum[entity_name])
-
-        return max(division_result_raw.values())
-
-    # TODO: consider deleting
-    def sum_entities(self):
-
-        original_sum = self.entities_instances_counts.copy()
-        for entity_name, count in self.in_change_entities_instances_counts.items():
-            if entity_name in original_sum:
-                original_sum[entity_name] += count
-            else:
-                original_sum[entity_name] = count
-
-        return original_sum
+        return EntityGroup(self.entity_name, new_entities_instances_count)
 
 class EntityGroupDelta:
 
@@ -166,6 +187,10 @@ class EntitiesGroupDelta:
             elif entity_instances_count > 0:
                 self.deltas[entity_name] = EntityGroupDelta(entity_name,
                                                             entity_instances_count)
+
+        # Signifies whether the delta should be considered during the enforcing or not.
+        # The aim of 'virtual' property is to keep the connection between the deltas after the enforcement.
+        self.virtual = False
 
     def __init__(self,
                  deltas : dict,

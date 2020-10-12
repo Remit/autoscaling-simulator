@@ -93,8 +93,7 @@ class PlatformScalingModel:
         return tear_down_ms
 
     def delay(self,
-              delta_timestamp,
-              generalized_delta):
+              container_group_delta : ContainerGroupDelta):
 
         """
         Implements the delay operation on the platform level. Returns the timestamped
@@ -102,18 +101,17 @@ class PlatformScalingModel:
         then the application of the delay yields another single group.
         """
 
-        provider = generalized_delta.container_group_delta.get_provider()
-        container_type = generalized_delta.container_group_delta.get_container_type()
-        timestamp_adjustment = pd.Timedelta(0, unit = 'ms')
-        if generalized_delta.container_group_delta.sign < 0:
-            timestamp_adjustment = self.platform_scaling_infos[provider].node_scaling_infos[container_type].tear_down_ms
-        elif generalized_delta.container_group_delta.sign > 0:
-            timestamp_adjustment = self.platform_scaling_infos[provider].node_scaling_infos[container_type].boot_up_ms
-        timestamp_adjustment *= generalized_delta.container_group_delta.sign
-        timestamp_after_applying_delay = delta_timestamp + timestamp_adjustment
+        delay = pd.Timedelta(0, unit = 'ms')
+        enforced_container_group_delta = None
+        if container_group_delta.in_change:
+            provider = container_group_delta.get_provider()
+            container_type = container_group_delta.get_container_type()
 
-        enforced_container_group_delta = generalized_delta.container_group_delta.enforce()
-        enforced_generalized_delta = GeneralizedDelta(enforced_container_group_delta,
-                                                      generalized_delta.entity_group_delta)
+            if container_group_delta.sign < 0:
+                timestamp_adjustment = self.platform_scaling_infos[provider].node_scaling_infos[container_type].tear_down_ms
+            elif container_group_delta.sign > 0:
+                timestamp_adjustment = self.platform_scaling_infos[provider].node_scaling_infos[container_type].boot_up_ms
 
-        return {timestamp_after_applying_delay: enforced_generalized_delta}
+            enforced_container_group_delta = container_group_delta.enforce()
+
+        return (delay, enforced_container_group_delta)

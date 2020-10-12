@@ -66,18 +66,26 @@ class WindowedCombiner(Combiner):
         unified_timeline_of_adjustments = {}
         cur_begin = cur_timestamp
         cur_end = cur_begin + self.window
-        while len(scaled_entities_adjustments) > 0:
+        cur_scaled_entities_adjustments = scaled_entities_adjustments.copy()
+        while len(cur_scaled_entities_adjustments) > 0:
 
             if not cur_begin in unified_timeline_of_adjustments:
                 unified_timeline_of_adjustments[cur_begin] = {}
 
-            for scaled_entity, scaled_entity_adjustment_timeline in scaled_entities_adjustments.items():
-                entity_adjustments_in_window = scaled_entity_adjustment_timeline[(scaled_entity_adjustment_timeline.index >= cur_begin) and (scaled_entity_adjustment_timeline.index < cur_end)]
-                cumulative_entity_adjustment_in_window = self.aggregation_operation(entity_adjustments_in_window['value'])
-                unified_timeline_of_adjustments[(cur_begin, cur_end)][scaled_entity] = cumulative_entity_adjustment_in_window
-                scaled_entities_adjustments[scaled_entity] = scaled_entity_adjustment_timeline[scaled_entity_adjustment_timeline.index >= cur_end]
+            cur_scaled_entities_adjustments_df = {}
+            for scaled_entity, scaled_entity_adjustment_timeline in cur_scaled_entities_adjustments.items():
+                timeline_df = pd.DataFrame({'datetime': list(scaled_entity_adjustment_timeline.keys()),
+                                            'value': list(scaled_entity_adjustment_timeline.values())})
+                timeline_df = timeline_df.set_index('datetime')
+                cur_scaled_entities_adjustments[scaled_entity] = timeline_df
 
-            scaled_entities_adjustments = {(scaled_entity, scaled_entity_adjustment_timeline) for scaled_entity, scaled_entity_adjustment_timeline in scaled_entities_adjustments.items() if len(scaled_entity_adjustment_timeline) > 0 }
+            for scaled_entity, timeline_df in cur_scaled_entities_adjustments_df.items():
+                entity_adjustments_in_window = timeline_df[(timeline_df.index >= cur_begin) and (timeline_df.index < cur_end)]
+                cumulative_entity_adjustment_in_window = self.aggregation_operation(entity_adjustments_in_window['value'])
+                unified_timeline_of_adjustments[cur_begin][scaled_entity] = cumulative_entity_adjustment_in_window
+                cur_scaled_entities_adjustments_df[scaled_entity] = timeline_df[timeline_df.index >= cur_end]
+
+            cur_scaled_entities_adjustments_df = {(scaled_entity, scaled_entity_adjustment_timeline) for scaled_entity, scaled_entity_adjustment_timeline in cur_scaled_entities_adjustments_df.items() if len(scaled_entity_adjustment_timeline) > 0 }
 
             cur_begin = cur_end
             cur_end += self.window

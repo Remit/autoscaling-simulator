@@ -28,8 +28,7 @@ class HomogeneousContainerGroup:
             raise ValueError('Provided argument is not of a {} class'.format(SystemCapacity.__name__))
         self.system_capacity = system_capacity
         self.id = hash(self.container_name + \
-                       str(self.containers_count) + \
-                       str(self.entities_state))
+                       str(self.containers_count))
 
     def __init__(self,
                  group_conf):
@@ -44,9 +43,15 @@ class HomogeneousContainerGroup:
                       entities_instances_counts,
                       system_capacity)
 
-    def compute_soft_adjustment_with_entities(self,
-                                              scaled_entity_adjustment_in_existing_containers : dict,
-                                              scaled_entity_instance_requirements_by_entity : dict):
+    def __add__(self,
+                entities_group_delta : EntitiesGroupDelta):
+
+        self.entities_state += entities_group_delta
+
+    def compute_soft_adjustment(self,
+                                scaled_entity_adjustment_in_existing_containers : dict,
+                                scaled_entity_instance_requirements_by_entity : dict,
+                                region_name : str):
 
         """
         Computes the adjustments to the current containers in the Homogeneous
@@ -168,7 +173,8 @@ class HomogeneousContainerGroup:
 
 
                 gd = GeneralizedDelta(container_group_delta,
-                                      entities_group_delta)
+                                      entities_group_delta,
+                                      region_name)
 
                 generalized_deltas.append(gd)
 
@@ -231,6 +237,9 @@ class ContainerGroupDelta:
 
         # Signifies whether the delta is just desired (True) or already delayed (False).
         self.in_change = in_change
+        # Signifies whether the delta should be considered during the enforcing or not.
+        # The aim of 'virtual' property is to keep the connection between the deltas after the enforcement.
+        self.virtual = False
 
     def enforce(self):
 
@@ -344,16 +353,26 @@ class HomogeneousContainerGroupSet:
             self._homogeneous_groups[hcg.id] = hcg
 
     def __add__(self,
-                homogeneous_group_delta):
+                delta : GeneralizedDelta):
 
-        if not isinstance(homogeneous_group_delta, ContainerGroupDelta):
-            raise ValueError('An attempt to add an object of type {} to the {}'.format(homogeneous_group_delta.__class__.__name__,
+        if isinstance(delta, GeneralizedDelta):
+            container_group_delta = delta.container_group_delta
+            entities_group_delta = delta.entities_group_delta
+
+            if container_group_delta.virtual:
+                # If the container group delta is virtual, then add/remove
+                # entities given in entities_group_delta to/from the corresponding
+                # container group
+                self._homogeneous_groups[container_group_delta.container_group.id] += entities_group_delta
+            else:
+                # If the container group delta is not virtual, then add/remove it
+                if container_group_delta.sign > 0:
+                    self._homogeneous_groups[container_group_delta.container_group.id] = container_group_delta.container_group
+                elif container_group_delta.sign < 0:
+                    del self._homogeneous_groups[container_group_delta.container_group.id]
+        else:
+            raise ValueError('An attempt to add an object of type {} to the {}'.format(delta.__class__.__name__,
                                                                                        self.__class__.__name__))
-
-        if homogeneous_group_delta.sign > 0:
-            self._homogeneous_groups[homogeneous_group_delta.container_group.id] = homogeneous_group_delta.container_group
-        elif homogeneous_group_delta.sign < 0:
-            del self._homogeneous_groups[homogeneous_group_delta.container_group.id]
 
     def __sub__(self,
                 homogeneous_group_delta):

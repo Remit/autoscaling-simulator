@@ -86,20 +86,17 @@ class ApplicationScalingModel:
         return (entities_booting_period_expired, entities_termination_period_expired)
 
     def delay(self,
-              delta_timestamp : pd.Timestamp,
-              generalized_delta : GeneralizedDelta):
+              entity_group_delta : EntityGroupDelta):
 
         """
-        Implements the delay operation on the application level. Returns multiple timestamped
-        delayed generalized deltas that each includes both the platform- and application-level delta.
-        Applying the delay on the level of entities groups deltas is only possible if
-        the bundled container group is already delayed (in_change = False).
+        Implements the delay operation on the application level. Returns multiple
+        delayed entities deltas indexed by their delays.
         """
 
-        timeline_of_new_deltas = {}
-        cur_entity_group_delta = generalized_delta.entity_group_delta.copy()
-        if not generalized_delta.container_group_delta.in_change:
-            entities_names = cur_entity_group_delta.get_entities()
+        delays_of_enforced_deltas = {}
+        if not entity_group_delta is None:
+            entities_names = entity_group_delta.get_entities()
+
             # Group entities by their change enforcement time
             entities_by_change_enforcement_delay = {}
             for entity_name in entities_names:
@@ -107,27 +104,24 @@ class ApplicationScalingModel:
                     raise ValueError('No scaling information for entity {} found in {}'.format(entity_name,
                                                                                                self.__class__.__name__))
                 change_enforcement_delay = pd.Timedelta(0, unit = 'ms')
-                if cur_entity_group_delta.sign < 0:
+                if entity_group_delta.sign < 0:
                     change_enforcement_delay = self.service_scaling_infos[entity_name].boot_up_ms
-                elif cur_entity_group_delta.sign > 0:
+                elif entity_group_delta.sign > 0:
                     change_enforcement_delay = self.service_scaling_infos[entity_name].termination_ms
 
                 if not change_enforcement_delay in entities_by_change_enforcement_delay:
-                    entities_by_change_enforcement_delay[change_enforcement_delay] = [entity_name]
-                else:
-                    entities_by_change_enforcement_delay[change_enforcement_delay].append(entity_name)
+                    entities_by_change_enforcement_delay[change_enforcement_delay] = []
+
+                entities_by_change_enforcement_delay[change_enforcement_delay].append(entity_name)
 
             if len(entities_by_change_enforcement_delay) > 0:
                 entities_by_change_enforcement_delay_sorted = OrderedDict(sorted(entities_by_change_enforcement_delay,
                                                                                  lambda elem: elem[0]))
 
                 for change_enforcement_delay, entities_lst in entities_by_change_enforcement_delay_sorted.items():
-                    timestamp_after_applying_delay = delta_timestamp + change_enforcement_delay
-                    if not cur_entity_group_delta is None:
-                        enforced_entity_group_delta, cur_entity_group_delta = cur_entity_group_delta.enforce(entities_lst)
-                        if not enforced_entity_group_delta is None:
-                            enforced_generalized_delta = GeneralizedDelta(generalized_delta.container_group_delta,
-                                                                          enforced_entity_group_delta)
-                            timeline_of_new_deltas[timestamp_after_applying_delay] = enforced_generalized_delta
 
-        return timeline_of_new_deltas
+                        enforced_entity_group_delta, _ = entity_group_delta.enforce(entities_lst) # all should be enforced by design
+                            if not enforced_entity_group_delta is None:
+                                delays_of_enforced_deltas[change_enforcement_delay] = enforced_entity_group_delta
+
+        return delays_of_enforced_deltas
