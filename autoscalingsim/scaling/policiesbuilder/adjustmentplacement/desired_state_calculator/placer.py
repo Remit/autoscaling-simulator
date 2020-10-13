@@ -1,5 +1,7 @@
 from collections import OrderedDict
 
+from ....infrastructure_platform.entity_group import EntitiesState
+
 class InContainerPlacement:
 
     """
@@ -51,9 +53,44 @@ class Placer:
         self.cached_placement_options = {}
         self.balancing_threshold = 0.05 # TODO: consider providing in config file
 
+    def compute_containers_requirements(self,
+                                        scaled_entity_instance_requirements_by_entity,
+                                        entities_state,
+                                        dynamic_current_placement = None,
+                                        dynamic_performance = None,
+                                        dynamic_resource_utilization = None):
+
+        placement_options = self.compute_placement_options(scaled_entity_instance_requirements_by_entity,
+                                                           entities_state,
+                                                           dynamic_current_placement,
+                                                           dynamic_performance,
+                                                           dynamic_resource_utilization)
+
+        containers_required = {}
+        for container_name, placement_options_per_container in placement_options.items():
+            container_count_required_per_option = []
+            for placement_option in placement_options_per_container:
+                placement_entity_repr = EntitiesState(placement_option)
+                containers_required = entities_state / placement_entity_repr
+                container_count_required_per_option.append({'placement_entity_representation': placement_entity_repr,
+                                                            'containers': containers_required})
+
+            if len(container_count_required_per_option) > 0:
+                selected_containers_required_per_cont = container_count_required_per_option[0]['containers']
+                selected_placement_per_cont = container_count_required_per_option[0]['placement_entity_representation']
+                for container_count_required in container_count_required_per_option:
+                    if container_count_required['containers'] < selected_containers_required_per_cont:
+                        selected_containers_required_per_cont = container_count_required['containers']
+                        selected_placement_per_cont = container_count_required['placement_entity_representation']
+
+                containers_required[container_name] = {'count': selected_containers_required_per_cont,
+                                                       'placement_entity_representation': selected_placement_per_cont}
+
+        return containers_required
+
     def compute_placement_options(self,
                                   scaled_entity_instance_requirements_by_entity,
-                                  container_for_scaled_entities_types,
+                                  entities_state,
                                   dynamic_current_placement = None,
                                   dynamic_performance = None,
                                   dynamic_resource_utilization = None):
@@ -77,6 +114,7 @@ class Placer:
          and (dynamic_performance is None) and (dynamic_resource_utilization is None):
             return self.cached_placement_options
 
+        container_for_scaled_entities_types = entities_state.to_dict()
         placement_options = {}
         consider_other_placement_options = False
         if self.placement_hint == 'existing_mixture':

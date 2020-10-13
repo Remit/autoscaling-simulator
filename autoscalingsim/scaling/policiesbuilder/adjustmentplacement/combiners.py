@@ -94,7 +94,23 @@ class WindowedCombiner(Combiner):
                                                              key = lambda elem: elem[0][0]))
         return unified_timeline_of_adjustments
 
-combiners_registry = {
-    'noop': NoopCombiner,
-    'windowed': WindowedCombiner
-}
+
+
+class Registry:
+
+    """
+    Stores the combiner classes and organizes access to them.
+    """
+
+    registry = {
+        'noop': NoopCombiner,
+        'windowed': WindowedCombiner
+    }
+
+    @staticmethod
+    def get(name):
+
+        if not name in Registry.registry:
+            raise ValueError('No Combiner of type {} found'.format(combiner_type))
+
+        return Registry.registry[name]
