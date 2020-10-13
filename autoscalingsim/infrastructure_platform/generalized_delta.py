@@ -24,6 +24,27 @@ class GeneralizedDelta:
         self.container_group_delta = container_group_delta
         self.entities_group_delta = entities_group_delta
         self.region = region
+        self.cached_enforcement = {}
+
+    def till_full_enforcement(self,
+                              platform_scaling_model : PlatformScalingModel,
+                              application_scaling_model : ApplicationScalingModel,
+                              delta_timestamp : pd.Timestamp):
+
+        """
+        Computes the time required for the enforcement to finish at all levels.
+        Makes the enforcement underneath.
+        """
+
+        new_deltas = self.enforce(platform_scaling_model,
+                                  application_scaling_model,
+                                  delta_timestamp)
+
+        time_until_enforcement = pd.Timedelta(0, unit = 'ms')
+        if len(new_deltas) > 0:
+            time_until_enforcement = max(list(new_deltas.keys())) - delta_timestamp
+
+        return time_until_enforcement
 
     def enforce(self,
                 platform_scaling_model : PlatformScalingModel,
@@ -35,8 +56,15 @@ class GeneralizedDelta:
         these as timelines. The enforcement takes into account the sequence of
         scaling actions. On scale down, all the entities should terminate first.
         On scale up, the container group should boot first.
+
+        In addition, it caches the enforcement on first computation since
+        the preliminary till_full_enforcement method requires it.
         """
 
+        if delta_timestamp in self.cached_enforcement:
+            return self.cached_enforcement[delta_timestamp]
+
+        self.cached_enforcement = {}
         new_deltas = {}
         if self.container_group_delta.in_change and (not self.container_group_delta.virtual):
             delay_from_containers = pd.Timedelta(0, unit = 'ms')
@@ -75,4 +103,5 @@ class GeneralizedDelta:
                                                                   entities_group_delta,
                                                                   self.region))
 
+        self.cached_enforcement[delta_timestamp] = new_deltas
         return new_deltas

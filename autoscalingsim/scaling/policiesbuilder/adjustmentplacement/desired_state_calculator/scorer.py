@@ -1,3 +1,5 @@
+import pandas as pd
+
 class Scorer:
 
     """
@@ -14,7 +16,8 @@ class Scorer:
         self.score_calculator = score_calculator
 
     def __call__(self,
-                 containers_required : dict):
+                 containers_required : dict,
+                 state_duration_h : float):
 
         scored_options = {}
         for container_name, container_count_and_placement in containers_required.items():

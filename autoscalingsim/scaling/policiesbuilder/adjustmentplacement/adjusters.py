@@ -54,6 +54,7 @@ class Adjuster(ABC):
     specific adjusters.
     """
 
+    @abstractmethod
     def __init__(self,
                  application_scaling_model : ApplicationScalingModel,
                  platform_scaling_model : PlatformScalingModel,
@@ -61,22 +62,107 @@ class Adjuster(ABC):
                  scaled_entity_instance_requirements_by_entity : dict,
                  optimizer_type : str,
                  placement_hint : str,
-                 combiner_type : str,
-                 score_calculator_class : score_calculators.ScoreCalculator):
+                 combiner_type: str):
+        pass
+
+    def init_common(self,
+                    application_scaling_model : ApplicationScalingModel,
+                    platform_scaling_model : PlatformScalingModel,
+                    container_for_scaled_entities_types : dict,
+                    scaled_entity_instance_requirements_by_entity : dict,
+                    optimizer_type : str,
+                    placement_hint : str,
+                    combiner_type : str,
+                    score_calculator_class : score_calculators.ScoreCalculator):
 
         self.application_scaling_model = application_scaling_model
         self.platform_scaling_model = platform_scaling_model
-        self.container_for_scaled_entities_types = container_for_scaled_entities_types # TODO: remove?
         self.scaled_entity_instance_requirements_by_entity = scaled_entity_instance_requirements_by_entity
 
         self.combiner = combiners.Registry.get(combiner_type)
         self.desired_state_calculator = DesiredStateCalculator(placement_hint,
                                                                score_calculator_class,
-                                                               optimizer_type)
+                                                               optimizer_type,
+                                                               container_for_scaled_entities_types,
+                                                               scaled_entity_instance_requirements_by_entity)
 
-    @abstractmethod
-    def adjust(self):
-        pass
+    def adjust(self,
+               cur_timestamp,
+               entities_scaling_events, # TODO: propagate per region
+               current_state):
+
+        timeline_of_unmet_changes = TimelineOfDesiredEntitiesChanges(self.combiner,
+                                                                     entities_scaling_events,
+                                                                     cur_timestamp)
+        timeline_of_deltas = DeltaTimeline(self.platform_scaling_model,
+                                           self.application_scaling_model,
+                                           current_state)
+        ts_of_unmet_change, unmet_change = timeline_of_unmet_changes.next()
+        in_work_state = current_state
+
+        while not unmet_change is None:
+            # 1. We try to accommodate the unmet_change on the existing containers.
+            # This may result in the scale down. The scale down is performed in such
+            # a way that the largest possible group of unused containers is removed.
+            # Otherwise, only the number of entities is affected.
+            deltas, unmet_change = in_work_state.compute_soft_adjustment(unmet_change,
+                                                                         self.scaled_entity_instance_requirements_by_entity)
+            timeline_of_deltas.add_deltas(ts_of_unmet_change, deltas)
+
+            # 2. If an unmet positive change is left after we tried to accommodate
+            # the changes on the considered timestamp, we need to consider the
+            # alternatives: either to add new containers to accommodate the change
+            # or to start a new cluster and migrate services there.
+            if len(unmet_change) > 0:
+
+                in_work_collective_entities_states = in_work_state.extract_collective_entities_states()
+                ts_next = timeline_of_unmet_changes.peek(ts_of_unmet_change)
+                state_duration_h = (ts_next - ts_of_unmet_change) / pd.Timedelta(1, unit = 'h')
+
+                # 2.a: Addition of new containers
+                state_simple_addition, score_simple_addition = self.desired_state_calculator(in_work_collective_entities_states,
+                                                                                             state_duration_h)
+                # TODO: score_per_h --> again regional aspect!
+                score_simple_addition += in_work_state.score_per_h * state_duration_h
+
+                # 2.b: New cluster and migration
+                in_work_collective_entities_states += unmet_change
+                state_substitution, score_substitution = self.desired_state_calculator(in_work_collective_entities_states,
+                                                                                       state_duration_h)
+                # TODO: make gen. delta out of state_substitution// take into account regions
+                # abstraction: set of generalized deltas differing by region?
+                # platform_state.to_deltas?
+                state_substitution_delta =
+                till_state_substitution_td = shadow_state_substitution_delta.till_full_enforcement(self.platform_scaling_model,
+                                                                                                   self.application_scaling_model,
+                                                                                                   ts_of_unmet_change)
+                till_state_substitution_h = till_state_substitution_td / pd.Timedelta(1, unit = 'h')
+                score_substitution += in_work_state.score_per_h * till_state_substitution_h # TODO: set of till_state...
+                # TODO: score_per_h differing by region or???
+
+                # Comparing and selecting an alternative
+                chosen_state = None
+                chosen_score = None
+                if score_simple_addition > score_substitution:
+                    chosen_state = state_simple_addition
+                    chosen_score = score_simple_addition
+                else:
+                    chosen_state = state_substitution
+                    chosen_score = score_substitution
+
+                chosen_score_per_h = (chosen_score / state_duration_h.seconds) / 3600
+
+                # TODO: adding deltas to timeline_of_deltas based on state_of_choice vs in_work_state
+
+                # change in_work_state
+                in_work_state = timeline_of_deltas.roll_out_updates(ts_of_unmet_change)
+                in_work_state.score_per_h = chosen_score_per_h
+
+            # If by this time len(unmet_change) > 0, then there were not enough
+            # resources or budget.
+            timeline_of_unmet_changes.overwrite(ts_of_unmet_change, unmet_change)
+
+        return timeline_of_deltas# ?
 
 class CostMinimizer(Adjuster):
 
@@ -95,72 +181,14 @@ class CostMinimizer(Adjuster):
                  combiner_type = 'windowed'):
 
         score_calculator_class = score_calculators.Registry.get(self.__class__.__name__)
-        super().__init__(application_scaling_model,
-                         platform_scaling_model,
-                         container_for_scaled_entities_types,
-                         scaled_entity_instance_requirements_by_entity,
-                         optimizer_type,
-                         placement_hint,
-                         combiner_type,
-                         score_calculator_class)
-
-    # NEW:
-    # TODO: level up to multiple regions? + level up to Adjuster class
-    def adjust(self,
-               cur_timestamp,
-               desired_scaled_entities_scaling_events,
-               current_state,
-               region = 'default'):
-
-        timeline_of_unmet_changes = TimelineOfDesiredEntitiesChanges(self.combiner,
-                                                                     desired_scaled_entities_scaling_events,
-                                                                     cur_timestamp)
-        timeline_of_deltas = DeltaTimeline(self.platform_scaling_model,
-                                           self.application_scaling_model,
-                                           current_state)
-        ts_of_unmet_change, unmet_change = timeline_of_unmet_changes.next()
-        in_work_state = current_state
-
-        while not unmet_change is None:
-            # 1. We try to accommodate the unmet_change on the existing containers.
-            # This may result in the scale down. The scale down is performed in such
-            # a way that the largest possible group of unused containers is removed.
-            # Otherwise, only the number of entities is affected.
-            deltas, unmet_change = in_work_state.compute_soft_adjustment(unmet_change,
-                                                                         self.scaled_entity_instance_requirements_by_entity,
-                                                                         region)
-            timeline_of_deltas.add_deltas(ts_of_unmet_change, deltas)
-
-            # If we failed to accommodate the negative change in services counts, then
-            # we discard them (no such services to delete, first must add these)
-            unmet_change = {(service_name, change) for service_name, change in unmet_change if change > 0}
-
-            # 2. If an unmet positive change is left after we tried to accommodate
-            # the changes on the considered timestamp, we need to consider the
-            # alternatives: either to add new containers to accommodate the change
-            # or to start a new cluster and migrate services there.
-            if len(unmet_change) > 0:
-                in_work_collective_entities_state = in_work_state.extract_collective_entity_state(region)
-
-                # 2.a: Addition of new containers
-                self.desired_state_calculator(self.scaled_entity_instance_requirements_by_entity,
-                                              in_work_collective_entities_state)
-
-                # 2.b: New cluster and migration
-                unmet_change_delta = EntitiesGroupDelta(unmet_change)
-                in_work_collective_entities_state += unmet_change_delta # TODO: new var?
-
-                # TODO: Comparing and selecting
-                # TODO: adding deltas to timeline_of_deltas
-
-                # change in_work_state
-                in_work_state = timeline_of_deltas.roll_out_the_deltas(ts_of_unmet_change)
-
-            # If by this time len(unmet_change) > 0, then there were not enough
-            # resources or budget.
-            timeline_of_unmet_changes.overwrite(ts_of_unmet_change, unmet_change)
-
-        return timeline_of_deltas# ?
+        super().init_common(application_scaling_model,
+                            platform_scaling_model,
+                            container_for_scaled_entities_types,
+                            scaled_entity_instance_requirements_by_entity,
+                            optimizer_type,
+                            placement_hint,
+                            combiner_type,
+                            score_calculator_class)
 
 class PerformanceMaximizer(Adjuster):
 
