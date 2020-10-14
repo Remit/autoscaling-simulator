@@ -23,6 +23,54 @@ class InvertingFunction:
         else:
             return self.inverting_function(argument)
 
+class StateScore:
+
+    """
+    Wraps scores for state on per region basis.
+    """
+
+    def __init__(self,
+                 scores_per_region : dict):
+
+        self.scores_per_region = scores_per_region
+
+    def __mul__(self,
+                state_duration):
+
+        scores_per_region = {}
+        if isinstance(state_duration, StateDuration):
+            for region_name, score in self.scores_per_region.items():
+                if region_name in state_duration.durations_per_region_h:
+                    scores_per_region[region_name] = score * state_duration.durations_per_region_h[region_name]
+        elif isinstance(state_duration, numbers.Number):
+            for region_name, score in self.scores_per_region.items():
+                scores_per_region[region_name] = score * state_duration
+        else:
+            raise TypeError('An attempt to multiply {} by an unknown object: {}'.format(self.__class__.__name__,
+                                                                                        state_duration.__class__.__name__))
+
+        return StateScore(self.scores_per_region)
+
+    def __truediv__(self,
+                    scalar : numbers.Number):
+
+        if not isinstance(scalar, numbers.Number):
+            raise TypeError('An attempt to divide {} by an unknown object: {}'.format(self.__class__.__name__,
+                                                                                      scalar.__class__.__name__))
+
+        if scalar <= 0:
+            raise ValueError('An attempt to divide the {} by a negative number or zero'.format(self.__class__.__name__))
+
+        new_scores_per_region = {}
+        for region_name, score in self.scores_per_region.items():
+            new_scores_per_region[region_name] = score / scalar
+
+        return StateScore(new_scores_per_region)
+
+    def collapse(self):
+
+        return sum(list(self.scores_per_region.values()))
+
 class Score(ABC):
 
     """
@@ -47,8 +95,6 @@ class Score(ABC):
     def __mul__(self,
                 scalar):
         pass
-
-
 
     def __lt__(self,
                other_score : Score):
@@ -86,7 +132,6 @@ class Score(ABC):
         else:
             return False
 
-
     def __ge__(self,
                other_score : Score):
 
@@ -99,7 +144,6 @@ class Score(ABC):
         else:
             return False
 
-
     def __eq__(self,
                other_score : Score):
 
@@ -111,7 +155,6 @@ class Score(ABC):
             return True
         else:
             return False
-
 
     def __ne__(self,
                other_score : Score):

@@ -1,6 +1,7 @@
 from .container_group import ContainerGroupDelta
 from .entity_group import EntityGroupDelta
 
+# TODO: consider as a separate module and making an abstract Delta class with some common methods
 class StateDelta:
 
     """
@@ -20,6 +21,19 @@ class StateDelta:
 
     def __iter__(self):
         return StateDeltaIterator(self)
+
+    def till_full_enforcement(self,
+                              platform_scaling_model : PlatformScalingModel,
+                              application_scaling_model : ApplicationScalingModel,
+                              delta_timestamp : pd.Timestamp):
+
+        time_till_enforcement_per_rd = {}
+        for region_name, regional_delta in self.deltas_per_region.items():
+            time_till_enforcement_per_rd[region_name] = regional_delta.till_full_enforcement(platform_scaling_model,
+                                                                                             application_scaling_model,
+                                                                                             delta_timestamp)) / pd.Timedelta(1, unit = 'h')
+
+        return StateDuration(time_till_enforcement_per_rd)
 
     def enforce(self,
                 platform_scaling_model : PlatformScalingModel,
@@ -72,6 +86,19 @@ class RegionalDelta:
 
     def __iter__(self):
         return RegionalDeltaIterator(self)
+
+    def till_full_enforcement(self,
+                              platform_scaling_model : PlatformScalingModel,
+                              application_scaling_model : ApplicationScalingModel,
+                              delta_timestamp : pd.Timestamp):
+
+        time_till_enforcement_per_gd = []
+        for generalized_delta in self.generalized_deltas:
+            time_till_enforcement_per_gd.append(generalized_delta.till_full_enforcement(platform_scaling_model,
+                                                                                        application_scaling_model,
+                                                                                        delta_timestamp))
+
+        return max(time_till_enforcement_per_gd)
 
     def enforce(self,
                 platform_scaling_model : PlatformScalingModel,

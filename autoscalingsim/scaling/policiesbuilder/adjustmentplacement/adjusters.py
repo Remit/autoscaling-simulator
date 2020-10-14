@@ -120,43 +120,38 @@ class Adjuster(ABC):
                 unmet_change_state = EntitiesStatesRegionalized(unmet_change)
 
                 # 2.a: Addition of new containers
-                state_simple_addition_deltas, score_simple_addition = self.desired_state_calculator(unmet_change_state,
-                                                                                                    state_duration_h)
-                score_simple_addition += in_work_state.score_per_h * state_duration_h
+                state_simple_addition_deltas, state_score_simple_addition = self.desired_state_calculator(unmet_change_state,
+                                                                                                          state_duration_h)
+                score_simple_addition += in_work_state.state_score * state_duration_h
 
                 # 2.b: New cluster and migration
                 in_work_collective_entities_states = in_work_state.extract_collective_entities_states()
                 in_work_collective_entities_states += unmet_change_state
-                state_substitution_deltas, score_substitution = self.desired_state_calculator(in_work_collective_entities_states,
-                                                                                       state_duration_h)
-                # TODO: make gen. delta out of state_substitution// take into account regions
-                # abstraction: set of generalized deltas differing by region?
-                # platform_state.to_deltas?
-                till_state_substitution_td = state_substitution_deltas.till_full_enforcement(self.platform_scaling_model,
-                                                                                             self.application_scaling_model,
-                                                                                             ts_of_unmet_change) # TODO: implement + return list?
-                till_state_substitution_h = till_state_substitution_td / pd.Timedelta(1, unit = 'h')
-                score_substitution += in_work_state.score_per_h * till_state_substitution_h # TODO: set of till_state...
-                # TODO: score_per_h differing by region or???
+                state_substitution_deltas, state_score_substitution = self.desired_state_calculator(in_work_collective_entities_states,
+                                                                                                    state_duration_h)
 
-                # Comparing and selecting an alternative --> convert to deltas operation
-                chosen_state = None
-                chosen_score = None
-                if score_simple_addition > score_substitution:
-                    chosen_state = state_simple_addition
-                    chosen_score = score_simple_addition
+                till_state_substitution_h = state_substitution_deltas.till_full_enforcement(self.platform_scaling_model,
+                                                                                            self.application_scaling_model,
+                                                                                            ts_of_unmet_change)
+                state_score_substitution += in_work_state.state_score * till_state_substitution_h
+
+                # Comparing and selecting an alternative
+                chosen_state_deltas = None
+                chosen_state_score = None
+                if state_score_simple_addition.collapse() > state_score_substitution.collapse():
+                    chosen_state_deltas = state_simple_addition_deltas
+                    chosen_state_score = state_score_simple_addition
                 else:
-                    chosen_state = state_substitution
-                    chosen_score = score_substitution
+                    chosen_state_deltas = state_substitution_deltas
+                    chosen_state_score = state_score_substitution
 
-                chosen_score_per_h = (chosen_score / state_duration_h.seconds) / 3600
+                chosen_state_score_per_h = chosen_state_score / state_duration_h
 
-                # TODO: adding deltas to timeline_of_deltas based on state_of_choice vs in_work_state
-                timeline_of_deltas.add_state_delta(ts_of_unmet_change, in_work_state_delta)
+                timeline_of_deltas.add_state_delta(ts_of_unmet_change, chosen_state_deltas)
 
-                # change in_work_state
+                # Rolling out the enforced updates
                 in_work_state = timeline_of_deltas.roll_out_updates(ts_of_unmet_change)
-                in_work_state.score_per_h = chosen_score_per_h
+                in_work_state.state_score = chosen_state_score_per_h
 
             # If by this time len(unmet_change) > 0, then there were not enough
             # resources or budget.

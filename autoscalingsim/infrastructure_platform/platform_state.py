@@ -1,5 +1,6 @@
 from .generalized_delta import GeneralizedDelta, GeneralizedDeltaRegionalized
 from .region import Region
+from ..scaling.policiesbuilder.adjustmentplacement.desired_state_calculator.score import StateScore
 from ..utils.error_check import ErrorChecker
 
 class PlatformState:
@@ -24,7 +25,7 @@ class PlatformState:
                  regions = {}):
 
         self.regions = regions
-        self.score_per_h = 0
+        self.state_score = None
 
     def __add__(self,
                 state_delta : StateDelta):
@@ -153,3 +154,28 @@ class PlatformState:
                                                  region.extract_collective_entities_state())
 
         return collective_entities_states
+
+class StateDuration:
+
+    """
+    Wraps durations for state in particular regions.
+    """
+
+    def __init__(self,
+                 durations_per_region_h : dict):
+
+        self.durations_per_region_h = durations_per_region_h
+
+    def __mul__(self,
+                state_score : StateScore):
+
+        if not isinstance(state_score, StateScore):
+            raise TypeError('An attempt to multiply {} by an unknown object: {}'.format(self.__class__.__name__,
+                                                                                        state_score.__class__.__name__))
+
+        scores_per_region = {}
+        for region_name, score in state_score.scores_per_region.items():
+            if region_name in self.durations_per_region_h:
+                scores_per_region[region_name] = score * self.durations_per_region_h[region_name]
+
+        return StateScore(state_score.score_class)

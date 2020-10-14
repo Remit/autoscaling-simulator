@@ -3,6 +3,7 @@ import pandas as pd
 from .placer import Placer
 from .scorer import Scorer
 import .optimizers
+from .score import StateScore
 
 # TODO: consider moving region and platform state to utils.
 from ......infrastructure_platform.region import Region
@@ -38,6 +39,7 @@ class DesiredChangeCalculator:
 
         # TODO: add logic to check whether empty results are returned
         regions = {}
+        scores_per_region = {}
         joint_score = self.scorer.get_null_score()
         for region_name, entities_state in entities_states:
             # Place
@@ -54,9 +56,10 @@ class DesiredChangeCalculator:
                                           self.scaled_entity_instance_requirements_by_entity,
                                           selected_placement)
 
-            # Building the new state based on the selected container type
-            desired_state = PlatformState(regions)
-            desired_deltas = desired_state.to_deltas()
-            joint_score += selected_placement.score
+            scores_per_region[region] = selected_placement.score
 
-        return (desired_deltas, joint_score)
+        # Building the new state based on the selected container type
+        desired_state = PlatformState(regions)
+        desired_deltas = desired_state.to_deltas()
+
+        return (desired_deltas, StateScore(scores_per_region))
