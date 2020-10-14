@@ -5,7 +5,7 @@ from ....infrastructure_platform.entity_group import EntitiesState
 class InContainerPlacement:
 
     """
-    Wraps the information about the in-container placement. In case of nodes,
+    Wraps the working information about the in-container placement. In case of nodes,
     it will be an in-node placement of services.
 
     Specifies:
@@ -22,6 +22,66 @@ class InContainerPlacement:
         self.container_type = container_type
         self.capacity_taken = capacity_taken
         self.placed_entities = placed_entities
+
+class EntitiesPlacement:
+
+    """
+    The smallest placement unit. Wraps a final placement representation for
+    a single group of entities.
+    """
+
+    def __init__(self,
+                 container_name : str,
+                 containers_count : int,
+                 entities_state : EntitiesState):
+
+        self.container_name = container_name
+        self.containers_count = containers_count
+        self.entities_state = entities_state
+
+class Placement:
+
+    """
+    Wraps a final placement representation.
+    """
+
+    def __init__(self,
+                 entities_placements : list = []):
+
+        self._placements = entities_placements
+        self.score = None
+
+    def add_entities_placement(self,
+                               other_entities_placement : EntitiesPlacement):
+
+        if not isinstance(other_entities_placement, EntitiesPlacement):
+            raise TypeError('Wrong type on adding a new entities placement: {}'.format(other_entities_placement.__class__.__name__))
+
+        self._placements.append(other_entities_placement)
+
+    def __iter__(self):
+        return PlacementIterator(self)
+
+class PlacementIterator:
+
+    """
+    Iterates over the entities placements.
+    """
+
+    def __init__(self,
+                 placement : Placement):
+
+        self._placement = placement
+        self._index = 0
+
+    def __next__(self):
+
+        if self._index < len(placement._placements):
+            placement = placement._placements[self._index]
+            self._index += 1
+            return placement
+
+        raise StopIteration
 
 class Placer:
 
@@ -69,6 +129,7 @@ class Placer:
         containers_required = {}
         for container_name, placement_options_per_container in placement_options.items():
             container_count_required_per_option = []
+            # Computing how many containers are required to cover the placement option
             for placement_option in placement_options_per_container:
                 placement_entity_repr = EntitiesState(placement_option)
                 containers_required = entities_state / placement_entity_repr
@@ -76,6 +137,7 @@ class Placer:
                                                             'containers': containers_required})
 
             if len(container_count_required_per_option) > 0:
+                # Selecting the best option for each container
                 selected_containers_required_per_cont = container_count_required_per_option[0]['containers']
                 selected_placement_per_cont = container_count_required_per_option[0]['placement_entity_representation']
                 for container_count_required in container_count_required_per_option:
@@ -86,7 +148,24 @@ class Placer:
                 containers_required[container_name] = {'count': selected_containers_required_per_cont,
                                                        'placement_entity_representation': selected_placement_per_cont}
 
-        return containers_required
+        # Correcting the EntitiesState for each selected option since not all the
+        # containers might be filled equally
+        placements = []
+        for container_name, placement_option in containers_required.items():
+            leftover_entities_state = entities_state % placement_option['placement_entity_representation']
+            remainder_placement = EntitiesPlacement(container_name,
+                                                    1,
+                                                    leftover_entities_state)
+            placement = Placement([remainder_placement])
+            if placement_option['count'] > 1:
+                main_placement = EntitiesPlacement(container_name,
+                                                   placement_option['count'] - 1,
+                                                   placement_option['placement_entity_representation'])
+                placement.add_entities_placement(main_placement)
+
+            placements.append(placement)
+
+        return placements
 
     def compute_placement_options(self,
                                   scaled_entity_instance_requirements_by_entity,

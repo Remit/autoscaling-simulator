@@ -13,16 +13,22 @@ class HomogeneousContainerGroup:
     """
 
     def __init__(self,
-                 container_info,
+                 container_info : NodeInfo,
                  containers_count : int,
-                 entities_instances_counts : dict,
+                 entities_instances_counts,
                  system_capacity : SystemCapacity):
 
         self.container_name = container_info.get_name()
         self.container_info = container_info
 
         self.containers_count = containers_count
-        self.entities_state = EntitiesState(entities_instances_counts)
+        if isinstance(entities_instances_counts, dict):
+            self.entities_state = EntitiesState(entities_instances_counts)
+        elif isinstance(entities_instances_counts, EntitiesState):
+            self.entities_state = entities_instances_counts
+        else:
+            raise TypeError('Incorrect type of the entities_instances_counts when creating {}: {}'.format(self.__class__.__name__,
+                                                                                                          entities_instances_counts.__class__.__name__))
 
         if not isinstance(system_capacity, SystemCapacity):
             raise ValueError('Provided argument is not of a {} class'.format(SystemCapacity.__name__))
@@ -283,71 +289,26 @@ class HomogeneousContainerGroupSet:
             self._homogeneous_groups[group.id] = group
 
     def __init__(self,
-                 container_info,
-                 containers_count,
-                 cumulative_entities_state,
-                 selected_placement_entity_representation,
-                 scaled_entity_instance_requirements_by_entity):
-
-        """
-        """
+                 container_for_scaled_entities_types : dict,
+                 requirements_by_entity : dict,
+                 selected_placement : Placement):
 
         self._homogeneous_groups = {}
+        for entity_placement in selected_placement:
 
-        in_change_entity_count_applied_to_all_containers = {}
-        containers_count_with_unit_change_applied = {}
-        for entity_name, in_change_entity_count in cumulative_entities_state.in_change_entities_instances_counts.items():
-            in_change_entity_count_applied_to_all_containers[entity_name] = in_change_entity_count // containers_count
-            containers_count_with_unit_change_applied[entity_name] = in_change_entity_count % containers_count
+            if not entity_placement.container_name in container_for_scaled_entities_types:
+                raise ValueError('Incorrect container type {}'.format(entity_placement.container_name))
 
-        groups_configs = {} # by hash
-        for _ in range(containers_count):
-            container_config = {}
-            for entity_name, entity_count in cumulative_entities_state.entities_instances_counts.items():
-                unit_delta = 0
-                if containers_count_with_unit_change_applied[entity_name] > 0:
-                    unit_delta = np.sign(in_change_entity_count_applied_to_all_containers[entity_name])
-                    containers_count_with_unit_change_applied[entity_name] -= 1
+            container_info = container_for_scaled_entities_types[entity_placement.container_name]
 
-                cumulative_change_on_container = in_change_entity_count_applied_to_all_containers[entity_name] + unit_delta
-                to_allocate_with_changes_accounted_for = selected_placement_entity_representation[entity_name] - \
-                                                         cumulative_change_on_container
-
-                if entity_count > 0:
-                    container_config[entity_name] = {'entities_instances_counts': to_allocate_with_changes_accounted_for,
-                                                     'in_change_entities_instances_counts': cumulative_change_on_container}
-                    hashed_conf_name = hash(entity_name + str(to_allocate_with_changes_accounted_for))
-
-                    cumulative_change_on_container
-                    cumulative_entities_state.entities_instances_counts[entity_name] -= to_allocate_with_changes_accounted_for
-
-            id = hash(str(container_config))
-            if id in groups_configs:
-                groups_configs[id]['container_count'] += 1
-            else:
-                groups_configs[is] = { 'group_config': container_config,
-                                       'container_count': 1 }
-
-        for id, group_config in groups_configs.items():
-
-            system_capacity_taken = SystemCapacity(container_info.node_type)
-            entities_instances_counts_per_group = group_config['container_count']['group_config']['entities_instances_counts']
-            in_change_entities_instances_counts_per_group = group_config['container_count']['group_config']['in_change_entities_instances_counts']
-
-            for entity_name, entity_instances_count in entities_instances_counts_per_group.items():
-                total_entity_count = entity_instances_count
-                if entity_name in in_change_entities_instances_counts_per_group:
-                    total_entity_count += in_change_entities_instances_counts_per_group[entity_name]
-
-                fits, cap_taken = container_info.takes_capacity({entity_name: scaled_entity_instance_requirements_by_entity[entity_name]})
-                if not fits:
-                    raise ValueError('Attempt to fit an entity {} on the container {} when it cannot fit'.format(entity_name, container_info.node_type))
-                system_capacity_taken += total_entity_count * cap_taken
+            fit, system_capacity_taken = container_info.takes_capacity(requirements_by_entity,
+                                                                       entity_placement.entities_state)
+            if not fits:
+                raise ValueError('Attempt to fit EntitiesState on the container {} where it cannot fit'.format(entity_name, container_info.node_type))
 
             hcg = HomogeneousContainerGroup(container_info,
-                                            group_config['container_count'],
-                                            entities_instances_counts_per_group,
-                                            in_change_entities_instances_counts_per_group,
+                                            entity_placement.containers_count,
+                                            entity_placement.entities_state,
                                             system_capacity_taken)
 
             self._homogeneous_groups[hcg.id] = hcg

@@ -9,7 +9,12 @@ class EntitiesStatesRegionalized:
     def __init__(self,
                  entities_states_per_region : dict):
 
-        self._entities_states_per_region = entities_states_per_region
+        self._entities_states_per_region = {}
+        for region_name, value in entities_states_per_region.items():
+            if isinstance(value, EntitiesState):
+                self.add_state(value)
+            elif isinstance(value, dict) and len(value) > 0:
+                self._entities_states_per_region[region_name] = EntitiesState(value)
 
     def __add__(self,
                 other_regionalized_states):
@@ -139,6 +144,30 @@ class EntitiesState:
 
         return max(division_result_raw.values())
 
+    def __mod__(self,
+                other_entities_state):
+
+        """
+        Computes the remainder entities state that is only partially covered by the
+        current entities state. Complements the __truediv__ defined above.
+        """
+
+        if not isinstance(other_entities_state, self.__class__):
+            raise TypeError('Incorrect type of operand to take {} modulo: {}'.format(self.__class__.__name__,
+                                                                                     other_entities_state.__class__.__name__))
+
+        result_raw = {}
+        other_entities_state_raw = other_entities_state.to_dict()
+        for entity_name, count in self.to_dict().items():
+            if entity_name in other_entities_state_raw:
+                remainder = count % other_entities_state_raw[entity_name]
+                if remainder > 0:
+                    result_raw[entity_name] = count % other_entities_state_raw[entity_name]
+            else:
+                result_raw[entity_name] = count
+
+        return EntitiesState(result_raw)
+
     def to_dict(self):
 
         dict_representation = {}
@@ -146,6 +175,14 @@ class EntitiesState:
             dict_representation[entity_name] = group.entity_instances_count
 
         return dict_representation
+
+    def count(self,
+              entity_name : str):
+
+        if entity_name in self.entities_instances_counts:
+            return self.entities_instances_counts[entity_name].entity_instances_count
+        else:
+            return 0
 
 class EntityGroup:
 
@@ -188,6 +225,19 @@ class EntityGroup:
         new_entities_instances_count = self.entity_instances_count * multiplier
 
         return EntityGroup(self.entity_name, new_entities_instances_count)
+
+    def __mod__(self,
+                other_entity_group):
+
+        if not isinstance(other_entity_group, self.__class__):
+            raise TypeError('Incorrect type of operand to take modulo of {}: {}'.format(self.__class__.__name__, other_entity_group.__class__.__name__))
+
+        if self.entity_name != other_entity_group.entity_name:
+            raise ValueError('Non-matching names of EntityGroups to take modulo: {} and {}'.format(self.entity_name, other_entity_group.entity_name))
+
+        modulo_result = self.entity_instances_count % other_entity_group.entity_instances_count
+
+        return EntityGroup(self.entity_name, modulo_result)
 
 class EntityGroupDelta:
 

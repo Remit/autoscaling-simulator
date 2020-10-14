@@ -67,20 +67,25 @@ class NodeInfo(ScaledEntityContainer):
         return fits
 
     def takes_capacity(self,
-                       requirements_by_entity):
+                       requirements_by_entity : dict,
+                       entities_state : EntitiesState = None):
 
         labels_required = []
         vCPU_required = 0
         memory_required = 0
 
-        for entity, requirements in requirements_by_entity.items():
+        for entity_name, requirements in requirements_by_entity.items():
             labels_reqs = ErrorChecker.key_check_and_load('labels', requirements, self.node_type)
             vCPU_reqs = ErrorChecker.key_check_and_load('vCPU', requirements, self.node_type)
             memory_reqs = ErrorChecker.key_check_and_load('memory', requirements, self.node_type)
 
+            factor = 1
+            if not entities_state is None:
+                factor = entities_state.count(entity_name)
+
             labels_required.extend(labels_reqs)
-            vCPU_required += vCPU_reqs
-            memory_required += memory_reqs
+            vCPU_required += (vCPU_reqs * factor)
+            memory_required += (memory_reqs * factor)
 
         for label_required in labels_required:
             if not label_required in self.labels:

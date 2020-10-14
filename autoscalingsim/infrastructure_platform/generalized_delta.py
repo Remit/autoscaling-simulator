@@ -1,6 +1,29 @@
 from .container_group import ContainerGroupDelta
 from .entity_group import EntityGroupDelta
 
+class StateDelta:
+
+    """
+    Wraps multiple generalized deltas corresponding to different regions.
+    """
+
+    def __init__(self,
+                 raw_deltas : dict):
+
+        self.deltas_per_region = {}
+        for region_name, delta in raw_deltas.items():
+            if not isinstance(delta, GeneralizedDelta):
+                raise TypeError('Expected GeneralizedDelta on initializing {}, got {}'.format(self.__class__.__name__,
+                                                                                              delta.__class__.__name__))
+
+            self.deltas_per_region[region_name] = delta
+
+class RegionalDelta:
+
+    """
+    """
+# TODO: consider an abstraction between below and above? region can contain multiple deltas
+
 class GeneralizedDelta:
 
     """

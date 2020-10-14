@@ -80,11 +80,11 @@ class Adjuster(ABC):
         self.scaled_entity_instance_requirements_by_entity = scaled_entity_instance_requirements_by_entity
 
         self.combiner = combiners.Registry.get(combiner_type)
-        self.desired_state_calculator = DesiredStateCalculator(placement_hint,
-                                                               score_calculator_class,
-                                                               optimizer_type,
-                                                               container_for_scaled_entities_types,
-                                                               scaled_entity_instance_requirements_by_entity)
+        self.desired_state_calculator = DesiredChangeCalculator(placement_hint,
+                                                                score_calculator_class,
+                                                                optimizer_type,
+                                                                container_for_scaled_entities_types,
+                                                                scaled_entity_instance_requirements_by_entity)
 
     def adjust(self,
                cur_timestamp,
@@ -113,34 +113,33 @@ class Adjuster(ABC):
             # the changes on the considered timestamp, we need to consider the
             # alternatives: either to add new containers to accommodate the change
             # or to start a new cluster and migrate services there.
-            if len(unmet_change) > 0:
+            if len(unmet_change) > 0: # unmet_change can only be positive below
 
-                in_work_collective_entities_states = in_work_state.extract_collective_entities_states()
                 ts_next = timeline_of_unmet_changes.peek(ts_of_unmet_change)
                 state_duration_h = (ts_next - ts_of_unmet_change) / pd.Timedelta(1, unit = 'h')
+                unmet_change_state = EntitiesStatesRegionalized(unmet_change)
 
                 # 2.a: Addition of new containers
-                state_simple_addition, score_simple_addition = self.desired_state_calculator(in_work_collective_entities_states,
-                                                                                             state_duration_h)
-                # TODO: score_per_h --> again regional aspect!
+                state_simple_addition_deltas, score_simple_addition = self.desired_state_calculator(unmet_change_state,
+                                                                                                    state_duration_h)
                 score_simple_addition += in_work_state.score_per_h * state_duration_h
 
                 # 2.b: New cluster and migration
-                in_work_collective_entities_states += unmet_change
-                state_substitution, score_substitution = self.desired_state_calculator(in_work_collective_entities_states,
+                in_work_collective_entities_states = in_work_state.extract_collective_entities_states()
+                in_work_collective_entities_states += unmet_change_state
+                state_substitution_deltas, score_substitution = self.desired_state_calculator(in_work_collective_entities_states,
                                                                                        state_duration_h)
                 # TODO: make gen. delta out of state_substitution// take into account regions
                 # abstraction: set of generalized deltas differing by region?
                 # platform_state.to_deltas?
-                state_substitution_delta =
-                till_state_substitution_td = shadow_state_substitution_delta.till_full_enforcement(self.platform_scaling_model,
-                                                                                                   self.application_scaling_model,
-                                                                                                   ts_of_unmet_change)
+                till_state_substitution_td = state_substitution_deltas.till_full_enforcement(self.platform_scaling_model,
+                                                                                             self.application_scaling_model,
+                                                                                             ts_of_unmet_change) # TODO: implement + return list?
                 till_state_substitution_h = till_state_substitution_td / pd.Timedelta(1, unit = 'h')
                 score_substitution += in_work_state.score_per_h * till_state_substitution_h # TODO: set of till_state...
                 # TODO: score_per_h differing by region or???
 
-                # Comparing and selecting an alternative
+                # Comparing and selecting an alternative --> convert to deltas operation
                 chosen_state = None
                 chosen_score = None
                 if score_simple_addition > score_substitution:

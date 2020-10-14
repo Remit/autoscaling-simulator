@@ -17,18 +17,18 @@ class Optimizer(ABC):
 class OptimizerScoreMaximizer(Optimizer):
 
     def __call__(self,
-                 scored_options : dict):
+                 scored_placements_lst : list):
 
-        if len(scored_options) > 0:
-            selected_container_name = list(scored_options.keys())[0]
-            sel_val = list(scored_options.values())[0]
+        selected_placement = None
 
-            for container_name, scored_option in scored_options.items():
-                if scored_option['score'] > sel_val['score']:
-                    selected_container_name = container_name
-                    sel_val = scored_option
+        if len(scored_placements_lst) > 0:
+            selected_placement = scored_placements_lst[0]
 
-        return (selected_container_name, sel_val)
+            for placement in scored_placements_lst[1:]:
+                if placement.score > selected_placement.score:
+                    selected_placement = placement
+
+        return selected_placement
 
 class Registry:
 

@@ -29,11 +29,9 @@ class Region:
 
     def __init__(self,
                  region_name : str,
-                 container_info : NodeInfo,
-                 containers_count : int,
-                 selected_placement_entity_representation : dict,
-                 entities_state : dict,
-                 scaled_entity_instance_requirements_by_entity : dict):
+                 container_for_scaled_entities_types : dict,
+                 scaled_entity_instance_requirements_by_entity : dict,
+                 selected_placement : Placement):
 
         """
         Alternative Region initialization. Useful for creation of the temporary
@@ -41,11 +39,9 @@ class Region:
         """
 
         self.region_name = region_name
-        self.homogeneous_groups = HomogeneousContainerGroupSet(container_info,
-                                                               containers_count,
-                                                               selected_placement_entity_representation,
-                                                               entities_state,
-                                                               scaled_entity_instance_requirements_by_entity)
+        self.homogeneous_groups = HomogeneousContainerGroupSet(container_for_scaled_entities_types,
+                                                               scaled_entity_instance_requirements_by_entity,
+                                                               selected_placement)
 
 
     def compute_soft_adjustment(self,

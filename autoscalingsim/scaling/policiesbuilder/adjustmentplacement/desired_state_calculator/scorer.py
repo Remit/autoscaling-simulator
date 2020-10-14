@@ -16,18 +16,22 @@ class Scorer:
         self.score_calculator = score_calculator
 
     def __call__(self,
-                 containers_required : dict,
+                 placements_lst : list,
                  state_duration_h : float):
 
-        scored_options = {}
-        for container_name, container_count_and_placement in containers_required.items():
-            score, parameter_val = self.score_calculator(container_name,
-                                                         state_duration_h,
-                                                         containers_count_and_placement['count'])
-            interval_score = { 'score': score,
-                               'parameter': parameter_val,
-                               'count': containers_count_and_placement['count'],
-                               'placement': containers_count_and_placement['placement_entity_representation']}
-            scored_options[container_name] = interval_score
+        for placement in placements_lst:
+            cumulative_score = self.get_null_score()
+            for entities_placement in placement:
 
-        return scored_options
+                score, _ = self.score_calculator(entities_placement.container_name,
+                                                 state_duration_h,
+                                                 entities_placement.containers_count)
+                cumulative_score += score
+
+            placement.score = score
+
+        return placements_lst
+
+    def get_null_score(self):
+
+        return self.score_calculator.score_class()

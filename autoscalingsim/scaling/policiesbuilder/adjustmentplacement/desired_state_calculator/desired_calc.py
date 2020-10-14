@@ -9,7 +9,7 @@ from ......infrastructure_platform.region import Region
 from ......infrastructure_platform.entity_group import EntitiesStatesRegionalized
 from ......infrastructure_platform.platform_state import PlatformState
 
-class DesiredStateCalculator:
+class DesiredChangeCalculator:
 
     """
     Implements PSO (Place-Score-Optimize) process. Provides the desired state
@@ -38,27 +38,25 @@ class DesiredStateCalculator:
 
         # TODO: add logic to check whether empty results are returned
         regions = {}
-        joint_score = 0
+        joint_score = self.scorer.get_null_score()
         for region_name, entities_state in entities_states:
             # Place
-            containers_required = self.placer.compute_containers_requirements(self.scaled_entity_instance_requirements_by_entity,
-                                                                              entities_state)
+            placements_lst = self.placer.compute_containers_requirements(self.scaled_entity_instance_requirements_by_entity,
+                                                                         entities_state)
             # Score
-            scored_options = self.scorer(containers_required, state_duration_h)
+            scored_placements_lst = self.scorer(placements_lst, state_duration_h)
 
             # Optimize
-            container_name, container_params = self.optimizer(scored_options)
+            selected_placement = self.optimizer(scored_placements_lst)
 
             regions[region_name] = Region(region_name,
-                                          self.container_for_scaled_entities_types[container_name],
-                                          container_params['count'],
-                                          container_params['placement'],
-                                          EntitiesState(),
-                                          self.scaled_entity_instance_requirements_by_entity)
-
+                                          self.container_for_scaled_entities_types,
+                                          self.scaled_entity_instance_requirements_by_entity,
+                                          selected_placement)
 
             # Building the new state based on the selected container type
             desired_state = PlatformState(regions)
-            joint_score += container_params['score']
+            desired_deltas = desired_state.to_deltas()
+            joint_score += selected_placement.score
 
-        return (desired_state, joint_score)
+        return (desired_deltas, joint_score)

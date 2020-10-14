@@ -1,4 +1,4 @@
-from .generalized_delta import GeneralizedDelta
+from .generalized_delta import GeneralizedDelta, GeneralizedDeltaRegionalized
 from .region import Region
 from ..utils.error_check import ErrorChecker
 
@@ -42,6 +42,17 @@ class PlatformState:
 
         return modified_state
 
+    def to_deltas(self):
+
+        """
+        """
+
+        per_region_deltas = {}
+        for region_name, region in self.regions:
+            per_region_deltas[region_name] = region.to_delta()
+
+        return GeneralizedDeltaRegionalized(per_region_deltas)
+
     def copy(self):
 
         return PlatformState(self.regions.copy())
@@ -58,20 +69,22 @@ class PlatformState:
         Does not change the state.
         """
 
-        groups_deltas = {}
+        groups_deltas_raw = {}
         unmet_scaled_entity_adjustment = {}
 
         for region_name, region in self.regions:
             region_groups_deltas, region_unmet_scaled_entity_adjustment = region.compute_soft_adjustment(scaled_entity_adjustment_in_existing_containers,
                                                                                                          scaled_entity_instance_requirements_by_entity)
             if len(region_groups_deltas) > 0:
-                groups_deltas[region_name] = region_groups_deltas
+                groups_deltas_raw[region_name] = region_groups_deltas
 
             if len(region_unmet_scaled_entity_adjustment) > 0:
                 # If we failed to accommodate the negative change in services counts, then
                 # we discard them (no such services to delete, first must add these)
                 unmet_change_positive = {(service_name, change) for service_name, change in region_unmet_scaled_entity_adjustment.items() if change > 0}
                 unmet_scaled_entity_adjustment[region_name] = unmet_change_positive
+
+        groups_deltas = GeneralizedDeltaRegionalized(groups_deltas_raw)
 
         return (groups_deltas, unmet_scaled_entity_adjustment)
 

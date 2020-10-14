@@ -136,7 +136,7 @@ class PriceScore(Score):
     """
 
     def __init__(self,
-                 price = 1):
+                 price = float('Inf')):
 
         super().__init__(InvertingFunction(lambda price: 1 / price),
                          InvertingFunction(lambda score: 1 / score))
@@ -174,7 +174,7 @@ class PriceScore(Score):
             new_score.score = float('Inf')
         else:
             new_score.score = self.score / scalar
-            
+
         return new_score
 
 class Registry:
