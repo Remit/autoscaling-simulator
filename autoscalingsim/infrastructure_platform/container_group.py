@@ -54,10 +54,38 @@ class HomogeneousContainerGroup:
 
         self.entities_state += entities_group_delta
 
+    def nullify_entities_state(self):
+
+        self.entities_state = EntitiesState()
+        self.system_capacity = SystemCapacity(self.container_name)
+
+    def copy(self):
+
+        return HomogeneousContainerGroup(self.container_info,
+                                         self.containers_count,
+                                         self.entities_state,
+                                         self.system_capacity)
+
+    def to_delta(self,
+                 direction : int = 1):
+
+        """
+        Converts the container into the *unenforced* GeneralizedDelta representation.
+        By default: scale up direction.
+        """
+
+        container_group = self.copy()
+        container_group.nullify_entities_state()
+        container_group_delta = ContainerGroupDelta(container_group,
+                                                    sign = direction)
+
+        return GeneralizedDelta(container_group_delta,
+                                self.entities_state.to_delta(direction))
+
+
     def compute_soft_adjustment(self,
                                 scaled_entity_adjustment_in_existing_containers : dict,
-                                scaled_entity_instance_requirements_by_entity : dict,
-                                region_name : str):
+                                scaled_entity_instance_requirements_by_entity : dict):
 
         """
         Computes the adjustments to the current containers in the Homogeneous
@@ -179,8 +207,7 @@ class HomogeneousContainerGroup:
 
 
                 gd = GeneralizedDelta(container_group_delta,
-                                      entities_group_delta,
-                                      region_name)
+                                      entities_group_delta)
 
                 generalized_deltas.append(gd)
 
@@ -188,38 +215,6 @@ class HomogeneousContainerGroup:
         unmet_changes_res = [{entity_name: count} for entity_name, count in unmet_changes if count != 0]
 
         return (generalized_deltas, unmet_changes_res)
-
-    # TODO: removal!
-    def finish_change_for_entities(self,
-                                   entities_booting_period_expired,
-                                   entities_termination_period_expired):
-
-        """
-        Produces a new container group with the changes applied.
-
-        The given container group does not change.
-        """
-
-        new_entities_instances_counts = self.entities_state.entities_instances_counts.copy()
-        new_in_change_entities_instances_counts = self.entities_state.in_change_entities_instances_counts.copy()
-        for entity_name, change_to_apply in self.entities_state.in_change_entities_instances_counts.items():
-
-            if ((entity_name in entities_booting_period_expired) and (change_to_apply > 0)) or \
-               ((entity_name in entities_termination_period_expired) and (change_to_apply < 0))
-
-                de_facto_change = 0
-                if entity_name in new_entities_instances_counts:
-                    old_instances_count = new_entities_instances_counts[entity_name]
-                    new_entities_instances_counts[entity_name] = max(0, new_entities_instances_counts[entity_name] + change_to_apply)
-                    de_facto_change = new_entities_instances_counts[entity_name] - old_instances_count
-
-                new_in_change_entities_instances_counts[entity_name] -= de_facto_change
-
-        return HomogeneousContainerGroup(self.container_info,
-                                         self.containers_count,
-                                         new_entities_instances_counts,
-                                         new_in_change_entities_instances_counts,
-                                         self.system_capacity) # TODO: check whether in-change services are considered to be taking capacity, if yes, no change required
 
 class ContainerGroupDelta:
 
@@ -284,9 +279,15 @@ class HomogeneousContainerGroupSet:
     def __init__(self,
                  homogeneous_groups = []):
 
-        self._homogeneous_groups = {}
-        for group in homogeneous_groups:
-            self._homogeneous_groups[group.id] = group
+        if isinstance(homogeneous_groups, dict):
+            self._homogeneous_groups = homogeneous_groups
+        else:
+            self._homogeneous_groups = {}
+            for group in homogeneous_groups:
+                if not isinstance(group, HomogeneousContainerGroup):
+                    raise TypeError('An entity of unknown type {} when initializing {}'.format(group.__class__.__name__,
+                                                                                               self.__class__.__name__))
+                self._homogeneous_groups[group.id] = group
 
     def __init__(self,
                  container_for_scaled_entities_types : dict,
@@ -314,27 +315,40 @@ class HomogeneousContainerGroupSet:
             self._homogeneous_groups[hcg.id] = hcg
 
     def __add__(self,
-                delta : GeneralizedDelta):
+                regional_delta : RegionalDelta):
 
-        if isinstance(delta, GeneralizedDelta):
-            container_group_delta = delta.container_group_delta
-            entities_group_delta = delta.entities_group_delta
+        homogeneous_groups = self.copy()
+        if isinstance(delta, RegionalDelta):
 
-            if container_group_delta.virtual:
-                # If the container group delta is virtual, then add/remove
-                # entities given in entities_group_delta to/from the corresponding
-                # container group
-                self._homogeneous_groups[container_group_delta.container_group.id] += entities_group_delta
-            else:
-                # If the container group delta is not virtual, then add/remove it
-                if container_group_delta.sign > 0:
-                    self._homogeneous_groups[container_group_delta.container_group.id] = container_group_delta.container_group
-                elif container_group_delta.sign < 0:
-                    del self._homogeneous_groups[container_group_delta.container_group.id]
+            for generalized_delta in regional_delta:
+                container_group_delta = generalized_delta.container_group_delta
+
+                if not container_group_delta.in_chage:
+                    entities_group_delta = generalized_delta.entities_group_delta
+
+                    if container_group_delta.virtual:
+                        # If the container group delta is virtual, then add/remove
+                        # entities given in entities_group_delta to/from the corresponding
+                        # container group
+                        if not entities_group_delta.in_change:
+                            homogeneous_groups._homogeneous_groups[container_group_delta.container_group.id] += entities_group_delta
+                    else:
+                        # If the container group delta is not virtual, then add/remove it
+                        if container_group_delta.sign > 0:
+                            homogeneous_groups._homogeneous_groups[container_group_delta.container_group.id] = container_group_delta.container_group
+                        elif container_group_delta.sign < 0:
+                            del homogeneous_groups._homogeneous_groups[container_group_delta.container_group.id]
         else:
-            raise ValueError('An attempt to add an object of type {} to the {}'.format(delta.__class__.__name__,
-                                                                                       self.__class__.__name__))
+            raise TypeError('An attempt to add an object of type {} to the {}'.format(regional_delta.__class__.__name__,
+                                                                                      self.__class__.__name__))
 
+        return homogeneous_groups
+
+    def copy(self):
+        return HomogeneousContainerGroupSet(self._homogeneous_groups.copy())
+
+
+    # TODO: redo below
     def __sub__(self,
                 homogeneous_group_delta):
 
@@ -347,6 +361,19 @@ class HomogeneousContainerGroupSet:
 
     def __iter__(self):
         return HomogeneousContainerGroupSetIterator(self)
+
+    def to_deltas(self):
+
+        """
+        Converts the owned homogeneous container groups to their generalized
+        deltas representations.
+        """
+
+        generalized_deltas_lst = []
+        for group in generalized_deltas_lst.values():
+            generalized_deltas_lst.append(group.to_delta)
+
+        return generalized_deltas_lst
 
     def get(self):
         return list(self._homogeneous_groups.values())

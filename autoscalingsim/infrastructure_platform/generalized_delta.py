@@ -4,25 +4,110 @@ from .entity_group import EntityGroupDelta
 class StateDelta:
 
     """
-    Wraps multiple generalized deltas corresponding to different regions.
+    Wraps multiple regional deltas.
     """
 
     def __init__(self,
-                 raw_deltas : dict):
+                 regional_deltas_lst : list):
 
         self.deltas_per_region = {}
-        for region_name, delta in raw_deltas.items():
-            if not isinstance(delta, GeneralizedDelta):
-                raise TypeError('Expected GeneralizedDelta on initializing {}, got {}'.format(self.__class__.__name__,
+        for regional_delta in regional_deltas_lst:
+            if not isinstance(regional_delta, RegionalDelta):
+                raise TypeError('Expected RegionalDelta on initializing {}, got {}'.format(self.__class__.__name__,
                                                                                               delta.__class__.__name__))
 
-            self.deltas_per_region[region_name] = delta
+            self.deltas_per_region[regional_delta.region_name] = regional_delta
+
+    def __iter__(self):
+        return StateDeltaIterator(self)
+
+    def enforce(self,
+                platform_scaling_model : PlatformScalingModel,
+                application_scaling_model : ApplicationScalingModel,
+                delta_timestamp : pd.Timestamp):
+
+        new_timestamped_sd = {}
+        for region_name, regional_delta in self.deltas_per_region:
+
+            new_timestamped_rd = regional_delta.enforce(platform_scaling_model,
+                                                        application_scaling_model,
+                                                        delta_timestamp)
+
+            for timestamp, reg_deltas_per_ts in new_timestamped_rd.items():
+
+                new_timestamped_sd[timestamp] = StateDelta(reg_deltas_per_ts)
+
+        return new_timestamped_sd
+
+class StateDeltaIterator:
+
+    def __init__(self,
+                 state_delta : StateDelta):
+
+        self._state_delta = state_delta
+        self._index = 0
+
+    def __next__(self):
+
+        if self._index < len(self.deltas_per_region):
+            region_name = list(self.deltas_per_region.keys())[self._index]
+            self._index += 1
+            return self.deltas_per_region[region_name]
+
+        raise StopIteration
 
 class RegionalDelta:
 
     """
+    Wraps multiple generalized deltas that bundle changes in entities state with
+    the corresponding change in container group.
     """
-# TODO: consider an abstraction between below and above? region can contain multiple deltas
+
+    def __init__(self,
+                 region_name : str,
+                 generalized_deltas_lst : list = []):
+
+        self.region_name = region_name
+        self.generalized_deltas = generalized_deltas_lst
+
+    def __iter__(self):
+        return RegionalDeltaIterator(self)
+
+    def enforce(self,
+                platform_scaling_model : PlatformScalingModel,
+                application_scaling_model : ApplicationScalingModel,
+                delta_timestamp : pd.Timestamp):
+
+        new_timestamped_rd = {}
+        for generalized_delta in self.generalized_deltas:
+
+            new_timestamped_gd = generalized_delta.enforce(platform_scaling_model,
+                                                           application_scaling_model,
+                                                           delta_timestamp)
+
+            for timestamp, gen_deltas_per_ts in new_timestamped_gd.items():
+
+                new_timestamped_rd[timestamp] = RegionalDelta(self.region_name,
+                                                              gen_deltas_per_ts)
+
+        return new_timestamped_rd
+
+class RegionalDeltaIterator:
+
+    def __init__(self,
+                 regional_delta : RegionalDelta):
+
+        self._regional_delta = regional_delta
+        self._index = 0
+
+    def __next__(self):
+
+        if self._index < len(self._regional_delta.generalized_deltas):
+            generalized_delta = self._regional_delta.generalized_deltas[self._index]
+            self._index += 1
+            return generalized_delta
+
+        raise StopIteration
 
 class GeneralizedDelta:
 
@@ -33,8 +118,7 @@ class GeneralizedDelta:
 
     def __init__(self,
                  container_group_delta : ContainerGroupDelta,
-                 entities_group_delta : EntitiesGroupDelta,
-                 region : str):
+                 entities_group_delta : EntitiesGroupDelta):
 
         if (not isinstance(container_group_delta, ContainerGroupDelta)) and (not container_group_delta is None):
             raise TypeError('The parameter provided for the initialization of {} is not of {} type'.format(self.__class__.__name__,
@@ -46,7 +130,6 @@ class GeneralizedDelta:
 
         self.container_group_delta = container_group_delta
         self.entities_group_delta = entities_group_delta
-        self.region = region
         self.cached_enforcement = {}
 
     def till_full_enforcement(self,
@@ -112,8 +195,7 @@ class GeneralizedDelta:
             if not new_timestamp in new_deltas:
                 new_deltas[new_timestamp] = []
             new_deltas[new_timestamp].append(GeneralizedDelta(container_group_delta,
-                                                              None,
-                                                              self.region))
+                                                              None))
 
             # Deltas for entities -- connecting them to the corresponding containers
             for delay, entities_group_delta in entities_groups_deltas_by_delays.items():
@@ -123,8 +205,7 @@ class GeneralizedDelta:
 
                 container_group_delta_virtual.virtual = True
                 new_deltas[new_timestamp].append(GeneralizedDelta(container_group_delta_virtual,
-                                                                  entities_group_delta,
-                                                                  self.region))
+                                                                  entities_group_delta))
 
         self.cached_enforcement[delta_timestamp] = new_deltas
         return new_deltas

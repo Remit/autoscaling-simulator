@@ -16,16 +16,26 @@ class Region:
                  homogeneous_groups_and_deltas = []):
 
         self.region_name = region_name
-        self.homogeneous_groups = HomogeneousContainerGroupSet()
+        if isinstance(homogeneous_groups_and_deltas, HomogeneousContainerGroupSet):
+            self.homogeneous_groups = homogeneous_groups_and_deltas
+        else:
+            self.homogeneous_groups = HomogeneousContainerGroupSet()
 
-        for group_or_delta in homogeneous_groups_and_deltas:
-            group_delta = None
-            if isinstance(group_or_delta, HomogeneousContainerGroup):
-                group_delta = ContainerGroupDelta(group)
-            elif:
-                group_delta = group_or_delta
-            if not group_delta is None:
-                self.homogeneous_groups += group_delta
+            for group_or_delta in homogeneous_groups_and_deltas:
+                group_delta = None
+                if isinstance(group_or_delta, HomogeneousContainerGroup):
+                    group_delta = ContainerGroupDelta(group)
+                elif isinstance(group_or_delta, ContainerGroupDelta):
+                    group_delta = group_or_delta
+                else:
+                    raise TypeError('Unexpected type on {} initialization'.format(group_or_delta.__class__.__name__))
+
+                if not group_delta is None:
+                    generalized_delta = GeneralizedDelta(group_delta, None)
+                    regional_delta = RegionalDelta(region_name,
+                                                   [generalized_delta])
+
+                    self.homogeneous_groups += regional_delta
 
     def __init__(self,
                  region_name : str,
@@ -43,6 +53,17 @@ class Region:
                                                                scaled_entity_instance_requirements_by_entity,
                                                                selected_placement)
 
+    def to_deltas(self):
+
+        """
+        Converts region to its delta-representation (RegionalDelta) by converting
+        the owned homogeneous groups accordingly.
+        """
+
+        generalized_deltas_lst = self.homogeneous_groups.to_deltas()
+
+        return RegionalDelta(self.region_name,
+                             generalized_deltas_lst)
 
     def compute_soft_adjustment(self,
                                 entities_deltas,
@@ -141,23 +162,22 @@ class Region:
                     # that did not happen -- still, the associated
                     # entities should be terminated.
                     generalized_deltas_lst.append(GeneralizedDelta(non_enforced_gd.container_group_delta.enforce(),
-                                                                   non_enforced_gd.entities_group_delta,
-                                                                   self.region_name))
+                                                                   non_enforced_gd.entities_group_delta))
                     virtual_cgd = non_enforced_gd.container_group_delta.enforce()
                     virtual_cgd.sign = 1
                     generalized_deltas_lst.append(GeneralizedDelta(virtual_cgd,
-                                                                   None,
-                                                                   self.region_name))
+                                                                   None))
 
                     new_deltas_per_ts.extend(generalized_deltas_lst)
                 else:
                     remaining_non_enforced_scale_down_deltas.append(non_enforced_gd)
 
         new_deltas_per_ts.extend(remaining_non_enforced_scale_down_deltas)
+        regional_delta = RegionalDelta(self.region_name, new_deltas_per_ts)
 
         unmet_changes_on_ts = {**unmet_cumulative_reduction_on_ts, **unmet_cumulative_increase_on_ts}
 
-        return (new_deltas_per_ts, unmet_changes_on_ts)
+        return (regional_delta, unmet_changes_on_ts)
 
     # ToDO: consider deleting
     def update_container_groups(self,
@@ -185,10 +205,20 @@ class Region:
                                                 entities_group_delta)
 
     def __add__(self,
-                operand_to_add):
+                regional_delta : RegionalDelta):
 
-        if isinstance(operand_to_add, GeneralizedDelta):
-            self.homogeneous_groups += operand_to_add
+        if not isinstance(regional_delta, RegionalDelta):
+            raise TypeError('An attempt to add an entity of type {} to the {}'.format(regional_delta.__class__.__name__,
+                                                                                      self.__class__.__name__))
+
+        if regional_delta.region_name != self.region_name:
+            raise ValueError('An attempt to add the delta for region {} to the Region {}'.format(regional_delta.region_name,
+                                                                                                 self.region_name))
+
+        homogeneous_groups = self.homogeneous_groups.copy()
+        homogeneous_groups += regional_delta
+
+        return Region(self.region_name, homogeneous_groups)
 
     def finish_change_for_entities(self,
                                    entities_booting_period_expired,

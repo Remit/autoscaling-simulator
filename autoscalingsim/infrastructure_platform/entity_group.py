@@ -176,6 +176,21 @@ class EntitiesState:
 
         return dict_representation
 
+    def to_delta(self,
+                 direction = 1):
+
+        """
+        Converts the current EntitiesState into its GeneralizedDelta representation.
+        Assumes scale up direction for every EntityGroup.
+        """
+
+        delta = EntitiesGroupDelta()
+        for group in self.entities_instances_counts.values():
+            delta.add(group.to_delta(direction))
+
+        return delta
+
+
     def count(self,
               entity_name : str):
 
@@ -239,6 +254,21 @@ class EntityGroup:
 
         return EntityGroup(self.entity_name, modulo_result)
 
+    def copy(self):
+
+        return EntityGroup(self.entity_name, self.entity_instances_count)
+
+    def to_delta(self,
+                 direction = 1):
+
+        """
+        Converts the current EntityGroup into its delta representation.
+        Assumes scale up direction.
+        """
+
+        return EntityGroupDelta(self.copy(),
+                                direction)
+
 class EntityGroupDelta:
 
     """
@@ -251,10 +281,21 @@ class EntityGroupDelta:
                  entity_count,
                  sign = 1):
 
+        entity_group = EntityGroup(entity_name, entity_count)
+        self.__init__(entity_group, sign)
+
+    def __init__(self,
+                 entity_group : EntityGroup,
+                 sign = 1):
+
         if not isinstance(sign, int):
             raise TypeError('The provided sign parameters is not of {} type'.format(int.__name__))
+
+        if not isinstance(entity_group, EntityGroup):
+            raise TypeError('The provided argument is not of EntityGroup type: {}'.format(entity_group.__class__.__name__))
+
         self.sign = sign
-        self.entity_group = EntityGroup(entity_name, entity_count)
+        self.entity_group = entity_group
 
     def __add__(self,
                 other_delta):
@@ -294,7 +335,7 @@ class EntitiesGroupDelta:
     """
 
     def __init__(self,
-                 entities_instances_counts : dict):
+                 entities_instances_counts : dict = {}):
 
         self.deltas = {}
         self.in_change = True
@@ -340,6 +381,11 @@ class EntitiesGroupDelta:
                 new_deltas[entity_name] = entity_delta
 
         return EntitiesGroupDelta(new_deltas, self.in_change)
+
+    def add(self,
+            other_entity_group_delta : EntityGroupDelta):
+
+        self.deltas[other_entity_group_delta.entity_group.entity_name] = other_entity_group_delta
 
 
     def enforce(self,

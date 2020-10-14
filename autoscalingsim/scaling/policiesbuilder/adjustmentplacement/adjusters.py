@@ -105,9 +105,9 @@ class Adjuster(ABC):
             # This may result in the scale down. The scale down is performed in such
             # a way that the largest possible group of unused containers is removed.
             # Otherwise, only the number of entities is affected.
-            deltas, unmet_change = in_work_state.compute_soft_adjustment(unmet_change,
-                                                                         self.scaled_entity_instance_requirements_by_entity)
-            timeline_of_deltas.add_deltas(ts_of_unmet_change, deltas)
+            in_work_state_delta, unmet_change = in_work_state.compute_soft_adjustment(unmet_change,
+                                                                                      self.scaled_entity_instance_requirements_by_entity)
+            timeline_of_deltas.add_state_delta(ts_of_unmet_change, in_work_state_delta)
 
             # 2. If an unmet positive change is left after we tried to accommodate
             # the changes on the considered timestamp, we need to consider the
@@ -152,6 +152,7 @@ class Adjuster(ABC):
                 chosen_score_per_h = (chosen_score / state_duration_h.seconds) / 3600
 
                 # TODO: adding deltas to timeline_of_deltas based on state_of_choice vs in_work_state
+                timeline_of_deltas.add_state_delta(ts_of_unmet_change, in_work_state_delta)
 
                 # change in_work_state
                 in_work_state = timeline_of_deltas.roll_out_updates(ts_of_unmet_change)

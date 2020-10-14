@@ -84,45 +84,45 @@ class DeltaTimeline:
         self.timeline = {}
         self.time_of_last_state_update = pd.Timestamp(0)
 
-    def add_deltas(self,
-                   timestamp : pd.Timestamp,
-                   deltas : dict):
+    def add_state_delta(self,
+                        timestamp : pd.Timestamp,
+                        state_delta : StateDelta):
 
-        for region_name, deltas_per_region in deltas.items():
-            if len(deltas_per_region) > 0:
-                if not region_name in self.timeline:
-                    self.timeline[region_name] = {}
+        if not isinstance(state_delta, StateDelta):
+            raise TypeError('An attempt to add an unknown object to {}'.format(self.__class__.__name__))
 
-                if not timestamp in self.timeline[region_name]:
-                    self.timeline[region_name][timestamp] = []
-
-                self.timeline[region_name][timestamp].extend(deltas)
+        if not timestamp in self.timeline:
+            self.timeline[timestamp] = []
+        self.timeline[timestamp].append(state_delta)
 
     def roll_out_updates(self,
                          borderline_ts_for_updates : pd.Timestamp):
+
+        """
+        Roll out all the updates before and at the given point in time.
+        Returns the new current state with all the updates taken into account.
+        """
 
         if borderline_ts_for_updates > self.time_of_last_state_update:
             decision_interval = borderline_ts_for_updates - self.time_of_last_state_update
 
             # Enforcing deltas if needed and updating the timeline with them
-            for region_name, regional_timeline in self.timeline.items():
-                timeline_to_consider = { (timestamp, deltas) for timestamp, deltas in regional_timeline.items() if (timestamp - self.time_of_last_state_update <= decision_interval) }
-                for timestamp, deltas in timeline_to_consider.items():
-                    for delta in deltas:
-                        new_timestamped_deltas = delta.delay(self.platform_scaling_model,
-                                                             self.application_scaling_model,
-                                                             timestamp)
-                        if len(new_timestamped_deltas) > 0:
-                            for timestamp, new_deltas in new_timestamped_deltas.items():
-                                if not timestamp in self.timeline[region_name]:
-                                    self.timeline[region_name][timestamp] = []
-                                self.timeline[region_name][timestamp].extend(new_deltas)
+            timeline_to_consider = { (timestamp, state_deltas) for timestamp, state_deltas in self.timeline.items() if (timestamp - self.time_of_last_state_update <= decision_interval) }
+            for timestamp, state_deltas in timeline_to_consider.items():
+                for state_delta in state_deltas:
+                    new_timestamped_state_deltas = state_delta.enforce(self.platform_scaling_model,
+                                                                       self.application_scaling_model,
+                                                                       timestamp)
 
-                # Updating the actual state using the enforced deltas
-                timeline_to_consider = { (timestamp, deltas) for timestamp, deltas in regional_timeline.items() if (timestamp - self.time_of_last_state_update <= decision_interval) }
-                for timestamp, deltas in timeline_to_consider.items():
-                    for delta in deltas:
-                        self.actual_state += delta
+                    for new_timestamp, new_state_delta in new_timestamped_state_deltas.items():
+                        self.add_delta(new_timestamp, new_state_delta)
+
+            # Updating the actual state using the enforced deltas
+            timeline_to_consider = { (timestamp, state_deltas) for timestamp, state_deltas in self.timeline.items() if (timestamp - self.time_of_last_state_update <= decision_interval) }
+
+            for timestamp, state_deltas in timeline_to_consider.items():
+                for state_delta in state_deltas:
+                    self.actual_state += state_delta
 
             self.time_of_last_state_update = borderline_ts_for_updates
 

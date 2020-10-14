@@ -27,31 +27,32 @@ class PlatformState:
         self.score_per_h = 0
 
     def __add__(self,
-                generalized_delta : GeneralizedDelta):
+                state_delta : StateDelta):
 
         modified_state = self.copy()
-        if not generalized_delta is None:
-            if not isinstance(generalized_delta, GeneralizedDelta):
-                raise TypeError('An attempt to add an entity of type {} to the {}'.format(generalized_delta.__class__.__name__, self.__class__.__name__))
+        if not isinstance(state_delta, StateDelta):
+            raise TypeError('An attempt to add an entity of type {} to the {}'.format(state_delta.__class__.__name__,
+                                                                                      self.__class__.__name__))
 
-            if not container_group_delta.in_change:
-                if not generalized_delta.region in self.regions:
-                    self.regions[generalized_delta.region] = Region(generalized_delta.region)
-
-                self.regions[generalized_delta.region] += generalized_delta
+        for regional_delta in state_delta:
+            if not regional_delta.region_name in modified_state.regions:
+                modified_state.regions[region_name] = Region(region_name)
+            modified_state.regions[region_name] += regional_delta
 
         return modified_state
 
     def to_deltas(self):
 
         """
+        Converts the Platform State to the StateDelta by converting corresponding
+        regions to their RegionalDelta representation.
         """
 
-        per_region_deltas = {}
+        per_region_deltas = []
         for region_name, region in self.regions:
-            per_region_deltas[region_name] = region.to_delta()
+            per_region_deltas.append(region.to_deltas())
 
-        return GeneralizedDeltaRegionalized(per_region_deltas)
+        return StateDelta(per_region_deltas)
 
     def copy(self):
 
@@ -84,9 +85,9 @@ class PlatformState:
                 unmet_change_positive = {(service_name, change) for service_name, change in region_unmet_scaled_entity_adjustment.items() if change > 0}
                 unmet_scaled_entity_adjustment[region_name] = unmet_change_positive
 
-        groups_deltas = GeneralizedDeltaRegionalized(groups_deltas_raw)
+        state_delta = StateDelta(groups_deltas_raw)
 
-        return (groups_deltas, unmet_scaled_entity_adjustment)
+        return (state_delta, unmet_scaled_entity_adjustment)
 
     # TODO: consider deleting
     def update_virtually(self,
