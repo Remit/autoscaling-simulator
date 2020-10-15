@@ -1,7 +1,6 @@
 import pandas as pd
 
-from .adjusters import *
-from ....utils.error_check import ErrorChecker
+import .adjusters
 
 class AdjustmentPolicy:
 
@@ -20,8 +19,7 @@ class AdjustmentPolicy:
         # TODO: think of generalizing terms in the scaling model to the scaled entity etc
         self.scaling_model = scaling_model
         self.state_reader = None
-        adjuster_class = ErrorChecker.key_check_and_load(scaling_settings.adjustment_goal,
-                                                         adjusters_registry, 'Adjuster')
+        adjuster_class = adjusters.Registry.get(scaling_settings.adjustment_goal)
         self.adjuster = adjuster_class(scaling_settings.adjustment_preference)
         self.services_scaling_config = scaling_settings.services_scaling_config
 

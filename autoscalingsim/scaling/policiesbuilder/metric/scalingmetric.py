@@ -1,8 +1,8 @@
-from .valuesfilter import *
-from .valuesaggregator import *
-from .stabilizer import *
-from .forecasting import *
-from .limiter import *
+import .valuesfilter
+import .valuesaggregator
+import .stabilizer
+import .forecasting
+from .limiter import Limiter
 
 class MetricDescription:
 
@@ -94,8 +94,6 @@ class ScalingMetric:
     the metric can come from entirely different source, e.g. external.
     """
 
-
-
     def __init__(self,
                  scaled_entity_name,
                  scaled_aspect_name,
@@ -131,13 +129,13 @@ class ScalingMetric:
         # on the criteria in it, e.g. takes only values for last 5 seconds.
         # Should be callable.
         # TODO: consider filter chains
-        self.values_filter = value_filter_registry[values_filter_conf['name']](values_filter_conf['config'])
+        self.values_filter = valuesfilter.Registry.get(values_filter_conf['name'])(values_filter_conf['config'])
 
         # an aggregator applicable to the time series metrics values
         # -- it aggregates metric values prior to the comparison
         # against the target. Should be callable.
         # TODO: consider values aggregators chains
-        self.values_aggregator = value_aggregator_registry[values_aggregator_conf['name']](values_aggregator_conf['config'])
+        self.values_aggregator = valuesaggregator.Registry.get(values_aggregator_conf['name'])(values_aggregator_conf['config'])
 
         # Scaling determinants:
         # integer value that determines the position of the metric in the
@@ -158,18 +156,18 @@ class ScalingMetric:
         # used to stabilize scaling actions over time, e.g. if the scaling happens
         # many times over a short period of time, various start-up and termination
         # effects may severely impact the response time latency as well as other metrics
-        self.stabilizer = value_stabilizer_registry[stabilizer_conf['name']](stabilizer_conf['config'])
+        self.stabilizer = stabilizer.Registry.get(stabilizer_conf['name'])(stabilizer_conf['config'])
 
         # either predictive or reactive; depending on the value
         # either the real metric value or its forecast is used.
         # The use of the "predictive" demands presence of the
         # forecaster.
         self.timing_type = timing_type
-        self.forecaster = MetricForecaster(fhorizon_in_steps = forecaster_conf['fhorizon_in_steps'],
-                                           forecasting_model_name = forecaster_conf['name'],
-                                           forecasting_model_params = forecaster_conf['config'],
-                                           resolution_ms = forecaster_conf['resolution_ms'],
-                                           history_data_buffer_size = forecaster_conf['history_data_buffer_size'])
+        self.forecaster = forecasting.MetricForecaster(fhorizon_in_steps = forecaster_conf['fhorizon_in_steps'],
+                                                       forecasting_model_name = forecaster_conf['name'],
+                                                       forecasting_model_params = forecaster_conf['config'],
+                                                       resolution_ms = forecaster_conf['resolution_ms'],
+                                                       history_data_buffer_size = forecaster_conf['history_data_buffer_size'])
 
         # either continuous (for vertical scaling) or discrete (for
         # horizontal scaling)

@@ -1,7 +1,9 @@
-from .generalized_delta import GeneralizedDelta, GeneralizedDeltaRegionalized
 from .region import Region
-from ..scaling.policiesbuilder.adjustmentplacement.desired_state_calculator.score import StateScore
-from ..utils.error_check import ErrorChecker
+from .entity_state.entities_states_reg import EntitiesStatesRegionalized
+
+from ..deltarepr.platform_state_delta import StateDelta
+
+from ...scaling.policiesbuilder.adjustmentplacement.desired_adjustment_calculator.score import StateScore
 
 class PlatformState:
 

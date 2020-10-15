@@ -1,8 +1,8 @@
-from abc import ABC, abstractmethod
 import pandas as pd
+from abc import ABC, abstractmethod
 from collections import OrderedDict
 
-from ....utils.error_check import ErrorChecker
+from .error_check import ErrorChecker
 
 class Combiner(ABC):
 
@@ -93,8 +93,6 @@ class WindowedCombiner(Combiner):
         unified_timeline_of_adjustments = OrderedDict(sorted(unified_timeline_of_adjustments.items(),
                                                              key = lambda elem: elem[0][0]))
         return unified_timeline_of_adjustments
-
-
 
 class Registry:
 

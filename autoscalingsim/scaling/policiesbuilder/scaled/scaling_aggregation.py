@@ -1,6 +1,7 @@
-from abc import ABC, abstractmethod
 import pandas as pd
 import numpy as np
+
+from abc import ABC, abstractmethod
 
 class ScalingEffectAggregationRule(ABC):
 
@@ -153,7 +154,22 @@ class MinScalingEffectAggregationRule(ParallelScalingEffectAggregationRule):
         super().__init__(metrics_by_priority,
                          min)
 
-scaling_aggregation_rules_registry = {}
-scaling_aggregation_rules_registry['seqScale'] = SequentialScalingEffectAggregationRule
-scaling_aggregation_rules_registry['maxScale'] = MaxScalingEffectAggregationRule
-scaling_aggregation_rules_registry['minScale'] = MinScalingEffectAggregationRule
+class Registry:
+
+    """
+    Stores the scaling aggregation rules classes and organizes access to them.
+    """
+
+    registry = {
+        'seqScale': SequentialScalingEffectAggregationRule,
+        'maxScale': MaxScalingEffectAggregationRule,
+        'minScale': MinScalingEffectAggregationRule
+    }
+
+    @staticmethod
+    def get(name):
+
+        if not name in Registry.registry:
+            raise ValueError('An attempt to use the non-existent aggregation rule {}'.format(name))
+
+        return Registry.registry[name]

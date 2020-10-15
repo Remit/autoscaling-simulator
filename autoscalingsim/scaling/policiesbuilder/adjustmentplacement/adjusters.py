@@ -1,49 +1,16 @@
-from abc import ABC, abstractmethod
 import pandas as pd
+from abc import ABC, abstractmethod
 
-import .combiners
-from .placer import Placer
-from .timelines import *
-from .desired_state_calculator.desired_calc import DesiredStateCalculator
-import .desired_state_calculator.score_calculators
+import .desired_adjustment_calculator.score_calculators
+from .desired_adjustment_calculator.desired_calc import DesiredChangeCalculator
 
+from ...application_scaling_model import ApplicationScalingModel
+from ...platform_scaling_model import PlatformScalingModel
 
-class ScaledEntityContainer(ABC):
-
-    """
-    A representation of a container that holds instances of the scaled entities,
-    e.g. a node/virtual machine. A concrete class that is to be used as a reference
-    information source for the adjustment has to implement the methods below.
-    For instance, the NodeInfo class for the platform model has to implement them
-    s.t. the adjustment policy could figure out which number of discrete nodes to
-    provide according to the given adjustment goal.
-    """
-
-    @abstractmethod
-    def get_name(self):
-        pass
-
-    @abstractmethod
-    def get_capacity(self):
-        pass
-
-    @abstractmethod
-    def get_cost_per_unit_time(self):
-        pass
-
-    @abstractmethod
-    def get_performance(self):
-        pass
-
-    @abstractmethod
-    def fits(self,
-             requirements_by_entity):
-        pass
-
-    @abstractmethod
-    def takes_capacity(self,
-                       requirements_by_entity):
-        pass
+import ....utils.combiners
+from ....utils.deltarepr.timelines.entities_changes_timeline import TimelineOfDesiredEntitiesChanges
+from ....utils.deltarepr.timelines.delta_timeline import DeltaTimeline
+from ....utils.state.entity_state.entities_states_reg import EntitiesStatesRegionalized
 
 class Adjuster(ABC):
 
@@ -80,16 +47,46 @@ class Adjuster(ABC):
         self.scaled_entity_instance_requirements_by_entity = scaled_entity_instance_requirements_by_entity
 
         self.combiner = combiners.Registry.get(combiner_type)
-        self.desired_state_calculator = DesiredChangeCalculator(placement_hint,
-                                                                score_calculator_class,
-                                                                optimizer_type,
-                                                                container_for_scaled_entities_types,
-                                                                scaled_entity_instance_requirements_by_entity)
+        self.desired_change_calculator = DesiredChangeCalculator(placement_hint,
+                                                                 score_calculator_class,
+                                                                 optimizer_type,
+                                                                 container_for_scaled_entities_types,
+                                                                 scaled_entity_instance_requirements_by_entity)
 
     def adjust(self,
                cur_timestamp,
                entities_scaling_events, # TODO: propagate per region
                current_state):
+
+        """
+        Implements the collaborative platform and application adjustment logic,
+        gluing the layer together.
+
+        It starts by taking the unmet changes in the number of entities that
+        are extracted from the scaling events provided as a parameter. Next,
+        until all the unmet changes are accommodated, the loop proceeds as follows.
+        It first computes the adjusment to accommodate the application
+        desired scaling events based on existing platform configuration.
+        This step (1) may result in accommodating all or part of the changes on the
+        existing platform capacity. If a scale down in services counts was desired,
+        a corresponding scale down in platform might follow. As a result, after this
+        step the platform state might shrink in the capacity and the only meaningful changes
+        to accommodateon the following timesteps are those of the scale out (positive).
+        The processing of these scale out events is grouped in step (2). This step
+        evaluates two alternatives. The first alternative (2.a) is to add a new platform
+        capacity to the existing one to accommodate the scale out events without
+        performing any changes to the original platform capacity and any migration.
+        The second alternative (2.b) is to scrap the old platform capacity and to
+        substitute it with the new joint platform capacity that hosts both the
+        entities instances deployed using the old platform capacity and the new
+        ones, added by the scaling events. This alternative incurs additional cost
+        on maintanining the old capacity for some time in each region until the
+        start up of the new platform capacity and service instances finishes
+        (shadow time). Lastly, two options are evaluated using their scores, and
+        the option with the highest score gets used -- the corresponding deltas
+        are added to the timeline and the platform state gets update to be considered
+        on the next iteration of the loop.
+        """
 
         timeline_of_unmet_changes = TimelineOfDesiredEntitiesChanges(self.combiner,
                                                                      entities_scaling_events,
@@ -120,15 +117,15 @@ class Adjuster(ABC):
                 unmet_change_state = EntitiesStatesRegionalized(unmet_change)
 
                 # 2.a: Addition of new containers
-                state_simple_addition_deltas, state_score_simple_addition = self.desired_state_calculator(unmet_change_state,
-                                                                                                          state_duration_h)
+                state_simple_addition_deltas, state_score_simple_addition = self.desired_change_calculator(unmet_change_state,
+                                                                                                           state_duration_h)
                 score_simple_addition += in_work_state.state_score * state_duration_h
 
                 # 2.b: New cluster and migration
                 in_work_collective_entities_states = in_work_state.extract_collective_entities_states()
                 in_work_collective_entities_states += unmet_change_state
-                state_substitution_deltas, state_score_substitution = self.desired_state_calculator(in_work_collective_entities_states,
-                                                                                                    state_duration_h)
+                state_substitution_deltas, state_score_substitution = self.desired_change_calculator(in_work_collective_entities_states,
+                                                                                                     state_duration_h)
 
                 till_state_substitution_h = state_substitution_deltas.till_full_enforcement(self.platform_scaling_model,
                                                                                             self.application_scaling_model,
@@ -157,7 +154,7 @@ class Adjuster(ABC):
             # resources or budget.
             timeline_of_unmet_changes.overwrite(ts_of_unmet_change, unmet_change)
 
-        return timeline_of_deltas# ?
+        return timeline_of_deltas
 
 class CostMinimizer(Adjuster):
 
@@ -191,7 +188,7 @@ class PerformanceMaximizer(Adjuster):
                  placement_hint = 'sole_instance',
                  combiner_type = 'windowed'):
 
-        self.placer = Placer(placement_hint)
+        pass
 
 class UtilizationMaximizer(Adjuster):
 
@@ -199,11 +196,24 @@ class UtilizationMaximizer(Adjuster):
                  placement_hint = 'balanced',
                  combiner_type = 'windowed'):
 
-        self.placer = Placer(placement_hint)
+        pass
 
+class Registry:
 
-adjusters_registry = {
-    'cost_minimization': CostMinimizer,
-    'performance_maximization': PerformanceMaximizer,
-    'utilization_maximization': UtilizationMaximizer
-}
+    """
+    Stores the adjusters classes and organizes access to them.
+    """
+
+    registry = {
+        'cost_minimization': CostMinimizer,
+        'performance_maximization': PerformanceMaximizer,
+        'utilization_maximization': UtilizationMaximizer
+    }
+
+    @staticmethod
+    def get(name):
+
+        if not name in Registry.registry:
+            raise ValueError('An attempt to use the non-existent adjuster {}'.format(name))
+
+        return Registry.registry[name]

@@ -1,5 +1,6 @@
-from abc import ABC, abstractmethod
 import pandas as pd
+
+from abc import ABC, abstractmethod
 from datetime import timedelta
 
 class MetricForecaster:
@@ -24,7 +25,7 @@ class MetricForecaster:
 
         # Dynamic State
         if (forecasting_model_name in forecasting_model_registry) and (not forecasting_model_params is None):
-            self.model = forecasting_model_registry[forecasting_model_name](forecasting_model_params)
+            self.model = Registry.get(forecasting_model_name)(forecasting_model_params)
         else:
             self.model = None
 
@@ -122,13 +123,13 @@ class SimpleAverage(ForecastingModel):
                 fhorizon_in_steps,
                 resolution_ms):
 
-        one_ms = timedelta(microseconds=1000)
+        one_ms = pd.Timedelta(1, unit = 'ms')
         forecasting_interval_start = df.iloc[-1:,].index[0] + resolution_ms * one_ms
         forecasting_interval_end = forecasting_interval_start + fhorizon_in_steps * resolution_ms * one_ms
         forecast_interval = pd.date_range(start = forecasting_interval_start,
                                           end = forecasting_interval_end,
                                           freq = str(resolution_ms) + 'L')
-        forecasts_df = pd.DataFrame(date_rng, columns=['date'])
+        forecasts_df = pd.DataFrame(date_rng, columns = ['date'])
         forecasts_df['value'] = [self.averaged_value] * len(date_rng)
         forecasts_df['datetime'] = pd.to_datetime(forecasts_df['date'])
         forecasts_df = forecasts_df.set_index('datetime')
@@ -136,5 +137,20 @@ class SimpleAverage(ForecastingModel):
 
         return forecasts_df
 
-forecasting_model_registry = {}
-forecasting_model_registry['simpleAvg'] = SimpleAverage
+class Registry:
+
+    """
+    Stores the forecasting model classes and organizes access to them.
+    """
+
+    registry = {
+        'simpleAvg': SimpleAverage
+    }
+
+    @staticmethod
+    def get(name):
+
+        if not name in Registry.registry:
+            raise ValueError('An attempt to use the non-existent forecasting model {}'.format(name))
+
+        return Registry.registry[name]

@@ -1,6 +1,5 @@
-from abc import ABC, abstractmethod
 import pandas as pd
-from datetime import timedelta
+from abc import ABC, abstractmethod
 
 class ValuesAggregator(ABC):
 
@@ -46,7 +45,7 @@ class AvgAggregator(ValuesAggregator):
     def __call__(self,
                  values):
 
-        resolution_delta = self.resolution_window_ms * timedelta(microseconds = 1000)
+        resolution_delta = self.resolution_window_ms * pd.Timedelta(1, unit = 'ms')
         window_start = values.index[0]
         window_end = window_start + resolution_delta
 
@@ -66,5 +65,20 @@ class AvgAggregator(ValuesAggregator):
 
         return aggregated_vals
 
-value_aggregator_registry = {}
-value_aggregator_registry['avgAggregator'] = AvgAggregator
+class Registry:
+
+    """
+    Stores the aggregator classes and organizes access to them.
+    """
+
+    registry = {
+        'avgAggregator': AvgAggregator
+    }
+
+    @staticmethod
+    def get(name):
+
+        if not name in Registry.registry:
+            raise ValueError('An attempt to use the non-existent aggregator {}'.format(name))
+
+        return Registry.registry[name]

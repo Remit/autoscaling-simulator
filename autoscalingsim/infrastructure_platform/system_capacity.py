@@ -1,4 +1,4 @@
-from ..utils.capacity import Capacity
+from ..utils.state.capacity import Capacity
 
 class SystemCapacity(Capacity):
 

@@ -1,5 +1,5 @@
-from abc import ABC, abstractmethod
 import pandas as pd
+from abc import ABC, abstractmethod
 
 class ValuesFilter(ABC):
 
@@ -45,5 +45,20 @@ class DefaultNA(ValuesFilter):
 
         return values.fillna(self.default_value)
 
-value_filter_registry = {}
-value_filter_registry['defaultNA'] = DefaultNA
+class Registry:
+
+    """
+    Stores the filter classes and organizes access to them.
+    """
+
+    registry = {
+        'defaultNA': DefaultNA
+    }
+
+    @staticmethod
+    def get(name):
+
+        if not name in Registry.registry:
+            raise ValueError('An attempt to use the non-existent filter {}'.format(name))
+
+        return Registry.registry[name]

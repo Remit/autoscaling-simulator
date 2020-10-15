@@ -1,7 +1,8 @@
 import pandas as pd
 from collections import OrderedDict
+
 from ..utils.error_check import ErrorChecker
-from ..infrastructure_platform.generalized_delta import GeneralizedDelta
+from ..utils.deltarepr.delta_entities.entity_group_delta import EntityGroupDelta
 
 class ServiceScalingInfo:
 

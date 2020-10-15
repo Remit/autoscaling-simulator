@@ -1,14 +1,12 @@
 import pandas as pd
 
-from .placer import Placer
-from .scorer import Scorer
 import .optimizers
-from .score import StateScore
+from .placer import Placer
+from .scorer import Scorer, StateScore
 
-# TODO: consider moving region and platform state to utils.
-from ......infrastructure_platform.region import Region
-from ......infrastructure_platform.entity_group import EntitiesStatesRegionalized
-from ......infrastructure_platform.platform_state import PlatformState
+from .....utils.state.region import Region
+from .....utils.state.platform_state import PlatformState
+from .....utils.state.entity_state.entities_states_reg import EntitiesStatesRegionalized
 
 class DesiredChangeCalculator:
 

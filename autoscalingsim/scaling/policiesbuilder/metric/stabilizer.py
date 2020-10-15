@@ -1,6 +1,5 @@
-from abc import ABC, abstractmethod
 import pandas as pd
-from datetime import timedelta
+from abc import ABC, abstractmethod
 
 class Stabilizer(ABC):
     """
@@ -43,7 +42,7 @@ class MaxStabilizer(Stabilizer):
     def __call__(self,
                  values):
 
-        resolution_delta = self.resolution_window_ms * timedelta(microseconds = 1000)
+        resolution_delta = self.resolution_window_ms * pd.Timedelta(1, unit = 'ms')
         window_start = values.index[0]
         window_end = window_start + resolution_delta
 
@@ -65,5 +64,20 @@ class MaxStabilizer(Stabilizer):
 
         return stabilized_vals
 
-value_stabilizer_registry = {}
-value_stabilizer_registry['maxStabilizer'] = MaxStabilizer
+class Registry:
+
+    """
+    Stores the stabilizer classes and organizes access to them.
+    """
+
+    registry = {
+        'maxStabilizer': MaxStabilizer
+    }
+
+    @staticmethod
+    def get(name):
+
+        if not name in Registry.registry:
+            raise ValueError('An attempt to use the non-existent stabilizer {}'.format(name))
+
+        return Registry.registry[name]

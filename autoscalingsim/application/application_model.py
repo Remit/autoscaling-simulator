@@ -3,12 +3,13 @@ import operator
 import pandas as pd
 import os
 
+from .service import Service
+
 from ..workload.request import RequestProcessingInfo
 from ..deployment.deployment_model import DeploymentModel
 from ..infrastructure_platform.platform_model import PlatformModel
 from ..utils.error_check import ErrorChecker
-from ..utils.statemanagers import StateReader, ScalingManager
-from .service import Service
+from ..utils.state.statemanagers import StateReader, ScalingManager
 
 class ApplicationModel:
 

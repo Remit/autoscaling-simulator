@@ -1,7 +1,7 @@
-import math
 import numpy as np
 import pandas as pd
-from ..infrastructure_platform.generalized_delta import GeneralizedDelta
+
+from ..utils.deltarepr.delta_containers.container_group_delta import ContainerGroupDelta
 
 class NodeScalingInfo:
     """
@@ -75,7 +75,7 @@ class PlatformScalingModel:
         boot_up_ms = self.simulation_step_ms
         raw_boot_up_ms = np.random.normal(mu, self.sigma_ms, 1)
         if raw_boot_up_ms > boot_up_ms:
-            boot_up_ms = int(math.ceil(raw_boot_up_ms / self.simulation_step_ms)) * self.simulation_step_ms
+            boot_up_ms = int(np.ceil(raw_boot_up_ms / self.simulation_step_ms)) * self.simulation_step_ms
 
         return boot_up_ms
 
@@ -88,7 +88,7 @@ class PlatformScalingModel:
         tear_down_ms = self.simulation_step_ms
         raw_tear_down_ms = np.random.normal(mu, self.sigma_ms, 1)
         if raw_tear_down_ms > tear_down_ms:
-            tear_down_ms = int(math.ceil(raw_tear_down_ms / self.simulation_step_ms)) * self.simulation_step_ms
+            tear_down_ms = int(np.ceil(raw_tear_down_ms / self.simulation_step_ms)) * self.simulation_step_ms
 
         return tear_down_ms
 

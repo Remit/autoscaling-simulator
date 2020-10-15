@@ -1,5 +1,7 @@
 import pandas as pd
 
+from .score_calculators import *
+
 class Scorer:
 
     """

@@ -1,7 +1,12 @@
-from .system_capacity import SystemCapacity
-from .container_group import HomogeneousContainerGroup, ContainerGroupDelta, HomogeneousContainerGroupSet
-from .generalized_delta import GeneralizedDelta
-from .entity_group import EntitiesState
+from collections import OrderedDict
+
+from .container_state.container_group import HomogeneousContainerGroup
+from .container_state.container_group_set import HomogeneousContainerGroupSet
+from .entity_state.entities_state import EntitiesState
+
+from ..deltarepr.regional_delta import RegionalDelta
+from ..deltarepr.generalized_delta import GeneralizedDelta
+from ..deltarepr.delta_containers.container_group_delta import ContainerGroupDelta
 
 class Region:
 
