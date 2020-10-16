@@ -17,6 +17,7 @@ class MetricDescription:
     }
 
     def __init__(self,
+                 regions,
                  scaled_entity_name,
                  scaled_aspect_name,
                  metric_source_name,
@@ -33,6 +34,7 @@ class MetricDescription:
                  initial_min_limit,
                  initial_entity_representation_in_metric):
 
+        self.regions = regions
         self.scaled_entity_name = scaled_entity_name
         self.scaled_aspect_name = scaled_aspect_name
         self.metric_source_name = metric_source_name
@@ -52,22 +54,23 @@ class MetricDescription:
 
     def convert_to_metric(self):
 
-        return ScalingMetric(self.scaled_entity_name,
-                             self.scaled_aspect_name,
-                             self.metric_source_name,
-                             self.metric_name,
-                             self.values_filter_conf,
-                             self.values_aggregator_conf,
-                             self.target_value,
-                             self.stabilizer_conf,
-                             self.timing_type,
-                             self.forecaster_conf,
-                             self.capacity_adaptation_type,
-                             self.priority,
-                             self.initial_max_limit,
-                             self.initial_min_limit,
-                             self.initial_entity_representation_in_metric,
-                             self.metric_manager)
+        return ScalingMetricRegionalized(self.regions,
+                                         self.scaled_entity_name,
+                                         self.scaled_aspect_name,
+                                         self.metric_source_name,
+                                         self.metric_name,
+                                         self.values_filter_conf,
+                                         self.values_aggregator_conf,
+                                         self.target_value,
+                                         self.stabilizer_conf,
+                                         self.timing_type,
+                                         self.forecaster_conf,
+                                         self.capacity_adaptation_type,
+                                         self.priority,
+                                         self.initial_max_limit,
+                                         self.initial_min_limit,
+                                         self.initial_entity_representation_in_metric,
+                                         self.metric_manager)
 
     @staticmethod
     def config_check(config_raw,
@@ -84,6 +87,91 @@ class MetricDescription:
 
         return config_res
 
+
+class ScalingMetricRegionalized:
+
+    """
+    Wraps a metric that spans over multiple regions.
+
+    TODO:
+    -- consider adding an opportunity to provide different metrics configurations per region
+    """
+
+    def __init__(self,
+                 regions : list,
+                 scaled_entity_name : str,
+                 scaled_aspect_name : str,
+                 metric_source_name : str,
+                 metric_name : str,
+                 values_filter_conf : dict,
+                 values_aggregator_conf : dict,
+                 target_value : float,
+                 stabilizer_conf : dict,
+                 timing_type : str,
+                 forecaster_conf : dict,
+                 capacity_adaptation_type : str,
+                 priority : int,
+                 max_limit : float,
+                 min_limit : float,
+                 entity_representation_in_metric : float,
+                 metric_manager : StateReader):
+
+        # Description of the entity to scale, includes:
+        # - the name of the entity to scale, e.g. service name
+        # - the name of the entity's aspect to scale, e.g. instance count
+        self.scaled_entity_name = scaled_entity_name
+        self.scaled_aspect_name = scaled_aspect_name
+
+        # Description of the metric used for scaling, includes:
+        # - the name of the metric source, e.g. service name or the name of some external entity
+        # - the name of the metric in the metric source specified by the name above
+        self.metric_source_name = metric_source_name
+        self.metric_name = metric_name
+
+        self.metrics_per_region = {}
+        for region_name in regions:
+            self.metrics_per_region[region_name] = ScalingMetric(region_name,
+                                                                 values_filter_conf,
+                                                                 values_aggregator_conf,
+                                                                 target_value,
+                                                                 stabilizer_conf,
+                                                                 timing_type,
+                                                                 forecaster_conf,
+                                                                 capacity_adaptation_type,
+                                                                 priority,
+                                                                 max_limit,
+                                                                 min_limit,
+                                                                 entity_representation_in_metric,
+                                                                 metric_manager)
+
+    def __call__(self):
+
+        """
+        Computes desired aspect value according to the metric for each region.
+        The returned dataframe is transformed into an aggregated timeline of
+        regionalized entities state. In each entities state there is information
+        only for a single entity since the metric is associated with a single entity.
+        The aggregation across multiple entities happends at the Scaling Manager.
+        """
+
+        regionalized_desired_ts_raw = {}
+        for region_name, metric in self.metrics_per_region.items():
+
+            desired_scaled_aspect_val_pr = metric()
+
+            for timestamp, row_val in desired_scaled_aspect_val_pr.iterrows():
+                if not timestamp in regionalized_desired_ts_raw:
+                    regionalized_desired_ts_raw[timestamp] = {}
+                regionalized_desired_ts_raw[timestamp][region_name] = {}
+                regionalized_desired_ts_raw[timestamp][region_name][self.scaled_entity_name] = row_val[0]
+
+        timeline_of_regionalized_desired_states = {}
+        for timestamp, regionalized_desired_val in regionalized_desired_ts_raw.items():
+            timeline_of_regionalized_desired_states[timestamp] = EntitiesStatesRegionalized(regionalized_desired_val)
+
+        return timeline_of_regionalized_desired_states
+
+
 class ScalingMetric:
 
     """
@@ -95,10 +183,7 @@ class ScalingMetric:
     """
 
     def __init__(self,
-                 scaled_entity_name,
-                 scaled_aspect_name,
-                 metric_source_name,
-                 metric_name,
+                 region_name : str,
                  values_filter_conf,
                  values_aggregator_conf,
                  target_value,
@@ -112,17 +197,7 @@ class ScalingMetric:
                  entity_representation_in_metric,
                  metric_manager):
         # Static state
-        # Description of the entity to scale, includes:
-        # - the name of the entity to scale, e.g. service name
-        # - the name of the entity's aspect to scale, e.g. instance count
-        self.scaled_entity_name = scaled_entity_name
-        self.scaled_aspect_name = scaled_aspect_name
 
-        # Description of the metric used for scaling, includes:
-        # - the name of the metric source, e.g. service name or the name of some external entity
-        # - the name of the metric in the metric source specified by the name above
-        self.metric_source_name = metric_source_name
-        self.metric_name = metric_name
 
         # Metric values preprocessing:
         # a filter that takes some of the metrics values depending
@@ -205,7 +280,9 @@ class ScalingMetric:
         # Extracts available metric values in a form of pandas DataFrame
         # with the datetime index. Can be a single value or a sequence of
         # values (in this case, some metric history is incorporated)
-        metric_vals = self.entity_ref.get_metric_vals(self.metric_name)
+        metric_vals = self.metric_manager.get_values(self.scaled_entity_name,
+                                                     self.metric_name,
+                                                     self.region_name)
         if self.timing_type == 'predictive':
             metric_vals = self.forecaster(cur_metric_vals)
 
@@ -227,7 +304,9 @@ class ScalingMetric:
         # desired amount of the scaled aspect is stabilized to avoid
         # oscillations in it that may cause too much overhead when scaling.
         metric_ratio = aggregated_metric_vals / self.target_value
-        cur_scaled_aspect_val = self.metric_manager.get_values(self.scaled_entity_name, self.scaled_aspect_name)
+        cur_scaled_aspect_val = self.metric_manager.get_values(self.scaled_entity_name,
+                                                               self.scaled_aspect_name,
+                                                               self.region_name)
         desired_scaled_aspect = math.ceil(metric_ratio * self.entity_representation_in_metric * cur_scaled_aspect_val)
         desired_scaled_aspect_stabilized = self.stabilizer(desired_scaled_aspect)
 

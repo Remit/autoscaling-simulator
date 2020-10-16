@@ -34,7 +34,7 @@ class ScaledEntity:
                  scaled_entity_class,
                  scaled_entity_name,
                  scaling_setting_for_entity,
-                 metric_manager):
+                 metric_manager): # TODO: provide regions where the entity is deployed
 
         if not scaling_setting_for_entity is None:
             # All the metrics associated with the scaling of the given entity
@@ -50,6 +50,7 @@ class ScaledEntity:
 
                 metric_description.metric_manager = metric_manager
 
+# TODO: convert to the metric -- needs to become aware of the regions
                 metrics_by_priority[metric_description.priority] = metric_description.convert_to_metric()
 
             self.metrics_by_priority = collections.OrderedDict(sorted(metrics_by_priority.items()))

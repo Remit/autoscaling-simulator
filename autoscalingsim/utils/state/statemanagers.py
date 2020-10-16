@@ -72,7 +72,9 @@ class ScalingManager(StateManager):
 
         desired_states = {}
         for scaled_entity_name, scaled_entity_ref in self.entities.items():
-            desired_scaling_aspect_val = scaled_entity_ref.reconcile_desired_state()
+            desired_scaling_aspect_val = scaled_entity_ref.reconcile_desired_state()# returns a data frame with ts/val
             desired_states[scaled_entity_name] = desired_scaling_aspect_val
+
+        # TODO: assemble a representation using the entities state regionalized
 
         return desired_states
