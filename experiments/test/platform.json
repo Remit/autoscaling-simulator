@@ -1,75 +1,77 @@
-{
-	"provider": "aws",
-	"vm_types": [
+[
 		{
-			"type": "t3.nano",
-			"vCPU": 2,
-			"cpu_credits_h": 6,
-			"memory": 0.5,
-			"network_bandwidth_MBps": 625,
-			"price_p_h": 0.0052,
-			"latency_ms": 10,
-			"requests_acceleration_factor": 1.0
-		},
-		{
-			"type": "t3.micro",
-			"vCPU": 2,
-			"cpu_credits_h": 12,
-			"memory": 1,
-			"network_bandwidth_MBps": 625,
-			"price_p_h": 0.0104,
-			"latency_ms": 10,
-			"requests_acceleration_factor": 1.1
-		},
-		{
-			"type": "t3.small",
-			"vCPU": 2,
-			"cpu_credits_h": 24,
-			"memory": 2,
-			"network_bandwidth_MBps": 625,
-			"price_p_h": 0.0209,
-			"latency_ms": 10,
-			"requests_acceleration_factor": 1.1
-		},
-		{
-			"type": "t3.medium",
-			"vCPU": 2,
-			"cpu_credits_h": 24,
-			"memory": 4,
-			"network_bandwidth_MBps": 625,
-			"price_p_h": 0.0418,
-			"latency_ms": 10,
-			"requests_acceleration_factor": 1.1
-		},
-		{
-			"type": "t3.large",
-			"vCPU": 2,
-			"cpu_credits_h": 36,
-			"memory": 8,
-			"network_bandwidth_MBps": 625,
-			"price_p_h": 0.0835,
-			"latency_ms": 10,
-			"requests_acceleration_factor": 1.1
-		},
-		{
-			"type": "t3.xlarge",
-			"vCPU": 4,
-			"cpu_credits_h": 96,
-			"memory": 16,
-			"network_bandwidth_MBps": 625,
-			"price_p_h": 0.1670,
-			"latency_ms": 10,
-			"requests_acceleration_factor": 1.5
-		},
-		{
-			"type": "t3.2xlarge",
-			"vCPU": 8,
-			"cpu_credits_h": 192,
-			"memory": 32,
-			"network_bandwidth_MBps": 625,
-			"price_p_h": 0.3341,
-			"latency_ms": 10,
-			"requests_acceleration_factor": 1.7
+			"provider": "aws",
+			"node_types": [
+				{
+					"type": "t3.nano",
+					"vCPU": 2,
+					"cpu_credits_h": 6,
+					"memory": 0.5,
+					"network_bandwidth_MBps": 625,
+					"price_p_h": 0.0052,
+					"latency_ms": 10,
+					"requests_acceleration_factor": 1.0
+				},
+				{
+					"type": "t3.micro",
+					"vCPU": 2,
+					"cpu_credits_h": 12,
+					"memory": 1,
+					"network_bandwidth_MBps": 625,
+					"price_p_h": 0.0104,
+					"latency_ms": 10,
+					"requests_acceleration_factor": 1.1
+				},
+				{
+					"type": "t3.small",
+					"vCPU": 2,
+					"cpu_credits_h": 24,
+					"memory": 2,
+					"network_bandwidth_MBps": 625,
+					"price_p_h": 0.0209,
+					"latency_ms": 10,
+					"requests_acceleration_factor": 1.1
+				},
+				{
+					"type": "t3.medium",
+					"vCPU": 2,
+					"cpu_credits_h": 24,
+					"memory": 4,
+					"network_bandwidth_MBps": 625,
+					"price_p_h": 0.0418,
+					"latency_ms": 10,
+					"requests_acceleration_factor": 1.1
+				},
+				{
+					"type": "t3.large",
+					"vCPU": 2,
+					"cpu_credits_h": 36,
+					"memory": 8,
+					"network_bandwidth_MBps": 625,
+					"price_p_h": 0.0835,
+					"latency_ms": 10,
+					"requests_acceleration_factor": 1.1
+				},
+				{
+					"type": "t3.xlarge",
+					"vCPU": 4,
+					"cpu_credits_h": 96,
+					"memory": 16,
+					"network_bandwidth_MBps": 625,
+					"price_p_h": 0.1670,
+					"latency_ms": 10,
+					"requests_acceleration_factor": 1.5
+				},
+				{
+					"type": "t3.2xlarge",
+					"vCPU": 8,
+					"cpu_credits_h": 192,
+					"memory": 32,
+					"network_bandwidth_MBps": 625,
+					"price_p_h": 0.3341,
+					"latency_ms": 10,
+					"requests_acceleration_factor": 1.7
+				}
+			]
 		}
-	]
-}
+]

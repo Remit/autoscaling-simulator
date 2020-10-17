@@ -3,8 +3,6 @@ import pandas as pd
 
 from .adjustmentplacement.adjustment_policy import AdjustmentPolicy
 
-from ...utils.state.state import State
-
 class ScalingPolicy:
 
     """
@@ -38,7 +36,7 @@ class ScalingPolicy:
 
     """
 
-    class ScalingState(State):
+    class ScalingState:
 
         def __init__(self):
 

@@ -1,8 +1,88 @@
 import pandas as pd
 
-from .state import State
+from .state import ScaledEntityState
+from .utilization import ServiceUtilization
 
-class ServiceState(State):
+from .entity_state.entity_group import EntityGroup
+
+from ...infrastructure_platform.node import NodeInfo
+
+class ServiceState:
+
+    """
+    Wraps service state for a particular region. The information present in the state
+    is relevant for the scaling.
+    """
+
+    def __init__(self,
+                 service_name : str,
+                 init_timestamp : pd.Timestamp,
+                 region_name : str,
+                 averaging_interval : pd.Timedelta,
+                 init_keepalive : pd.Timedelta,
+                 resource_names : list = []):
+
+        self.region_name = region_name
+        self.entity_group = EntityGroup(service_name)
+        self.utilization = ServiceUtilization(init_timestamp,
+                                              averaging_interval,
+                                              init_keepalive,
+                                              resource_names)
+        self.placed_on_node = None
+
+    def update_metric(self,
+                      metric_name : str,
+                      timestamp : pd.Timestamp,
+                      value : float):
+
+        """
+        Updates the metric if it is present in the state. The method checks
+        what type of metric does the updated metric belong to, e.g. if it
+        is one of the utilization metrics.
+        """
+
+        if self.utilization.has_metric(metric_name):
+            self.utilization.update(metric_name,
+                                    timestamp,
+                                    value)
+        else:
+            raise ValueError('A metric with the name {} was not found in {} for region {}'.format(metric_name,
+                                                                                                  self.__class__.__name__,
+                                                                                                  self.region_name))
+
+    def update_aspect(self,
+                      aspect_name : str,
+                      value : float):
+
+        """
+        Updates the scaling aspect value. This value is stored in the entity
+        group, e.g. the count of instances or the resource limit.
+        """
+
+        self.entity_group.update_aspect(aspect_name, value)
+
+    def update_placement(self,
+                         node_info : NodeInfo):
+
+        self.placed_on_node = node_info
+
+    def get_aspect_value(self,
+                         aspect_name : str):
+
+        return self.entity_group.get_aspect_value(aspect_name)
+
+    def get_metric_value(self,
+                         metric_name : str):
+
+        if self.utilization.has_metric(metric_name):
+            return self.utilization.get(metric_name)
+        else:
+            raise ValueError('A metric with the name {} was not found in {} for region {}'.format(metric_name,
+                                                                                                  self.__class__.__name__,
+                                                                                                  self.region_name))
+
+class ServiceStateRegionalized(ScaledEntityState):
+
     """
     Contains information relevant to conduct the scaling. The state should be
     updated at each simulation step and provided to the ServiceScalingPolicyHierarchy
@@ -15,107 +95,70 @@ class ServiceState(State):
         add properties for workload-based scaling + predictive
     """
 
-    resource_utilization_types = [
-        'cpu_utilization',
-        'mem_utilization',
-        'disk_utilization'
-    ]
-
     def __init__(self,
-                 init_timestamp,
-                 init_service_instances,
-                 init_resource_requirements,
+                 service_name : str,
+                 init_timestamp : pd.Timestamp,
+                 service_regions : list,
                  averaging_interval_ms,
-                 init_keepalive_ms = -1):
+                 init_keepalive_ms = pd.Timedelta(-1, unit = 'ms'),
+                 resource_names : list = []):
 
-        # Untimed
-        self.requirements = init_resource_requirements
-        self.count = init_service_instances
-        # The number of threads that the platform has allocated on different nodes
-        # for the instances of this service
-        self.platform_threads_available = 4 # TODO: 0, it's a temp fix
-        # the negative value of keepalive is used to keep the timed params indefinitely
-        self.keepalive = pd.Timedelta(init_keepalive_ms, unit = 'ms')
-
-        # Timed
-        self.tmp_state = State.TempState(init_timestamp,
-                                         averaging_interval_ms,
-                                         ServiceState.resource_utilization_types)
-
-        default_ts_init = {'datetime': [init_timestamp], 'value': [0.0]}
-
-        self.cpu_utilization = pd.DataFrame(default_ts_init)
-        self.cpu_utilization = self.cpu_utilization.set_index('datetime')
-
-        self.mem_utilization = pd.DataFrame(default_ts_init)
-        self.mem_utilization = self.mem_utilization.set_index('datetime')
-
-        self.disk_utilization = pd.DataFrame(default_ts_init)
-        self.disk_utilization = self.disk_utilization.set_index('datetime')
-
-    def get_val(self,
-                attribute_name):
-
-        """
-        Currently, the only method defined in the parent abstract class (interface),
-        i.e. the contract that State establishes with others using it is that
-        of a uniform attribute getting access.
-        """
-
-        if not hasattr(self, attribute_name):
-            raise ValueError('Attribute {} not found in {}'.format(attribute_name, self.__class__.__name__))
-
-        return self.__getattribute__(attribute_name)
-
-    def update_val(self,
-                   attribute_name,
-                   attribute_val):
-
-        """
-        Updates an untimed attribute (its past values are not interesting).
-        Should be called by an entity that computes the new value of the attribute, i.e.
-        it incorporates the formalized knowledge of how to compute it.
-        For instance, ScalingAspectManager is responsible for the updates
-        that happen during the scaling with the aspects, e.g. number of service
-        instances grows or shrinks; a scaling aspect is a variety of an updatable attribute.
-        """
-
-        if (not hasattr(self, attribute_name)) or attribute_name in ServiceState.resource_utilization_types:
-            raise ValueError('Untimed attribute {} not found in {}'.format(aspect_name, self.__class__.__name__))
-
-        self.__setattr__(aspect_name, aspect_val)
+        self.region_states = {}
+        for region_name in service_regions:
+            self.region_states[region_name] = ServiceState(service_name,
+                                                           init_timestamp,
+                                                           region_name,
+                                                           averaging_interval_ms,
+                                                           init_keepalive_ms,
+                                                           resource_names)
 
     def update_metric(self,
-                      metric_name,
-                      cur_ts,
-                      cur_val):
+                      region_name : str,
+                      metric_name : str,
+                      timestamp : pd.Timestamp,
+                      value : float):
 
-        """
-        Updates a metric with help of the temporary state that bufferizes some observations
-        that are aggregated based on a moving average technique and returned as the actual
-        values stored in the ServiceState.
-        """
+        if not region_name in self.region_states:
+            raise ValueError('A state for the given region name {} was not found'.format(region_name))
 
-        if not hasattr(self, metric_name):
-            raise ValueError('Metric {} not found in {}'.format(metric_name, self.__class__.__name__))
+        self.region_states[region_name].update_metric(metric_name,
+                                                      timestamp,
+                                                      value)
 
-        old_metric_val = self.__getattribute__(metric_name)
+    def update_aspect(self,
+                      region_name : str,
+                      aspect_name : str,
+                      value : float):
 
-        if isinstance(old_metric_val, pd.DataFrame):
-            if not isinstance(cur_ts, pd.Timestamp):
-                raise ValueError('Timestamp of unexpected type')
+        if not region_name in self.region_states:
+            raise ValueError('A state for the given region name {} was not found'.format(region_name))
 
-            oldest_to_keep_ts = cur_ts - self.keepalive
+        self.region_states[region_name].update_aspect(aspect_name,
+                                                      value)
 
-            # Discarding old observations
-            if oldest_to_keep_ts < cur_ts:
-                old_metric_val = old_metric_val[old_metric_val.index > oldest_to_keep_ts]
+    def update_placement(self,
+                         region_name : str,
+                         node_info : NodeInfo):
 
-            val_to_upd = self.tmp_state.update_and_get(metric_name,
-                                                       cur_ts,
-                                                       cur_val)
+        if not region_name in self.region_states:
+            raise ValueError('A state for the given region name {} was not found'.format(region_name))
 
-            val_to_upd = old_metric_val.append(val_to_upd)
-            self.__setattr__(metric_name, val_to_upd)
-        else:
-            raise ValueError('Unexpected metric type {}'.format(type(old_metric_val)))
+        self.region_states[region_name].update_placement(node_info)
+
+    def get_aspect_value(self,
+                         region_name : str,
+                         aspect_name : str):
+
+        if not region_name in self.region_states:
+            raise ValueError('A state for the given region name {} was not found'.format(region_name))
+
+        return self.region_states[region_name].get_aspect_value(aspect_name)
+
+    def get_metric_value(self,
+                         region_name : str,
+                         metric_name : str):
+
+        if not region_name in self.region_states:
+            raise ValueError('A state for the given region name {} was not found'.format(region_name))
+
+        return self.region_states[region_name].get_metric_value(aspect_name)

@@ -51,6 +51,15 @@ class EntitiesStatesRegionalized:
             self._entities_states_per_region[region_name] = EntitiesState()
         self._entities_states_per_region[region_name] += entities_state
 
+    def get_value(self,
+                  region_name : str,
+                  entity_name : str):
+
+        if not region_name in self._entities_states_per_region:
+            return 0
+
+        return self._entities_states_per_region[region_name].get_value(entity_name)
+
     def copy(self):
 
         return EntitiesStatesRegionalized(self._entities_states_per_region.copy())

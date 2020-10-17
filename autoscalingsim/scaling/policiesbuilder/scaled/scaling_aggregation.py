@@ -55,14 +55,22 @@ class SequentialScalingEffectAggregationRule(ScalingEffectAggregationRule):
         self.expected_deviation_ratio = expected_deviation_ratio
 
     def __call__(self):
-        # TODO:
 
         ordered_metrics = list(self.metrics_by_priority.values())
         if len(ordered_metrics) > 1:
-            for metric, metric_next in zip(ordered_metrics[:-1], ordered_metrics[1:]):
-                desired_scaled_aspect = metric() # TODO: regionalize
-                min_lim = np.floor((1 - self.expected_deviation_ratio) * desired_scaled_aspect)
-                max_lim = np.ceil((1 + self.expected_deviation_ratio) * desired_scaled_aspect)
+            for regionalized_metric, regionalized_metric_next in zip(ordered_metrics[:-1], ordered_metrics[1:]):
+                timeline_by_metric = regionalized_metric()
+                timeline_df = pd.DataFrame(columns = ['datetime', 'value'])
+                timeline_df = timeline_df.set_index('datetime')
+                for timestamp, state in timeline_by_metric.items():
+                    aspect_value = state.get_value(regionalized_metric.region_name,
+                                                   regionalized_metric.scaled_entity_name)
+                    df_to_add = pd.DataFrame(data = {'datetime': timestamp, 'value': aspect_value})
+                    df_to_add = df_to_add.set_index('datetime')
+                    timeline_df = timeline_df.append(df_to_add)
+
+                min_lim = np.floor((1 - self.expected_deviation_ratio) * timeline_df)
+                max_lim = np.ceil((1 + self.expected_deviation_ratio) * timeline_df)
                 metric_next.update_limits(min_lim, max_lim)
 
         return ordered_metrics[-1]()

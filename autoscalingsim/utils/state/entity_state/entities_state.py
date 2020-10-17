@@ -118,6 +118,7 @@ class EntitiesState:
         return delta
 
 
+    # TODO: think of generalizing beyound count
     def count(self,
               entity_name : str):
 
@@ -125,3 +126,12 @@ class EntitiesState:
             return self.entities_instances_counts[entity_name].entity_instances_count
         else:
             return 0
+
+    # TODO: think of generalizing beyound count
+    def get_value(self,
+                  entity_name : str):
+
+            if entity_name in self.entities_instances_counts:
+                return self.entities_instances_counts[entity_name].entity_instances_count
+            else:
+                return 0

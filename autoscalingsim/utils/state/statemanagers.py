@@ -1,6 +1,8 @@
 from .state import State
+from .entity_state.entities_states_reg import EntitiesStatesRegionalized
 
 class StateManager:
+
     """
     Base class for specialized managers that deal with the state.
     """
@@ -29,14 +31,27 @@ class StateReader(StateManager):
     Acts only as a reader for the metrics.
     """
 
-    def get_values(self,
-                   source_name,
-                   attribute_name):
+    def get_aspect_value(self,
+                         source_name : str,
+                         region_name : str,
+                         aspect_name : str):
 
         if not source_name in self.entities:
-            raise ValueError('An attempt to call the source {} that is not in the list of the {}'.format(source_name, self.__class__.__name__))
+            raise ValueError('An attempt to call the source {} that is not in the list of {}'.format(source_name, self.__class__.__name__))
 
-        return self.entities[source_name].state.get_val(attribute)
+        return self.entities[source_name].state.get_aspect_value(region_name,
+                                                                 aspect_name)
+
+    def get_metric_value(self,
+                         source_name : str,
+                         region_name : str,
+                         metric_name : str):
+
+        if not source_name in self.entities:
+            raise ValueError('An attempt to call the source {} that is not in the list of {}'.format(source_name, self.__class__.__name__))
+
+        return self.entities[source_name].state.get_metric_value(region_name,
+                                                                 metric_name)
 
 class ScalingManager(StateManager):
 
@@ -46,10 +61,11 @@ class ScalingManager(StateManager):
     state calculation.
     """
 
-    def set_scaling_aspect_value(self,
-                                 scaled_entity_name,
-                                 scaling_aspect_name,
-                                 scaling_aspect_value):
+    def set_aspect_value(self,
+                         entity_name : str,
+                         region_name : str,
+                         aspect_name : str,
+                         value : float):
 
         """
         This method of the Scaling Manager is used by the Enforce step in the
@@ -57,24 +73,28 @@ class ScalingManager(StateManager):
         aspect, e.g. the current number of service instances or the CPU shares.
         """
 
-        if not scaled_entity_name in self.entities:
-            raise ValueError('An attempt to set the scaling aspect of the {} that is unknown to {}'.format(scaled_entity_name, self.__class__.__name__))
+        if not entity_name in self.entities:
+            raise ValueError('An attempt to set the scaling aspect of {} that is unknown to {}'.format(entity_name,
+                                                                                                       self.__class__.__name__))
 
-        self.entities[scaled_entity_name].state.update_val(scaling_aspect_name, scaling_aspect_value)
+        self.entities[entity_name].state.update_aspect(region_name,
+                                                       aspect_name,
+                                                       value)
 
     def compute_desired_state(self):
 
         """
-        Computes the desired state for every scaled entity managed by the Scaling
-        Manager. The resulting list is returned to the caller (scaling policy) to
-        continue with the steps like combining, adjustment, placement and enforcement.
+        Computes the desired regionalized entities state for every scaled entity managed by the Scaling
+        Manager. The results for individual entities are then aggregated into the joint timeline.
+        Two entities state get aggregated only if they occur at the same timestamp.
         """
 
-        desired_states = {}
-        for scaled_entity_name, scaled_entity_ref in self.entities.items():
-            desired_scaling_aspect_val = scaled_entity_ref.reconcile_desired_state()# returns a data frame with ts/val
-            desired_states[scaled_entity_name] = desired_scaling_aspect_val
+        joint_timeline_desired_regionalized_entities_states = {}
+        for entity_name, entity_ref in self.entities.items():
+            entity_timeline = scaled_entity_ref.reconcile_desired_state()
+            for timestamp, state_regionalized in entity_timeline.items():
+                if not timestamp in joint_timeline_desired_regionalized_entities_states:
+                    joint_timeline_desired_regionalized_entities_states[timestamp] = EntitiesStatesRegionalized()
+                joint_timeline_desired_regionalized_entities_states[timestamp] += state_regionalized
 
-        # TODO: assemble a representation using the entities state regionalized
-
-        return desired_states
+        return joint_timeline_desired_regionalized_entities_states

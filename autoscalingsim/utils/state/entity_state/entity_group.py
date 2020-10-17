@@ -8,6 +8,7 @@ class EntityGroup:
     entities. The dynamic part is the count of booting/terminating entities.
     """
 
+    # TODO: transform into aspects representation
     def __init__(self,
                  entity_name : str,
                  entity_instances_count : int):
@@ -69,3 +70,9 @@ class EntityGroup:
 
         return EntityGroupDelta(self.copy(),
                                 direction)
+
+    def update_aspect(self,
+                      aspect_name,
+                      value):
+
+        pass

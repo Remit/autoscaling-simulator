@@ -32,7 +32,8 @@ class ApplicationModel:
                  starting_time_ms,
                  platform_model,
                  scaling_policy,
-                 config_file):
+                 config_file,
+                 averaging_interval : pd.Timedelta = pd.Timedelta(500, unit = 'ms')):
 
         # Dynamic state
         self.new_requests = []
@@ -45,6 +46,7 @@ class ApplicationModel:
         self.scaling_manager = ScalingManager()
         self.scaling_policy.set_scaling_manager(self.scaling_manager)
         self.scaling_policy.set_state_reader(self.state_reader)
+        self.deployment_model = DeploymentModel()
 
         # Static state
         self.name = None
@@ -123,23 +125,36 @@ class ApplicationModel:
 
                         buffer_capacity_by_request_type[request_type] = capacity
 
-                    threads_per_service_instance = ErrorChecker.key_check_and_load('threads_per_service_instance', service_config, 'service', service_name)
-                    ErrorChecker.value_check('threads_per_service_instance', threads_per_service_instance, operator.gt, 0, ['service {}'.format(service_name)])
+                    system_requirements = ResourceRequirements(ErrorChecker.key_check_and_load('system_requirements', service_config, 'service', service_name))
 
-                    init_service_instances = ErrorChecker.key_check_and_load('init_service_instances', service_config, 'service', service_name)
-                    ErrorChecker.value_check('init_service_instances', init_service_instances, operator.gt, 0, ['service {}'.format(service_name)])
+                    init_service_instances_regionalized = {}
+                    node_infos_regionalized = {}
+                    node_counts_regionalized = {}
+                    deployment = ErrorChecker.key_check_and_load('deployment', service_config, 'service', service_name)
+                    service_regions = []
+                    for region_name, region_deployment_conf in deployment.items():
+                        service_regions.append(region_name)
 
-                    state_mb = ErrorChecker.key_check_and_load('state_mb', service_config, 'service', service_name)
-                    ErrorChecker.value_check('state_mb', state_mb, operator.ge, 0, ['service {}'.format(service_name)])
+                        service_instances = ErrorChecker.key_check_and_load('service_instances', region_deployment_conf, 'service', service_name)
+                        ErrorChecker.value_check('service_instances', service_instances, operator.gt, 0, ['service {}'.format(service_name)])
+                        init_service_instances_regionalized[region_name] = service_instances
+
+                        provider = ErrorChecker.key_check_and_load('provider', deployment, 'service', service_name)
+                        node_type = ErrorChecker.key_check_and_load('node_type', deployment, 'service', service_name)
+                        node_info = self.platform_model.get_node_info(provider, node_type)
+                        node_infos_regionalized[region_name] = node_info
+
+                        node_count = ErrorChecker.key_check_and_load('count', deployment, 'service', service_name)
+                        ErrorChecker.value_check('node_count', node_count, operator.gt, 0, ['service {}'.format(service_name)])
+                        node_counts_regionalized[region_name] = node_count
+
+                    self.deployment_model.add_service_deployment(service_name,
+                                                                 init_service_instances_regionalized,
+                                                                 node_infos_regionalized,
+                                                                 node_counts_regionalized)
 
                     # Value that is less than 0 for the keepalive interval of the metric means that it is not discarded at all
-                    init_metric_keepalive_ms = ErrorChecker.key_check_and_load('init_metric_keepalive_ms', service_config, 'service', service_name)
-
-                    # TODO: below, consider deleting if not needed
-                    provider = service_config["deployment"]["provider"]
-                    node_info = self.platform_model.node_types[service_config["deployment"]["vm_type"]]
-                    node_count = service_config["deployment"]["count"]
-                    deployment_model = DeploymentModel(provider, node_info, node_count)
+                    init_metric_keepalive = pd.Timedelta(ErrorChecker.key_check_and_load('init_metric_keepalive_ms', service_config, 'service', service_name), unit = 'ms')
 
                     # Taking correct scaling settings for the service which is derived from a ScaledEntity
                     services_scaling_settings = self.scaling_policy.get_services_scaling_settings()
@@ -150,17 +165,16 @@ class ApplicationModel:
                         service_scaling_settings = services_scaling_settings['default']
 
                     # Initializing the service
-                    service = Service(init_datetime,
-                                      service_name,
-                                      threads_per_service_instance,
+                    service = Service(service_name,
+                                      init_datetime,
+                                      service_regions,
+                                      system_requirements,
                                       buffer_capacity_by_request_type,
-                                      deployment_model, #TODO: maybe decouple, platform-related?
                                       self.reqs_processing_infos,
-                                      init_service_instances,
-                                      init_metric_keepalive_ms,
                                       service_scaling_settings,
                                       self.state_reader,
-                                      state_mb)
+                                      averaging_interval,
+                                      init_metric_keepalive)
 
                     # Adding services as sources to the state managers
                     self.state_reader.add_source(service_name,
@@ -190,6 +204,8 @@ class ApplicationModel:
                     if len(prev_services) == 0:
                         prev_services = None
                     self.structure[service_name] = {'next': next_services, 'prev': prev_services}
+
+        self.platform_model.init_deployment_deltas(self.deployment_model.to_init_deltas())
 
     def step(self,
              cur_simulation_time_ms,

@@ -13,15 +13,22 @@
 					"capacity": 10
 				}
 			],
-			"threads_per_service_instance": 2,
-			"init_service_instances": 1,
-			"state_mb": 0,
+			"system_requirements": {
+				"cpu": 2,
+		    "memory": 2000,
+		    "disk": 0
+			},
 			"next": ["appserver"],
 			"prev": [],
 			"deployment": {
-				"provider": "aws",
-				"vm_type": "t3.xlarge",
-				"count": 1
+				"eu": {
+					"service_instances": 1,
+					"platform": {
+						"provider": "aws",
+						"node_type": "t3.xlarge",
+						"count": 1
+					}
+				}
 			},
 			"init_metric_keepalive_ms": 2000
 		},
@@ -37,15 +44,22 @@
 					"capacity": 10
 				}
 			],
-			"threads_per_service_instance": 4,
-			"init_service_instances": 1,
-			"state_mb": 0,
+			"system_requirements": {
+				"cpu": 4,
+		    "memory": 2000,
+		    "disk": 0
+			},
 			"next": ["db"],
 			"prev": ["frontend"],
 			"deployment": {
-				"provider": "aws",
-				"vm_type": "t3.xlarge",
-				"count": 1
+				"eu": {
+					"service_instances": 1,
+					"platform": {
+						"provider": "aws",
+						"node_type": "t3.xlarge",
+						"count": 1
+					}
+				}
 			},
 			"init_metric_keepalive_ms": 2000
 		},
@@ -61,15 +75,22 @@
 					"capacity": 5
 				}
 			],
-			"threads_per_service_instance": 4,
-			"init_service_instances": 1,
-			"state_mb": 1024,
+			"system_requirements": {
+				"cpu": 4,
+		    "memory": 4000,
+		    "disk": 1024
+			},
 			"next": [],
 			"prev": ["appserver"],
 			"deployment": {
-				"provider": "aws",
-				"vm_type": "t3.xlarge",
-				"count": 1
+				"eu": {
+					"service_instances": 1,
+					"platform": {
+						"provider": "aws",
+						"node_type": "t3.xlarge",
+						"count": 1
+					}
+				}
 			},
 			"init_metric_keepalive_ms": 2000
 		}

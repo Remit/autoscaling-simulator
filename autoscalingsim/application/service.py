@@ -3,10 +3,26 @@ import pandas as pd
 
 from .linkbuffer import LinkBuffer
 
-from ..utils.state.service_state import ServiceState
+from ..utils.state.service_state import ServiceStateRegionalized
 from ..scaling.policiesbuilder.scaled.scaled_entity import *
 from ..workload.request import Request
 from ..deployment.deployment_model import DeploymentModel
+
+class ResourceRequirements:
+
+    """
+    Container for all the resource requirements of the service instance.
+    """
+
+# TODO: unify names and push into separate fiile?
+    def __init__(self,
+                 threads_per_service_instance,
+                 memory_per_service_instance = 0,
+                 disk_per_service_instance = 0):
+
+        self.threads_per_service_instance = threads_per_service_instance
+        self.memory_per_service_instance = memory_per_service_instance
+        self.disk_per_service_instance = disk_per_service_instance
 
 class Service(ScaledEntity):
 
@@ -18,54 +34,35 @@ class Service(ScaledEntity):
         that the request takes the thread and does not let it go until its processing is finished
     """
 
-    class ResourceRequirements:
-
-        """
-        Container for all the resource requirements of the service instance.
-        """
-
-        def __init__(self,
-                     threads_per_service_instance,
-                     memory_per_service_instance = 0,
-                     disk_per_service_instance = 0):
-
-            self.threads_per_service_instance = threads_per_service_instance
-            self.memory_per_service_instance = memory_per_service_instance
-            self.disk_per_service_instance = disk_per_service_instance
-
     def __init__(self,
-                 init_timestamp,
-                 service_name,
-                 threads_per_service_instance,
-                 buffer_capacity_by_request_type,
-                 deployment_model,# TODO: required??
-                 request_processing_infos,
-                 init_service_instances,
-                 init_keepalive_ms,
-                 scaling_setting_for_service,
-                 metric_manager,
-                 state_mb = 0,
-                 memory_mb = 0,
-                 averaging_interval_ms = 500):
+                 service_name : str,
+                 init_timestamp : pd.Timestamp,
+                 service_regions : list,
+                 resource_requirements : ResourceRequirements,
+                 buffer_capacity_by_request_type : dict,
+                 request_processing_infos : dict,
+                 scaling_setting_for_service : ScalingPolicyConfiguration,
+                 state_reader : StateReader,
+                 averaging_interval : pd.Timedelta = pd.Timedelta(500, unit = 'ms'),
+                 init_keepalive : pd.Timedelta = pd.Timedelta(-1, unit = 'ms')):
 
         # Initializing scaling-related functionality in the superclass
         super().__init__(self.__class__.__name__,
                          service_name,
                          scaling_setting_for_service,
-                         metric_manager)
+                         state_reader)
 
         # Static state
         self.service_name = service_name
-        init_resource_requirements = Service.ResourceRequirements(threads_per_service_instance,
-                                                                  memory_mb,
-                                                                  state_mb)
+        self.resource_requirements = resource_requirements
 
         # Dynamic state
-        self.state = ServiceState(init_timestamp,
-                                  init_service_instances,
-                                  init_resource_requirements,
-                                  averaging_interval_ms,
-                                  init_keepalive_ms)
+        self.state = ServiceStateRegionalized(service_name,
+                                              init_timestamp,
+                                              service_regions,
+                                              averaging_interval,
+                                              init_keepalive,
+                                              resource_names)
 
         # Upstream and downstream links/buffers of the service
         self.upstream_buf = LinkBuffer(buffer_capacity_by_request_type,
@@ -77,6 +74,7 @@ class Service(ScaledEntity):
                                          deployment_model.node_info.latency_ms,# TODO: make updatable from platform
                                          deployment_model.node_info.network_bandwidth_MBps)# TODO: make updatable from platform
 
+        # TODO: regionalize below
         # requests that are currently in simultaneous processing
         self.in_processing_simultaneous = []
         # requests that are processed in this step, they can proceed
@@ -176,14 +174,15 @@ class Service(ScaledEntity):
         self._recompute_metrics(cur_timestamp)
 
     def _compute_current_capacity_in_threads(self):
-        return int(self.state.platform_threads_available - len(self.in_processing_simultaneous) * self.state.requirements.threads_per_service_instance)
+        return int(self.state.platform_threads_available - len(self.in_processing_simultaneous) * self.requirements.threads_per_service_instance)
 
+    # TODO: redo
     def _recompute_metrics(self,
                            cur_timestamp):
 
         # Updating metrics:
         # - CPU utilization
-        cpu_utilization = (len(self.in_processing_simultaneous) * self.state.requirements.threads_per_service_instance) / self.state.platform_threads_available
+        cpu_utilization = (len(self.in_processing_simultaneous) * self.requirements.threads_per_service_instance) / self.state.platform_threads_available
         self.state.update_metric('cpu_utilization',
                                  cur_timestamp,
                                  cpu_utilization)

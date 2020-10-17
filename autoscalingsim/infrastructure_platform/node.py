@@ -12,6 +12,7 @@ class NodeInfo(ScaledContainer):
         consider more universal resource names and what performance can be shared?
     """
     def __init__(self,
+                 provider,
                  node_type,
                  vCPU,
                  memory,
@@ -22,7 +23,7 @@ class NodeInfo(ScaledContainer):
                  requests_acceleration_factor = 1.0,
                  labels = []):
 
-        self.provider = 'default' # make a parameter
+        self.provider = provider
         self.node_type = node_type
         self.vCPU = vCPU
         self.memory = memory

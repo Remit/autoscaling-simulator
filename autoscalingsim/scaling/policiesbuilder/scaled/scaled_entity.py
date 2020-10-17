@@ -34,7 +34,7 @@ class ScaledEntity:
                  scaled_entity_class,
                  scaled_entity_name,
                  scaling_setting_for_entity,
-                 metric_manager): # TODO: provide regions where the entity is deployed
+                 state_reader):
 
         if not scaling_setting_for_entity is None:
             # All the metrics associated with the scaling of the given entity
@@ -48,9 +48,8 @@ class ScaledEntity:
                 if metric_description.metric_source_name == scaled_entity_class:
                     metric_description.metric_source_name = scaled_entity_name
 
-                metric_description.metric_manager = metric_manager
+                metric_description.state_reader = state_reader
 
-# TODO: convert to the metric -- needs to become aware of the regions
                 metrics_by_priority[metric_description.priority] = metric_description.convert_to_metric()
 
             self.metrics_by_priority = collections.OrderedDict(sorted(metrics_by_priority.items()))
@@ -68,18 +67,18 @@ class ScaledEntity:
             self.scaling_effect_aggregation_rule = None
 
     def reconcile_desired_state(self):
-        desired_state = None
+        desired_states_timeline = None
         if not self.scaling_effect_aggregation_rule is None:
-            desired_state = self.scaling_effect_aggregation_rule()
+            desired_states_timeline = self.scaling_effect_aggregation_rule()
 
-        return desired_state
+        return desired_states_timeline
 
-    def set_metric_manager(self,
-                           metric_manager_ref):
+    def set_state_reader(self,
+                         state_reader_ref):
         """
         Sets access point to the Metric Manager to query the relevant data for the ScalingMetric.
         Can be set only after the manager is initialized with all the relevant metrics providers.
         """
 
         for _, metric in self.metrics_by_priority:
-            metric.metric_manager = metric_manager_ref
+            metric.state_reader = state_reader_ref

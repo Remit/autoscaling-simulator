@@ -5,6 +5,49 @@ from .node import NodeInfo
 from ..utils.state.platform_state import PlatformState
 from ..utils.error_check import ErrorChecker
 
+class ProviderNodes:
+
+    """
+    Groups information about the nodes of a particular provider.
+    """
+
+    def __init__(self,
+                 provider : str):
+
+        self.node_infos = {}
+        self.provider = provider
+
+    def add_node_info(self,
+                      node_type : str,
+                      vCPU : int,
+                      memory : int,
+                      network_bandwidth_MBps : int,
+                      price_p_h : float,
+                      cpu_credits_h : float,
+                      latency_ms : float,
+                      requests_acceleration_factor : float,
+                      labels = []):
+
+        self.node_infos[node_type] = NodeInfo(self.provider,
+                                              node_type,
+                                              vCPU,
+                                              memory,
+                                              network_bandwidth_MBps,
+                                              price_p_h,
+                                              cpu_credits_h,
+                                              latency_ms,
+                                              requests_acceleration_factor,
+                                              labels)
+
+    def get_node_info(self,
+                      node_type : str):
+
+        if not node_type in self.node_infos:
+            raise ValueError('Unknown node type {} for provider {}'.format(node_type,
+                                                                           self.provider))
+
+        return self.node_infos[node_type]
+
 class PlatformModel:
     """
     Defines the hardware/virtual platform underlying the application. Acts as a centralized storage
@@ -29,9 +72,9 @@ class PlatformModel:
                  config_file = None):
 
         # Static state
-        self.node_types = {}
         self.platform_scaling_model = platform_scaling_model
         self.adjustment_policy = None
+        self.providers_configs = {}
 
         if config_file is None:
             raise ValueError('Configuration file not provided for the {}'.format(self.__class__.__name__))
@@ -40,26 +83,31 @@ class PlatformModel:
                 try:
                     config = json.load(f)
 
-                    vm_types_config = ErrorChecker.key_check_and_load('vm_types', config, self.__class__.__name__)
-                    for vm_type in vm_types_config:
-                        type_name = ErrorChecker.key_check_and_load('type', vm_type, self.__class__.__name__)
+                    for provider_config in config:
 
-                        vCPU = ErrorChecker.key_check_and_load('vCPU', vm_type, type_name)
-                        memory = ErrorChecker.key_check_and_load('memory', vm_type, type_name)
-                        network_bandwidth_MBps = ErrorChecker.key_check_and_load('network_bandwidth_MBps', vm_type, type_name)
-                        price_p_h = ErrorChecker.key_check_and_load('price_p_h', vm_type, type_name)
-                        cpu_credits_h = ErrorChecker.key_check_and_load('cpu_credits_h', vm_type, type_name)
-                        latency_ms = ErrorChecker.key_check_and_load('latency_ms', vm_type, type_name)
-                        requests_acceleration_factor = ErrorChecker.key_check_and_load('requests_acceleration_factor', vm_type, type_name)
+                        provider = ErrorChecker.key_check_and_load('provider', provider_config, self.__class__.__name__)
+                        self.providers_configs[provider] = ProviderNodes(provider)
 
-                        self.node_types[type_name] = NodeInfo(type_name,
-                                                              vCPU,
-                                                              memory,
-                                                              network_bandwidth_MBps,
-                                                              price_p_h,
-                                                              cpu_credits_h,
-                                                              latency_ms,
-                                                              requests_acceleration_factor)
+                        node_types_config = ErrorChecker.key_check_and_load('node_types', provider_config, self.__class__.__name__)
+                        for node_type in node_types_config:
+                            type = ErrorChecker.key_check_and_load('type', node_type, self.__class__.__name__)
+
+                            vCPU = ErrorChecker.key_check_and_load('vCPU', node_type, type)
+                            memory = ErrorChecker.key_check_and_load('memory', node_type, type)
+                            network_bandwidth_MBps = ErrorChecker.key_check_and_load('network_bandwidth_MBps', node_type, type)
+                            price_p_h = ErrorChecker.key_check_and_load('price_p_h', node_type, type)
+                            cpu_credits_h = ErrorChecker.key_check_and_load('cpu_credits_h', node_type, type)
+                            latency_ms = ErrorChecker.key_check_and_load('latency_ms', node_type, type)
+                            requests_acceleration_factor = ErrorChecker.key_check_and_load('requests_acceleration_factor', node_type, type)
+
+                            self.providers_configs[provider].add_node_info(type,
+                                                                           vCPU,
+                                                                           memory,
+                                                                           network_bandwidth_MBps,
+                                                                           price_p_h,
+                                                                           cpu_credits_h,
+                                                                           latency_ms,
+                                                                           requests_acceleration_factor)
 
                 except json.JSONDecodeError:
                     raise ValueError('The config file {} provided for {} is an invalid JSON.'.format(config_file, self.__class__.__name__))
@@ -82,6 +130,25 @@ class PlatformModel:
             self.desired_nodes_state[node_type] = {}
             self.desired_nodes_state[node_type][starting_time_ms] = 0
         self.scheduled_desired_nodes_state_per_service = {}
+
+    def init_deployment_deltas(self,
+                               deployment_deltas):
+
+        """
+        Initializes the Platform Model with the application and platform deltas,
+        that are enforced at the very beginning of the simulation.
+        """
+        # TODO
+        pass
+
+    def get_node_info(self,
+                      provider : str,
+                      node_type : str):
+
+        if not provider in self.providers_configs:
+            raise ValueError('Unknown provider {}'.format(provider))
+
+        return self.providers_configs[provider].get_node_info(node_type)
 
     def adjust(self,
                cur_timestamp,
