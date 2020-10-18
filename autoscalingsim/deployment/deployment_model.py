@@ -1,3 +1,10 @@
+from ..utils.deltarepr.generalized_delta import GeneralizedDelta
+from ..utils.deltarepr.platform_state_delta import StateDelta
+from ..utils.deltarepr.regional_delta import RegionalDelta
+from ..utils.deltarepr.delta_containers.container_group_delta import ContainerGroupDelta
+from ..utils.deltarepr.delta_entities.entities_group_delta import EntitiesGroupDelta
+from ..utils.state.container_state.container_group import HomogeneousContainerGroup
+
 class ServiceDeployment:
 
     """
@@ -14,6 +21,25 @@ class ServiceDeployment:
         self.service_instances_regionalized = init_service_instances_regionalized
         self.node_infos_regionalized = init_node_infos_regionalized
         self.node_counts_regionalized = init_node_counts_regionalized
+
+    def to_platform_state_delta(self):
+
+        """
+        Converts service and platform information contained in the Service
+        Deployment into the positive generalized delta representation.
+        """
+
+        regional_deltas_lst = []
+        for region_name in self.service_instances_regionalized.keys():
+
+            container_group = HomogeneousContainerGroup(self.node_infos_regionalized[region_name],
+                                                        self.node_counts_regionalized[region_name])
+            gen_delta = GeneralizedDelta(ContainerGroupDelta(container_group),
+                                         EntitiesGroupDelta({self.service_name: self.service_instances_regionalized[region_name]}))
+            regional_deltas_lst.append(RegionalDelta(region_name,
+                                                     [gen_delta]))
+
+        return StateDelta(regional_deltas_lst)
 
 class DeploymentModel:
     """
@@ -41,11 +67,15 @@ class DeploymentModel:
                                                                    init_node_infos_regionalized,
                                                                    init_node_counts_regionalized)
 
-    def to_init_deltas(self):
+    def to_init_platform_state_delta(self):
 
         """
         Converts initial deployment parameters into deltas used by the Platform
         Model to enforce the starting state of the Platform and Application.
         """
-        # TODO:
-        pass
+
+        init_state_delta = StateDelta()
+        for service_name, service_deployment in self.service_deployments.items():
+            init_state_delta += service_deployment.to_platform_state_delta()
+
+        return init_state_delta

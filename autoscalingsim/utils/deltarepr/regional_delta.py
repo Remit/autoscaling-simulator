@@ -20,6 +20,22 @@ class RegionalDelta:
     def __iter__(self):
         return RegionalDeltaIterator(self)
 
+    def __add__(self,
+                other_regional_delta : RegionalDelta):
+
+        if not isinstance(other_regional_delta, RegionalDelta):
+            raise TypeError('An attempt to add an object of type {} to an object of type {}'.format(other_regional_delta.__class__.__name__,
+                                                                                                    self.__class__.__name__))
+
+        if self.region_name != other_regional_delta.region_name:
+            raise ValueError('An attempt to add the delta for region {} to the delta for region {}'.format(other_regional_delta.region_name,
+                                                                                                           self.region_name))
+
+        new_generalized_deltas = self.generalized_deltas
+        new_generalized_deltas.extend(other_regional_delta.generalized_deltas)
+
+        return RegionalDelta(self.region_name, new_generalized_deltas)
+
     def till_full_enforcement(self,
                               platform_scaling_model : PlatformScalingModel,
                               application_scaling_model : ApplicationScalingModel,

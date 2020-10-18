@@ -205,7 +205,7 @@ class ApplicationModel:
                         prev_services = None
                     self.structure[service_name] = {'next': next_services, 'prev': prev_services}
 
-        self.platform_model.init_deployment_deltas(self.deployment_model.to_init_deltas())
+        self.platform_model.init_deployment_deltas(self.deployment_model.to_init_platform_state_delta())
 
     def step(self,
              cur_simulation_time_ms,

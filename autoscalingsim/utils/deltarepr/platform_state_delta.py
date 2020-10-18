@@ -1,5 +1,7 @@
 import pandas as pd
 
+from .regional_delta import RegionalDelta
+
 from ...scaling.platform_scaling_model import PlatformScalingModel,
 from ...scaling.application_scaling_model import ApplicationScalingModel
 
@@ -10,18 +12,42 @@ class StateDelta:
     """
 
     def __init__(self,
-                 regional_deltas_lst : list):
+                 regional_deltas = {}):
 
         self.deltas_per_region = {}
-        for regional_delta in regional_deltas_lst:
-            if not isinstance(regional_delta, RegionalDelta):
-                raise TypeError('Expected RegionalDelta on initializing {}, got {}'.format(self.__class__.__name__,
-                                                                                           delta.__class__.__name__))
+        if isinstance(regional_deltas, list):
+            for regional_delta in regional_deltas:
+                if not isinstance(regional_delta, RegionalDelta):
+                    raise TypeError('Expected RegionalDelta on initializing {}, got {}'.format(self.__class__.__name__,
+                                                                                               delta.__class__.__name__))
 
             self.deltas_per_region[regional_delta.region_name] = regional_delta
+        elif isinstance(regional_deltas, dict):
+            for regional_delta in regional_deltas.values():
+                if not isinstance(regional_delta, RegionalDelta):
+                    raise TypeError('Expected RegionalDelta on initializing {}, got {}'.format(self.__class__.__name__,
+                                                                                               delta.__class__.__name__))
+
+            self.deltas_per_region = regional_deltas
 
     def __iter__(self):
         return StateDeltaIterator(self)
+
+    def __add__(self,
+                other_state_delta : StateDelta):
+
+        if not isinstance(other_state_delta, StateDelta):
+            raise TypeError('An attempt to add an object of type {} to an object of type {}'.format(other_state_delta.__class__.__name__,
+                                                                                                    self.__class__.__name__))
+
+        new_regional_deltas = self.deltas_per_region.copy()
+        for region_name, regional_delta in other_state_delta.items():
+            if not region_name in new_regional_deltas:
+                new_regional_deltas[region_name] = regional_delta
+            else:
+                new_regional_deltas[region_name] += regional_delta
+
+        return StateDelta(new_regional_deltas)
 
     def till_full_enforcement(self,
                               platform_scaling_model : PlatformScalingModel,

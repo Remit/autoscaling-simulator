@@ -20,8 +20,8 @@ class HomogeneousContainerGroup:
     def __init__(self,
                  container_info : NodeInfo,
                  containers_count : int,
-                 entities_instances_counts,
-                 system_capacity : SystemCapacity):
+                 entities_instances_counts = {},
+                 system_capacity : SystemCapacity = SystemCapacity(container_info)):
 
         self.container_name = container_info.get_name()
         self.container_info = container_info
