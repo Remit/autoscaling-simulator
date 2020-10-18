@@ -35,7 +35,7 @@ class ScalingAspect(ABC):
         pass
 
     @abstractmethod
-    def __div__(self,
+    def __mod__(self,
                 other_aspect_val):
         pass
 
@@ -71,6 +71,23 @@ class Count(ScalingAspect):
                                                                                                  self.__class__.__name__))
 
         return Count(self.value - other_aspect_val.value)
+
+    def __mul__(self,
+                scalar : int):
+
+        if not isinstance(other_aspect_val, int):
+            raise TypeError('An attempt to multiply by non-int of type {}'.format(type(scalar)))
+
+        return Count(self.value * scalar)
+
+    def __mod__(self,
+                other_aspect_val : Count):
+
+        if not isinstance(other_aspect_val, Count):
+            raise TypeError('An attempt to perform modulo operation on {} with an object of unknown type {}'.format(self.__class__.__name__,
+                                                                                                                    other_aspect_val.__class__.__name__))
+
+        return Count(self.value % other_aspect_val.value)
 
 class Registry:
 
