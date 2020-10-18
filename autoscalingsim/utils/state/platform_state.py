@@ -24,9 +24,24 @@ class PlatformState:
     """
 
     def __init__(self,
-                 regions = {}):
+                 regions = []):
 
-        self.regions = regions
+        self.regions = {}
+        if isinstance(regions, dict):
+            for region in regions.values():
+                if not isinstance(region, Region):
+                    raise ValueError('An incorrect type of region in the dict provided on init: {}'.format(region.__class__.__name__))
+
+            self.regions = regions
+        elif isinstance(regions, list):
+            for region_name in regions:
+                if not isinstance(region_name, str):
+                    raise ValueError('An incorrect type of region name in the list provided on init: {}'.format(region_name.__class__.__name__))
+
+            self.regions[region_name] = Region()
+        else:
+            raise TypeError('Unknown type of regions on init: {}'.format(regions.__class__.__name__))
+
         self.state_score = None
 
     def __add__(self,

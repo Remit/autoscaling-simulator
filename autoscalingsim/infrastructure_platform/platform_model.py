@@ -67,14 +67,16 @@ class PlatformModel:
     """
 
     def __init__(self,
-                 starting_time_ms,
-                 platform_scaling_model,
-                 config_file = None):
+                 platform_scaling_model : PlatformScalingModel,
+                 application_scaling_model : ApplicationScalingModel,
+                 config_file: str):
 
         # Static state
         self.platform_scaling_model = platform_scaling_model
+        self.application_scaling_model = application_scaling_model
         self.adjustment_policy = None
         self.providers_configs = {}
+        self.state_deltas_timeline = None
 
         if config_file is None:
             raise ValueError('Configuration file not provided for the {}'.format(self.__class__.__name__))
@@ -112,6 +114,7 @@ class PlatformModel:
                 except json.JSONDecodeError:
                     raise ValueError('The config file {} provided for {} is an invalid JSON.'.format(config_file, self.__class__.__name__))
 
+        # TODO: consider deleting below
         # Dynamic state
         self.state = PlatformState() # consider regions -- they might be specified in config file
         self.adjustment_policy = None
@@ -131,15 +134,22 @@ class PlatformModel:
             self.desired_nodes_state[node_type][starting_time_ms] = 0
         self.scheduled_desired_nodes_state_per_service = {}
 
-    def init_deployment_deltas(self,
-                               deployment_deltas):
+    def init_platform_state_deltas(self,
+                                   regions : list,
+                                   init_timestamp : pd.Timestamp,
+                                   init_platform_state_delta : StateDelta):
 
         """
-        Initializes the Platform Model with the application and platform deltas,
-        that are enforced at the very beginning of the simulation.
+        Builds an initial timeline of the Platform State deltas with the values
+        provided in the deployment configuration of the application.
         """
-        # TODO
-        pass
+
+        self.state_deltas_timeline = DeltaTimeline(self.platform_scaling_model,
+                                                   self.application_scaling_model,
+                                                   PlatformState(regions))
+
+        self.state_deltas_timeline.add_state_delta(init_timestamp,
+                                                   init_platform_state_delta)
 
     def get_node_info(self,
                       provider : str,
@@ -153,6 +163,7 @@ class PlatformModel:
     def adjust(self,
                cur_timestamp,
                desired_states_to_process):
+        # TODO: self.state_deltas_timeline update
 
         """
         Adjusts the platform with help of Adjustment Policy.

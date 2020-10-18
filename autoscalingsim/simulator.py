@@ -71,6 +71,7 @@ class Simulator:
 
                 platform_model = PlatformModel(starting_time_ms,
                                                scaling_model.platform_scaling_model,
+                                               scaling_model.application_scaling_model,
                                                os.path.join(configs_dir, config[Simulator.CONF_PLATFORM_MODEL_KEY]))
 
                 scaling_policies_settings = ScalingPoliciesSettings(configs_dir)

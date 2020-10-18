@@ -29,10 +29,10 @@ class ApplicationModel:
     """
 
     def __init__(self,
-                 starting_time_ms,
-                 platform_model,
-                 scaling_policy,
-                 config_file,
+                 starting_time : pd.Timestamp,
+                 platform_model : PlatformModel,
+                 scaling_policy : ScalingPolicy,
+                 config_file : str,
                  averaging_interval : pd.Timedelta = pd.Timedelta(500, unit = 'ms')):
 
         # Dynamic state
@@ -53,7 +53,7 @@ class ApplicationModel:
         self.services = {}
         self.structure = {}
         self.reqs_processing_infos = {}
-        init_datetime = pd.Timestamp(starting_time_ms, unit = 'ms')
+        regions = []
 
         if not isinstance(config_file, str):
             raise ValueError('Incorrect format of the path to the configuration file for the {}, should be string'.format(self.__class__.__name__))
@@ -148,6 +148,8 @@ class ApplicationModel:
                         ErrorChecker.value_check('node_count', node_count, operator.gt, 0, ['service {}'.format(service_name)])
                         node_counts_regionalized[region_name] = node_count
 
+                    regions.extend(service_regions)
+
                     self.deployment_model.add_service_deployment(service_name,
                                                                  init_service_instances_regionalized,
                                                                  node_infos_regionalized,
@@ -166,7 +168,7 @@ class ApplicationModel:
 
                     # Initializing the service
                     service = Service(service_name,
-                                      init_datetime,
+                                      starting_time,
                                       service_regions,
                                       system_requirements,
                                       buffer_capacity_by_request_type,
@@ -182,16 +184,6 @@ class ApplicationModel:
                     self.scaling_manager.add_source(service_name,
                                                     service)
 
-                    # TODO: consider removing below
-                    add_ts_ms, node_info, num_added = self.platform_model.get_new_nodes(starting_time_ms,
-                                                                                        service_name,
-                                                                                        starting_time_ms,
-                                                                                        provider,
-                                                                                        service_config["deployment"]["vm_type"],
-                                                                                        node_count)
-                    if num_added < node_count:
-                        raise ValueError('Failed to deploy the service {}, insufficient number of nodes.'.format(service_name))
-
                     self.services[service_name] = service
 
                     # Adding the links of the given service to the structure.
@@ -205,7 +197,9 @@ class ApplicationModel:
                         prev_services = None
                     self.structure[service_name] = {'next': next_services, 'prev': prev_services}
 
-        self.platform_model.init_deployment_deltas(self.deployment_model.to_init_platform_state_delta())
+        self.platform_model.init_platform_state_deltas(list(set(regions)),
+                                                       starting_time,
+                                                       self.deployment_model.to_init_platform_state_delta())
 
     def step(self,
              cur_simulation_time_ms,
