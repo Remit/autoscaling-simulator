@@ -119,7 +119,12 @@
 			"timeout_ms": 300,
 			"request_size_b": 1024,
 			"response_size_b": 1024,
-			"operation_type": "rw"
+			"operation_type": "rw",
+			"processing_requirements": {
+				"vCPU": 1,
+				"memory": 100,
+				"disk": 0
+			}
 		},
 		{
 			"request_type": "buy",
@@ -144,7 +149,12 @@
 			"timeout_ms": 400,
 			"request_size_b": 2048,
 			"response_size_b": 1024,
-			"operation_type": "rw"
+			"operation_type": "rw",
+			"processing_requirements": {
+				"vCPU": 1,
+				"memory": 100,
+				"disk": 0
+			}
 		}
 	],
 	"load_balancing": {}

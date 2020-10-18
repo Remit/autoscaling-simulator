@@ -75,8 +75,6 @@ class LinkBuffer:
     def __init__(self,
                  capacity_by_request_type,
                  request_processing_infos,
-                 latency_ms,
-                 throughput_MBps,
                  policy = "FIFO"):
 
         # Static state
@@ -85,8 +83,8 @@ class LinkBuffer:
         self.policy = policy
 
         # Link:
-        self.latency_ms = latency_ms
-        self.throughput_MBps = throughput_MBps
+        self.latency_ms = pd.Timedelta(0, unit = 'ms')
+        self.throughput_MBps = 0
         self.request_processing_infos = request_processing_infos
 
         # Dynamic state
@@ -99,6 +97,12 @@ class LinkBuffer:
         # Link:
         self.requests_in_transfer = []
         self.used_throughput_MBps = 0
+
+    def update_settings(latency : pd.Timedelta,
+                        network_bandwidth_MBps : int):
+
+        self.latency = latency
+        self.throughput_MBps = network_bandwidth_MBps
 
     def step(self, simulation_step_ms):
         """ Processing requests to bring them from the link into the buffer """
@@ -118,6 +122,54 @@ class LinkBuffer:
                     self.reqs_cnt[req.request_type] += 1
 
                 self.requests_in_transfer.remove(req)
+
+    def attempt_pop(self):
+
+        if self.size() > 0:
+            return self.requests[-1]
+        else:
+            return None
+
+    def attempt_fan_in(self):
+
+        if self.size() > 0:
+            req = self.requests[-1]
+            # Processing fan-in case
+            if req.replies_expected > 1:
+                req_id_ref = req.request_id
+                reqs_present = 1
+                for req_lookup in self.requests[:-1]:
+                    if req_lookup.request_id == req_id_ref:
+                        reqs_present += 1
+
+                if reqs_present == req.replies_expected:
+                    return req
+
+            else:
+                return req
+        else:
+            return None
+
+    def shift(self):
+
+        """
+        Shifts requests queue to give other requests a chance to get processed.
+        """
+
+        req = self.pop()
+        self.append_left(req)
+
+    def fan_in(self,
+               req : Request):
+
+        """
+        Finalizes fan-in action for the given request by removing the
+        associated responses from the requests queue.
+        """
+
+        req = self.pop()
+        self.remove_by_id(req.request_id)
+        req.replies_expected = 1
 
     def put(self, req):
         req_size_b_MBps = self._req_occupied_MBps(req)

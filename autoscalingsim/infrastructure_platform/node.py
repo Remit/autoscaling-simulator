@@ -64,7 +64,7 @@ class NodeInfo(ScaledContainer):
         return fits
 
     def takes_capacity(self,
-                       requirements_by_entity : dict,
+                       requirements_by_entity : dict, # TODO: adapt to resource Requirements abstraction
                        entities_state : EntitiesState = None):
 
         labels_required = []

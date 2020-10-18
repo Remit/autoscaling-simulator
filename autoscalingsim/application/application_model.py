@@ -88,8 +88,8 @@ class ApplicationModel:
 
                         processing_times[service_name] = [upstream_time, downstream_time]
 
-                    timeout_ms = ErrorChecker.key_check_and_load('timeout_ms', request_info, 'request_type', request_type)
-                    ErrorChecker.value_check('timeout_ms', timeout_ms, operator.ge, 0, ['request_type {}'.format(request_type)])
+                    timeout = pd.Timedelta(ErrorChecker.key_check_and_load('timeout', request_info, 'request_type', request_type), unit = 'ms')
+                    ErrorChecker.value_check('timeout', timeout, operator.ge, pd.Timedelta(0, unit = 'ms'), ['request_type {}'.format(request_type)])
 
                     request_size_b = ErrorChecker.key_check_and_load('request_size_b', request_info, 'request_type', request_type)
                     ErrorChecker.value_check('request_size_b', request_size_b, operator.ge, 0, ['request_type {}'.format(request_type)])
@@ -99,13 +99,16 @@ class ApplicationModel:
 
                     request_operation_type = ErrorChecker.key_check_and_load('operation_type', request_info, 'request_type', request_type)
 
+                    request_processing_requirements = ErrorChecker.key_check_and_load('processing_requirements', request_info, 'request_type', request_type)
+
                     req_proc_info = RequestProcessingInfo(request_type,
                                                           entry_service,
                                                           processing_times,
-                                                          timeout_ms,
+                                                          timeout,
                                                           request_size_b,
                                                           response_size_b,
-                                                          request_operation_type)
+                                                          request_operation_type,
+                                                          request_processing_requirements)
                     self.reqs_processing_infos[request_type] = req_proc_info
 
                 # Parsing the configuration of services and creating the Service objects
