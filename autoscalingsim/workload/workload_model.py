@@ -49,3 +49,11 @@ class WorkloadModel:
             joint_reqs.extend(region_workload_model.generate_requests(timestamp))
 
         return joint_reqs
+
+    def get_generated_workload(self):
+
+        workload = {}
+        for region_name, region_workload_model in self.region_models.items():
+            workload[region_name] = region_workload_model.workload
+
+        return workload
