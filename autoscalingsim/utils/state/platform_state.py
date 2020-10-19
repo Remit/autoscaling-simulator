@@ -59,6 +59,15 @@ class PlatformState:
 
         return modified_state
 
+    def extract_node_counts(self,
+                            in_change : bool):
+
+        node_counts_per_region = {}
+        for region_name, region in self.regions.items():
+            node_counts_per_region[region_name] = region.extract_node_counts(in_change)
+
+        return node_counts_per_region
+
     def to_deltas(self):
 
         """

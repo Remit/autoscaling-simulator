@@ -114,25 +114,6 @@ class PlatformModel:
                 except json.JSONDecodeError:
                     raise ValueError('The config file {} provided for {} is an invalid JSON.'.format(config_file, self.__class__.__name__))
 
-        # TODO: consider deleting below
-        # Dynamic state
-
-        # timeline that won't change
-        self.nodes_state = {}
-        for node_type, node_info in self.node_types.items():
-            self.nodes_state[node_type] = {}
-            self.nodes_state[node_type][starting_time_ms] = 0
-            # format of val: [node_type][<timestamp>] = <+/-><delta_num>
-        # schedule timeline that is subject to invalidation
-        # format of val: [service_name][node_type][<timestamp>] = <+/-><delta_num>
-        self.scheduled_nodes_state_per_service = {}
-        # desired state timelines
-        self.desired_nodes_state = {}
-        for node_type, node_info in self.node_types.items():
-            self.desired_nodes_state[node_type] = {}
-            self.desired_nodes_state[node_type][starting_time_ms] = 0
-        self.scheduled_desired_nodes_state_per_service = {}
-
     def step(self,
              cur_timestamp : pd.Timestamp):
 
@@ -194,49 +175,70 @@ class PlatformModel:
 
 
     def compute_desired_node_count(self,
-                                   simulation_step_ms,
-                                   simulation_end_ms):
+                                   simulation_step : pd.Timedelta,
+                                   simulation_end : pd.Timestamp):
 
-        return self._compute_usage(self.desired_nodes_state,
-                                   simulation_step_ms,
-                                   simulation_end_ms)
+        return self._compute_usage(simulation_step,
+                                   simulation_end,
+                                   True)
 
     def compute_actual_node_count(self,
-                                  simulation_step_ms,
-                                  simulation_end_ms):
+                                  simulation_step : pd.Timedelta,
+                                  simulation_end : pd.Timestamp):
 
-        return self._compute_usage(self.nodes_state,
-                                   simulation_step_ms,
-                                   simulation_end_ms)
+        return self._compute_usage(simulation_step,
+                                   simulation_end,
+                                   False)
 
     def _compute_usage(self,
-                       states,
-                       simulation_step_ms,
-                       simulation_end_ms):
-        # Converting the up/down changes into cur number per sim step
-        nodes_usage = {}
+                       simulation_step : pd.Timedelta,
+                       simulation_end : pd.Timestamp,
+                       in_change : bool):
 
-        for node_type, delta_line in states.items():
-            if len(delta_line) > 1: # filtering only those node types that were used
-                nodes_usage[node_type] = {"timestamps": [], "count": []}
+        """
+        Wraps common code to convert the delta timeline into the count of
+        nodes per regions and per node type.
+        """
 
-        for node_type in nodes_usage.keys():
-            next_event_id = 1
-            next_timestamp = list(states[node_type].keys())[0]
-            latest_count = states[node_type][next_timestamp]
-            timestamp_cur = next_timestamp
+        joint_node_count = {}
+        timeline_of_deltas_raw = self.state_deltas_timeline.to_dict()
+        cur_state = PlatformState()
+        interval_begins = list(timeline_of_deltas_raw.keys())
+        interval_ends = list(timeline_of_deltas_raw.keys())[-1]
+        interval_ends.append(pd.Timestamp.max)
+        for timestamp_beg, timestamp_end in zip(interval_begins, interval_ends):
 
-            while timestamp_cur <= simulation_end_ms:
+            timestamp = timestamp_beg
+            deltas_lst = timeline_of_deltas_raw[timestamp]
+            for delta in deltas_lst:
+                cur_state += delta
+            node_counts_raw = cur_state.extract_node_counts(in_change)
 
-                event_cnt = states[node_type].get(timestamp_cur)
-                if not event_cnt is None:
-                    latest_count += event_cnt
-                    if latest_count < 0:
-                        latest_count = 0
+            repeated_data = {}
+            for region_name, node_count_per_type in node_counts_raw.items():
+                if not region_name in joint_node_count:
+                    joint_node_count[region_name] = {}
+                    repeated_data[region_name] = {}
 
-                nodes_usage[node_type]["timestamps"].append(timestamp_cur)
-                nodes_usage[node_type]["count"].append(latest_count)
+                for node_type, node_count in node_count_per_type.items():
+                    if not node_type in joint_node_count[region_name]:
+                        joint_node_count[region_name][node_type] = { 'timestamps': [],
+                                                                     'count': [] }
 
-                timestamp_cur += simulation_step_ms
+                    joint_node_count[region_name][node_type]['timestamps'].append(timestamp)
+                    joint_node_count[region_name][node_type]['count'].append(node_count)
+                    repeated_data[region_name][node_type] = node_count
 
-        return nodes_usage
+            # Just repeating what we already computed before if the state did not change
+            timestamp += simulation_step
+            timestamp_real_end = min(timestamp_end, simulation_end)
+            while timestamp < timestamp_real_end:
+
+                for region_name, node_count_per_type in repeated_data.items():
+                    for node_type, node_count in node_count_per_type.items():
+                        joint_node_count[region_name][node_type]['timestamps'].append(timestamp)
+                        joint_node_count[region_name][node_type]['count'].append(node_count)
+
+                timestamp += simulation_step
+
+        return joint_node_count

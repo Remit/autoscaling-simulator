@@ -22,6 +22,8 @@ class HomogeneousContainerGroupSet:
                                                                                                self.__class__.__name__))
                 self._homogeneous_groups[group.id] = group
 
+        self._in_change_homogeneous_groups = {}
+
     def __init__(self,
                  container_for_scaled_entities_types : dict,
                  requirements_by_entity : dict,
@@ -47,35 +49,71 @@ class HomogeneousContainerGroupSet:
 
             self._homogeneous_groups[hcg.id] = hcg
 
+        self._in_change_homogeneous_groups = {}
+
     def __add__(self,
                 regional_delta : RegionalDelta):
 
         homogeneous_groups = self.copy()
         if isinstance(delta, RegionalDelta):
-
             for generalized_delta in regional_delta:
-                container_group_delta = generalized_delta.container_group_delta
-
-                if not container_group_delta.in_chage:
-                    entities_group_delta = generalized_delta.entities_group_delta
-
-                    if container_group_delta.virtual:
-                        # If the container group delta is virtual, then add/remove
-                        # entities given in entities_group_delta to/from the corresponding
-                        # container group
-                        if not entities_group_delta.in_change:
-                            homogeneous_groups._homogeneous_groups[container_group_delta.container_group.id] += entities_group_delta
-                    else:
-                        # If the container group delta is not virtual, then add/remove it
-                        if container_group_delta.sign > 0:
-                            homogeneous_groups._homogeneous_groups[container_group_delta.container_group.id] = container_group_delta.container_group
-                        elif container_group_delta.sign < 0:
-                            del homogeneous_groups._homogeneous_groups[container_group_delta.container_group.id]
+                homogeneous_groups._add_groups(generalized_delta)
         else:
             raise TypeError('An attempt to add an object of type {} to the {}'.format(regional_delta.__class__.__name__,
                                                                                       self.__class__.__name__))
 
         return homogeneous_groups
+
+    def _add_groups(self,
+                    generalized_delta : GeneralizedDelta):
+
+        container_group_delta = generalized_delta.container_group_delta
+        in_change = container_group_delta.in_change
+
+        groups_to_change = None
+        if in_change:
+            groups_to_change = self._in_change_homogeneous_groups
+        else:
+            groups_to_change = self._homogeneous_groups
+
+        if container_group_delta.virtual:
+
+            entities_group_delta = generalized_delta.entities_group_delta
+
+            # If the container group delta is virtual, then add/remove
+            # entities given in entities_group_delta to/from the corresponding
+            # container group
+            if entities_group_delta.in_change == in_change:
+                groups_to_change[container_group_delta.container_group.id] += entities_group_delta
+        else:
+            # If the container group delta is not virtual, then add/remove it
+            if container_group_delta.sign > 0:
+                groups_to_change[container_group_delta.container_group.id] = container_group_delta.container_group
+            elif container_group_delta.sign < 0:
+                del groups_to_change[container_group_delta.container_group.id]
+
+    def extract_node_counts(self,
+                            in_change : bool):
+
+        """
+        Extracts either desired or the actual count of containers in the
+        given state.
+        """
+
+        node_counts_per_type = {}
+        groups_for_extraction = None
+        if in_change:
+            groups_for_extraction = self._in_change_homogeneous_groups
+        else:
+            groups_for_extraction = self._homogeneous_groups
+
+        for container_group in groups_for_extraction.values():
+            container_name = container_group.container_info.get_name()
+            if not container_name in node_counts_per_type:
+                node_counts_per_type[container_name] = 0
+            node_counts_per_type[container_name] += container_group.containers_count
+
+        return node_counts_per_type
 
     def copy(self):
         return HomogeneousContainerGroupSet(self._homogeneous_groups.copy())

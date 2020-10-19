@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 from ...state.platform_state import PlatformState
 
 from ....scaling.application_scaling_model import ApplicationScalingModel
@@ -21,6 +23,11 @@ class DeltaTimeline:
 
         self.timeline = {}
         self.time_of_last_state_update = pd.Timestamp(0)
+
+    def to_dict(self):
+
+        return OrderedDict(sorted(self.timeline,
+                                  key = lambda elem: elem[0]))
 
     def merge(self,
               other_delta_timeline : DeltaTimeline):

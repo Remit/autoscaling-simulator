@@ -58,6 +58,11 @@ class Region:
                                                                scaled_entity_instance_requirements_by_entity,
                                                                selected_placement)
 
+    def extract_node_counts(self,
+                            in_change : bool):
+
+        return self.homogeneous_groups.extract_node_counts(in_change)
+
     def to_deltas(self):
 
         """
