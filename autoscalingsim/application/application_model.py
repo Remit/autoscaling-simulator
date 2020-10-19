@@ -4,6 +4,7 @@ import pandas as pd
 import os
 
 from .service import Service
+from .workload_stats import WorkloadStats
 
 from ..workload.request import RequestProcessingInfo
 from ..deployment.deployment_model import DeploymentModel
@@ -37,9 +38,7 @@ class ApplicationModel:
 
         # Dynamic state
         self.new_requests = []
-        self.response_times_by_request = {}
-        self.network_times_by_request = {}
-        self.buffer_times_by_request = {}
+        self.workload_stats = WorkloadStats()
         self.state_reader = StateReader()
         self.platform_model = platform_model
         self.scaling_policy = scaling_policy
@@ -254,24 +253,8 @@ class ApplicationModel:
                                 req.replies_expected = replies_expected
                                 self.services[prev_service_name].add_request(req)
                     else:
-                        # Response received by the user
-                        if req.request_type in self.response_times_by_request:
-                            self.response_times_by_request[req.request_type].append(req.cumulative_time)
-                        else:
-                            self.response_times_by_request[req.request_type] = [req.cumulative_time]
-
-                        # Time spent transferring between the nodes
-                        if req.request_type in self.network_times_by_request:
-                            self.network_times_by_request[req.request_type].append(req.network_time)
-                        else:
-                            self.network_times_by_request[req.request_type] = [req.network_time]
-
-                        # Time spent waiting in the buffers
-                        if len(req.buffer_time) > 0:
-                            if req.request_type in self.buffer_times_by_request:
-                                self.buffer_times_by_request[req.request_type].append(req.buffer_time)
-                            else:
-                                self.buffer_times_by_request[req.request_type] = [req.buffer_time]
+                        # updating the stats
+                        self.workload_stats.add_request(req)
 
         # Calling scaling policy that determines the need to scale
         self.scaling_policy.reconcile_state(cur_timestamp)
