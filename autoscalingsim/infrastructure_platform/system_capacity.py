@@ -105,6 +105,18 @@ class SystemCapacity(Capacity):
 
         return True
 
+    def to_dict(self):
+
+        return self.system_capacity_taken
+
+    def normalized_capacity_consumption(self,
+                                        capacity_type : str):
+
+        if capacity_type in self.system_capacity_taken:
+            return self.system_capacity_taken[capacity_type] / (self.instance_count * self.instance_capacity[capacity_type])
+        else:
+            return 0
+
 # TODO: consider removing?where is it used?
     def collapse(self):
 

@@ -190,14 +190,8 @@ class ServiceState:
         while(time_budget > pd.Timedelta(0, unit = 'ms')):
 
             time_budget = self.processor.step(time_budget)
-            reqs_count_by_type = self.processor.get_in_processing_stat()
-            cumulative_cap_taken = SystemCapacity(self.placed_on_node,
-                                                  self.node_count)
-            for request_type, request_count in reqs_count_by_type.items():
-                cap_taken = self.placed_on_node.resource_requirements_to_capacity(self.request_processing_infos[request_type].resource_requirements)
-                cumulative_cap_taken += cap_taken
-
-            total_capacity_taken = self.system_capacity_reserved + cumulative_cap_taken
+            capacity_taken_by_reqs = self._compute_capacity_taken_by_requests()
+            total_capacity_taken = self.system_capacity_reserved + capacity_taken_by_reqs
 
             # Assumption: first we try to process the downstream reqs to
             # provide the response faster, but overall it is application-dependent
@@ -232,23 +226,20 @@ class ServiceState:
         # Increase the cumulative time for all the reqs left in the buffers waiting
         self.upstream_buf.add_cumulative_time(simulation_step)
         self.downstream_buf.add_cumulative_time(simulation_step)
-        # Update metric values in the service state, e.g. utilization
-        self._recompute_metrics(cur_timestamp)
+        # Update resource utilization at the end of the step
+        self.utilization.update_with_capacity(cur_timestamp,
+                                              self._compute_capacity_taken_by_requests())
 
-    # TODO: redo
-    def _recompute_metrics(self,
-                           cur_timestamp):
+    def _compute_capacity_taken_by_requests(self):
 
-        # Updating metrics:
-        # - CPU utilization
-        cpu_utilization = (len(self.in_processing_simultaneous) * self.requirements.threads_per_service_instance) / self.state.platform_threads_available
-        self.state.update_metric('cpu_utilization',
-                                 cur_timestamp,
-                                 cpu_utilization)
+        reqs_count_by_type = self.processor.get_in_processing_stat()
+        capacity_taken_by_reqs = SystemCapacity(self.placed_on_node,
+                                              self.node_count)
+        for request_type, request_count in reqs_count_by_type.items():
+            cap_taken = self.placed_on_node.resource_requirements_to_capacity(self.request_processing_infos[request_type].resource_requirements)
+            capacity_taken_by_reqs += cap_taken
 
-        # TODO:
-        # - memory utilization
-        # - disk utilization
+        return capacity_taken_by_reqs
 
 class ServiceStateRegionalized(ScaledEntityState):
 

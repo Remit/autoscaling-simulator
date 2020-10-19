@@ -75,6 +75,14 @@ class ServiceUtilization:
                                                                             averaging_interval,
                                                                             init_keepalive)
 
+    def update_with_capacity(self,
+                             timestamp : pd.Timestamp,
+                             capacity_taken : SystemCapacity):
+
+        for resource_name in self.resource_utilizations.keys():
+            self.resource_utilizations[resource_name].update(capacity_taken.normalized_capacity_consumption(resource_name),
+                                                             timestamp)
+
     def update(self,
                resource_name : str,
                timestamp : pd.Timestamp,
