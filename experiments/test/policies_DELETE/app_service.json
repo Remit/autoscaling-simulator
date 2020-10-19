@@ -1,4 +1,0 @@
-{
-  "policy_name": "ReactiveServiceScalingPolicy",
-  "service_instances_scaling_step": 1
-}
