@@ -341,3 +341,15 @@ class ServiceStateRegionalized(ScaledEntityState):
             raise ValueError('A state for the given region name {} was not found'.format(region_name))
 
         return self.region_states[region_name].get_metric_value(aspect_name)
+
+    def get_processed(self):
+
+        """
+        Binds together all the processed requests and returns them.
+        """
+
+        processed_requests = []
+        for service_state in self.region_states.values():
+            processed_requests.extend(service_state.get_processed())
+
+        return processed_requests

@@ -79,7 +79,7 @@ class ScalingPolicy:
             self.platform_model.set_adjustment_policy(adjustment_policy)
 
     def reconcile_state(self,
-                        cur_timestamp):
+                        cur_timestamp : pd.Timestamp):
 
         if (cur_timestamp - self.state.get_val('last_sync_timestamp')) > self.scaling_settings.sync_period_timedelta:
 
@@ -104,6 +104,8 @@ class ScalingPolicy:
         # Enforce use scaling_aspect_manager
         # this part goes independent of the sync period since it's about
         # implementing the scaling decision which is e.g. in desired state, not taking it
+
+        actual_state = self.platform_model.step(cur_timestamp)
         if not self.scaling_manager is None:
             pass # TODO: remember updating platform_threads_available in the service state
 

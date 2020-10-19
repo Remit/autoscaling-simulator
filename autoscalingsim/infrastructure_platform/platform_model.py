@@ -116,8 +116,7 @@ class PlatformModel:
 
         # TODO: consider deleting below
         # Dynamic state
-        self.state = PlatformState() # consider regions -- they might be specified in config file
-        self.adjustment_policy = None
+
         # timeline that won't change
         self.nodes_state = {}
         for node_type, node_info in self.node_types.items():
@@ -133,6 +132,15 @@ class PlatformModel:
             self.desired_nodes_state[node_type] = {}
             self.desired_nodes_state[node_type][starting_time_ms] = 0
         self.scheduled_desired_nodes_state_per_service = {}
+
+    def step(self,
+             cur_timestamp : pd.Timestamp):
+
+        """
+        Rolls out the planned updates that are to occur before or at the provided time.
+        """
+
+        return self.state_deltas_timeline.roll_out_updates(cur_timestamp)
 
     def init_platform_state_deltas(self,
                                    regions : list,
@@ -161,18 +169,18 @@ class PlatformModel:
         return self.providers_configs[provider].get_node_info(node_type)
 
     def adjust(self,
-               cur_timestamp,
-               desired_states_to_process):
-        # TODO: self.state_deltas_timeline update
+               cur_timestamp : pd.Timestamp,
+               desired_states_to_process : dict):
 
         """
         Adjusts the platform with help of Adjustment Policy.
         """
 
-        self.adjustment_policy.adjust(cur_timestamp,
-                                      desired_states_to_process,
-                                      self.node_types,
-                                      self.state)
+        adjusted_timeline_of_deltas = self.adjustment_policy.adjust(cur_timestamp,
+                                                                    desired_states_to_process,
+                                                                    self.node_types,
+                                                                    self.state_deltas_timeline.actual_state)
+        self.state_deltas_timeline.merge(adjusted_timeline_of_deltas)
 
     def set_adjustment_policy(self,
                               adjustment_policy):
@@ -184,47 +192,6 @@ class PlatformModel:
 
         self.placement_policy = placement_policy
 
-    # TODO: remove
-    def get_new_nodes(self,
-                      simulation_timestamp_ms,
-                      service_name,
-                      desired_timestamp_ms,
-                      provider,
-                      node_type,
-                      count):
-
-        num_added = count
-
-        adjustment_ms = self.platform_scaling_model.get_boot_up_ms(provider,
-                                                                   node_type)
-        return self._update_scaling_events(simulation_timestamp_ms,
-                                           service_name,
-                                           desired_timestamp_ms,
-                                           provider,
-                                           node_type,
-                                           num_added,
-                                           adjustment_ms)
-
-    # TODO: remove
-    def remove_nodes(self,
-                     simulation_timestamp_ms,
-                     service_name,
-                     desired_timestamp_ms,
-                     provider,
-                     node_type,
-                     count):
-
-        num_removed = -count
-
-        adjustment_ms = self.platform_scaling_model.get_tear_down_ms(provider,
-                                                                     node_type)
-        return self._update_scaling_events(simulation_timestamp_ms,
-                                           service_name,
-                                           desired_timestamp_ms,
-                                           provider,
-                                           node_type,
-                                           num_removed,
-                                           adjustment_ms)
 
     def compute_desired_node_count(self,
                                    simulation_step_ms,
@@ -273,84 +240,3 @@ class PlatformModel:
                 timestamp_cur += simulation_step_ms
 
         return nodes_usage
-
-    def _update_scaling_events(self,
-                               simulation_timestamp_ms,
-                               service_name,
-                               desired_timestamp_ms,
-                               provider,
-                               node_type,
-                               delta,
-                               adjustment_ms):
-        # In case of reactive autoscaling:
-        # simulation_timestamp_ms = desired_timestamp_ms
-        ts_adjusted = desired_timestamp_ms + adjustment_ms
-
-        # 1. Maintaining schedules
-        # Updating the scheduled state to be enacted (not yet in force)
-        self._update_schedule(service_name,
-                              node_type,
-                              self.scheduled_nodes_state_per_service,
-                              delta,
-                              ts_adjusted)
-
-        # Updating the desired scheduled state (not yet in force)
-        self._update_schedule(service_name,
-                              node_type,
-                              self.scheduled_desired_nodes_state_per_service,
-                              delta,
-                              desired_timestamp_ms)
-
-        # 2. Maintaining histories
-        # Updating the enacted history (in force)
-        self._update_scaling_history(simulation_timestamp_ms,
-                                     service_name,
-                                     node_type,
-                                     self.scheduled_nodes_state_per_service,
-                                     self.nodes_state)
-
-        # Updating the desired history (in force)
-        self._update_scaling_history(simulation_timestamp_ms,
-                                     service_name,
-                                     node_type,
-                                     self.scheduled_desired_nodes_state_per_service,
-                                     self.desired_nodes_state)
-
-        return (ts_adjusted, self.node_types[node_type], delta)
-
-    def _update_schedule(self,
-                         service_name,
-                         node_type,
-                         schedule,
-                         delta,
-                         cutoff_ts):
-
-        if service_name in schedule:
-            for scheduled_ts_ms in reversed(list(schedule[service_name][node_type].keys())):
-                # invalidating scheduled scaling events that occur later or
-                # at the same time
-                if cutoff_ts <= scheduled_ts_ms:
-                    del schedule[service_name][node_type][scheduled_ts_ms]
-        else:
-            schedule[service_name] = {}
-            schedule[service_name][node_type] = {}
-
-        schedule[service_name][node_type][cutoff_ts] = delta
-
-    def _update_scaling_history(self,
-                                simulation_timestamp_ms,
-                                service_name,
-                                node_type,
-                                schedule,
-                                history):
-
-        for scheduled_ts_ms in reversed(list(schedule[service_name][node_type].keys())):
-            if scheduled_ts_ms <= simulation_timestamp_ms:
-                scheduled_correction = schedule[service_name][node_type][scheduled_ts_ms]
-
-                if not scheduled_ts_ms in history[node_type]:
-                    history[node_type][scheduled_ts_ms] = scheduled_correction
-                else:
-                    history[node_type][scheduled_ts_ms] += scheduled_correction
-
-                del schedule[service_name][node_type][scheduled_ts_ms]

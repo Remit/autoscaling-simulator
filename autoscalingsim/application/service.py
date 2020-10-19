@@ -61,3 +61,7 @@ class Service(ScaledEntity):
 
         self.state.step(cur_timestamp,
                         simulation_step)
+
+    def get_processed(self):
+
+        return self.state.get_processed()

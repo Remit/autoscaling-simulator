@@ -22,6 +22,30 @@ class DeltaTimeline:
         self.timeline = {}
         self.time_of_last_state_update = pd.Timestamp(0)
 
+    def merge(self,
+              other_delta_timeline : DeltaTimeline):
+
+        """
+        Merges deltas from the other delta timeline into the current timeline.
+        Only the deltas after the time of the last state update are merged, since
+        the deltas before are already irreversably enforced.
+        """
+
+        if not isinstance(other_delta_timeline, DeltaTimeline):
+            raise TypeError('Expected value of type {} when merging, got {}'.format(self.__class__.__name__,
+                                                                                    other_delta_timeline.__class__.__name__))
+
+        # Keeping only already enforced deltas. We also keep the deltas that fall
+        # between the timestamp of the last enforcement and the beginning of the update.
+        min_timestamp_of_other_timeline = min(list(other_delta_timeline.timeline.keys()))
+        borderline_ts = max(self.time_of_last_state_update, min_timestamp_of_other_timeline)
+        self.timeline = { (timestamp, deltas) for timestamp, deltas in self.timeline.items() if timestamp <= borderline_ts }
+
+        # Adding new deltas
+        for timestamp, list_of_updates in other_delta_timeline.timeline.items():
+            if timestamp > borderline_ts:
+                self.timeline[timestamp] = list_of_updates
+
     def add_state_delta(self,
                         timestamp : pd.Timestamp,
                         state_delta : StateDelta):

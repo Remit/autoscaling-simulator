@@ -205,30 +205,27 @@ class ApplicationModel:
                                                        self.deployment_model.to_init_platform_state_delta())
 
     def step(self,
-             cur_simulation_time_ms,
-             simulation_step_ms):
-
-        cur_timestamp = pd.Timestamp(cur_simulation_time_ms, unit = 'ms')
+             cur_timestamp : pd.Timestamp,
+             simulation_step : pd.Timedelta):
 
         if len(self.new_requests) > 0:
             for req in self.new_requests:
                 entry_service = self.reqs_processing_infos[req.request_type].entry_service
-                req.processing_left_ms = self.reqs_processing_infos[req.request_type].processing_times[entry_service][1]
+                req.processing_left = self.reqs_processing_infos[req.request_type].processing_times[entry_service][1]
                 self.services[entry_service].add_request(req)
 
             self.new_requests = []
 
         # Proceed through the services // fan-in merge and fan-out copying
         # is done in the app logic since it knows the structure and times
-        # IMPORTANT: the simulation step should be small for the following
-        # processing to work correctly ~5-10 ms.
         for service_name, service in self.services.items():
             # Simulation step in service
             service.step(cur_timestamp,
-                         simulation_step_ms)
+                         simulation_step)
 
-            while len(service.out) > 0:
-                req = service.out.pop()
+            processed_requests = service.get_processed()
+            while len(processed_requests) > 0:
+                req = processed_requests.pop()
                 req_info = self.reqs_processing_infos[req.request_type]
 
                 if req.upstream:
@@ -236,9 +233,8 @@ class ApplicationModel:
                     if not next_services_names is None:
                         for next_service_name in next_services_names:
                             if next_service_name in req_info.processing_times:
-                                req_cpy = req
-                                req_cpy.processing_left_ms = req_info.processing_times[next_service_name][0]
-                                self.services[next_service_name].add_request(req_cpy)
+                                req.processing_left = req_info.processing_times[next_service_name][0]
+                                self.services[next_service_name].add_request(req)
                     else:
                         # Sending response
                         req.upstream = False
@@ -254,32 +250,33 @@ class ApplicationModel:
 
                         for prev_service_name in prev_services_names:
                             if prev_service_name in req_info.processing_times:
-                                req_cpy = req
-                                req_cpy.processing_left_ms = req_info.processing_times[prev_service_name][1]
-                                req_cpy.replies_expected = replies_expected
-                                self.services[prev_service_name].add_request(req_cpy)
+                                req.processing_left = req_info.processing_times[prev_service_name][1]
+                                req.replies_expected = replies_expected
+                                self.services[prev_service_name].add_request(req)
                     else:
                         # Response received by the user
                         if req.request_type in self.response_times_by_request:
-                            self.response_times_by_request[req.request_type].append(req.cumulative_time_ms)
+                            self.response_times_by_request[req.request_type].append(req.cumulative_time)
                         else:
-                            self.response_times_by_request[req.request_type] = [req.cumulative_time_ms]
+                            self.response_times_by_request[req.request_type] = [req.cumulative_time]
 
                         # Time spent transferring between the nodes
                         if req.request_type in self.network_times_by_request:
-                            self.network_times_by_request[req.request_type].append(req.network_time_ms)
+                            self.network_times_by_request[req.request_type].append(req.network_time)
                         else:
-                            self.network_times_by_request[req.request_type] = [req.network_time_ms]
+                            self.network_times_by_request[req.request_type] = [req.network_time]
 
                         # Time spent waiting in the buffers
-                        if len(req.buffer_time_ms) > 0:
+                        if len(req.buffer_time) > 0:
                             if req.request_type in self.buffer_times_by_request:
-                                self.buffer_times_by_request[req.request_type].append(req.buffer_time_ms)
+                                self.buffer_times_by_request[req.request_type].append(req.buffer_time)
                             else:
-                                self.buffer_times_by_request[req.request_type] = [req.buffer_time_ms]
+                                self.buffer_times_by_request[req.request_type] = [req.buffer_time]
 
         # Calling scaling policy that determines the need to scale
         self.scaling_policy.reconcile_state(cur_timestamp)
 
-    def enter_requests(self, new_requests):
+    def enter_requests(self,
+                       new_requests : list):
+
         self.new_requests = new_requests
