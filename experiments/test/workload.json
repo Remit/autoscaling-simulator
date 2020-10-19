@@ -1,88 +1,93 @@
 {
-	"seasonal_pattern": {
-		"type": "values",
-		"discretion_s": 3600,
-		"params": [
-			{
-				"month": "all",
-				"day_of_week": "weekday",
-				"values": [1800,
-					   1405,
-					   1005,
-					   120,
-					   110,
-					   205,
-					   1840,
-					   3705,
-					   8030,
-					   12350,
-					   10080,
-					   2460,
-					   2230,
-					   7605,
-					   2005,
-					   1055,
-					   1100,
-					   1305,
-					   4050,
-					   11020,
-					   4060,
-					   3005,
-					   2055,
-					   1905
-					  ]
-			},
-			{
-				"month": "all",
-				"day_of_week": "weekend",
-				"values": [2900,
-					   1960,
-					   1205,
-					   560,
-					   300,
-					   100,
-					   940,
-					   2200,
-					   6730,
-					   17650,
-					   12080,
-					   10450,
-					   9040,
-					   10405,
-					   8790,
-					   8950,
-					   11450,
-					   10300,
-					   9070,
-					   8450,
-					   7800,
-					   6500,
-					   3605,
-					   3005
-					  ]
-			}
-		]
-	},
-	"workloads_configs": [{
-			"request_type": "auth",
-			"workload_config": {
-				"ratio": 0.8,
-				"sliced_distribution": {
-					"type": "normal",
-					"params": [20, 1]
-				}
-
-			}
-		},
+	"regions_configs": [
 		{
-			"request_type": "buy",
-			"workload_config": {
-				"ratio": 0.2,
-				"sliced_distribution": {
-					"type": "normal",
-					"params": [1, 1]
+			"region_name": "eu",
+			"seasonal_pattern": {
+				"type": "values",
+				"discretion_s": 3600,
+				"params": [
+					{
+						"month": "all",
+						"day_of_week": "weekday",
+						"values": [1800,
+							   1405,
+							   1005,
+							   120,
+							   110,
+							   205,
+							   1840,
+							   3705,
+							   8030,
+							   12350,
+							   10080,
+							   2460,
+							   2230,
+							   7605,
+							   2005,
+							   1055,
+							   1100,
+							   1305,
+							   4050,
+							   11020,
+							   4060,
+							   3005,
+							   2055,
+							   1905
+							  ]
+					},
+					{
+						"month": "all",
+						"day_of_week": "weekend",
+						"values": [2900,
+							   1960,
+							   1205,
+							   560,
+							   300,
+							   100,
+							   940,
+							   2200,
+							   6730,
+							   17650,
+							   12080,
+							   10450,
+							   9040,
+							   10405,
+							   8790,
+							   8950,
+							   11450,
+							   10300,
+							   9070,
+							   8450,
+							   7800,
+							   6500,
+							   3605,
+							   3005
+							  ]
+					}
+				]
+			},
+			"workloads_configs": [{
+					"request_type": "auth",
+					"workload_config": {
+						"ratio": 0.8,
+						"sliced_distribution": {
+							"type": "normal",
+							"params": [20, 1]
+						}
+
+					}
+				},
+				{
+					"request_type": "buy",
+					"workload_config": {
+						"ratio": 0.2,
+						"sliced_distribution": {
+							"type": "normal",
+							"params": [1, 1]
+						}
+					}
 				}
-			}
+			]
 		}
 	]
 }
