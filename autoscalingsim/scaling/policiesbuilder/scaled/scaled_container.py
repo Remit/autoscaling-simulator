@@ -33,6 +33,7 @@ class ScaledContainer(ABC):
         pass
 
     @abstractmethod
-    def takes_capacity(self,
-                       requirements_by_entity):
+    def entities_require_capacity(self,
+                                  requirements_by_entity,
+                                  entities_state):
         pass

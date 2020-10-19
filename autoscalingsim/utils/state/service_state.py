@@ -141,12 +141,12 @@ class ServiceState:
         self.placed_on_node = node_info
         self.node_count = node_count
 
-        fits, cap_taken = self.placed_on_node.takes_capacity(self.resource_requirements)
+        cap_taken = self.placed_on_node.resource_requirements_to_capacity(self.resource_requirements)
         self.system_capacity_reserved = cap_taken * self.node_count
 
         self.upstream_buf.update_settings(self.placed_on_node.latency_ms,
                                           self.placed_on_node.network_bandwidth_MBps)
-                                          
+
         self.downstream_buf.update_settings(self.placed_on_node.latency_ms,
                                             self.placed_on_node.network_bandwidth_MBps)
 
@@ -191,9 +191,10 @@ class ServiceState:
 
             time_budget = self.processor.step(time_budget)
             reqs_count_by_type = self.processor.get_in_processing_stat()
-            cumulative_cap_taken = SystemCapacity(self.placed_on_node)
+            cumulative_cap_taken = SystemCapacity(self.placed_on_node,
+                                                  self.node_count)
             for request_type, request_count in reqs_count_by_type.items():
-                fits, cap_taken = self.placed_on_node.takes_capacity(self.request_processing_infos[request_type].resource_requirements)
+                cap_taken = self.placed_on_node.resource_requirements_to_capacity(self.request_processing_infos[request_type].resource_requirements)
                 cumulative_cap_taken += cap_taken
 
             total_capacity_taken = self.system_capacity_reserved + cumulative_cap_taken
@@ -204,7 +205,7 @@ class ServiceState:
 
                 req = self.downstream_buf.attempt_fan_in()
                 if not req is None:
-                    fits, cap_taken = self.placed_on_node.takes_capacity(self.request_processing_infos[req.request_type].resource_requirements)
+                    cap_taken = self.placed_on_node.resource_requirements_to_capacity(self.request_processing_infos[req.request_type].resource_requirements)
                     if not (total_capacity_taken + cap_taken).is_exhausted():
                         req = self.downstream_buf.fan_in(req)
                         self.processor.start_processing(req)
@@ -215,7 +216,7 @@ class ServiceState:
 
                 req = self.upstream_buf.attempt_pop()
                 if not req is None:
-                    fits, cap_taken = self.placed_on_node.takes_capacity(self.request_processing_infos[req.request_type].resource_requirements)
+                    cap_taken = self.placed_on_node.resource_requirements_to_capacity(self.request_processing_infos[req.request_type].resource_requirements)
                     if not (total_capacity_taken + cap_taken).is_exhausted():
                         req = self.upstream_buf.pop(req)
                         self.processor.start_processing(req)

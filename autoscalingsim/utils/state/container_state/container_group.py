@@ -107,7 +107,7 @@ class HomogeneousContainerGroup:
 
         container_capacity_taken_by_entity = {}
         for scaled_entity, instance_requirements in scaled_entity_instance_requirements_by_entity.items():
-            fits, cap_taken = container_info.takes_capacity({scaled_entity: instance_requirements})
+            fits, cap_taken = container_info.entities_require_capacity({scaled_entity: instance_requirements})
             if fits:
                 container_capacity_taken_by_entity[scaled_entity] = cap_taken
 

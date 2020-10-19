@@ -1,4 +1,5 @@
 from collections import deque
+import pandas as pd
 
 from ..workload.request import Request, RequestProcessingInfo
 
@@ -73,8 +74,8 @@ class LinkBuffer:
 
     """
     def __init__(self,
-                 capacity_by_request_type,
-                 request_processing_infos,
+                 capacity_by_request_type : dict,
+                 request_processing_infos : dict,
                  policy = "FIFO"):
 
         # Static state
@@ -83,7 +84,7 @@ class LinkBuffer:
         self.policy = policy
 
         # Link:
-        self.latency_ms = pd.Timedelta(0, unit = 'ms')
+        self.latency = pd.Timedelta(0, unit = 'ms')
         self.throughput_MBps = 0
         self.request_processing_infos = request_processing_infos
 
@@ -104,19 +105,22 @@ class LinkBuffer:
         self.latency = latency
         self.throughput_MBps = network_bandwidth_MBps
 
-    def step(self, simulation_step_ms):
+    def step(self,
+             simulation_step : pd.Timedelta):
+
         """ Processing requests to bring them from the link into the buffer """
+
         for req in self.requests_in_transfer:
             #min_time_to_subtract_ms = min(req.processing_left_ms, simulation_step_ms)
             #req.processing_left_ms -= min_time_to_subtract_ms
             #if req.processing_left_ms <= 0:
-            req.cumulative_time_ms += simulation_step_ms
+            req.cumulative_time += simulation_step_ms
             capacity = self.capacity_by_request_type[req.request_type]
 
-            req.waiting_on_link_left_ms -= simulation_step_ms
-            req.network_time_ms += simulation_step_ms
-            if req.waiting_on_link_left_ms <= 0:
-                if (capacity > self.reqs_cnt[req.request_type]) and (req.cumulative_time_ms < self.request_processing_infos[req.request_type].timeout_ms):
+            req.waiting_on_link_left -= simulation_step_ms
+            req.network_time += simulation_step_ms
+            if req.waiting_on_link_left <= 0:
+                if (capacity > self.reqs_cnt[req.request_type]) and (req.cumulative_time < self.request_processing_infos[req.request_type].timeout):
                     self.requests.append(req)
                     self.used_throughput_MBps -= self._req_occupied_MBps(req)
                     self.reqs_cnt[req.request_type] += 1
@@ -125,12 +129,20 @@ class LinkBuffer:
 
     def attempt_pop(self):
 
+        """ Provides a copy of the oldest request in the queue """
+
         if self.size() > 0:
             return self.requests[-1]
         else:
             return None
 
     def attempt_fan_in(self):
+
+        """
+        Attempts to find all the requests that are required to process the oldest
+        request in the queue. If all prerequisites are fulfilled, the copy of the oldest request
+        is returned. Otherwise, this method returns None.
+        """
 
         if self.size() > 0:
             req = self.requests[-1]
@@ -170,6 +182,8 @@ class LinkBuffer:
         req = self.pop()
         self.remove_by_id(req.request_id)
         req.replies_expected = 1
+
+        return req
 
     def put(self, req):
         req_size_b_MBps = self._req_occupied_MBps(req)
