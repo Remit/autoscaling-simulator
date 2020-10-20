@@ -81,26 +81,26 @@ class AnalysisFramework:
                                     figures_dir = figures_dir_in_use)
 
         FulfilledDroppedBarchart.plot(response_times_regionalized,
-                                      workload_ts_per_request_type,
+                                      workload_regionalized,
                                       figures_dir = figures_dir_in_use)
 
         # Autoscaling behaviour characterization category
-        WorkloadLineGraph.plot(workload_ts_per_request_type,
+        WorkloadLineGraph.plot(workload_regionalized,
                                resolution_ms = 5000,
                                figures_dir = figures_dir_in_use)
 
-        GeneratedRequestsByType.plot(workload_ts_per_request_type,
+        GeneratedRequestsByType.plot(workload_regionalized,
                                      figures_dir = figures_dir_in_use)
 
-        NodesUsageLineGraph.plot(desired_node_count,
-                                 actual_node_count,
+        NodesUsageLineGraph.plot(desired_node_count_regionalized,
+                                 actual_node_count_regionalized,
                                  figures_dir = figures_dir_in_use)
 
-        WaitingServiceBuffersHistogram.plot(buffer_times_by_request,
+        WaitingServiceBuffersHistogram.plot(buffer_times_regionalized,
                                             bins_size_ms = 3 * int(self.simulation_step.microseconds / 1000),
                                             figures_dir = figures_dir_in_use)
 
-        DistributionRequestsTimesBarchart.plot(response_times_per_request_type,
-                                               buffer_times_by_request,
-                                               network_times_by_request,
+        DistributionRequestsTimesBarchart.plot(response_times_regionalized,
+                                               buffer_times_regionalized,
+                                               network_times_regionalized,
                                                figures_dir = figures_dir_in_use)
