@@ -1,7 +1,7 @@
 import argparse
 import sys
 from autoscalingsim import simulator
-from datetime import datetime
+import pandas as pd
 
 # Q: why not in __main__? Problems with the relative paths in the package, details below.
 # Reference for Python's import challenges: https://stackoverflow.com/questions/14132789/relative-imports-in-python-2-7/14132912#14132912
@@ -29,25 +29,24 @@ parser.add_argument('--results', dest = 'results_dir',
 
 args = parser.parse_args()
 
-starting_time = datetime.now()
 try:
-    starting_time = datetime.strptime(args.starting_time_str, '%Y-%m-%dT%H:%M:%S')
+    starting_time = pd.Timestamp(args.starting_time_str)
+
+    if args.config_dir is None:
+        sys.exit('No configuration directory specified.')
+
+    if args.simulation_step_ms < 10:
+        sys.exit('The simulation step is too small, should be equal or more than 10 ms')
+
+    simulator = simulator.Simulator(pd.Timedelta(args.simulation_step_ms, unit = 'ms'),
+                                    starting_time,
+                                    args.time_to_simulate_days)
+
+    simulator.add_simulation(args.config_dir,
+                             args.results_dir)
+
+    simulator.start_simulation()
 except ValueError:
     sys.exit('Incorrect format for the simulated start, should be YYYY-MM-DDThh:mm:ss')
-
-if args.config_dir is None:
-    sys.exit('No configuration directory specified.')
-
-if args.simulation_step_ms < 10:
-    sys.exit('The simulation step value is too small, should be equal or more than 10 ms')
-
-simulator = simulator.Simulator(args.simulation_step_ms,
-                                starting_time,
-                                args.time_to_simulate_days)
-
-simulator.add_simulation(args.config_dir,
-                         args.results_dir)
-
-simulator.start_simulation()
 
 #print(list(simulator.simulations["test"].application_model.buffer_times_by_request['auth']))

@@ -1,39 +1,51 @@
 import numpy as np
 import pandas as pd
 
+from ..utils.error_check import ErrorChecker
 from ..utils.deltarepr.delta_containers.container_group_delta import ContainerGroupDelta
 
 class NodeScalingInfo:
+
     """
+    Wraps scalling-related information for a particular node type.
     """
+
     def __init__(self,
-                 node_type,
-                 boot_up_ms,
-                 tear_down_ms):
+                 node_type : str,
+                 booting_duration : pd.Timedelta,
+                 termination_duration : pd.Timedelta):
 
         self.node_type = node_type
-        self.boot_up_ms = boot_up_ms
-        self.tear_down_ms = tear_down_ms
+        self.booting_duration = booting_duration
+        self.termination_duration = termination_duration
 
 class PlatformScalingInfo:
+
     """
+    Wraps scaling-related information about all the nodes for the platform
+    of a particular provider.
     """
+
     def __init__(self,
-                 provider,
-                 decision_making_time_ms,
-                 link_added_throughput_coef_per_vm,
-                 node_scaling_infos_raw):
+                 provider : str,
+                 node_scaling_infos_raw : list):
 
         self.provider = provider
-        self.decision_making_time_ms = decision_making_time_ms
-        self.link_added_throughput_coef_per_vm = link_added_throughput_coef_per_vm
         self.node_scaling_infos = {}
 
         for node_scaling_info_raw in node_scaling_infos_raw:
-            nsi = NodeScalingInfo(node_scaling_info_raw["type"],
-                                  pd.Timedelta(node_scaling_info_raw["boot_up_ms"], unit = 'ms'),
-                                  pd.Timedelta(node_scaling_info_raw["tear_down_ms"], unit = 'ms'))
-            self.node_scaling_infos[node_scaling_info_raw["type"]] = nsi
+            node_type = ErrorChecker.key_check_and_load('type', node_scaling_info_raw)
+            booting_duration = pd.Timedelta(ErrorChecker.key_check_and_load('booting_duration_ms',
+                                                                            node_scaling_info_raw,
+                                                                            'node type',
+                                                                            node_type), unit = 'ms')
+            termination_duration = pd.Timedelta(ErrorChecker.key_check_and_load('termination_duration_ms',
+                                                                                node_scaling_info_raw,
+                                                                                'node type',
+                                                                                node_type), unit = 'ms')
+            self.node_scaling_infos[node_type] = NodeScalingInfo(node_type,
+                                                                 booting_duration,
+                                                                 termination_duration)
 
 class PlatformScalingModel:
 
@@ -47,50 +59,19 @@ class PlatformScalingModel:
     """
 
     def __init__(self,
-                 simulation_step_ms,
-                 sigma_ms = 10):
+                 simulation_step : pd.Timedelta,
+                 sigma_ms : int = 10):
 
         self.platform_scaling_infos = {}
-        self.simulation_step_ms = simulation_step_ms
-        self.sigma_ms = 10
+        self.simulation_step = simulation_step
+        self.sigma_ms = sigma_ms
 
     def add_provider(self,
-                     provider = "on-premise",
-                     decision_making_time_ms = 0,
-                     link_added_throughput_coef_per_vm = 1,
-                     node_scaling_infos_raw = []):
+                     provider : str,
+                     node_scaling_infos_raw : list):
 
-        psi = PlatformScalingInfo(provider,
-                                  decision_making_time_ms,
-                                  link_added_throughput_coef_per_vm,
-                                  node_scaling_infos_raw)
-        self.platform_scaling_infos[provider] = psi
-
-    # TODO: remove
-    def get_boot_up_ms(self,
-                       provider,
-                       node_type):
-
-        mu = self.platform_scaling_infos[provider].node_scaling_infos[node_type].boot_up_ms
-        boot_up_ms = self.simulation_step_ms
-        raw_boot_up_ms = np.random.normal(mu, self.sigma_ms, 1)
-        if raw_boot_up_ms > boot_up_ms:
-            boot_up_ms = int(np.ceil(raw_boot_up_ms / self.simulation_step_ms)) * self.simulation_step_ms
-
-        return boot_up_ms
-
-    # TODO: remove
-    def get_tear_down_ms(self,
-                         provider,
-                         node_type):
-
-        mu = self.platform_scaling_infos[provider].node_scaling_infos[node_type].tear_down_ms
-        tear_down_ms = self.simulation_step_ms
-        raw_tear_down_ms = np.random.normal(mu, self.sigma_ms, 1)
-        if raw_tear_down_ms > tear_down_ms:
-            tear_down_ms = int(np.ceil(raw_tear_down_ms / self.simulation_step_ms)) * self.simulation_step_ms
-
-        return tear_down_ms
+        self.platform_scaling_infos[provider] = PlatformScalingInfo(provider,
+                                                                    node_scaling_infos_raw)
 
     def delay(self,
               container_group_delta : ContainerGroupDelta):
@@ -108,9 +89,9 @@ class PlatformScalingModel:
             container_type = container_group_delta.get_container_type()
 
             if container_group_delta.sign < 0:
-                timestamp_adjustment = self.platform_scaling_infos[provider].node_scaling_infos[container_type].tear_down_ms
+                delay = self.platform_scaling_infos[provider].node_scaling_infos[container_type].termination_duration
             elif container_group_delta.sign > 0:
-                timestamp_adjustment = self.platform_scaling_infos[provider].node_scaling_infos[container_type].boot_up_ms
+                delay = self.platform_scaling_infos[provider].node_scaling_infos[container_type].booting_duration
 
             enforced_container_group_delta = container_group_delta.enforce()
 

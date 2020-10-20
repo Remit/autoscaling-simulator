@@ -12,28 +12,11 @@ class ServiceScalingInfo:
     """
 
     def __init__(self,
-                 boot_up_delta,
-                 termination_ms = 0):
+                 booting_duration : pd.Timedelta,
+                 termination_duration : pd.Timedelta = pd.Timedelta(0, unit = 'ms')):
 
-        self.boot_up_ms = pd.Timedelta(boot_up_delta, unit = 'ms')
-        self.termination_ms = pd.Timedelta(termination_ms, unit = 'ms')
-
-# TODO: consider removing
-class ServiceScalingInfoIterator:
-
-    def __init__(self,
-                 application_scaling_model):
-        self._index = 0
-        self._application_scaling_model = application_scaling_model
-
-    def __next__(self):
-
-        if self._index < len(self._application_scaling_model.service_scaling_infos):
-            ssi = self._application_scaling_model.service_scaling_infos[self._application_scaling_model.service_scaling_infos.keys()[self._index]]
-            self._index += 1
-            return ssi
-
-        raise StopIteration
+        self.booting_duration = booting_duration
+        self.termination_duration = termination_duration
 
 class ApplicationScalingModel:
 
@@ -50,41 +33,17 @@ class ApplicationScalingModel:
 
         for service_scaling_info_raw in service_scaling_infos_raw:
 
-            boot_up_ms = ErrorChecker.key_check_and_load('boot_up_ms', service_scaling_info_raw, self.__class__.__name__)
-            termination_ms = ErrorChecker.key_check_and_load('termination_ms', service_scaling_info_raw, self.__class__.__name__)
-            ssi = ServiceScalingInfo(pd.Timedelta(boot_up_ms, unit = 'ms'),
-                                     pd.Timedelta(termination_ms, unit = 'ms'))
-
-            service_name = ErrorChecker.key_check_and_load('name', service_scaling_info_raw, self.__class__.__name__)
-
-            self.service_scaling_infos[service_name] = ssi
-
-    # TODO: consider removing
-    def __iter__(self):
-        return ServiceScalingInfoIterator(self)
-
-    # TODO: consider removing
-    def get_service_scaling_params(self,
-                                   service_name):
-        ssi = None
-        if service_name in self.service_scaling_infos:
-            ssi = self.service_scaling_infos[service_name]
-
-        return ssi
-
-    # TODO: consider removing
-    def get_entities_with_expired_scaling_period(self,
-                                                 interval : pd.Timedelta):
-
-        entities_booting_period_expired = []
-        entities_termination_period_expired = []
-        for entity_name, ssi in self.service_scaling_infos.items():
-            if ssi.boot_up_ms <= interval:
-                entities_booting_period_expired.append(entity_name)
-            if ssi.termination_ms <= interval:
-                entities_termination_period_expired.append(entity_name)
-
-        return (entities_booting_period_expired, entities_termination_period_expired)
+            service_name = ErrorChecker.key_check_and_load('name', service_scaling_info_raw)
+            booting_duration = pd.Timedelta(ErrorChecker.key_check_and_load('booting_duration_ms',
+                                                                            service_scaling_info_raw,
+                                                                            'service',
+                                                                            service_name), unit = 'ms')
+            termination_duration = pd.Timedelta(ErrorChecker.key_check_and_load('termination_duration_ms',
+                                                                                service_scaling_info_raw,
+                                                                                'service',
+                                                                                service_name), unit = 'ms')
+            self.service_scaling_infos[service_name] = ServiceScalingInfo(booting_duration,
+                                                                          termination_duration)
 
     def delay(self,
               entity_group_delta : EntityGroupDelta):
@@ -106,9 +65,9 @@ class ApplicationScalingModel:
                                                                                                self.__class__.__name__))
                 change_enforcement_delay = pd.Timedelta(0, unit = 'ms')
                 if entity_group_delta.sign < 0:
-                    change_enforcement_delay = self.service_scaling_infos[entity_name].boot_up_ms
+                    change_enforcement_delay = self.service_scaling_infos[entity_name].booting_duration
                 elif entity_group_delta.sign > 0:
-                    change_enforcement_delay = self.service_scaling_infos[entity_name].termination_ms
+                    change_enforcement_delay = self.service_scaling_infos[entity_name].termination_duration
 
                 if not change_enforcement_delay in entities_by_change_enforcement_delay:
                     entities_by_change_enforcement_delay[change_enforcement_delay] = []

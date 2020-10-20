@@ -13,10 +13,9 @@ class WorkloadModel:
     """
 
     def __init__(self,
-                 filename : str,
                  simulation_step : pd.Timedelta = pd.Timedelta(10, unit = 'ms'),
+                 filename : str,     
                  reqs_types_ratios : dict = None):
-
 
         self.region_models = {}
 

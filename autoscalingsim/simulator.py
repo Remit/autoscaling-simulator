@@ -8,7 +8,6 @@ from .scaling.scaling_model import ScalingModel
 from .infrastructure_platform.platform_model import PlatformModel
 from .application.application_model import ApplicationModel
 from .simulation.simulation import Simulation
-from .scaling.policies.scaling_policies_settings import ScalingPoliciesSettings
 from .scaling.policiesbuilder.policy import ScalingPolicy
 
 class Simulator:
@@ -27,19 +26,19 @@ class Simulator:
     CONF_SCALING_POLICY_KEY = "scaling_policy"
 
     def __init__(self,
-                 simulation_step_ms = 10,
-                 starting_time = datetime.now(),
-                 time_to_simulate_days = 0.0005):
+                 simulation_step : pd.Timedelta = pd.Timedelta(10, unit = 'ms'),
+                 starting_time : pd.Timestamp = pd.Timestamp.now(),
+                 time_to_simulate_days : float = 0.0005):
 
-        self.simulation_step_ms = simulation_step_ms
+        self.simulation_step = simulation_step
         self.starting_time = starting_time
         self.time_to_simulate_days = time_to_simulate_days
         self.simulations = {}
 
     def add_simulation(self,
-                       configs_dir,
-                       results_dir = None,
-                       stat_updates_every_round = 1000):
+                       configs_dir : str,
+                       results_dir : str = None,
+                       stat_updates_every_round : int = 1000):
 
         simulation_name = ""
         if not os.path.exists(configs_dir):
@@ -61,38 +60,32 @@ class Simulator:
                  (not Simulator.CONF_APPLICATION_MODEL_KEY in config):
                     raise ValueError('The config listing file misses at least one key model.')
 
-                starting_time_ms = int(self.starting_time.timestamp() * 1000)
+                workload_model = WorkloadModel(self.simulation_step,
+                                               os.path.join(configs_dir, config[Simulator.CONF_WORKLOAD_MODEL_KEY]))
 
-                workload_model = WorkloadModel(self.simulation_step_ms,
-                                               filename = os.path.join(configs_dir, config[Simulator.CONF_WORKLOAD_MODEL_KEY]))
-
-                scaling_model = ScalingModel(self.simulation_step_ms,
+                scaling_model = ScalingModel(self.simulation_step,
                                              os.path.join(configs_dir, config[Simulator.CONF_SCALING_MODEL_KEY]))
 
-                platform_model = PlatformModel(starting_time_ms,
-                                               scaling_model.platform_scaling_model,
+                platform_model = PlatformModel(scaling_model.platform_scaling_model,
                                                scaling_model.application_scaling_model,
                                                os.path.join(configs_dir, config[Simulator.CONF_PLATFORM_MODEL_KEY]))
 
-                scaling_policies_settings = ScalingPoliciesSettings(configs_dir)
                 scaling_policy = ScalingPolicy(os.path.join(configs_dir, config[Simulator.CONF_SCALING_POLICY_KEY]),
                                                scaling_model,
                                                platform_model)
 
-                application_model = ApplicationModel(starting_time_ms,
+                application_model = ApplicationModel(self.starting_time,
                                                      platform_model,
                                                      scaling_policy,
                                                      os.path.join(configs_dir, config[Simulator.CONF_APPLICATION_MODEL_KEY]))
 
-                sim = Simulation(workload_model,
-                                 application_model,
-                                 self.starting_time,
-                                 self.time_to_simulate_days,
-                                 self.simulation_step_ms,
-                                 stat_updates_every_round,
-                                 results_dir)
-
-                self.simulations[simulation_name] = sim
+                self.simulations[simulation_name] = Simulation(workload_model,
+                                                               application_model,
+                                                               self.starting_time,
+                                                               self.time_to_simulate_days,
+                                                               self.simulation_step,
+                                                               stat_updates_every_round,
+                                                               results_dir)
 
             except json.JSONDecodeError:
                 raise ValueError('The config listing file is an invalid JSON.')

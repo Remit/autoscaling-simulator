@@ -60,9 +60,9 @@ class ScalingPolicy:
             self.__setattr__(aspect_name, aspect_val)
 
     def __init__(self,
-                 config_file,
-                 scaling_model,
-                 platform_model):
+                 config_file : str,
+                 scaling_model : ScalingModel,
+                 platform_model : PlatformModel):
 
         self.scaling_manager = None
         self.scaling_settings = None
