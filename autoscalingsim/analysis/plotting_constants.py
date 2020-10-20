@@ -1,0 +1,1 @@
+MAX_PLOTS_CNT_ROW = 4

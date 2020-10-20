@@ -8,9 +8,10 @@ setup(
    author_email = 'v.e.podoslkiy@gmail.com',
    packages = ['autoscalingsim'],
    install_requires = [
-                        'datetime',
+                        'tqdm',
                         'pandas',
-                        'uuid'
+                        'uuid',
+                        'matplotlib'
                       ],
    scripts = [
                'autoscalingsim-cl.py',

@@ -1,6 +1,7 @@
 import os
 import pickle
-from datetime import datetime
+import pandas as pd
+
 from tqdm import tqdm
 
 from ..application.application_model import ApplicationModel
