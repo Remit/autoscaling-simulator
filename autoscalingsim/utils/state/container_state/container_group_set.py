@@ -92,6 +92,17 @@ class HomogeneousContainerGroupSet:
             elif container_group_delta.sign < 0:
                 del groups_to_change[container_group_delta.container_group.id]
 
+    def extract_container_groups(self,
+                                 in_change : bool):
+
+        groups_for_extraction = None
+        if in_change:
+            groups_for_extraction = self._in_change_homogeneous_groups
+        else:
+            groups_for_extraction = self._homogeneous_groups
+
+        return list(groups_for_extraction.values())
+
     def extract_node_counts(self,
                             in_change : bool):
 

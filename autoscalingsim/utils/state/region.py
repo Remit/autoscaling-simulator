@@ -63,6 +63,11 @@ class Region:
 
         return self.homogeneous_groups.extract_node_counts(in_change)
 
+    def extract_container_groups(self,
+                                 in_change : bool):
+
+        return self.homogeneous_groups.extract_container_groups(in_change)
+
     def to_deltas(self):
 
         """

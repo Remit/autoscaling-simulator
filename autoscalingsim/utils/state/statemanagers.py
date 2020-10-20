@@ -65,8 +65,47 @@ class ScalingManager(StateManager):
                            platform_state : PlatformState):
 
         """
-        Sets multiple
+        Sets multiple scaling aspects associated with the state provided as
+        an argument to the  call.
         """
+
+        # Enforces scaling aspects values on scaled entities
+        scaling_infos = platform_state.extract_container_groups(False)
+        for region_name, regional_container_groups in scaling_scaling_infos.items():
+            for container_group in regional_container_groups:
+
+                self.update_placement(entity_name,
+                                      region_name,
+                                      container_group.container_info,
+                                      container_group.containers_count)
+
+                scaling_aspects = container_group.extract_scaling_aspects()
+                for entity_name, aspects in scaling_aspects.items():
+                    for aspect_name, value in aspects.items():
+                        self.set_aspect_value(entity_name,
+                                              region_name,
+                                              aspect_name,
+                                              value)
+
+    def update_placement(self,
+                         entity_name : str,
+                         region_name : str,
+                         node_info : NodeInfo,
+                         node_count : int):
+
+        """
+        This method of the Scaling Manager is used by the Enforce step in the
+        scaling policy -- it is used to set the decided upon value of the placement
+        of the entities that incorporates the count of nodes and information about them.
+        """
+
+        if not entity_name in self.entities:
+            raise ValueError('An attempt to set the placement of {} that is unknown to {}'.format(entity_name,
+                                                                                                  self.__class__.__name__))
+
+        self.entities[entity_name].state.update_placement(region_name,
+                                                          node_info,
+                                                          node_count)
 
     def set_aspect_value(self,
                          entity_name : str,

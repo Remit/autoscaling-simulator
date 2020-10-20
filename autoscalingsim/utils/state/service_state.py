@@ -317,12 +317,14 @@ class ServiceStateRegionalized(ScaledEntityState):
 
     def update_placement(self,
                          region_name : str,
-                         node_info : NodeInfo):
+                         node_info : NodeInfo,
+                         node_count : int):
 
         if not region_name in self.region_states:
             raise ValueError('A state for the given region name {} was not found'.format(region_name))
 
-        self.region_states[region_name].update_placement(node_info)
+        self.region_states[region_name].update_placement(node_info,
+                                                         node_count)
 
     def get_aspect_value(self,
                          region_name : str,

@@ -54,6 +54,10 @@ class HomogeneousContainerGroup:
                       entities_instances_counts,
                       system_capacity)
 
+    def extract_scaling_aspects(self):
+
+        return self.entities_state.extract_scaling_aspects()
+
     def __add__(self,
                 entities_group_delta : EntitiesGroupDelta):
 

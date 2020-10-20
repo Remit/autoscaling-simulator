@@ -107,6 +107,14 @@ class EntitiesState:
 
         return delta
 
+    def extract_scaling_aspects(self):
+
+        aspect_vals_dict = {}
+        for entity_name, entity_group in self.entities_groups.items()
+            aspect_vals_dict[entity_name] = entity_group.scaling_aspects
+
+        return aspect_vals_dict
+
     def get_aspect_value(self,
                          entity_name : str,
                          aspect_name : str):

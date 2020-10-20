@@ -68,6 +68,15 @@ class PlatformState:
 
         return node_counts_per_region
 
+    def extract_container_groups(self,
+                                 in_change : bool):
+
+        container_groups_regionalized = {}
+        for region_name, region in self.regions.items():
+            container_groups_regionalized[region_name] = region.extract_container_groups(in_change)
+
+        return container_groups_regionalized
+
     def to_deltas(self):
 
         """
