@@ -3,9 +3,10 @@ import os
 import numpy as np
 import pandas as pd
 import math
+import matplotlib.gridspec as gridspec
+
 from autoscalingsim.simulation.simulation import Simulation
 from matplotlib import pyplot as plt
-import matplotlib.gridspec as gridspec
 
 CDF_FILENAME = 'cdf_response_times.png'
 RESP_TIMES_HIST_FILENAME = 'hist_response_times.png'
@@ -40,10 +41,10 @@ class AnalysisFramework:
               a bar for each request type
     """
     def __init__(self,
-                 simulation_step_ms,
+                 simulation_step : pd.Timedelta,
                  figures_dir = None):
 
-        self.simulation_step_ms = simulation_step_ms
+        self.simulation_step = simulation_step
         self.figures_dir = figures_dir
 
     def build_figures(self,
@@ -69,14 +70,14 @@ class AnalysisFramework:
         desired_node_count = {}
         actual_node_count = {}
         if not simulation is None:
-            workload_ts_per_request_type = simulation.workload_model.workload
-            response_times_per_request_type = simulation.application_model.response_times_by_request
-            buffer_times_by_request = simulation.application_model.buffer_times_by_request
-            network_times_by_request = simulation.application_model.network_times_by_request
-            desired_node_count = simulation.application_model.platform_model.compute_desired_node_count(self.simulation_step_ms,
-                                                                                                         simulation.time_to_simulate_ms)
-            actual_node_count = simulation.application_model.platform_model.compute_actual_node_count(self.simulation_step_ms,
-                                                                                                      simulation.time_to_simulate_ms)
+            workload_regionalized = simulation.workload_model.get_generated_workload()
+            response_times_regionalized = simulation.application_model.workload_stats.get_response_times_by_request()
+            buffer_times_regionalized = simulation.application_model.workload_stats.get_buffer_times_by_request()
+            network_times_regionalized = simulation.application_model.workload_stats.get_network_times_by_request()
+            desired_node_count_regionalized = simulation.application_model.platform_model.compute_desired_node_count(self.simulation_step,
+                                                                                                                     simulation.simulation_end)
+            actual_node_count_regionalized = simulation.application_model.platform_model.compute_actual_node_count(self.simulation_step,
+                                                                                                                   simulation.simulation_end)
 
         # Building figures with the internal functions
         # Autoscaling quality evaluation category
@@ -84,7 +85,7 @@ class AnalysisFramework:
                              figures_dir = figures_dir_in_use)
 
         self._resp_times_histogram(response_times_per_request_type,
-                                   3 * self.simulation_step_ms,
+                                   3 * int(self.simulation_step.microseconds / 1000),
                                    figures_dir = figures_dir_in_use)
 
         self._fulfilled_dropped_barchart(response_times_per_request_type,
@@ -104,7 +105,7 @@ class AnalysisFramework:
                                      figures_dir = figures_dir_in_use)
 
         self._waiting_service_buffers_histogram(buffer_times_by_request,
-                                                bins_size_ms = 3 * self.simulation_step_ms,
+                                                bins_size_ms = 3 * int(self.simulation_step.microseconds / 1000),
                                                 figures_dir = figures_dir_in_use)
 
         self._distribution_of_reqs_times_barchart(response_times_per_request_type,

@@ -64,42 +64,42 @@ class Simulation:
     """
 
     def __init__(self,
-                 workload_model,
-                 application_model,
-                 simulation_start_datetime,
-                 time_to_simulate_days = 0.0005,
-                 simulation_step_ms = 10,
-                 stat_updates_every_round = 0,
-                 results_dir = None):
+                 workload_model : WorkloadModel,
+                 application_model : ApplicationModel,
+                 simulation_start : pd.Timestamp,
+                 time_to_simulate_days : float = 0.0005,
+                 simulation_step : pd.Timedelta = pd.Timedelta(10, unit = 'ms'),
+                 stat_updates_every_round : int = 0,
+                 results_dir : str = None):
 
         # Static state
         self.workload_model = workload_model
         self.application_model = application_model
-        self.time_to_simulate_ms = int(simulation_start_datetime.timestamp() * 1000) + int(time_to_simulate_days * 24 * 60 * 60 * 1000)
-        self.simulation_step_ms = simulation_step_ms
+        self.simulation_end = simulation_start + pd.Timedelta(time_to_simulate_days, unit = 'd')
+        self.simulation_step = simulation_step
         self.stat_updates_every_round = stat_updates_every_round
         self.results_dir = results_dir
 
         # Dynamic state
-        self.cur_simulation_time_ms = int(simulation_start_datetime.timestamp() * 1000)
+        self.cur_simulation_time = simulation_start
         self.sim_round = 0
 
     def start(self):
 
-        left_to_simulate_ms = self.time_to_simulate_ms - self.cur_simulation_time_ms
-        left_to_simulate_steps = left_to_simulate_ms // self.simulation_step_ms
+        left_to_simulate = self.simulation_end - self.cur_simulation_time
+        left_to_simulate_steps = left_to_simulate // self.simulation_step
 
         with tqdm(total = left_to_simulate_steps) as progress_bar:
-            while(self.cur_simulation_time_ms <= self.time_to_simulate_ms):
-                self.cur_simulation_time_ms += self.simulation_step_ms
+            while self.cur_simulation_time <= self.simulation_end:
+                self.cur_simulation_time += self.simulation_step
                 self._step()
                 self.sim_round += 1
                 if self.stat_updates_every_round > 0:
                     if self.sim_round % self.stat_updates_every_round == 0:
-                        left_to_simulate_ms = self.time_to_simulate_ms - self.cur_simulation_time_ms
-                        left_to_simulate_steps = left_to_simulate_ms // self.simulation_step_ms
-                        print('[{}] Left to simulate: {} min or {} steps'.format(datetime.now(),
-                                                                                 int(left_to_simulate_ms / (1000 * 60)),
+                        left_to_simulate = self.simulation_end - self.cur_simulation_time
+                        left_to_simulate_steps = left_to_simulate // self.simulation_step
+                        print('[{}] Left to simulate: {} min or {} steps'.format(str(pd.Timestamp.now()),
+                                                                                 str(left_to_simulate),
                                                                                  left_to_simulate_steps))
                 progress_bar.update(1)
 
@@ -109,14 +109,21 @@ class Simulation:
             if not os.path.exists(self.results_dir):
                 os.mkdir(self.results_dir)
                 full_filename = os.path.join(results_dir, filename)
-                results_to_store = {"response_times_by_request": self.application_model.response_times_by_request,
-                                    "workload": self.workload_model.workload}
+
+                results_to_store = {'workload_regionalized': self.workload_model.get_generated_workload(),
+                                    'response_times_regionalized': self.application_model.workload_stats.get_response_times_by_request(),
+                                    'buffer_times_regionalized': self.application_model.workload_stats.get_buffer_times_by_request(),
+                                    'network_times_regionalized': self.application_model.workload_stats.get_network_times_by_request(),
+                                    'desired_node_count_regionalized': self.application_model.platform_model.compute_desired_node_count(self.simulation_step,
+                                                                                                                                        self.simulation_end),
+                                    'actual_node_count_regionalized': self.application_model.platform_model.compute_actual_node_count(self.simulation_step,
+                                                                                                                                      self.simulation_end)}
 
                 with open(full_filename, 'wb') as f:
                     pickle.dump(results_to_store, f)
 
     def _step(self):
-        new_requests = self.workload_model.generate_requests(self.cur_simulation_time_ms)
+        new_requests = self.workload_model.generate_requests(self.cur_simulation_time)
         self.application_model.enter_requests(new_requests)
-        self.application_model.step(self.cur_simulation_time_ms,
-                                    self.simulation_step_ms)
+        self.application_model.step(self.cur_simulation_time,
+                                    self.simulation_step)
