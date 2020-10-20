@@ -61,6 +61,13 @@ class ScalingManager(StateManager):
     state calculation.
     """
 
+    def set_aspects_values(self,
+                           platform_state : PlatformState):
+
+        """
+        Sets multiple
+        """
+
     def set_aspect_value(self,
                          entity_name : str,
                          region_name : str,

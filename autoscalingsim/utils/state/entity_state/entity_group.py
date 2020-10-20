@@ -29,7 +29,7 @@ class EntityGroup:
             self.scaling_aspects['count'] = aspects.Count(aspects_vals)
 
     def __add__(self,
-                other_entity_group):
+                other_entity_group : EntityGroup):
 
         if not isinstance(other_entity_group, self.__class__):
             raise TypeError('Incorrect type of operand to add to {}: {}'.format(self.__class__.__name__, other_entity_group.__class__.__name__))
@@ -55,6 +55,23 @@ class EntityGroup:
             new_aspects[aspect_name] *= multiplier
 
         return EntityGroup(self.entity_name, new_aspects)
+
+    def __floordiv__(self,
+                     other_entity_group : EntityGroup):
+
+        """
+        Returns the list of scaling aspects...
+        """
+
+        if not isinstance(other_entity_group, EntityGroup):
+            raise TypeError('An attempt to floor-divide by an unknown type {}'.format(other_entity_group.__class__.__name__))
+
+        division_results = []
+        for aspect_name, aspect_value in self.scaling_aspects.items():
+            if aspect_name in other_entity_group.scaling_aspects:
+                division_results.append(aspect_value // other_entity_group.scaling_aspects[aspect_name])
+
+        return division_results
 
     def __mod__(self,
                 other_entity_group):
@@ -95,3 +112,11 @@ class EntityGroup:
             raise ValueError('Unexpected aspect for an update: {}'.format(aspect_name))
 
         self.scaling_aspects[aspect_name].set_value(value)
+
+    def get_aspect_value(self,
+                         aspect_name : str):
+
+        if not aspect_name in self.scaling_aspects:
+            raise ValueError('Unexpected aspect for an update: {}'.format(aspect_name))
+
+        return self.scaling_aspects[aspect_name]

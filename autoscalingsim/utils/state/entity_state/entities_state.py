@@ -11,68 +11,69 @@ class EntitiesState:
     """
 
     def __init__(self,
-                 entities_instances_counts : dict):
+                 groups_or_aspects : dict):
 
-        self.entities_instances_counts = {}
-        for entity_name, instances_count in entities_instances_counts.items():
-            self.entities_instances_counts[entity_name] = EntityGroup(entity_name,
-                                                                      instances_count)
+        self.entities_groups = {}
+        if len(groups_or_aspects) > 0:
+            for entity_name, group_or_aspects_dict in entities_aspects_vals.items():
+                if isinstance(group_or_aspects_dict, EntityGroup):
+                    self.entities_groups[entity_name] = group_or_aspects_dict
+                elif isinstance(group_or_aspects_dict, dict):
+                    self.entities_groups[entity_name] = EntityGroup(entity_name,
+                                                                    group_or_aspects_dict)
 
     def __add__(self,
-                entities_to_add):
+                entities_state_or_delta):
 
-        new_entities_instances_counts = {}
-        if isinstance(entities_to_add, EntitiesGroupDelta):
-            for entity_name, entity_delta in entities_to_add.deltas.items():
+        """
+        Adds an argument to the current Entities State. The argument can be either
+        of an EntitiesGroupDelta class or of an EntitiesState class.
+        """
 
-                if entity_name in self.entities_instances_counts:
-                    new_entities_instances_counts[entity_name] = self.entities_instances_counts[entity_name] + entity_delta.sign * entity_delta.entity_group
-                elif (not entity_name in self.entities_instances_counts) and (entity_delta.sign > 0):
-                    new_entities_instances_counts[entity_name] = entity_delta.entity_group
+        new_groups = {}
+        if isinstance(entities_state_or_delta, EntitiesGroupDelta):
+            for entity_name, entity_delta in entities_state_or_delta.deltas.items():
+                if entity_name in self.entities_groups:
+                    new_groups[entity_name] = self.entities_groups[entity_name] + entity_delta.sign * entity_delta.entity_group
+                elif (not entity_name in self.entities_groups) and (entity_delta.sign > 0):
+                    new_groups[entity_name] = entity_delta.entity_group
 
-        elif isinstance(entities_to_add, EntitiesState):
-            for entity_name, entity_group_to_add in entities_to_add.items():
-                if entity_name in self.entities_instances_counts:
-                    new_entities_instances_counts[entity_name] = self.entities_instances_counts[entity_name] + entity_group_to_add
+        elif isinstance(entities_state_or_delta, EntitiesState):
+            for entity_name, entity_group_to_add in entities_state_or_delta.items():
+                if entity_name in self.entities_groups:
+                    new_groups[entity_name] = self.entities_groups[entity_name] + entity_group_to_add
                 else:
-                    new_entities_instances_counts[entity_name] = entity_group_to_add
+                    new_groups[entity_name] = entity_group_to_add
         else:
             raise TypeError('An attempt to add the operand of type {} to the {} when expecting type EntitiesGroupDelta or EntitiesState'.format(entities_to_add.__class__.__name__,
                                                                                                                                                 self.__class__.__name__))
 
-        return EntitiesState(new_entities_instances_counts)
+        return EntitiesState(new_groups)
 
     def __truediv__(self,
-                    other_entities_state):
+                    other_entities_state : EntitiesState):
 
         """
         Defines the division of one entities state by another. Allows to figure out, how
         many replicas of the argument state can be hosted within the original
-        state. Essentially, with the argument other_entities_state representing a
-        particular placement, the result of such division would be the count of
-        containers to host the entities of the current state.
-
-        Returns a ceiling of the division result.
+        state fully. The remainder can be calculated with __mod__.
         """
 
         if not isinstance(other_entities_state, self.__class__):
             raise TypeError('Incorrect type of operand to divide {} by: {}'.format(self.__class__.__name__,
                                                                                    other_entities_state.__class__.__name__))
 
-        original_counts = self.to_dict()
-        other_counts = other_entities_state.to_dict()
-
         division_result_raw = {}
-        for entity_name, count in original_counts.items():
-            if not entity_name in other_counts:
+        for entity_name, entity_group in self.entities_groups.items():
+            if not entity_name in other_entities_state.entities_groups:
                 return 0
             else:
-                division_result_raw[entity_name] = np.ceil(count / other_counts[entity_name])
+                division_result_raw[entity_name] = min(entity_group // other_entities_state.entities_groups[entity_name])
 
-        return max(division_result_raw.values())
+        return min(division_result_raw.values())
 
     def __mod__(self,
-                other_entities_state):
+                other_entities_state : EntitiesState):
 
         """
         Computes the remainder entities state that is only partially covered by the
@@ -83,28 +84,17 @@ class EntitiesState:
             raise TypeError('Incorrect type of operand to take {} modulo: {}'.format(self.__class__.__name__,
                                                                                      other_entities_state.__class__.__name__))
 
-        result_raw = {}
-        other_entities_state_raw = other_entities_state.to_dict()
-        for entity_name, count in self.to_dict().items():
-            if entity_name in other_entities_state_raw:
-                remainder = count % other_entities_state_raw[entity_name]
-                if remainder > 0:
-                    result_raw[entity_name] = count % other_entities_state_raw[entity_name]
+        remainder_groups = {}
+        for entity_name, entity_group in self.entities_groups.items():
+            if entity_group in other_entities_state.entities_groups:
+                remainder_groups[entity_name] = entity_group % other_entities_state.entities_groups[entity_name]
             else:
-                result_raw[entity_name] = count
+                remainder_groups[entity_name] = entity_group
 
-        return EntitiesState(result_raw)
-
-    def to_dict(self):
-
-        dict_representation = {}
-        for entity_name, group in self.entities_instances_counts.items():
-            dict_representation[entity_name] = group.entity_instances_count
-
-        return dict_representation
+        return EntitiesState(remainder_groups)
 
     def to_delta(self,
-                 direction = 1):
+                 direction : int = 1):
 
         """
         Converts the current EntitiesState into its GeneralizedDelta representation.
@@ -112,26 +102,16 @@ class EntitiesState:
         """
 
         delta = EntitiesGroupDelta()
-        for group in self.entities_instances_counts.values():
+        for group in self.entities_groups.values():
             delta.add(group.to_delta(direction))
 
         return delta
 
+    def get_aspect_value(self,
+                         entity_name : str,
+                         aspect_name : str):
 
-    # TODO: think of generalizing beyound count
-    def count(self,
-              entity_name : str):
-
-        if entity_name in self.entities_instances_counts:
-            return self.entities_instances_counts[entity_name].entity_instances_count
+        if entity_name in self.entities_groups:
+            return self.entities_groups[entity_name].get_aspect_value(aspect_name)
         else:
             return 0
-
-    # TODO: think of generalizing beyound count
-    def get_value(self,
-                  entity_name : str):
-
-            if entity_name in self.entities_instances_counts:
-                return self.entities_instances_counts[entity_name].entity_instances_count
-            else:
-                return 0
