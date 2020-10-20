@@ -1,6 +1,10 @@
+import pandas as pd
+
 from .system_capacity import SystemCapacity
 
 from ..scaling.policiesbuilder.scaled.scaled_container import ScaledContainer
+from ..utils.requirements import ResourceRequirements
+from ..utils.state.entity_state.entities_state import EntitiesState
 
 class NodeInfo(ScaledContainer):
     """

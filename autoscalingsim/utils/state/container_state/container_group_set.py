@@ -1,5 +1,5 @@
 from ..placement import Placement
-from .container_group import HomogeneousContainerGroup
+from .container_group import HomogeneousContainerGroup, GeneralizedDelta
 from ...deltarepr.regional_delta import RegionalDelta
 
 class HomogeneousContainerGroupSet:

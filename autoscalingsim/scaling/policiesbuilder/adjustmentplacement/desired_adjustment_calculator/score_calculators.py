@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
+import pandas as pd
 
-import .score
+from . import score
 
 class ScoreCalculator(ABC):
 

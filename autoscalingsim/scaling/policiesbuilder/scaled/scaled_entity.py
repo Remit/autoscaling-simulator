@@ -1,6 +1,6 @@
 import collections
 
-import .scaling_aggregation
+from . import scaling_aggregation
 
 class ScaledEntityScalingSettings:
 

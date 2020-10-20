@@ -1,5 +1,7 @@
 import pandas as pd
 
+from .system_capacity import SystemCapacity
+
 class ResourceUtilization:
 
     """

@@ -13,8 +13,8 @@ class WorkloadModel:
     """
 
     def __init__(self,
-                 simulation_step : pd.Timedelta = pd.Timedelta(10, unit = 'ms'),
-                 filename : str,     
+                 simulation_step : pd.Timedelta,
+                 filename : str,
                  reqs_types_ratios : dict = None):
 
         self.region_models = {}
@@ -28,6 +28,7 @@ class WorkloadModel:
 
                 for region_config in regions_configs:
                     region_name = ErrorChecker.key_check_and_load('region_name', region_config)
+                    print("HI")
                     seasonal_pattern = ErrorChecker.key_check_and_load('seasonal_pattern', region_config, 'region_name', region_name)
                     workloads_configs = ErrorChecker.key_check_and_load('workloads_configs', region_config, 'region_name', region_name)
                     self.region_models[region_name] = RegionalWorkloadModel(region_name,

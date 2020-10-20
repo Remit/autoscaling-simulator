@@ -1,3 +1,5 @@
+from ..workload.request import Request
+
 class WorkloadStatsRegional:
 
     """

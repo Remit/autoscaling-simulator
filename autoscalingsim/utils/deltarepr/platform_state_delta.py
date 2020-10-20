@@ -2,7 +2,7 @@ import pandas as pd
 
 from .regional_delta import RegionalDelta
 
-from ...scaling.platform_scaling_model import PlatformScalingModel,
+from ...scaling.platform_scaling_model import PlatformScalingModel
 from ...scaling.application_scaling_model import ApplicationScalingModel
 
 class StateDelta:
@@ -34,7 +34,7 @@ class StateDelta:
         return StateDeltaIterator(self)
 
     def __add__(self,
-                other_state_delta : StateDelta):
+                other_state_delta : 'StateDelta'):
 
         if not isinstance(other_state_delta, StateDelta):
             raise TypeError('An attempt to add an object of type {} to an object of type {}'.format(other_state_delta.__class__.__name__,
@@ -58,7 +58,7 @@ class StateDelta:
         for region_name, regional_delta in self.deltas_per_region.items():
             time_till_enforcement_per_rd[region_name] = regional_delta.till_full_enforcement(platform_scaling_model,
                                                                                              application_scaling_model,
-                                                                                             delta_timestamp)) / pd.Timedelta(1, unit = 'h')
+                                                                                             delta_timestamp) / pd.Timedelta(1, unit = 'h')
 
         return StateDuration(time_till_enforcement_per_rd)
 

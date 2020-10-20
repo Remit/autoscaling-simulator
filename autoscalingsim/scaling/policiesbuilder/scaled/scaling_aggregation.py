@@ -3,7 +3,7 @@ import numpy as np
 
 from abc import ABC, abstractmethod
 
-import ....utils.state.aggregators
+from ....utils.state import aggregators
 
 class ScalingEffectAggregationRule(ABC):
 

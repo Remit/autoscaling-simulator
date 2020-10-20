@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import pandas as pd
 from datetime import datetime
 
 from .workload.workload_model import WorkloadModel
@@ -8,7 +9,7 @@ from .scaling.scaling_model import ScalingModel
 from .infrastructure_platform.platform_model import PlatformModel
 from .application.application_model import ApplicationModel
 from .simulation.simulation import Simulation
-from .scaling.policiesbuilder.policy import ScalingPolicy
+from .scaling.policiesbuilder.scaling_policy import ScalingPolicy
 
 class Simulator:
     """

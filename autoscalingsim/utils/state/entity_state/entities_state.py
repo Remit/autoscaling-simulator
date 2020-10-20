@@ -1,8 +1,6 @@
 import numpy as np
 
-from .entity_group import EntityGroup
-
-from ...deltarepr.delta_entities.entities_group_delta import EntitiesGroupDelta
+from .entity_group import EntityGroup, EntitiesGroupDelta
 
 class EntitiesState:
 
@@ -51,7 +49,7 @@ class EntitiesState:
         return EntitiesState(new_groups)
 
     def __truediv__(self,
-                    other_entities_state : EntitiesState):
+                    other_entities_state : 'EntitiesState'):
 
         """
         Defines the division of one entities state by another. Allows to figure out, how
@@ -73,7 +71,7 @@ class EntitiesState:
         return min(division_result_raw.values())
 
     def __mod__(self,
-                other_entities_state : EntitiesState):
+                other_entities_state : 'EntitiesState'):
 
         """
         Computes the remainder entities state that is only partially covered by the
@@ -110,7 +108,7 @@ class EntitiesState:
     def extract_scaling_aspects(self):
 
         aspect_vals_dict = {}
-        for entity_name, entity_group in self.entities_groups.items()
+        for entity_name, entity_group in self.entities_groups.items():
             aspect_vals_dict[entity_name] = entity_group.scaling_aspects
 
         return aspect_vals_dict

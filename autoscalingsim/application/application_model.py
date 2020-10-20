@@ -9,6 +9,7 @@ from .workload_stats import WorkloadStats
 from ..workload.request import RequestProcessingInfo
 from ..deployment.deployment_model import DeploymentModel
 from ..infrastructure_platform.platform_model import PlatformModel
+from ..scaling.policiesbuilder.scaling_policy import ScalingPolicy
 from ..utils.error_check import ErrorChecker
 from ..utils.state.statemanagers import StateReader, ScalingManager
 

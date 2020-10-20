@@ -40,7 +40,7 @@ class TimelineOfDesiredEntitiesChanges:
 
         if len(self.current_timestamp) > 0:
             min_cur_timestamp = min(list(self.current_timestamp.values()))
-            regions_with_the_cur_ts = [ region_name for region_name, ts in self.current_timestamp.items() of ts == min_cur_timestamp]
+            regions_with_the_cur_ts = [ region_name for region_name, ts in self.current_timestamp.items() if ts == min_cur_timestamp]
 
             entities_scalings_on_ts = {}
             for region_name in regions_with_the_cur_ts:

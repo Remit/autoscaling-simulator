@@ -55,7 +55,7 @@ class Count(ScalingAspect):
                          value)
 
     def __add__(self,
-                other_aspect_val : Count):
+                other_aspect_val : 'Count'):
 
         if not isinstance(other_aspect_val, Count):
             raise TypeError('An attempt to add an object of unknown type {} to {}'.format(other_aspect_val.__class__.__name__,
@@ -64,7 +64,7 @@ class Count(ScalingAspect):
         return Count(self.value + other_aspect_val.value)
 
     def __sub__(self,
-                other_aspect_val : Count):
+                other_aspect_val : 'Count'):
 
         if not isinstance(other_aspect_val, Count):
             raise TypeError('An attempt to subtract an object of unknown type {} from {}'.format(other_aspect_val.__class__.__name__,
@@ -81,7 +81,7 @@ class Count(ScalingAspect):
         return Count(self.value * scalar)
 
     def __mod__(self,
-                other_aspect_val : Count):
+                other_aspect_val : 'Count'):
 
         if not isinstance(other_aspect_val, Count):
             raise TypeError('An attempt to perform modulo operation on {} with an object of unknown type {}'.format(self.__class__.__name__,

@@ -1,6 +1,6 @@
 import pandas as pd
 
-from ...scaling.platform_scaling_model import PlatformScalingModel,
+from ...scaling.platform_scaling_model import PlatformScalingModel
 from ...scaling.application_scaling_model import ApplicationScalingModel
 
 class RegionalDelta:
@@ -21,7 +21,7 @@ class RegionalDelta:
         return RegionalDeltaIterator(self)
 
     def __add__(self,
-                other_regional_delta : RegionalDelta):
+                other_regional_delta : 'RegionalDelta'):
 
         if not isinstance(other_regional_delta, RegionalDelta):
             raise TypeError('An attempt to add an object of type {} to an object of type {}'.format(other_regional_delta.__class__.__name__,

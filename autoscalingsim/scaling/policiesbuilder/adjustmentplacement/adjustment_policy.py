@@ -1,6 +1,6 @@
 import pandas as pd
 
-import .adjusters
+from . import adjusters
 
 class AdjustmentPolicy:
 

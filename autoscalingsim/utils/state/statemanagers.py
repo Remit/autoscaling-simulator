@@ -1,5 +1,7 @@
-from .state import State
+from .platform_state import PlatformState
 from .entity_state.entities_states_reg import EntitiesStatesRegionalized
+
+from ...infrastructure_platform.node import NodeInfo
 
 class StateManager:
 

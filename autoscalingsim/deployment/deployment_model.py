@@ -1,9 +1,7 @@
-from ..utils.deltarepr.generalized_delta import GeneralizedDelta
 from ..utils.deltarepr.platform_state_delta import StateDelta
 from ..utils.deltarepr.regional_delta import RegionalDelta
-from ..utils.deltarepr.delta_containers.container_group_delta import ContainerGroupDelta
-from ..utils.deltarepr.delta_entities.entities_group_delta import EntitiesGroupDelta
-from ..utils.state.container_state.container_group import HomogeneousContainerGroup
+from ..utils.state.entity_state.entity_group import EntitiesGroupDelta
+from ..utils.state.container_state.container_group import HomogeneousContainerGroup, ContainerGroupDelta, GeneralizedDelta
 
 class ServiceDeployment:
 
@@ -51,7 +49,7 @@ class DeploymentModel:
 
         consider tracking colocation of services.
     """
-    def __init__(self
+    def __init__(self,
                  services_colocation : list = []):
 
         self.service_deployments = {}

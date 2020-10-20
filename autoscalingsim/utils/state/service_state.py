@@ -1,11 +1,13 @@
 import pandas as pd
 
 from .state import ScaledEntityState
-from .utilization import ServiceUtilization
-
 from .entity_state.entity_group import EntityGroup
 
+from ..requirements import ResourceRequirements
+
+from ...infrastructure_platform.utilization import ServiceUtilization
 from ...infrastructure_platform.node import NodeInfo
+from ...workload.request import Request
 
 class RequestsProcessor:
 

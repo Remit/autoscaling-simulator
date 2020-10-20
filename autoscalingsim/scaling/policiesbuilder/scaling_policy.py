@@ -3,6 +3,9 @@ import pandas as pd
 
 from .adjustmentplacement.adjustment_policy import AdjustmentPolicy
 
+from ..scaling_model import ScalingModel
+from ...infrastructure_platform.platform_model import PlatformModel
+
 class ScalingPolicy:
 
     """

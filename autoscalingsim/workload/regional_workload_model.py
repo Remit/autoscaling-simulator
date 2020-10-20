@@ -167,7 +167,7 @@ class RegionalWorkloadModel:
         self.current_req_split_across_simulation_steps = {}
         for req_type, _ in self.reqs_types_ratios.items():
             ms_division = {}
-            for ms_bucket_id in range(1000 // self.simulation_step_ms):
+            for ms_bucket_id in range(pd.Timedelta(1000, unit = 'ms') // self.simulation_step):
                 ms_division[ms_bucket_id] = 0
             self.current_req_split_across_simulation_steps[req_type] = ms_division
         self.current_hour = -1

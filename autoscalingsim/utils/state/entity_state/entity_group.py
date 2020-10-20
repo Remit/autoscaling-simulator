@@ -1,6 +1,4 @@
-import .scaling_aspects as aspects
-
-from ...deltarepr.delta_entities.entity_group_delta import EntityGroupDelta
+from . import scaling_aspects
 
 class EntityGroup:
 
@@ -23,13 +21,13 @@ class EntityGroup:
 
         self.scaling_aspects = {}
         if isinstance(aspects_vals, dict):
-            for aspect_name, aspect_value in aspects.items():
-                self.scaling_aspects[aspect_name] = aspects.Registry.get(aspect_name)(aspect_value)
+            for aspect_name, aspect_value in scaling_aspects.items():
+                self.scaling_aspects[aspect_name] = scaling_aspects.Registry.get(aspect_name)(aspect_value)
         elif isinstance(aspects_vals, int):
-            self.scaling_aspects['count'] = aspects.Count(aspects_vals)
+            self.scaling_aspects['count'] = scaling_aspects.Count(aspects_vals)
 
     def __add__(self,
-                other_entity_group : EntityGroup):
+                other_entity_group : 'EntityGroup'):
 
         if not isinstance(other_entity_group, self.__class__):
             raise TypeError('Incorrect type of operand to add to {}: {}'.format(self.__class__.__name__, other_entity_group.__class__.__name__))
@@ -57,7 +55,7 @@ class EntityGroup:
         return EntityGroup(self.entity_name, new_aspects)
 
     def __floordiv__(self,
-                     other_entity_group : EntityGroup):
+                     other_entity_group : 'EntityGroup'):
 
         """
         Returns the list of scaling aspects...
@@ -120,3 +118,146 @@ class EntityGroup:
             raise ValueError('Unexpected aspect for an update: {}'.format(aspect_name))
 
         return self.scaling_aspects[aspect_name]
+
+class EntityGroupDelta:
+
+    """
+    Wraps the entity group change and the direction of change, i.e. addition
+    or subtraction.
+    """
+
+    def __init__(self,
+                 entity_name,
+                 entity_count,
+                 sign = 1):
+
+        entity_group = EntityGroup(entity_name, entity_count)
+        self.__init__(entity_group, sign)
+
+    def __init__(self,
+                 entity_group : EntityGroup,
+                 sign = 1):
+
+        if not isinstance(sign, int):
+            raise TypeError('The provided sign parameters is not of {} type'.format(int.__name__))
+
+        if not isinstance(entity_group, EntityGroup):
+            raise TypeError('The provided argument is not of EntityGroup type: {}'.format(entity_group.__class__.__name__))
+
+        self.sign = sign
+        self.entity_group = entity_group
+
+    def __add__(self,
+                other_delta):
+
+        if not isinstance(other_delta, EntityGroupDelta):
+            raise TypeError('The operand to be added is not of the expected type {}: instead got {}'.format(self.__class__.__name__,
+                                                                                                            other_delta.__class__.__name__))
+
+        if self.entity_group.entity_name != other_delta.entity_group.entity_name:
+            raise ValueError('An attempt to add {} with different names: {} and {}'.format(self.__class__.__name__,
+                                                                                           self.entity_group.entity_name,
+                                                                                           other_delta.entity_group.entity_name))
+
+        new_entity_instances_count = self.sign * self.entity_group.entity_instances_count + \
+                                     other_delta.sign * other_delta.entity_group.entity_instances_count
+        resulting_delta = None
+        if new_entity_instances_count < 0:
+            resulting_delta = EntityGroupDelta(self.entity_group.entity_name,
+                                               abs(new_entity_instances_count),
+                                               -1)
+        elif new_entity_instances_count > 0:
+            resulting_delta = EntityGroupDelta(self.entity_group.entity_name,
+                                               new_entity_instances_count)
+
+        return resulting_delta
+
+    def copy(self):
+
+        return EntityGroupDelta(self.entity_group.entity_name,
+                                self.entity_group.entity_instances_count.
+                                self.sign)
+
+
+class EntitiesGroupDelta:
+
+    """
+    Wraps multiple EntityGroupDelta distinguished by the sign and the entity.
+    """
+
+    def __init__(self,
+                 entities_instances_counts : dict = {}):
+
+        self.deltas = {}
+        self.in_change = True
+
+        for entity_name, entity_instances_count in entities_instances_counts.items():
+
+            if entity_instances_count < 0:
+                self.deltas[entity_name] = EntityGroupDelta(entity_name,
+                                                            abs(entity_instances_count),
+                                                            -1)
+
+            elif entity_instances_count > 0:
+                self.deltas[entity_name] = EntityGroupDelta(entity_name,
+                                                            entity_instances_count)
+
+        # Signifies whether the delta should be considered during the enforcing or not.
+        # The aim of 'virtual' property is to keep the connection between the deltas after the enforcement.
+        self.virtual = False
+
+    def __init__(self,
+                 deltas : dict,
+                 in_change = True):
+
+        self.deltas = deltas
+        self.in_change = in_change
+
+    def __add__(self,
+                other_entities_group_delta : 'EntitiesGroupDelta'):
+
+        if not isinstance(other_entities_group_delta, EntitiesGroupDelta):
+            raise TypeError('The operand to be added is not of the expected type {}: instead got {}'.format(self.__class__.__name__,
+                                                                                                            other_entities_group_delta.__class__.__name__))
+
+        if self.in_change != other_entities_group_delta.in_change:
+            raise ValueError('Addition operands differ by the in_change status')
+
+        new_deltas = {}
+        for entity_name, entity_delta in other_entities_group_delta.items():
+
+            if entity_name in self.deltas:
+                new_deltas[entity_name] = entity_delta + self.deltas[entity_name]
+            else:
+                new_deltas[entity_name] = entity_delta
+
+        return EntitiesGroupDelta(new_deltas, self.in_change)
+
+    def add(self,
+            other_entity_group_delta : EntityGroupDelta):
+
+        self.deltas[other_entity_group_delta.entity_group.entity_name] = other_entity_group_delta
+
+
+    def enforce(self,
+                entities_lst):
+
+        """
+        Enforces the entity group delta change for entities provided in the list.
+        Results in splitting the delta into two. The first one which is enforced,
+        and the second one that contains the unenforced remainder to consider
+        further (entities that have later enforcement time).
+        """
+
+        enforced_deltas = {}
+        non_enforced_deltas = self.deltas.copy()
+
+        for entity_name in entities_lst:
+            if entity_name in non_enforced_deltas:
+                enforced_deltas[entity_name] = non_enforced_deltas[entity_name].copy()
+                del non_enforced_deltas[entity_name]
+
+        enforced_egd = EntitiesGroupDelta(enforced_deltas, False)
+        non_enforced_egd = EntitiesGroupDelta(non_enforced_deltas, True)
+
+        return (enforced_egd, non_enforced_egd)

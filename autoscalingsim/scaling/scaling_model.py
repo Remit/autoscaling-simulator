@@ -1,4 +1,5 @@
 import json
+import pandas as pd
 
 from .application_scaling_model import ApplicationScalingModel
 from .platform_scaling_model import PlatformScalingModel

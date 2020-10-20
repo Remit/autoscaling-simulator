@@ -1,4 +1,4 @@
-from .state.entity_state.entities_state import EntitiesState
+from .entity_state.entities_state import EntitiesState
 
 class InContainerPlacement:
 

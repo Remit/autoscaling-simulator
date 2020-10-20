@@ -1,4 +1,5 @@
 from ..utils.state.capacity import Capacity
+from ..scaling.policiesbuilder.scaled.scaled_container import ScaledContainer
 
 class SystemCapacity(Capacity):
 
@@ -34,7 +35,7 @@ class SystemCapacity(Capacity):
                 self.system_capacity_taken[cap_type] = system_capacity_taken[cap_type]
 
     def __add__(self,
-                cap_to_add : SystemCapacity):
+                cap_to_add : 'SystemCapacity'):
 
         if not isinstance(cap_to_add, self.__class__):
             raise ValueError('An attempt to add an object of type {} to the object of type {}'.format(cap_to_add.__class__.__name__, self.__class__.__name__))
@@ -51,7 +52,7 @@ class SystemCapacity(Capacity):
                               sum_system_capacity)
 
     def __sub__(self,
-                cap_to_sub : SystemCapacity):
+                cap_to_sub : 'SystemCapacity'):
 
         if not isinstance(cap_to_sub, self.__class__):
             raise ValueError('An attempt to subtract an object of type {} to the object of type {}'.format(cap_to_sub.__class__.__name__, self.__class__.__name__))

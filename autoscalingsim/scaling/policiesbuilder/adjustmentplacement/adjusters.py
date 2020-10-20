@@ -1,13 +1,13 @@
 import pandas as pd
 from abc import ABC, abstractmethod
 
-import .desired_adjustment_calculator.score_calculators
+from .desired_adjustment_calculator import score_calculators
 from .desired_adjustment_calculator.desired_calc import DesiredChangeCalculator
 
 from ...application_scaling_model import ApplicationScalingModel
 from ...platform_scaling_model import PlatformScalingModel
 
-import ....utils.combiners
+from ....utils import combiners
 from ....utils.deltarepr.timelines.entities_changes_timeline import TimelineOfDesiredEntitiesChanges
 from ....utils.deltarepr.timelines.delta_timeline import DeltaTimeline
 from ....utils.state.entity_state.entities_states_reg import EntitiesStatesRegionalized

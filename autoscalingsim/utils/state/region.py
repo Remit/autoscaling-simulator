@@ -1,12 +1,12 @@
 from collections import OrderedDict
 
-from .container_state.container_group import HomogeneousContainerGroup
+from .placement import Placement
+from .container_state.container_group import HomogeneousContainerGroup, ContainerGroupDelta, GeneralizedDelta
 from .container_state.container_group_set import HomogeneousContainerGroupSet
 from .entity_state.entities_state import EntitiesState
+from .entity_state.entity_group import EntitiesGroupDelta
 
 from ..deltarepr.regional_delta import RegionalDelta
-from ..deltarepr.generalized_delta import GeneralizedDelta
-from ..deltarepr.delta_containers.container_group_delta import ContainerGroupDelta
 
 class Region:
 

@@ -2,7 +2,7 @@ import pandas as pd
 from collections import OrderedDict
 
 from ..utils.error_check import ErrorChecker
-from ..utils.deltarepr.delta_entities.entity_group_delta import EntityGroupDelta
+from ..utils.state.entity_state.entity_group import EntityGroupDelta
 
 class ServiceScalingInfo:
 
@@ -80,8 +80,8 @@ class ApplicationScalingModel:
 
                 for change_enforcement_delay, entities_lst in entities_by_change_enforcement_delay_sorted.items():
 
-                        enforced_entity_group_delta, _ = entity_group_delta.enforce(entities_lst) # all should be enforced by design
-                            if not enforced_entity_group_delta is None:
-                                delays_of_enforced_deltas[change_enforcement_delay] = enforced_entity_group_delta
+                    enforced_entity_group_delta, _ = entity_group_delta.enforce(entities_lst) # all should be enforced by design
+                    if not enforced_entity_group_delta is None:
+                        delays_of_enforced_deltas[change_enforcement_delay] = enforced_entity_group_delta
 
         return delays_of_enforced_deltas

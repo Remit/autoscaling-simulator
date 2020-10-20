@@ -77,7 +77,7 @@ class Score(ABC):
         pass
 
     def __lt__(self,
-               other_score : Score):
+               other_score : 'Score'):
 
         if not isinstance(other_score, self.__class__):
             raise TypeError('Incorrect type of the operand: {}. Expected {}'.format(other_score.__class__.__name__,
@@ -89,7 +89,7 @@ class Score(ABC):
             return False
 
     def __le__(self,
-               other_score : Score):
+               other_score : 'Score'):
 
         if not isinstance(other_score, self.__class__):
             raise TypeError('Incorrect type of the operand: {}. Expected {}'.format(other_score.__class__.__name__,
@@ -101,7 +101,7 @@ class Score(ABC):
             return False
 
     def __gt__(self,
-               other_score : Score):
+               other_score : 'Score'):
 
         if not isinstance(other_score, self.__class__):
             raise TypeError('Incorrect type of the operand: {}. Expected {}'.format(other_score.__class__.__name__,
@@ -113,7 +113,7 @@ class Score(ABC):
             return False
 
     def __ge__(self,
-               other_score : Score):
+               other_score : 'Score'):
 
         if not isinstance(other_score, self.__class__):
             raise TypeError('Incorrect type of the operand: {}. Expected {}'.format(other_score.__class__.__name__,
@@ -125,7 +125,7 @@ class Score(ABC):
             return False
 
     def __eq__(self,
-               other_score : Score):
+               other_score : 'Score'):
 
         if not isinstance(other_score, self.__class__):
             raise TypeError('Incorrect type of the operand: {}. Expected {}'.format(other_score.__class__.__name__,
@@ -137,7 +137,7 @@ class Score(ABC):
             return False
 
     def __ne__(self,
-               other_score : Score):
+               other_score : 'Score'):
 
         if not isinstance(other_score, self.__class__):
             raise TypeError('Incorrect type of the operand: {}. Expected {}'.format(other_score.__class__.__name__,
@@ -167,7 +167,7 @@ class PriceScore(Score):
         self.score = self.score_computer(price)
 
     def __add__(self,
-                other_score : PriceScore):
+                other_score : 'PriceScore'):
 
         if not isinstance(other_score, self.__class__):
             raise TypeError('An attempt to add the score of type {} to the score of type {}'.format(other_score.__class__.__name__,

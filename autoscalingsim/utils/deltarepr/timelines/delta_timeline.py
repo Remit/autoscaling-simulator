@@ -1,6 +1,8 @@
 from collections import OrderedDict
+import pandas as pd
 
 from ...state.platform_state import PlatformState
+from ..platform_state_delta import StateDelta
 
 from ....scaling.application_scaling_model import ApplicationScalingModel
 from ....scaling.platform_scaling_model import PlatformScalingModel
@@ -30,7 +32,7 @@ class DeltaTimeline:
                                   key = lambda elem: elem[0]))
 
     def merge(self,
-              other_delta_timeline : DeltaTimeline):
+              other_delta_timeline : 'DeltaTimeline'):
 
         """
         Merges deltas from the other delta timeline into the current timeline.
