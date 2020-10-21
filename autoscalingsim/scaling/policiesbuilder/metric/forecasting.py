@@ -124,7 +124,7 @@ class SimpleAverage(ForecastingModel):
                 resolution_ms):
 
         one_ms = pd.Timedelta(1, unit = 'ms')
-        forecasting_interval_start = df.iloc[-1:,].index[0] + resolution_ms * one_ms
+        forecasting_interval_start = metric_vals.iloc[-1:,].index[0] + resolution_ms * one_ms
         forecasting_interval_end = forecasting_interval_start + fhorizon_in_steps * resolution_ms * one_ms
         forecast_interval = pd.date_range(start = forecasting_interval_start,
                                           end = forecasting_interval_end,

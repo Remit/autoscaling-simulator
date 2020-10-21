@@ -2,7 +2,7 @@ import pandas as pd
 from collections import OrderedDict
 
 from ..utils.error_check import ErrorChecker
-from ..utils.state.entity_state.entity_group import EntityGroupDelta
+from ..utils.state.entity_state.entity_group import EntitiesGroupDelta
 
 class ServiceScalingInfo:
 
@@ -46,7 +46,7 @@ class ApplicationScalingModel:
                                                                           termination_duration)
 
     def delay(self,
-              entity_group_delta : EntityGroupDelta):
+              entities_group_delta : EntitiesGroupDelta):
 
         """
         Implements the delay operation on the application level. Returns multiple
@@ -54,8 +54,8 @@ class ApplicationScalingModel:
         """
 
         delays_of_enforced_deltas = {}
-        if not entity_group_delta is None:
-            entities_names = entity_group_delta.get_entities()
+        if not entities_group_delta is None:
+            entities_names = entities_group_delta.get_entities()
 
             # Group entities by their change enforcement time
             entities_by_change_enforcement_delay = {}
@@ -64,6 +64,8 @@ class ApplicationScalingModel:
                     raise ValueError('No scaling information for entity {} found in {}'.format(entity_name,
                                                                                                self.__class__.__name__))
                 change_enforcement_delay = pd.Timedelta(0, unit = 'ms')
+                entity_group_delta = entities_group_delta.get_entity_group_delta(entity_name)
+
                 if entity_group_delta.sign < 0:
                     change_enforcement_delay = self.service_scaling_infos[entity_name].booting_duration
                 elif entity_group_delta.sign > 0:
@@ -80,8 +82,8 @@ class ApplicationScalingModel:
 
                 for change_enforcement_delay, entities_lst in entities_by_change_enforcement_delay_sorted.items():
 
-                    enforced_entity_group_delta, _ = entity_group_delta.enforce(entities_lst) # all should be enforced by design
-                    if not enforced_entity_group_delta is None:
-                        delays_of_enforced_deltas[change_enforcement_delay] = enforced_entity_group_delta
+                    enforced_entities_group_delta, _ = entities_group_delta.enforce(entities_lst) # all should be enforced by design
+                    if not enforced_entities_group_delta is None:
+                        delays_of_enforced_deltas[change_enforcement_delay] = enforced_entities_group_delta
 
         return delays_of_enforced_deltas

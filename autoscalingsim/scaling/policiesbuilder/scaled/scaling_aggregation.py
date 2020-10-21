@@ -100,24 +100,26 @@ class ParallelScalingEffectAggregationRule(ScalingEffectAggregationRule):
             timelines_by_metric[regionalized_metric.metric_name] = regionalized_metric()
             ts_list = list(timelines_by_metric[regionalized_metric.metric_name].keys())
 
-            cur_min_td = min(np.diff(ts_list))
-            if cur_min_td < finest_td:
-                finest_td = cur_min_td
+            if len(ts_list) > 0:
+                cur_min_td = min(np.diff(ts_list))
+                if cur_min_td < finest_td:
+                    finest_td = cur_min_td
 
-            cur_max_ts = max(ts_list)
-            if cur_max_ts > max_ts:
-                max_ts = cur_max_ts
+                cur_max_ts = max(ts_list)
+                if cur_max_ts > max_ts:
+                    max_ts = cur_max_ts
 
         # 2. Impute the timelines that have different resolution to the found one
         for metric_name, timeline in timelines_by_metric.items():
-            cur_ts = list(timeline.keys())[0] + finest_td
-            prev_val = list(timeline.values())[0]
-            while cur_ts < max_ts:
-                if not cur_ts in timeline:
-                    timeline[cur_ts] = prev_val
-                else:
-                    prev_val = timeline[cur_ts]
-                cur_ts += finest_td
+            if len(timeline) > 0:
+                cur_ts = list(timeline.keys())[0] + finest_td
+                prev_val = list(timeline.values())[0]
+                while cur_ts < max_ts:
+                    if not cur_ts in timeline:
+                        timeline[cur_ts] = prev_val
+                    else:
+                        prev_val = timeline[cur_ts]
+                    cur_ts += finest_td
 
         # 3. Simply aggregate the regionalized entity states using
         # the operation provided in the aggregation rule

@@ -1,3 +1,5 @@
+import pandas as pd
+
 from . import valuesfilter
 from . import valuesaggregator
 from . import stabilizer
@@ -129,6 +131,8 @@ class ScalingMetricRegionalized:
         self.metric_source_name = metric_source_name
         self.metric_name = metric_name
 
+        self.state_reader = state_reader
+
         self.metrics_per_region = {}
         for region_name in regions:
             self.metrics_per_region[region_name] = ScalingMetric(region_name,
@@ -142,8 +146,7 @@ class ScalingMetricRegionalized:
                                                                  priority,
                                                                  max_limit,
                                                                  min_limit,
-                                                                 entity_representation_in_metric,
-                                                                 state_reader)
+                                                                 entity_representation_in_metric)
 
     def __call__(self):
 
@@ -158,7 +161,16 @@ class ScalingMetricRegionalized:
         regionalized_desired_ts_raw = {}
         for region_name, metric in self.metrics_per_region.items():
 
-            desired_scaled_aspect_val_pr = metric()
+            metric_vals = self.state_reader.get_metric_value(self.entity_name,
+                                                             region_name,
+                                                             self.metric_name)
+
+            cur_aspect_val = self.state_reader.get_aspect_value(self.entity_name,
+                                                                region_name,
+                                                                self.aspect_name)
+
+            desired_scaled_aspect_val_pr = metric(metric_vals,
+                                                  cur_aspect_val)
 
             for timestamp, row_val in desired_scaled_aspect_val_pr.iterrows():
                 if not timestamp in regionalized_desired_ts_raw:
@@ -195,10 +207,9 @@ class ScalingMetric:
                  priority,
                  max_limit,
                  min_limit,
-                 entity_representation_in_metric,
-                 state_reader):
+                 entity_representation_in_metric):
         # Static state
-
+        self.region_name = region_name
 
         # Metric values preprocessing:
         # a filter that takes some of the metrics values depending
@@ -250,11 +261,6 @@ class ScalingMetric:
         self.capacity_adaptation_type = capacity_adaptation_type
 
         # Dynamic state
-        # reference to the metric manager that acts as an interface for all the values requests
-        # from the side of the ScalingMetric, both for scaling metric and scaled aspect
-        # Initialized and given to the ScalingMetric after its creation since it contains
-        # the list of references to all the relevant entities/informers.
-        self.state_reader = state_reader
 
         # current min-max limits on the post-scaling result for the
         # aspect of the scaled entity (count of scaled entities in case of horizontal scaling
@@ -271,57 +277,56 @@ class ScalingMetric:
         # there is no universal correspondence for every app and every request type.
         self.entity_representation_in_metric = entity_representation_in_metric
 
-    def __call__(self):
+    def __call__(self,
+                 cur_metric_vals,
+                 cur_aspect_val):
 
         """
         Computes the desired state of the associated scaled entity (e.g. service)
         according to this particular metric.
         """
 
-        # Extracts available metric values in a form of pandas DataFrame
-        # with the datetime index. Can be a single value or a sequence of
-        # values (in this case, some metric history is incorporated)
-        metric_vals = self.state_reader.get_metric_value(self.entity_name,
-                                                           self.region_name,
-                                                           self.metric_name)
-        if self.timing_type == 'predictive':
-            metric_vals = self.forecaster(cur_metric_vals)
+        if cur_metric_vals.shape[0] > 0:
+            # Extracts available metric values in a form of pandas DataFrame
+            # with the datetime index. Can be a single value or a sequence of
+            # values (in this case, some metric history is incorporated)
 
-        # Filtering raw metric values (e.g. by removing NA or some
-        # abnormal values, or by smoothing the signal) and aggregating
-        # these filtered values to produce the desired aggregated metric,
-        # e.g. by averaging with the sliding window of a particular length
-        filtered_metric_vals = self.values_filter(metric_vals)
-        aggregated_metric_vals = self.values_aggregator(filtered_metric_vals)
+            if self.timing_type == 'predictive':
+                metric_vals = self.forecaster(cur_metric_vals)
 
-        # Computing how does metric value related to the target --
-        # the assumption is that the closer it is to the target value,
-        # the better the current state of the application/infrastructure
-        # reflects the needs of the scaled entity in terms of this metric.
-        # The computed ratio is used to calaculate the desired amount of the
-        # scaled aspect (e.g. CPU shares or service instances) by using
-        # the representation of the metric in terms of the scaled entity and
-        # the current amount of the scaled entity. Lastly, the computed
-        # desired amount of the scaled aspect is stabilized to avoid
-        # oscillations in it that may cause too much overhead when scaling.
-        metric_ratio = aggregated_metric_vals / self.target_value
-        cur_aspect_val = self.state_reader.get_aspect_value(self.entity_name,
-                                                              self.region_name,
-                                                              self.aspect_name)
+            # Filtering raw metric values (e.g. by removing NA or some
+            # abnormal values, or by smoothing the signal) and aggregating
+            # these filtered values to produce the desired aggregated metric,
+            # e.g. by averaging with the sliding window of a particular length
+            filtered_metric_vals = self.values_filter(cur_metric_vals)
+            aggregated_metric_vals = self.values_aggregator(filtered_metric_vals)
 
-        desired_scaled_aspect = math.ceil(metric_ratio * self.entity_representation_in_metric * cur_aspect_val)
-        desired_scaled_aspect_stabilized = self.stabilizer(desired_scaled_aspect)
+            # Computing how does metric value related to the target --
+            # the assumption is that the closer it is to the target value,
+            # the better the current state of the application/infrastructure
+            # reflects the needs of the scaled entity in terms of this metric.
+            # The computed ratio is used to calaculate the desired amount of the
+            # scaled aspect (e.g. CPU shares or service instances) by using
+            # the representation of the metric in terms of the scaled entity and
+            # the current amount of the scaled entity. Lastly, the computed
+            # desired amount of the scaled aspect is stabilized to avoid
+            # oscillations in it that may cause too much overhead when scaling.
+            metric_ratio = aggregated_metric_vals / self.target_value
+            desired_scaled_aspect = math.ceil(metric_ratio * self.entity_representation_in_metric * cur_aspect_val)
+            desired_scaled_aspect_stabilized = self.stabilizer(desired_scaled_aspect)
 
-        # Limiting the produced values of the desired scaled aspect
-        # such that it stays inside the given band. The limiting
-        # post-processing is useful if there is a strict limit
-        # on a particular scaled aspect (e.g. number of VM instances)
-        # or if the adjustments to the desired scaled aspect must proceed
-        # in a chained way using different metrics -> min/max limits
-        # then serve as a communication channel.
-        desired_scaled_aspect_stabilized_limited = self.limiter(desired_scaled_aspect_stabilized)
+            # Limiting the produced values of the desired scaled aspect
+            # such that it stays inside the given band. The limiting
+            # post-processing is useful if there is a strict limit
+            # on a particular scaled aspect (e.g. number of VM instances)
+            # or if the adjustments to the desired scaled aspect must proceed
+            # in a chained way using different metrics -> min/max limits
+            # then serve as a communication channel.
+            desired_scaled_aspect_stabilized_limited = self.limiter(desired_scaled_aspect_stabilized)
 
-        return desired_scaled_aspect_stabilized_limited
+            return desired_scaled_aspect_stabilized_limited
+        else:
+            return pd.DataFrame()
 
     def update_limits(self,
                       new_min,

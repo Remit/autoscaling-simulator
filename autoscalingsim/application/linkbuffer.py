@@ -114,11 +114,11 @@ class LinkBuffer:
             #min_time_to_subtract_ms = min(req.processing_left_ms, simulation_step_ms)
             #req.processing_left_ms -= min_time_to_subtract_ms
             #if req.processing_left_ms <= 0:
-            req.cumulative_time += simulation_step_ms
+            req.cumulative_time += simulation_step
             capacity = self.capacity_by_request_type[req.request_type]
 
-            req.waiting_on_link_left -= simulation_step_ms
-            req.network_time += simulation_step_ms
+            req.waiting_on_link_left -= simulation_step
+            req.network_time += simulation_step
             if req.waiting_on_link_left <= 0:
                 if (capacity > self.reqs_cnt[req.request_type]) and (req.cumulative_time < self.request_processing_infos[req.request_type].timeout):
                     self.requests.append(req)
@@ -190,7 +190,7 @@ class LinkBuffer:
 
         if self.throughput_MBps - self.used_throughput_MBps >= req_size_b_MBps:
             self.used_throughput_MBps += req_size_b_MBps
-            req.waiting_on_link_left_ms = self.latency_ms
+            req.waiting_on_link_left = self.latency
             self.requests_in_transfer.append(req)
         else:
             del req
@@ -218,15 +218,17 @@ class LinkBuffer:
         return len(self.requests)
 
     def add_cumulative_time(self,
-                            delta,
-                            service_name):
+                            delta : pd.Timedelta,
+                            service_name : str):
 
         for req in self.requests:
-            req.cumulative_time_ms += delta
-            if not service_name in req.buffer_time_ms:
-                req.buffer_time_ms[service_name] = delta
+            req.cumulative_time += delta
+            # Below is for the monitoring purposes - to estimate,
+            # which service did the request spend the longest time waiting at
+            if not service_name in req.buffer_time:
+                req.buffer_time[service_name] = delta
             else:
-                req.buffer_time_ms[service_name] += delta
+                req.buffer_time[service_name] += delta
 
     def remove_by_id(self, request_id):
         for req in reversed(self.requests):
@@ -240,5 +242,5 @@ class LinkBuffer:
         else:
             req_size_b = self.request_processing_infos[req.request_type].response_size_b
         req_size_b_mb = req_size_b / (1024 * 1024)
-        req_size_b_MBps = req_size_b_mb * (self.latency_ms / 1000) # taking channel for that long
+        req_size_b_MBps = req_size_b_mb * (self.latency / 1000) # taking channel for that long
         return req_size_b_MBps

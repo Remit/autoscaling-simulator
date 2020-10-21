@@ -59,9 +59,9 @@ class ScalingPolicy:
                        attribute_val):
 
             if not hasattr(self, attribute_name):
-                raise ValueError('Untimed attribute {} not found in {}'.format(aspect_name, self.__class__.__name__))
+                raise ValueError('Untimed attribute {} not found in {}'.format(attribute_name, self.__class__.__name__))
 
-            self.__setattr__(aspect_name, aspect_val)
+            self.__setattr__(attribute_name, attribute_val)
 
     def __init__(self,
                  config_file : str,

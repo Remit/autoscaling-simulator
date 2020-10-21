@@ -68,7 +68,7 @@ class StateDelta:
                 delta_timestamp : pd.Timestamp):
 
         new_timestamped_sd = {}
-        for region_name, regional_delta in self.deltas_per_region:
+        for region_name, regional_delta in self.deltas_per_region.items():
 
             new_timestamped_rd = regional_delta.enforce(platform_scaling_model,
                                                         application_scaling_model,

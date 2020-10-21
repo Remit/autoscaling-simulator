@@ -7,6 +7,7 @@ from ..requirements import ResourceRequirements
 
 from ...infrastructure_platform.utilization import ServiceUtilization
 from ...infrastructure_platform.node import NodeInfo
+from ...infrastructure_platform.system_capacity import SystemCapacity
 from ...workload.request import Request
 from ...application.linkbuffer import LinkBuffer
 
@@ -87,6 +88,7 @@ class ServiceState:
                  buffer_capacity_by_request_type : dict,
                  init_keepalive : pd.Timedelta):
 
+        self.service_name = service_name
         self.region_name = region_name
         self.processor = RequestsProcessor()
         self.entity_group = EntityGroup(service_name)
@@ -190,54 +192,56 @@ class ServiceState:
         self.downstream_buf.step(simulation_step)
         self.upstream_buf.step(simulation_step)
 
-        while(time_budget > pd.Timedelta(0, unit = 'ms')):
+        if not self.placed_on_node is None:
+            while(time_budget > pd.Timedelta(0, unit = 'ms')):
 
-            time_budget = self.processor.step(time_budget)
-            capacity_taken_by_reqs = self._compute_capacity_taken_by_requests()
-            total_capacity_taken = self.system_capacity_reserved + capacity_taken_by_reqs
+                time_budget = self.processor.step(time_budget)
+                capacity_taken_by_reqs = self._compute_capacity_taken_by_requests()
+                total_capacity_taken = self.system_capacity_reserved + capacity_taken_by_reqs
 
-            # Assumption: first we try to process the downstream reqs to
-            # provide the response faster, but overall it is application-dependent
-            while ((self.downstream_buf.size() > 0) or (self.upstream_buf.size() > 0)) and not total_capacity_taken.is_exhausted():
+                # Assumption: first we try to process the downstream reqs to
+                # provide the response faster, but overall it is application-dependent
+                while ((self.downstream_buf.size() > 0) or (self.upstream_buf.size() > 0)) and not total_capacity_taken.is_exhausted():
 
-                req = self.downstream_buf.attempt_fan_in()
-                if not req is None:
-                    cap_taken = self.placed_on_node.resource_requirements_to_capacity(self.request_processing_infos[req.request_type].resource_requirements)
-                    if not (total_capacity_taken + cap_taken).is_exhausted():
-                        req = self.downstream_buf.fan_in(req)
-                        self.processor.start_processing(req)
-                    else:
-                        self.downstream_buf.shift()
+                    req = self.downstream_buf.attempt_fan_in()
+                    if not req is None:
+                        cap_taken = self.placed_on_node.resource_requirements_to_capacity(self.request_processing_infos[req.request_type].resource_requirements)
+                        if not (total_capacity_taken + cap_taken).is_exhausted():
+                            req = self.downstream_buf.fan_in(req)
+                            self.processor.start_processing(req)
+                        else:
+                            self.downstream_buf.shift()
 
-                    total_capacity_taken = total_capacity_taken + cap_taken
+                        total_capacity_taken = total_capacity_taken + cap_taken
 
-                req = self.upstream_buf.attempt_pop()
-                if not req is None:
-                    cap_taken = self.placed_on_node.resource_requirements_to_capacity(self.request_processing_infos[req.request_type].resource_requirements)
-                    if not (total_capacity_taken + cap_taken).is_exhausted():
-                        req = self.upstream_buf.pop(req)
-                        self.processor.start_processing(req)
-                    else:
-                        self.upstream_buf.shift()
+                    req = self.upstream_buf.attempt_pop()
+                    if not req is None:
+                        cap_taken = self.placed_on_node.resource_requirements_to_capacity(self.request_processing_infos[req.request_type].resource_requirements)
+                        if not (total_capacity_taken + cap_taken).is_exhausted():
+                            req = self.upstream_buf.pop(req)
+                            self.processor.start_processing(req)
+                        else:
+                            self.upstream_buf.shift()
 
-                    total_capacity_taken = total_capacity_taken + cap_taken
+                        total_capacity_taken = total_capacity_taken + cap_taken
 
-            if (self.downstream_buf.size() == 0) and (self.upstream_buf.size() == 0):
-                time_budget = pd.Timedelta(0, unit = 'ms')
+                if (self.downstream_buf.size() == 0) and (self.upstream_buf.size() == 0):
+                    time_budget = pd.Timedelta(0, unit = 'ms')
 
         # Post-step maintenance actions
         # Increase the cumulative time for all the reqs left in the buffers waiting
-        self.upstream_buf.add_cumulative_time(simulation_step)
-        self.downstream_buf.add_cumulative_time(simulation_step)
+        self.upstream_buf.add_cumulative_time(simulation_step, self.service_name)
+        self.downstream_buf.add_cumulative_time(simulation_step, self.service_name)
         # Update resource utilization at the end of the step
-        self.utilization.update_with_capacity(cur_timestamp,
-                                              self._compute_capacity_taken_by_requests())
+        if not self.placed_on_node is None:
+            self.utilization.update_with_capacity(cur_timestamp,
+                                                  self._compute_capacity_taken_by_requests())
 
     def _compute_capacity_taken_by_requests(self):
 
         reqs_count_by_type = self.processor.get_in_processing_stat()
         capacity_taken_by_reqs = SystemCapacity(self.placed_on_node,
-                                              self.node_count)
+                                                self.node_count)
         for request_type, request_count in reqs_count_by_type.items():
             cap_taken = self.placed_on_node.resource_requirements_to_capacity(self.request_processing_infos[request_type].resource_requirements)
             capacity_taken_by_reqs += cap_taken
@@ -345,7 +349,7 @@ class ServiceStateRegionalized(ScaledEntityState):
         if not region_name in self.region_states:
             raise ValueError('A state for the given region name {} was not found'.format(region_name))
 
-        return self.region_states[region_name].get_metric_value(aspect_name)
+        return self.region_states[region_name].get_metric_value(metric_name)
 
     def get_processed(self):
 

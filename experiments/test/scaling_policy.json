@@ -17,7 +17,7 @@
         "metrics_descriptions": [
           {
             "metric_source_name": "Service",
-            "metric_name": "cpu_utilization",
+            "metric_name": "vCPU",
             "values_filter_conf": {
               "name": "defaultNA",
               "config": {

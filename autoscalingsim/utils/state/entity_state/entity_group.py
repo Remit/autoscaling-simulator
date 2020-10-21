@@ -213,6 +213,18 @@ class EntitiesGroupDelta:
         self.deltas = deltas
         self.in_change = in_change
 
+    def get_entities(self):
+
+        return list(self.deltas.keys())
+
+    def get_entity_group_delta(self,
+                               entity_name : str):
+
+        if not entity_name in self.deltas:
+            raise ValueError('No entity group delta for entity name {} found'.format(entity_name))
+
+        return self.deltas[entity_name]
+
     def __add__(self,
                 other_entities_group_delta : 'EntitiesGroupDelta'):
 
