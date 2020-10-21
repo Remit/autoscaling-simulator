@@ -41,7 +41,7 @@ class StateDelta:
                                                                                                     self.__class__.__name__))
 
         new_regional_deltas = self.deltas_per_region.copy()
-        for region_name, regional_delta in other_state_delta.items():
+        for region_name, regional_delta in other_state_delta:
             if not region_name in new_regional_deltas:
                 new_regional_deltas[region_name] = regional_delta
             else:
@@ -90,9 +90,9 @@ class StateDeltaIterator:
 
     def __next__(self):
 
-        if self._index < len(self.deltas_per_region):
-            region_name = list(self.deltas_per_region.keys())[self._index]
+        if self._index < len(self._state_delta.deltas_per_region):
+            region_name = list(self._state_delta.deltas_per_region.keys())[self._index]
             self._index += 1
-            return self.deltas_per_region[region_name]
+            return (region_name, self._state_delta.deltas_per_region[region_name])
 
         raise StopIteration

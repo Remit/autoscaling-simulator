@@ -37,7 +37,8 @@ class Service(ScaledEntity):
         super().__init__(self.__class__.__name__,
                          service_name,
                          scaling_setting_for_service,
-                         state_reader)
+                         state_reader,
+                         service_regions)
 
         # Static state
         self.service_name = service_name
@@ -49,8 +50,8 @@ class Service(ScaledEntity):
                                               averaging_interval,
                                               resource_requirements,
                                               request_processing_infos,
-                                              init_keepalive,
-                                              resource_names)
+                                              buffer_capacity_by_request_type,
+                                              init_keepalive)
 
     def add_request(self,
                     req : Request):

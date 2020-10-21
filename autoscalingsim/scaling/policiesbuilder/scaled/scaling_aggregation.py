@@ -144,7 +144,7 @@ class MaxScalingEffectAggregationRule(ParallelScalingEffectAggregationRule):
                  metrics_by_priority):
 
         super().__init__(metrics_by_priority,
-                         max)
+                         'max')
 
 class MinScalingEffectAggregationRule(ParallelScalingEffectAggregationRule):
 
@@ -156,7 +156,7 @@ class MinScalingEffectAggregationRule(ParallelScalingEffectAggregationRule):
                  metrics_by_priority):
 
         super().__init__(metrics_by_priority,
-                         min)
+                         'min')
 
 class Registry:
 

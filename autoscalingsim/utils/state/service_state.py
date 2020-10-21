@@ -8,6 +8,7 @@ from ..requirements import ResourceRequirements
 from ...infrastructure_platform.utilization import ServiceUtilization
 from ...infrastructure_platform.node import NodeInfo
 from ...workload.request import Request
+from ...application.linkbuffer import LinkBuffer
 
 class RequestsProcessor:
 
@@ -83,8 +84,8 @@ class ServiceState:
                  averaging_interval : pd.Timedelta,
                  resource_requirements : ResourceRequirements,
                  request_processing_infos : dict,
-                 init_keepalive : pd.Timedelta,
-                 resource_names : list = []):
+                 buffer_capacity_by_request_type : dict,
+                 init_keepalive : pd.Timedelta):
 
         self.region_name = region_name
         self.processor = RequestsProcessor()
@@ -94,7 +95,7 @@ class ServiceState:
         self.utilization = ServiceUtilization(init_timestamp,
                                               averaging_interval,
                                               init_keepalive,
-                                              resource_names)
+                                              resource_requirements.tracked_resources())
 
         self.upstream_buf = LinkBuffer(buffer_capacity_by_request_type,
                                        request_processing_infos)
@@ -264,8 +265,8 @@ class ServiceStateRegionalized(ScaledEntityState):
                  averaging_interval_ms,
                  resource_requirements : ResourceRequirements,
                  request_processing_infos : dict,
-                 init_keepalive_ms = pd.Timedelta(-1, unit = 'ms'),
-                 resource_names : list = []):
+                 buffer_capacity_by_request_type : dict,
+                 init_keepalive_ms = pd.Timedelta(-1, unit = 'ms')):
 
         self.region_states = {}
         for region_name in service_regions:
@@ -275,8 +276,8 @@ class ServiceStateRegionalized(ScaledEntityState):
                                                            averaging_interval_ms,
                                                            resource_requirements,
                                                            request_processing_infos,
-                                                           init_keepalive_ms,
-                                                           resource_names)
+                                                           buffer_capacity_by_request_type,
+                                                           init_keepalive_ms)
 
     def add_request(self,
                     req : Request):

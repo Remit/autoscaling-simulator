@@ -24,7 +24,7 @@ class MetricForecaster:
         self.history_data_buffer_size = history_data_buffer_size
 
         # Dynamic State
-        if (forecasting_model_name in forecasting_model_registry) and (not forecasting_model_params is None):
+        if (not forecasting_model_name is None) and (not forecasting_model_params is None):
             self.model = Registry.get(forecasting_model_name)(forecasting_model_params)
         else:
             self.model = None

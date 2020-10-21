@@ -38,7 +38,7 @@ class PlatformState:
                 if not isinstance(region_name, str):
                     raise ValueError('An incorrect type of region name in the list provided on init: {}'.format(region_name.__class__.__name__))
 
-            self.regions[region_name] = Region()
+            self.regions[region_name] = Region(region_name)
         else:
             raise TypeError('Unknown type of regions on init: {}'.format(regions.__class__.__name__))
 

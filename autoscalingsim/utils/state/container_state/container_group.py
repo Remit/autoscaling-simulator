@@ -16,6 +16,20 @@ class HomogeneousContainerGroup:
     only the count of scaled entities instances and the container name.
     """
 
+    @staticmethod
+    def from_conf(self,
+                  group_conf : dict):
+
+        container_info = ErrorChecker.key_check_and_load('container_info', group_conf, self.__class__.__name__)
+        containers_count = ErrorChecker.key_check_and_load('containers_count', group_conf, self.__class__.__name__)
+        entities_instances_counts = ErrorChecker.key_check_and_load('entities_instances_counts', group_conf, self.__class__.__name__)
+        system_capacity = ErrorChecker.key_check_and_load('system_capacity', group_conf, self.__class__.__name__)
+
+        return HomogeneousContainerGroup(container_info,
+                                         containers_count,
+                                         entities_instances_counts,
+                                         system_capacity)
+
     def __init__(self,
                  container_info : NodeInfo,
                  containers_count : int,
@@ -39,19 +53,6 @@ class HomogeneousContainerGroup:
         self.system_capacity = system_capacity
         self.id = hash(self.container_name + \
                        str(self.containers_count))
-
-    def __init__(self,
-                 group_conf):
-
-        container_info = ErrorChecker.key_check_and_load('container_info', group_conf, self.__class__.__name__)
-        containers_count = ErrorChecker.key_check_and_load('containers_count', group_conf, self.__class__.__name__)
-        entities_instances_counts = ErrorChecker.key_check_and_load('entities_instances_counts', group_conf, self.__class__.__name__)
-        system_capacity = ErrorChecker.key_check_and_load('system_capacity', group_conf, self.__class__.__name__)
-
-        self.__init__(container_info,
-                      containers_count,
-                      entities_instances_counts,
-                      system_capacity)
 
     def extract_scaling_aspects(self):
 

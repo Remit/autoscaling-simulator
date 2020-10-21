@@ -23,3 +23,7 @@ class ResourceRequirements:
                 'memory': self.memory,
                 'disk': self.disk,
                 'labels': self.labels}
+
+    def tracked_resources(self):
+
+        return ['vCPU', 'memory', 'disk']

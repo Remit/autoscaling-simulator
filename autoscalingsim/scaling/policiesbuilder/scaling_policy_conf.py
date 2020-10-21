@@ -8,7 +8,7 @@ from .metric.valuesaggregator import ValuesAggregator
 from .metric.stabilizer import Stabilizer
 from .metric.forecasting import MetricForecaster
 
-from .scaled.scaled_entity import ScaledEntityScalingSettings
+from .scaled.scaled_entity_settings import ScaledEntityScalingSettings
 
 from ...utils.error_check import ErrorChecker
 

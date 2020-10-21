@@ -16,8 +16,24 @@ class Region:
     be marked with the 'default' name.
     """
 
+    @staticmethod
+    def from_conf(region_name : str,
+                  container_for_scaled_entities_types : dict,
+                  scaled_entity_instance_requirements_by_entity : dict,
+                  selected_placement : Placement):
+
+        """
+        Alternative Region initialization. Useful for creation of the temporary
+        platform state when computing the rolling adjustments.
+        """
+
+        return Region(region_name,
+                      HomogeneousContainerGroupSet(container_for_scaled_entities_types,
+                                                   scaled_entity_instance_requirements_by_entity,
+                                                   selected_placement))
+
     def __init__(self,
-                 region_name = 'default',
+                 region_name,
                  homogeneous_groups_and_deltas = []):
 
         self.region_name = region_name
@@ -41,23 +57,7 @@ class Region:
                                                    [generalized_delta])
 
                     self.homogeneous_groups += regional_delta
-
-    def __init__(self,
-                 region_name : str,
-                 container_for_scaled_entities_types : dict,
-                 scaled_entity_instance_requirements_by_entity : dict,
-                 selected_placement : Placement):
-
-        """
-        Alternative Region initialization. Useful for creation of the temporary
-        platform state when computing the rolling adjustments.
-        """
-
-        self.region_name = region_name
-        self.homogeneous_groups = HomogeneousContainerGroupSet(container_for_scaled_entities_types,
-                                                               scaled_entity_instance_requirements_by_entity,
-                                                               selected_placement)
-
+                    
     def extract_node_counts(self,
                             in_change : bool):
 

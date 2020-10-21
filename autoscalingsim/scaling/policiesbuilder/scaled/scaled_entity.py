@@ -2,22 +2,8 @@ import collections
 
 from . import scaling_aggregation
 
-class ScaledEntityScalingSettings:
-
-    """
-    Wraps all the scaling settings relevant for a ScaledEntity.
-    """
-
-    def __init__(self,
-                 metrics_descriptions,
-                 scaling_effect_aggregation_rule_name,
-                 scaled_entity_name,
-                 scaled_aspect_name):
-
-        self.metrics_descriptions = metrics_descriptions
-        self.scaling_effect_aggregation_rule_name = scaling_effect_aggregation_rule_name
-        self.scaled_entity_name = scaled_entity_name
-        self.scaled_aspect_name = scaled_aspect_name
+from ....utils.state.statemanagers import StateReader
+from ..scaling_policy_conf import ScalingPolicyConfiguration
 
 class ScaledEntity:
 
@@ -31,10 +17,11 @@ class ScaledEntity:
     """
 
     def __init__(self,
-                 scaled_entity_class,
-                 scaled_entity_name,
-                 scaling_setting_for_entity,
-                 state_reader):
+                 scaled_entity_class : str,
+                 scaled_entity_name : str,
+                 scaling_setting_for_entity : ScalingPolicyConfiguration,
+                 state_reader : StateReader,
+                 regions : list):
 
         if not scaling_setting_for_entity is None:
             # All the metrics associated with the scaling of the given entity
@@ -42,15 +29,15 @@ class ScaledEntity:
             metrics_by_priority = {}
             for metric_description in scaling_setting_for_entity.metrics_descriptions:
 
-                if metric_description.scaled_entity_name == scaled_entity_class:
-                    metric_description.scaled_entity_name = scaled_entity_name
+                if metric_description.entity_name == scaled_entity_class:
+                    metric_description.entity_name = scaled_entity_name
 
                 if metric_description.metric_source_name == scaled_entity_class:
                     metric_description.metric_source_name = scaled_entity_name
 
                 metric_description.state_reader = state_reader
 
-                metrics_by_priority[metric_description.priority] = metric_description.convert_to_metric()
+                metrics_by_priority[metric_description.priority] = metric_description.convert_to_metric(regions)
 
             self.metrics_by_priority = collections.OrderedDict(sorted(metrics_by_priority.items()))
 
@@ -61,7 +48,7 @@ class ScaledEntity:
             # from the last metric in the chain (lowest priority); simultaneous - the
             # all the metrics compute their scaling effects independently, and the cumulative
             # scaling effect is the aggregated value of these effects (e.g. majority vote)
-            if scaling_setting_for_entity.scaling_effect_aggregation_rule_name in scaling_aggregation_rules_registry:
+            if not scaling_setting_for_entity.scaling_effect_aggregation_rule_name is None:
                 self.scaling_effect_aggregation_rule = scaling_aggregation.Registry.get(scaling_setting_for_entity.scaling_effect_aggregation_rule_name)(self.metrics_by_priority)
         else:
             self.scaling_effect_aggregation_rule = None

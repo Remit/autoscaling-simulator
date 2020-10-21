@@ -17,6 +17,50 @@ class Sum:
 
         return aggregated_val
 
+class Max:
+
+    """
+    Select the max state.
+    """
+
+    @staticmethod
+    def aggregate(states_list):
+
+        if len(states_list > 0):
+            res_class = states_list[0].__class__
+            selected_state = states_list[0]
+
+            last_max_cnt = 0
+            for state in states_list:
+                if sum(list(state.extract_node_counts(True).values())) > last_max_cnt:
+                    selected_state = state
+
+            return selected_state
+        else:
+            return None
+
+class Min:
+
+    """
+    Select the max state.
+    """
+
+    @staticmethod
+    def aggregate(states_list):
+
+        if len(states_list > 0):
+            res_class = states_list[0].__class__
+            selected_state = states_list[0]
+
+            last_min_cnt = float('Inf')
+            for state in states_list:
+                if sum(list(state.extract_node_counts(True).values())) < last_min_cnt:
+                    selected_state = state
+
+            return selected_state
+        else:
+            return None
+
 class Registry:
 
     """
@@ -24,7 +68,9 @@ class Registry:
     """
 
     registry = {
-        'sum': Sum
+        'sum': Sum,
+        'max': Max,
+        'min': Min
     }
 
     @staticmethod

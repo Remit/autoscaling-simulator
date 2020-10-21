@@ -14,7 +14,7 @@
 				}
 			],
 			"system_requirements": {
-				"cpu": 2,
+				"vCPU": 2,
 		    "memory": 2000,
 		    "disk": 0
 			},
@@ -45,7 +45,7 @@
 				}
 			],
 			"system_requirements": {
-				"cpu": 4,
+				"vCPU": 4,
 		    "memory": 2000,
 		    "disk": 0
 			},
@@ -76,7 +76,7 @@
 				}
 			],
 			"system_requirements": {
-				"cpu": 4,
+				"vCPU": 4,
 		    "memory": 4000,
 		    "disk": 1024
 			},

@@ -4,6 +4,33 @@ from ...deltarepr.regional_delta import RegionalDelta
 
 class HomogeneousContainerGroupSet:
 
+    @staticmethod
+    def from_conf(container_for_scaled_entities_types : dict,
+                  requirements_by_entity : dict,
+                  selected_placement : Placement):
+
+        homogeneous_groups = []
+        for entity_placement in selected_placement:
+
+            if not entity_placement.container_name in container_for_scaled_entities_types:
+               raise ValueError('Incorrect container type {}'.format(entity_placement.container_name))
+
+            container_info = container_for_scaled_entities_types[entity_placement.container_name]
+
+            fit, system_capacity_taken = container_info.takes_capacity(requirements_by_entity,
+                                                                       entity_placement.entities_state)
+            if not fits:
+               raise ValueError('Attempt to fit EntitiesState on the container {} where it cannot fit'.format(entity_name, container_info.node_type))
+
+            hcg = HomogeneousContainerGroup(container_info,
+                                            entity_placement.containers_count,
+                                            entity_placement.entities_state,
+                                            system_capacity_taken)
+
+            homogeneous_groups.append(hcg)
+
+        return HomogeneousContainerGroupSet(homogeneous_groups)
+
     """
     Wraps multiple homogeneous container groups to allow the arithmetic operations
     on them.
@@ -21,33 +48,6 @@ class HomogeneousContainerGroupSet:
                     raise TypeError('An entity of unknown type {} when initializing {}'.format(group.__class__.__name__,
                                                                                                self.__class__.__name__))
                 self._homogeneous_groups[group.id] = group
-
-        self._in_change_homogeneous_groups = {}
-
-    def __init__(self,
-                 container_for_scaled_entities_types : dict,
-                 requirements_by_entity : dict,
-                 selected_placement : Placement):
-
-        self._homogeneous_groups = {}
-        for entity_placement in selected_placement:
-
-            if not entity_placement.container_name in container_for_scaled_entities_types:
-                raise ValueError('Incorrect container type {}'.format(entity_placement.container_name))
-
-            container_info = container_for_scaled_entities_types[entity_placement.container_name]
-
-            fit, system_capacity_taken = container_info.takes_capacity(requirements_by_entity,
-                                                                       entity_placement.entities_state)
-            if not fits:
-                raise ValueError('Attempt to fit EntitiesState on the container {} where it cannot fit'.format(entity_name, container_info.node_type))
-
-            hcg = HomogeneousContainerGroup(container_info,
-                                            entity_placement.containers_count,
-                                            entity_placement.entities_state,
-                                            system_capacity_taken)
-
-            self._homogeneous_groups[hcg.id] = hcg
 
         self._in_change_homogeneous_groups = {}
 

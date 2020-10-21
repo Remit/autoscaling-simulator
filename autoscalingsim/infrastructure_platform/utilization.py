@@ -1,6 +1,7 @@
 import pandas as pd
 
 from .system_capacity import SystemCapacity
+from ..utils.state.state import ScaledEntityState
 
 class ResourceUtilization:
 
@@ -11,14 +12,14 @@ class ResourceUtilization:
     def __init__(self,
                  resource_name : str,
                  init_timestamp : pd.Timestamp,
-                 averaging_interval_ms,
+                 averaging_interval : pd.Timedelta,
                  init_keepalive_ms = -1):
 
         self.resource_name = resource_name
         self.utilization = pd.DataFrame(columns = ['datetime', 'value'])
         self.utilization = self.utilization.set_index('datetime')
-        self.tmp_state = State.TempState(init_timestamp,
-                                         averaging_interval_ms)
+        self.tmp_state = ScaledEntityState.TempState(init_timestamp,
+                                                     averaging_interval)
 
     def update(self,
                cur_ts : pd.Timestamp,

@@ -21,7 +21,7 @@ class EntityGroup:
 
         self.scaling_aspects = {}
         if isinstance(aspects_vals, dict):
-            for aspect_name, aspect_value in scaling_aspects.items():
+            for aspect_name, aspect_value in aspects_vals.items():
                 self.scaling_aspects[aspect_name] = scaling_aspects.Registry.get(aspect_name)(aspect_value)
         elif isinstance(aspects_vals, int):
             self.scaling_aspects['count'] = scaling_aspects.Count(aspects_vals)

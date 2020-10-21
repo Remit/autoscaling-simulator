@@ -12,6 +12,7 @@ from ..infrastructure_platform.platform_model import PlatformModel
 from ..scaling.policiesbuilder.scaling_policy import ScalingPolicy
 from ..utils.error_check import ErrorChecker
 from ..utils.state.statemanagers import StateReader, ScalingManager
+from ..utils.requirements import ResourceRequirements
 
 class ApplicationModel:
 
@@ -89,7 +90,7 @@ class ApplicationModel:
 
                         processing_times[service_name] = [upstream_time, downstream_time]
 
-                    timeout = pd.Timedelta(ErrorChecker.key_check_and_load('timeout', request_info, 'request_type', request_type), unit = 'ms')
+                    timeout = pd.Timedelta(ErrorChecker.key_check_and_load('timeout_ms', request_info, 'request_type', request_type), unit = 'ms')
                     ErrorChecker.value_check('timeout', timeout, operator.ge, pd.Timedelta(0, unit = 'ms'), ['request_type {}'.format(request_type)])
 
                     request_size_b = ErrorChecker.key_check_and_load('request_size_b', request_info, 'request_type', request_type)
@@ -144,12 +145,13 @@ class ApplicationModel:
                         ErrorChecker.value_check('service_instances', service_instances, operator.gt, 0, ['service {}'.format(service_name)])
                         init_service_instances_regionalized[region_name] = service_instances
 
-                        provider = ErrorChecker.key_check_and_load('provider', deployment, 'service', service_name)
-                        node_type = ErrorChecker.key_check_and_load('node_type', deployment, 'service', service_name)
+                        platform_info = ErrorChecker.key_check_and_load('platform', region_deployment_conf, 'service', service_name)
+                        provider = ErrorChecker.key_check_and_load('provider', platform_info, 'service', service_name)
+                        node_type = ErrorChecker.key_check_and_load('node_type', platform_info, 'service', service_name)
                         node_info = self.platform_model.get_node_info(provider, node_type)
                         node_infos_regionalized[region_name] = node_info
 
-                        node_count = ErrorChecker.key_check_and_load('count', deployment, 'service', service_name)
+                        node_count = ErrorChecker.key_check_and_load('count', platform_info, 'service', service_name)
                         ErrorChecker.value_check('node_count', node_count, operator.gt, 0, ['service {}'.format(service_name)])
                         node_counts_regionalized[region_name] = node_count
 

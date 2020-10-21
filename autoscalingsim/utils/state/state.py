@@ -16,9 +16,9 @@ class ScaledEntityState(ABC):
 
         def __init__(self,
                      init_timestamp : pd.Timestamp,
-                     averaging_interval_ms):
+                     averaging_interval : pd.Timedelta):
 
-            self.averaging_interval_timedelta = pd.Timedelta(averaging_interval_ms, unit = 'ms')
+            self.averaging_interval = averaging_interval
             self.tmp_buffer = pd.DataFrame({'datetime': [init_timestamp], 'value': [0.0]})
             self.tmp_buffer = self.tmp_buffer.set_index('datetime')
 
