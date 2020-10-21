@@ -13,21 +13,32 @@ class AdjustmentPolicy:
     """
 
     def __init__(self,
-                 scaling_model,
-                 scaling_settings):
+                 scaling_model : ScalingModel,
+                 scaling_settings : ScalingPolicyConfiguration):
 
-        # TODO: think of generalizing terms in the scaling model to the scaled entity etc
-        self.scaling_model = scaling_model
         self.state_reader = None
-        adjuster_class = adjusters.Registry.get(scaling_settings.adjustment_goal)
-        self.adjuster = adjuster_class(scaling_settings.adjustment_preference)
-        self.services_scaling_config = scaling_settings.services_scaling_config
+        self.scaling_model = scaling_model
+        self.scaling_settings = scaling_settings
+
+    def init_adjustment_policy(self,
+                               container_for_scaled_entities_types : dict,
+                               entity_instance_requirements : dict):
+
+        adjuster_class = adjusters.Registry.get(self.scaling_settings.adjustment_goal)
+        self.adjuster = adjuster_class(self.scaling_model.application_scaling_model,
+                                       self.scaling_model.platform_scaling_model,
+                                       container_for_scaled_entities_types,
+                                       entity_instance_requirements,
+                                       self.scaling_settings.optimizer_type,
+                                       self.scaling_settings.placement_hint,
+                                       self.scaling_settings.combiner_type)
 
     def adjust(self,
-               cur_timestamp,
-               desired_state_per_scaled_entity,
-               container_for_scaled_entities_types,
-               platform_state):
+               cur_timestamp : pd.Timestamp,
+               desired_state_per_scaled_entity : dict,
+               platform_state : PlatformState):
+
+        # TODO: adapt
 
         """
         Wraps the adjusting steps.
@@ -40,13 +51,13 @@ class AdjustmentPolicy:
         for scaled_entity_name, desired_state in desired_state_per_scaled_entity.items():
 
             scaled_entity_name_search_key = scaled_entity_name
-            if not scaled_entity_name_search_key in self.services_scaling_config:
+            if not scaled_entity_name_search_key in self.scaling_settings.services_scaling_config:
                 scaled_entity_name_search_key = 'default'
 
-                if not scaled_entity_name_search_key in self.services_scaling_config:
+                if not scaled_entity_name_search_key in self.scaling_settings.services_scaling_config:
                     raise ValueError('No services scaling config found for service {} when in {} class'.format(scaled_entity_name, self.__class__.__name__))
 
-            scaled_aspect_name = self.services_scaling_config[scaled_entity_name_search_key].scaled_aspect_name
+            scaled_aspect_name = self.scaling_settings.services_scaling_config[scaled_entity_name_search_key].scaled_aspect_name
             cur_scaling_aspect_value = self.state_reader.get_values(scaled_entity_name, scaled_aspect_name)
 
             # Computing the Delta-representation of the desired state, i.e. in terms

@@ -24,7 +24,10 @@ class DesiredChangeCalculator:
                  container_for_scaled_entities_types : dict,
                  scaled_entity_instance_requirements_by_entity : dict):
 
-        self.placer = Placer(placement_hint)
+        self.placer = Placer(placement_hint,
+                             container_for_scaled_entities_types,
+                             scaled_entity_instance_requirements_by_entity)
+                             
         score_calculator = score_calculator_class(container_for_scaled_entities_types)
         self.scorer = Scorer(score_calculator)
         optimizer_class = optimizers.Registry.get(optimizer_type)

@@ -127,6 +127,12 @@ class PlatformModel:
 
         return self.state_deltas_timeline.roll_out_updates(cur_timestamp)
 
+    def init_adjustment_policy(self,
+                               entity_instance_requirements : dict):
+
+        self.adjustment_policy.init_adjustment_policy(self.providers_configs,
+                                                      entity_instance_requirements)
+
     def init_platform_state_deltas(self,
                                    regions : list,
                                    init_timestamp : pd.Timestamp,
@@ -163,8 +169,8 @@ class PlatformModel:
 
         adjusted_timeline_of_deltas = self.adjustment_policy.adjust(cur_timestamp,
                                                                     desired_states_to_process,
-                                                                    self.node_types,
                                                                     self.state_deltas_timeline.actual_state)
+
         self.state_deltas_timeline.merge(adjusted_timeline_of_deltas)
 
     def set_adjustment_policy(self,

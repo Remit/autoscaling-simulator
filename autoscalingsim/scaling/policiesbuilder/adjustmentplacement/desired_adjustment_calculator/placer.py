@@ -24,24 +24,26 @@ class Placer:
     ]
 
     def __init__(self,
-                 placement_hint = 'specialized'):
+                 placement_hint : str,
+                 container_for_scaled_entities_types : dict,
+                 scaled_entity_instance_requirements_by_entity : dict):
 
         if not placement_hint in Placer.placement_hints:
             raise ValueError('Adjustment preference {} currently not supported in {}'.format(placement_hint, self.__class__.__name__))
 
         self.placement_hint = placement_hint
+        self.container_for_scaled_entities_types = container_for_scaled_entities_types
+        self.scaled_entity_instance_requirements_by_entity = scaled_entity_instance_requirements_by_entity
         self.cached_placement_options = {}
         self.balancing_threshold = 0.05 # TODO: consider providing in config file
 
     def compute_containers_requirements(self,
-                                        scaled_entity_instance_requirements_by_entity,
                                         entities_state,
                                         dynamic_current_placement = None,
                                         dynamic_performance = None,
                                         dynamic_resource_utilization = None):
 
-        placement_options = self.compute_placement_options(scaled_entity_instance_requirements_by_entity,
-                                                           entities_state,
+        placement_options = self.compute_placement_options(entities_state,
                                                            dynamic_current_placement,
                                                            dynamic_performance,
                                                            dynamic_resource_utilization)
@@ -88,7 +90,6 @@ class Placer:
         return placements
 
     def compute_placement_options(self,
-                                  scaled_entity_instance_requirements_by_entity,
                                   entities_state,
                                   dynamic_current_placement = None,
                                   dynamic_performance = None,
@@ -113,13 +114,10 @@ class Placer:
          and (dynamic_performance is None) and (dynamic_resource_utilization is None):
             return self.cached_placement_options
 
-        container_for_scaled_entities_types = entities_state.to_dict()
         placement_options = {}
         consider_other_placement_options = False
         if self.placement_hint == 'existing_mixture':
-            placement_options_raw = self._place_existing_mixture(scaled_entity_instance_requirements_by_entity,
-                                                                 container_for_scaled_entities_types,
-                                                                 dynamic_current_placement,
+            placement_options_raw = self._place_existing_mixture(dynamic_current_placement,
                                                                  dynamic_performance,
                                                                  dynamic_resource_utilization)
             placement_options = self._add_placement_options(placement_options,
@@ -130,9 +128,7 @@ class Placer:
 
         if consider_other_placement_options or (self.placement_hint == 'balanced') or (self.placement_hint == 'shared'):
 
-            placement_options_raw = self._place_shared(scaled_entity_instance_requirements_by_entity,
-                                                       container_for_scaled_entities_types,
-                                                       dynamic_performance,
+            placement_options_raw = self._place_shared(dynamic_performance,
                                                        dynamic_resource_utilization)
 
             if self.placement_hint == 'balanced':
@@ -145,9 +141,7 @@ class Placer:
 
         if consider_other_placement_options or (self.placement_hint == 'specialized'):
 
-            placement_options_raw = self._place_specialized(scaled_entity_instance_requirements_by_entity,
-                                                            container_for_scaled_entities_types,
-                                                            dynamic_performance,
+            placement_options_raw = self._place_specialized(dynamic_performance,
                                                             dynamic_resource_utilization)
             placement_options = self._add_placement_options(placement_options,
                                                             placement_options_raw)
@@ -155,9 +149,7 @@ class Placer:
             consider_other_placement_options = True
 
         if consider_other_placement_options or (self.placement_hint == 'sole_instance'):
-            placement_options_raw = self._place_sole_instance(scaled_entity_instance_requirements_by_entity,
-                                                              container_for_scaled_entities_types,
-                                                              dynamic_performance,
+            placement_options_raw = self._place_sole_instance(dynamic_performance,
                                                               dynamic_resource_utilization)
             placement_options = self._add_placement_options(placement_options,
                                                             placement_options_raw)
@@ -183,24 +175,20 @@ class Placer:
         return new_placement_options
 
     def _place_existing_mixture(self,
-                                scaled_entity_instance_requirements_by_entity,
-                                container_for_scaled_entities_types,
                                 dynamic_current_placement,
                                 dynamic_performance = None,
                                 dynamic_resource_utilization = None):
         return {}
 
     def _place_shared(self,
-                      scaled_entity_instance_requirements_by_entity,
-                      container_for_scaled_entities_types,
                       dynamic_performance = None,
                       dynamic_resource_utilization = None):
 
         placement_options = {}
-        for container_name, container_info in container_for_scaled_entities_types.items():
+        for container_name, container_info in self.container_for_scaled_entities_types.items():
             # For each scaled entity compute how much of container does it consume
             container_capacity_taken_by_entity = {}
-            for scaled_entity, instance_requirements in scaled_entity_instance_requirements_by_entity.items():
+            for scaled_entity, instance_requirements in self.scaled_entity_instance_requirements_by_entity.items():
                 fits, cap_taken = container_info.takes_capacity({scaled_entity: instance_requirements})
                 if fits:
                     container_capacity_taken_by_entity[scaled_entity] = cap_taken
@@ -243,8 +231,6 @@ class Placer:
 
     def _place_balanced(self,
                         shared_placement_options,
-                        scaled_entity_instance_requirements_by_entity = None,
-                        container_for_scaled_entities_types = None,
                         dynamic_performance = None,
                         dynamic_resource_utilization = None):
 
@@ -271,17 +257,15 @@ class Placer:
         return balanced_placement_options_per_container
 
     def _place_specialized(self,
-                           scaled_entity_instance_requirements_by_entity,
-                           container_for_scaled_entities_types,
                            dynamic_performance = None,
                            dynamic_resource_utilization = None):
 
         placement_options = {}
-        for container_name, container_info in container_for_scaled_entities_types.items():
+        for container_name, container_info in self.container_for_scaled_entities_types.items():
             placement_options_per_container = []
             single_placement_option_instances = {}
 
-            for scaled_entity, instance_requirements in scaled_entity_instance_requirements_by_entity.items():
+            for scaled_entity, instance_requirements in self.scaled_entity_instance_requirements_by_entity.items():
                 fits, cap_taken = container_info.takes_capacity({scaled_entity: instance_requirements})
                 if fits:
                     cumulative_capacity = cap_taken
@@ -308,17 +292,15 @@ class Placer:
         return placement_options
 
     def _place_sole_instance(self,
-                             scaled_entity_instance_requirements_by_entity,
-                             container_for_scaled_entities_types,
                              dynamic_performance = None,
                              dynamic_resource_utilization = None):
 
         placement_options = {}
-        for container_name, container_info in container_for_scaled_entities_types.items():
+        for container_name, container_info in self.container_for_scaled_entities_types.items():
             placement_options_per_container = []
             single_placement_option_instances = {}
 
-            for scaled_entity, instance_requirements in scaled_entity_instance_requirements_by_entity.items():
+            for scaled_entity, instance_requirements in self.scaled_entity_instance_requirements_by_entity.items():
                 fits, cap_taken = container_info.takes_capacity({scaled_entity: instance_requirements})
                 if fits:
                     cumulative_capacity = cap_taken

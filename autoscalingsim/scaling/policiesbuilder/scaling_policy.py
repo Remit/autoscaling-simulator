@@ -2,6 +2,7 @@ import os
 import pandas as pd
 
 from .adjustmentplacement.adjustment_policy import AdjustmentPolicy
+from .scaling_policy_conf import ScalingPolicyConfiguration
 
 from ..scaling_model import ScalingModel
 from ...infrastructure_platform.platform_model import PlatformModel
@@ -68,18 +69,20 @@ class ScalingPolicy:
                  platform_model : PlatformModel):
 
         self.scaling_manager = None
-        self.scaling_settings = None
         self.platform_model = platform_model
-
         self.state = ScalingPolicy.ScalingState()
 
         if not os.path.isfile(config_file):
             raise ValueError('No {} configuration file found under the path {}'.format(self.__class__.__name__, config_file))
-        else:
-            self.scaling_settings = ScalingPolicyConfiguration(config_file)
-            adjustment_policy = AdjustmentPolicy(scaling_model,
-                                                 self.scaling_settings)
-            self.platform_model.set_adjustment_policy(adjustment_policy)
+
+        self.scaling_settings = ScalingPolicyConfiguration(config_file)
+        self.platform_model.set_adjustment_policy(AdjustmentPolicy(scaling_model,
+                                                                   self.scaling_settings))
+
+    def init_adjustment_policy(self,
+                               entity_instance_requirements : dict):
+
+        self.platform_model.init_adjustment_policy(entity_instance_requirements)
 
     def reconcile_state(self,
                         cur_timestamp : pd.Timestamp):

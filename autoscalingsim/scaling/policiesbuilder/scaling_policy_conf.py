@@ -1,7 +1,13 @@
 import json
 import numbers
+import pandas as pd
 
 from .metric.scalingmetric import MetricDescription
+from .metric.valuesfilter import ValuesFilter
+from .metric.valuesaggregator import ValuesAggregator
+from .metric.stabilizer import Stabilizer
+from .metric.forecasting import MetricForecaster
+
 from .scaled.scaled_entity import ScaledEntityScalingSettings
 
 from ...utils.error_check import ErrorChecker
@@ -14,7 +20,7 @@ class ScalingPolicyConfiguration:
     """
 
     def __init__(self,
-                 config_file):
+                 config_file : str):
 
         self.app_structure_scaling_config = None
         self.services_scaling_config = {}
@@ -31,7 +37,9 @@ class ScalingPolicyConfiguration:
                 # General policy settings
                 self.sync_period_timedelta = pd.Timedelta(ErrorChecker.key_check_and_load('sync_period_ms', policy_config, self.__class__.__name__), unit = 'ms')
                 self.adjustment_goal = ErrorChecker.key_check_and_load('adjustment_goal', policy_config, self.__class__.__name__)
-                self.adjustment_preference = ErrorChecker.key_check_and_load('adjustment_preference', policy_config, self.__class__.__name__)
+                self.optimizer_type = ErrorChecker.key_check_and_load('optimizer_type', policy_config, self.__class__.__name__)
+                self.placement_hint = ErrorChecker.key_check_and_load('placement_hint', policy_config, self.__class__.__name__)
+                self.combiner_type = ErrorChecker.key_check_and_load('combiner_type', policy_config, self.__class__.__name__)
 
                 structure_config = ErrorChecker.key_check_and_load('structure', app_config, self.__class__.__name__)
                 services_config = ErrorChecker.key_check_and_load('services', app_config, self.__class__.__name__)

@@ -19,7 +19,6 @@ class MetricDescription:
     }
 
     def __init__(self,
-                 regions,
                  entity_name,
                  aspect_name,
                  metric_source_name,
@@ -36,7 +35,6 @@ class MetricDescription:
                  initial_min_limit,
                  initial_entity_representation_in_metric):
 
-        self.regions = regions
         self.entity_name = entity_name
         self.aspect_name = aspect_name
         self.metric_source_name = metric_source_name
@@ -54,9 +52,10 @@ class MetricDescription:
         self.initial_entity_representation_in_metric = initial_entity_representation_in_metric
         self.state_reader = None
 
-    def convert_to_metric(self):
+    def convert_to_metric(self,
+                          regions : list):
 
-        return ScalingMetricRegionalized(self.regions,
+        return ScalingMetricRegionalized(regions,
                                          self.entity_name,
                                          self.aspect_name,
                                          self.metric_source_name,

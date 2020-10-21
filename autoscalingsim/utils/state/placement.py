@@ -29,10 +29,12 @@ class EntitiesPlacement:
     """
 
     def __init__(self,
+                 provider : str,
                  container_name : str,
                  containers_count : int,
                  entities_state : EntitiesState):
 
+        self.provider = provider
         self.container_name = container_name
         self.containers_count = containers_count
         self.entities_state = entities_state

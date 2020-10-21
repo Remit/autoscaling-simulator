@@ -54,6 +54,7 @@ class ApplicationModel:
         self.structure = {}
         self.reqs_processing_infos = {}
         regions = []
+        entity_instance_requirements = {}
 
         if not isinstance(config_file, str):
             raise ValueError('Incorrect format of the path to the configuration file for the {}, should be string'.format(self.__class__.__name__))
@@ -129,6 +130,7 @@ class ApplicationModel:
                         buffer_capacity_by_request_type[request_type] = capacity
 
                     system_requirements = ResourceRequirements(ErrorChecker.key_check_and_load('system_requirements', service_config, 'service', service_name))
+                    entity_instance_requirements[service_name] = system_requirements
 
                     init_service_instances_regionalized = {}
                     node_infos_regionalized = {}
@@ -203,6 +205,7 @@ class ApplicationModel:
         self.platform_model.init_platform_state_deltas(list(set(regions)),
                                                        starting_time,
                                                        self.deployment_model.to_init_platform_state_delta())
+        self.scaling_policy.init_adjustment_policy(entity_instance_requirements)
 
     def step(self,
              cur_timestamp : pd.Timestamp,
