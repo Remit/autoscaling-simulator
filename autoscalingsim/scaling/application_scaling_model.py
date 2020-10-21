@@ -77,8 +77,8 @@ class ApplicationScalingModel:
                 entities_by_change_enforcement_delay[change_enforcement_delay].append(entity_name)
 
             if len(entities_by_change_enforcement_delay) > 0:
-                entities_by_change_enforcement_delay_sorted = OrderedDict(sorted(entities_by_change_enforcement_delay,
-                                                                                 lambda elem: elem[0]))
+                entities_by_change_enforcement_delay_sorted = OrderedDict(sorted(entities_by_change_enforcement_delay.items(),
+                                                                                 key = lambda elem: elem[0]))
 
                 for change_enforcement_delay, entities_lst in entities_by_change_enforcement_delay_sorted.items():
 

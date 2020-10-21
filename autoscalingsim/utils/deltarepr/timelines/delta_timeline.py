@@ -78,7 +78,6 @@ class DeltaTimeline:
             decision_interval = borderline_ts_for_updates - self.time_of_last_state_update
 
             # Enforcing deltas if needed and updating the timeline with them
-            print(self.timeline)
             timeline_to_consider = { timestamp: state_deltas for timestamp, state_deltas in self.timeline.items() if (timestamp - self.time_of_last_state_update <= decision_interval) }
             for timestamp, state_deltas in timeline_to_consider.items():
                 for state_delta in state_deltas:
@@ -87,7 +86,7 @@ class DeltaTimeline:
                                                                        timestamp)
 
                     for new_timestamp, new_state_delta in new_timestamped_state_deltas.items():
-                        self.add_delta(new_timestamp, new_state_delta)
+                        self.add_state_delta(new_timestamp, new_state_delta)
 
             # Updating the actual state using the enforced deltas
             timeline_to_consider = { timestamp: state_deltas for timestamp, state_deltas in self.timeline.items() if (timestamp - self.time_of_last_state_update <= decision_interval) }

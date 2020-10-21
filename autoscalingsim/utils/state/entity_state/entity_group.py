@@ -1,4 +1,8 @@
+import numbers
+
 from . import scaling_aspects
+
+from ...error_check import ErrorChecker
 
 class EntityGroup:
 
@@ -22,9 +26,12 @@ class EntityGroup:
         self.scaling_aspects = {}
         if isinstance(aspects_vals, dict):
             for aspect_name, aspect_value in aspects_vals.items():
-                self.scaling_aspects[aspect_name] = scaling_aspects.Registry.get(aspect_name)(aspect_value)
-        elif isinstance(aspects_vals, int):
-            self.scaling_aspects['count'] = scaling_aspects.Count(aspects_vals)
+                if isinstance(aspect_value, scaling_aspects.ScalingAspect):
+                    self.scaling_aspects[aspect_name] = aspect_value
+                elif isinstance(aspect_value, numbers.Number):
+                    self.scaling_aspects[aspect_name] = scaling_aspects.Registry.get(aspect_name)(aspect_value)
+        #elif isinstance(aspects_vals, int):
+        #    self.scaling_aspects['count'] = scaling_aspects.Count(aspects_vals)
 
     def __add__(self,
                 other_entity_group : 'EntityGroup'):
@@ -126,17 +133,9 @@ class EntityGroupDelta:
     or subtraction.
     """
 
-    def __init__(self,
-                 entity_name,
-                 entity_count,
-                 sign = 1):
-
-        entity_group = EntityGroup(entity_name, entity_count)
-        self.__init__(entity_group, sign)
-
-    def __init__(self,
-                 entity_group : EntityGroup,
-                 sign = 1):
+    @staticmethod
+    def from_group(entity_group : EntityGroup,
+                   sign = 1):
 
         if not isinstance(sign, int):
             raise TypeError('The provided sign parameters is not of {} type'.format(int.__name__))
@@ -144,8 +143,20 @@ class EntityGroupDelta:
         if not isinstance(entity_group, EntityGroup):
             raise TypeError('The provided argument is not of EntityGroup type: {}'.format(entity_group.__class__.__name__))
 
+        return EntityGroupDelta(entity_group.entity_name,
+                                entity_group.scaling_aspects,
+                                sign)
+
+    def __init__(self,
+                 entity_name : str,
+                 aspects_vals : dict,
+                 sign = 1):
+
+        self.entity_group = EntityGroup(entity_name,
+                                        aspects_vals)
         self.sign = sign
-        self.entity_group = entity_group
+
+
 
     def __add__(self,
                 other_delta):
@@ -174,10 +185,8 @@ class EntityGroupDelta:
 
     def copy(self):
 
-        return EntityGroupDelta(self.entity_group.entity_name,
-                                self.entity_group.entity_instances_count.
-                                self.sign)
-
+        return EntityGroupDelta.from_group(self.entity_group,
+                                           self.sign)
 
 class EntitiesGroupDelta:
 
@@ -185,33 +194,38 @@ class EntitiesGroupDelta:
     Wraps multiple EntityGroupDelta distinguished by the sign and the entity.
     """
 
+    @staticmethod
+    def from_entity_group_deltas(deltas : dict,
+                                 in_change = True):
+
+        entities_group_delta = EntitiesGroupDelta()
+        entities_group_delta.deltas = deltas
+        entities_group_delta.in_change = in_change
+
+        return entities_group_delta
+
     def __init__(self,
-                 entities_instances_counts : dict = {}):
+                 aspects_vals_per_entity : dict = {}):
 
         self.deltas = {}
         self.in_change = True
 
-        for entity_name, entity_instances_count in entities_instances_counts.items():
+        for entity_name, aspects_vals in aspects_vals_per_entity.items():
+
+            entity_instances_count = ErrorChecker.key_check_and_load('count', aspects_vals, 'entity', entity_name)
 
             if entity_instances_count < 0:
                 self.deltas[entity_name] = EntityGroupDelta(entity_name,
-                                                            abs(entity_instances_count),
+                                                            aspects_vals,
                                                             -1)
 
             elif entity_instances_count > 0:
                 self.deltas[entity_name] = EntityGroupDelta(entity_name,
-                                                            entity_instances_count)
+                                                            aspects_vals)
 
         # Signifies whether the delta should be considered during the enforcing or not.
         # The aim of 'virtual' property is to keep the connection between the deltas after the enforcement.
         self.virtual = False
-
-    def __init__(self,
-                 deltas : dict,
-                 in_change = True):
-
-        self.deltas = deltas
-        self.in_change = in_change
 
     def get_entities(self):
 
@@ -269,7 +283,9 @@ class EntitiesGroupDelta:
                 enforced_deltas[entity_name] = non_enforced_deltas[entity_name].copy()
                 del non_enforced_deltas[entity_name]
 
-        enforced_egd = EntitiesGroupDelta(enforced_deltas, False)
-        non_enforced_egd = EntitiesGroupDelta(non_enforced_deltas, True)
+        enforced_egd = EntitiesGroupDelta.from_entity_group_deltas(enforced_deltas,
+                                                                   False)
+        non_enforced_egd = EntitiesGroupDelta.from_entity_group_deltas(non_enforced_deltas,
+                                                                       True)
 
         return (enforced_egd, non_enforced_egd)

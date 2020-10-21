@@ -22,7 +22,9 @@
 			"prev": [],
 			"deployment": {
 				"eu": {
-					"service_instances": 1,
+					"init_aspects": {
+						"count": 1
+					},
 					"platform": {
 						"provider": "aws",
 						"node_type": "t3.xlarge",
@@ -53,7 +55,9 @@
 			"prev": ["frontend"],
 			"deployment": {
 				"eu": {
-					"service_instances": 1,
+					"init_aspects": {
+						"count": 1
+					},
 					"platform": {
 						"provider": "aws",
 						"node_type": "t3.xlarge",
@@ -84,7 +88,9 @@
 			"prev": ["appserver"],
 			"deployment": {
 				"eu": {
-					"service_instances": 1,
+					"init_aspects": {
+						"count": 1
+					},
 					"platform": {
 						"provider": "aws",
 						"node_type": "t3.xlarge",

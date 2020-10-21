@@ -133,7 +133,7 @@ class ApplicationModel:
                     system_requirements = ResourceRequirements(ErrorChecker.key_check_and_load('system_requirements', service_config, 'service', service_name))
                     entity_instance_requirements[service_name] = system_requirements
 
-                    init_service_instances_regionalized = {}
+                    init_service_aspects_regionalized = {}
                     node_infos_regionalized = {}
                     node_counts_regionalized = {}
                     deployment = ErrorChecker.key_check_and_load('deployment', service_config, 'service', service_name)
@@ -141,9 +141,7 @@ class ApplicationModel:
                     for region_name, region_deployment_conf in deployment.items():
                         service_regions.append(region_name)
 
-                        service_instances = ErrorChecker.key_check_and_load('service_instances', region_deployment_conf, 'service', service_name)
-                        ErrorChecker.value_check('service_instances', service_instances, operator.gt, 0, ['service {}'.format(service_name)])
-                        init_service_instances_regionalized[region_name] = service_instances
+                        init_service_aspects_regionalized[region_name] = ErrorChecker.key_check_and_load('init_aspects', region_deployment_conf, 'service', service_name)
 
                         platform_info = ErrorChecker.key_check_and_load('platform', region_deployment_conf, 'service', service_name)
                         provider = ErrorChecker.key_check_and_load('provider', platform_info, 'service', service_name)
@@ -158,7 +156,7 @@ class ApplicationModel:
                     regions.extend(service_regions)
 
                     self.deployment_model.add_service_deployment(service_name,
-                                                                 init_service_instances_regionalized,
+                                                                 init_service_aspects_regionalized,
                                                                  node_infos_regionalized,
                                                                  node_counts_regionalized)
 

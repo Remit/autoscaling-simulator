@@ -119,7 +119,7 @@ class LinkBuffer:
 
             req.waiting_on_link_left -= simulation_step
             req.network_time += simulation_step
-            if req.waiting_on_link_left <= 0:
+            if req.waiting_on_link_left <= pd.Timedelta(0):
                 if (capacity > self.reqs_cnt[req.request_type]) and (req.cumulative_time < self.request_processing_infos[req.request_type].timeout):
                     self.requests.append(req)
                     self.used_throughput_MBps -= self._req_occupied_MBps(req)
@@ -242,5 +242,5 @@ class LinkBuffer:
         else:
             req_size_b = self.request_processing_infos[req.request_type].response_size_b
         req_size_b_mb = req_size_b / (1024 * 1024)
-        req_size_b_MBps = req_size_b_mb * (self.latency / 1000) # taking channel for that long
+        req_size_b_MBps = req_size_b_mb * self.latency.seconds # taking channel for that long
         return req_size_b_MBps

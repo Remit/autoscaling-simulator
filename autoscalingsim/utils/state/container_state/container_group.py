@@ -233,9 +233,10 @@ class ContainerGroupDelta:
     """
 
     def __init__(self,
-                 container_group,
-                 sign = 1,
-                 in_change = True):
+                 container_group : HomogeneousContainerGroup,
+                 sign : int = 1,
+                 in_change : bool = True,
+                 virtual : bool = False):
 
         if not isinstance(container_group, HomogeneousContainerGroup):
             raise TypeError('The provided parameter is not of {} type'.format(HomogeneousContainerGroup.__name__))
@@ -249,7 +250,14 @@ class ContainerGroupDelta:
         self.in_change = in_change
         # Signifies whether the delta should be considered during the enforcing or not.
         # The aim of 'virtual' property is to keep the connection between the deltas after the enforcement.
-        self.virtual = False
+        self.virtual = virtual
+
+    def copy(self):
+
+        return ContainerGroupDelta(self.container_group,
+                                   self.sign,
+                                   self.in_change,
+                                   self.virtual)
 
     def enforce(self):
 
@@ -265,18 +273,18 @@ class ContainerGroupDelta:
 
         return self.container_group.container_info.node_type
 
-    def to_be_scaled_down(self):
+    #def to_be_scaled_down(self):
 
-        entities_instances_counts_after_change = {}
-        if self.container_group.entities_state.entities_instances_counts.keys() == self.container_group.entities_state.in_change_entities_instances_counts.keys():
-            for entity_instances_count, in_change_entity_instances_count in zip(self.container_group.entities_state.entities_instances_counts.items(),
-                                                                                self.container_group.entities_state.in_change_entities_instances_counts.items()):
-                entities_instances_counts_after_change[entity_instances_count[0]] = entity_instances_count[1] + in_change_entity_instances_count[1]
+    #    entities_instances_counts_after_change = {}
+    #    if self.container_group.entities_state.entities_instances_counts.keys() == self.container_group.entities_state.in_change_entities_instances_counts.keys():
+    #        for entity_instances_count, in_change_entity_instances_count in zip(self.container_group.entities_state.entities_instances_counts.items(),
+    #                                                                            self.container_group.entities_state.in_change_entities_instances_counts.items()):
+    #            entities_instances_counts_after_change[entity_instances_count[0]] = entity_instances_count[1] + in_change_entity_instances_count[1]
 
-        if len(entities_instances_counts_after_change) > 0:
-            return all(count_after_change == 0 for count_after_change in entities_instances_counts_after_change.values())
+    #    if len(entities_instances_counts_after_change) > 0:
+    #        return all(count_after_change == 0 for count_after_change in entities_instances_counts_after_change.values())
 
-        return False
+    #    return False
 
 class GeneralizedDelta:
 

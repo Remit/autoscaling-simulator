@@ -289,7 +289,7 @@ class ServiceStateRegionalized(ScaledEntityState):
         if not req.region_name in self.region_states:
             raise ValueError('Received request with an unknown region name: {}'.format(req.region_name))
 
-        self.region_states[region_name].add_request(req)
+        self.region_states[req.region_name].add_request(req)
 
     def step(self,
              cur_timestamp : pd.Timestamp,

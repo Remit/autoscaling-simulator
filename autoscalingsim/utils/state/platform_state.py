@@ -52,7 +52,7 @@ class PlatformState:
             raise TypeError('An attempt to add an entity of type {} to the {}'.format(state_delta.__class__.__name__,
                                                                                       self.__class__.__name__))
 
-        for regional_delta in state_delta:
+        for region_name, regional_delta in state_delta:
             if not regional_delta.region_name in modified_state.regions:
                 modified_state.regions[region_name] = Region(region_name)
             modified_state.regions[region_name] += regional_delta

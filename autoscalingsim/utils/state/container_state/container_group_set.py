@@ -55,7 +55,7 @@ class HomogeneousContainerGroupSet:
                 regional_delta : RegionalDelta):
 
         homogeneous_groups = self.copy()
-        if isinstance(delta, RegionalDelta):
+        if isinstance(regional_delta, RegionalDelta):
             for generalized_delta in regional_delta:
                 homogeneous_groups._add_groups(generalized_delta)
         else:
