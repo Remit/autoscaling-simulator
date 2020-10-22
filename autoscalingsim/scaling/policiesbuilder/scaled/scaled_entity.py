@@ -3,7 +3,7 @@ import collections
 from . import scaling_aggregation
 
 from ....utils.state.statemanagers import StateReader
-from ..scaling_policy_conf import ScalingPolicyConfiguration
+from .scaled_entity_settings import ScaledEntityScalingSettings
 
 class ScaledEntity:
 
@@ -19,7 +19,7 @@ class ScaledEntity:
     def __init__(self,
                  scaled_entity_class : str,
                  scaled_entity_name : str,
-                 scaling_setting_for_entity : ScalingPolicyConfiguration,
+                 scaling_setting_for_entity : ScaledEntityScalingSettings,
                  state_reader : StateReader,
                  regions : list):
 
@@ -49,11 +49,13 @@ class ScaledEntity:
             # all the metrics compute their scaling effects independently, and the cumulative
             # scaling effect is the aggregated value of these effects (e.g. majority vote)
             if not scaling_setting_for_entity.scaling_effect_aggregation_rule_name is None:
-                self.scaling_effect_aggregation_rule = scaling_aggregation.Registry.get(scaling_setting_for_entity.scaling_effect_aggregation_rule_name)(self.metrics_by_priority)
+                self.scaling_effect_aggregation_rule = scaling_aggregation.Registry \
+                                                        .get(scaling_setting_for_entity.scaling_effect_aggregation_rule_name)(self.metrics_by_priority)
         else:
             self.scaling_effect_aggregation_rule = None
 
     def reconcile_desired_state(self):
+
         desired_states_timeline = None
         if not self.scaling_effect_aggregation_rule is None:
             desired_states_timeline = self.scaling_effect_aggregation_rule()

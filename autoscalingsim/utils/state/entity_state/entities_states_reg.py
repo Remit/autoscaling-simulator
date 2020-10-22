@@ -22,11 +22,11 @@ class EntitiesStatesRegionalized:
         result = self.copy()
         if not isinstance(other_regionalized_states, result.__class__):
             if not isinstance(other_regionalized_states, dict):
-                raise TypeError('Unknown type of parameter to add to {}: {}'.format(result.__class__.__name__,
-                                                                                    other_regionalized_states.__class__.__name__))
+                raise TypeError('Unknown type of parameter to add to {}: {}'.format(result.__class__,
+                                                                                    type(other_regionalized_states)))
             for region_name, state in other_regionalized_states.items():
                 if not isinstance(state, EntitiesState):
-                    raise TypeError('Unknown type of parameters in dict: {}'.format(state.__class__.__name__))
+                    raise TypeError('Unknown type of parameters in dict: {}'.format(state.__class__))
 
                 result.add_state(region_name, state)
 
@@ -44,8 +44,8 @@ class EntitiesStatesRegionalized:
                   entities_state : EntitiesState):
 
         if not isinstance(entities_state, EntitiesState):
-            raise TypeError('An attempt to add to {} an operand of a wrong type {}'.format(self.__class__.__name__,
-                                                                                           entities_state.__class__.__name__))
+            raise TypeError('An attempt to add to {} an operand of a wrong type {}'.format(self.__class__,
+                                                                                           type(entities_state)))
 
         if not region_name in self._entities_states_per_region:
             self._entities_states_per_region[region_name] = EntitiesState()

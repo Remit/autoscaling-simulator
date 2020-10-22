@@ -1,4 +1,5 @@
 import numbers
+import numpy as np
 
 from . import scaling_aspects
 
@@ -30,24 +31,33 @@ class EntityGroup:
                     self.scaling_aspects[aspect_name] = aspect_value
                 elif isinstance(aspect_value, numbers.Number):
                     self.scaling_aspects[aspect_name] = scaling_aspects.Registry.get(aspect_name)(aspect_value)
-        #elif isinstance(aspects_vals, int):
-        #    self.scaling_aspects['count'] = scaling_aspects.Count(aspects_vals)
+                else:
+                    raise TypeError('Unexpected type of scaling aspects values to initialize the {}'.format(self.__class__.__name__))
 
     def __add__(self,
-                other_entity_group : 'EntityGroup'):
+                other_group_or_delta):
 
-        if not isinstance(other_entity_group, self.__class__):
-            raise TypeError('Incorrect type of operand to add to {}: {}'.format(self.__class__.__name__, other_entity_group.__class__.__name__))
+        to_add = None
+        if isinstance(other_group_or_delta, EntityGroup):
+            to_add = other_group_or_delta.scaling_aspects
+        elif isinstance(other_group_or_delta, EntityGroupDelta):
+            to_add = self.aspects_deltas
+        else:
+            raise TypeError('Incorrect type of operand to add to {}: {}'.format(self.__class__.__name__,
+                                                                                type(other_group_or_delta)))
 
-        if self.entity_name != other_entity_group.entity_name:
-            raise ValueError('Non-matching names of EntityGroups to add: {} and {}'.format(self.entity_name, other_entity_group.entity_name))
+        if self.entity_name != other_group_or_delta.entity_name:
+            raise ValueError('Non-matching names of operands to add: {} and {}'.format(self.entity_name,
+                                                                                       other_group_or_delta.entity_name))
 
-        new_aspects = self.scaling_aspects.copy()
-        for aspect_name, aspect in self.scaling_aspects.items():
-            if aspect_name in other_entity_group.scaling_aspects:
-                new_aspects[aspect_name] += other_entity_group.scaling_aspects[aspect_name]
+        new_group = self.copy()
+        for aspect_name in to_add:
+            if aspect_name in new_group.scaling_aspects:
+                new_group.scaling_aspects[aspect_name] += to_add[aspect_name]
+            else:
+                new_group.scaling_aspects[aspect_name] = to_add[aspect_name]
 
-        return EntityGroup(self.entity_name, new_aspects)
+        return new_group
 
     def __mul__(self,
                 multiplier : int):
@@ -65,11 +75,13 @@ class EntityGroup:
                      other_entity_group : 'EntityGroup'):
 
         """
-        Returns the list of scaling aspects...
+        Returns the list of values. Each value corresponds to a scaling aspect and
+        signifies how many times does the scaling aspect of the current group covers
+        the corresponding scaling aspect of the parameter.
         """
 
         if not isinstance(other_entity_group, EntityGroup):
-            raise TypeError('An attempt to floor-divide by an unknown type {}'.format(other_entity_group.__class__.__name__))
+            raise TypeError('An attempt to floor-divide by an unknown type {}'.format(type(other_entity_group)))
 
         division_results = []
         for aspect_name, aspect_value in self.scaling_aspects.items():
@@ -82,10 +94,12 @@ class EntityGroup:
                 other_entity_group):
 
         if not isinstance(other_entity_group, self.__class__):
-            raise TypeError('Incorrect type of operand to take modulo of {}: {}'.format(self.__class__.__name__, other_entity_group.__class__.__name__))
+            raise TypeError('Incorrect type of operand to take modulo of {}: {}'.format(self.__class__.__name__,
+                                                                                        type(other_entity_group)))
 
         if self.entity_name != other_entity_group.entity_name:
-            raise ValueError('Non-matching names of EntityGroups to take modulo: {} and {}'.format(self.entity_name, other_entity_group.entity_name))
+            raise ValueError('Non-matching names of EntityGroups to take modulo: {} and {}'.format(self.entity_name,
+                                                                                                   other_entity_group.entity_name))
 
         new_aspects = self.scaling_aspects.copy()
         for aspect_name, aspect in self.scaling_aspects.items():
@@ -96,7 +110,8 @@ class EntityGroup:
 
     def copy(self):
 
-        return EntityGroup(self.entity_name, self.scaling_aspects.copy())
+        return EntityGroup(self.entity_name,
+                           self.scaling_aspects.copy())
 
     def to_delta(self,
                  direction = 1):
@@ -106,8 +121,7 @@ class EntityGroup:
         Assumes scale up direction.
         """
 
-        return EntityGroupDelta(self.copy(),
-                                direction)
+        return EntityGroupDelta.from_group(self, direction)
 
     def update_aspect(self,
                       aspect_name : str,
@@ -143,89 +157,98 @@ class EntityGroupDelta:
         if not isinstance(entity_group, EntityGroup):
             raise TypeError('The provided argument is not of EntityGroup type: {}'.format(entity_group.__class__.__name__))
 
+        aspects_vals_raw_numbers = {}
+        for aspect_name, aspect_value in entity_group.scaling_aspects.items():
+            aspects_vals_raw_numbers[aspect_name] = sign * aspect_value.get_value()
+
         return EntityGroupDelta(entity_group.entity_name,
-                                entity_group.scaling_aspects,
-                                sign)
+                                aspects_vals_raw_numbers)
 
     def __init__(self,
                  entity_name : str,
-                 aspects_vals : dict,
-                 sign = 1):
+                 aspects_vals : dict):
 
-        self.entity_group = EntityGroup(entity_name,
-                                        aspects_vals)
-        self.sign = sign
-
-
+        self.entity_name = entity_name
+        self.aspects_deltas = {}
+        for aspect_name, aspect_value in aspects_vals.items():
+            if isinstance(aspect_value, scaling_aspects.ScalingAspect):
+                self.aspects_deltas[aspect_name] = scaling_aspects.ScalingAspectDelta(aspect_value)
+            elif isinstance(aspect_value, numbers.Number):
+                self.aspects_deltas[aspect_name] = scaling_aspects.ScalingAspectDelta(scaling_aspects.Registry.get(aspect_name)(abs(aspect_value)),
+                                                                                      np.sign(aspect_value))
+            else:
+                raise TypeError('Unexpected type of scaling aspects values to initialize the {}'.format(self.__class__.__name__))
 
     def __add__(self,
-                other_delta):
+                other_delta : EntityGroupDelta):
 
         if not isinstance(other_delta, EntityGroupDelta):
             raise TypeError('The operand to be added is not of the expected type {}: instead got {}'.format(self.__class__.__name__,
-                                                                                                            other_delta.__class__.__name__))
+                                                                                                            type(other_delta)))
 
-        if self.entity_group.entity_name != other_delta.entity_group.entity_name:
+        if self.entity_name != other_delta.entity_name:
             raise ValueError('An attempt to add {} with different names: {} and {}'.format(self.__class__.__name__,
-                                                                                           self.entity_group.entity_name,
-                                                                                           other_delta.entity_group.entity_name))
+                                                                                           self.entity_name,
+                                                                                           other_delta.entity_name))
 
-        new_entity_instances_count = self.sign * self.entity_group.entity_instances_count + \
-                                     other_delta.sign * other_delta.entity_group.entity_instances_count
-        resulting_delta = None
-        if new_entity_instances_count < 0:
-            resulting_delta = EntityGroupDelta(self.entity_group.entity_name,
-                                               abs(new_entity_instances_count),
-                                               -1)
-        elif new_entity_instances_count > 0:
-            resulting_delta = EntityGroupDelta(self.entity_group.entity_name,
-                                               new_entity_instances_count)
+        new_delta = self.copy()
+        for aspect_name in other_delta.aspects_deltas:
+            if aspect_name in new_delta.aspects_deltas:
+                new_delta.aspects_deltas[aspect_name] += other_delta.aspects_deltas[aspect_name]
+            else:
+                new_delta.aspects_deltas[aspect_name] = other_delta.aspects_deltas[aspect_name]
 
-        return resulting_delta
+        return new_delta
 
     def copy(self):
 
-        return EntityGroupDelta.from_group(self.entity_group,
-                                           self.sign)
+        return EntityGroupDelta(self.entity_name,
+                                self.to_raw_change())
+
+    def to_raw_change(self):
+
+        aspects_vals_raw_numbers = {}
+        for aspect_name, aspect_delta in self.aspects_deltas.items():
+            aspects_vals_raw_numbers[aspect_name] = aspect_delta.to_raw_change()
+
+        return aspects_vals_raw_numbers
+
+    def to_entity_group(self):
+
+        return EntityGroup(self.entity_name,
+                           self.to_raw_change())
+
 
 class EntitiesGroupDelta:
 
     """
-    Wraps multiple EntityGroupDelta distinguished by the sign and the entity.
+    Wraps multiple EntityGroupDelta distinguished by the entity.
     """
 
     @staticmethod
     def from_entity_group_deltas(deltas : dict,
                                  in_change = True):
 
-        entities_group_delta = EntitiesGroupDelta()
+        entities_group_delta = EntitiesGroupDelta({}, in_change)
         entities_group_delta.deltas = deltas
-        entities_group_delta.in_change = in_change
 
         return entities_group_delta
 
     def __init__(self,
-                 aspects_vals_per_entity : dict = {}):
+                 aspects_vals_per_entity : dict = {},
+                 in_change : bool = True,
+                 virtual : bool = False):
 
         self.deltas = {}
-        self.in_change = True
-
         for entity_name, aspects_vals in aspects_vals_per_entity.items():
 
-            entity_instances_count = ErrorChecker.key_check_and_load('count', aspects_vals, 'entity', entity_name)
-
-            if entity_instances_count < 0:
-                self.deltas[entity_name] = EntityGroupDelta(entity_name,
-                                                            aspects_vals,
-                                                            -1)
-
-            elif entity_instances_count > 0:
-                self.deltas[entity_name] = EntityGroupDelta(entity_name,
-                                                            aspects_vals)
+            self.deltas[entity_name] = EntityGroupDelta(entity_name,
+                                                        aspects_vals)
 
         # Signifies whether the delta should be considered during the enforcing or not.
         # The aim of 'virtual' property is to keep the connection between the deltas after the enforcement.
-        self.virtual = False
+        self.virtual = virtual
+        self.in_change = in_change
 
     def get_entities(self):
 
@@ -240,33 +263,46 @@ class EntitiesGroupDelta:
         return self.deltas[entity_name]
 
     def __add__(self,
-                other_entities_group_delta : 'EntitiesGroupDelta'):
+                other_delta : 'EntitiesGroupDelta'):
 
-        if not isinstance(other_entities_group_delta, EntitiesGroupDelta):
+        if not isinstance(other_delta), EntitiesGroupDelta):
             raise TypeError('The operand to be added is not of the expected type {}: instead got {}'.format(self.__class__.__name__,
-                                                                                                            other_entities_group_delta.__class__.__name__))
+                                                                                                            type(other_delta)))
 
-        if self.in_change != other_entities_group_delta.in_change:
+        if self.in_change != other_delta.in_change:
             raise ValueError('Addition operands differ by the in_change status')
 
-        new_deltas = {}
-        for entity_name, entity_delta in other_entities_group_delta.items():
-
-            if entity_name in self.deltas:
-                new_deltas[entity_name] = entity_delta + self.deltas[entity_name]
+        new_delta = self.copy()
+        for entity_name in other_delta.deltas:
+            if entity_name in new_delta.deltas:
+                new_delta.deltas[entity_name] += other_delta.deltas[entity_name]
             else:
-                new_deltas[entity_name] = entity_delta
+                new_delta.deltas[entity_name] = other_delta.deltas[entity_name]
 
-        return EntitiesGroupDelta(new_deltas, self.in_change)
+        return new_delta
+
+    def copy(self):
+
+        aspects_vals_per_entity = {}
+        for entity_name, delta in self.deltas.items():
+            aspects_vals_per_entity[aspect_name] = delta.to_raw_change()
+
+        return EntitiesGroupDelta(aspects_vals_per_entity,
+                                  self.in_change,
+                                  self.virtual)
 
     def add(self,
-            other_entity_group_delta : EntityGroupDelta):
+            other_delta : EntityGroupDelta):
 
-        self.deltas[other_entity_group_delta.entity_group.entity_name] = other_entity_group_delta
+        if not isinstance(other_delta, EntityGroupDelta):
+            raise TypeError('An attempt to add an object of unknown type {} to the list of deltas in {}'.format(type(other_delta),
+                                                                                                                self.__class__.__name__))
+
+        self.deltas[other_delta.entity_name] = other_delta
 
 
     def enforce(self,
-                entities_lst):
+                entities_lst : list):
 
         """
         Enforces the entity group delta change for entities provided in the list.

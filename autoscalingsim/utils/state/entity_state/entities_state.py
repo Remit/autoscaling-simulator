@@ -19,6 +19,8 @@ class EntitiesState:
                 elif isinstance(group_or_aspects_dict, dict):
                     self.entities_groups[entity_name] = EntityGroup(entity_name,
                                                                     group_or_aspects_dict)
+                else:
+                    raise TypeError('Unknown type of the init parameter: {}'.format(type(groups_or_aspects)))
 
     def __add__(self,
                 entities_state_or_delta):
@@ -32,9 +34,9 @@ class EntitiesState:
         if isinstance(entities_state_or_delta, EntitiesGroupDelta):
             for entity_name, entity_delta in entities_state_or_delta.deltas.items():
                 if entity_name in self.entities_groups:
-                    new_groups[entity_name] = self.entities_groups[entity_name] + entity_delta.sign * entity_delta.entity_group
-                elif (not entity_name in self.entities_groups) and (entity_delta.sign > 0):
-                    new_groups[entity_name] = entity_delta.entity_group
+                    new_groups[entity_name] = self.entities_groups[entity_name] + entity_delta
+                else:
+                    new_groups[entity_name] = entity_delta.to_entity_group()
 
         elif isinstance(entities_state_or_delta, EntitiesState):
             for entity_name, entity_group_to_add in entities_state_or_delta.items():
@@ -43,8 +45,8 @@ class EntitiesState:
                 else:
                     new_groups[entity_name] = entity_group_to_add
         else:
-            raise TypeError('An attempt to add the operand of type {} to the {} when expecting type EntitiesGroupDelta or EntitiesState'.format(entities_to_add.__class__.__name__,
-                                                                                                                                                self.__class__.__name__))
+            raise TypeError('An attempt to add the operand of type {} to the {} when expecting type EntitiesGroupDelta or EntitiesState'.format(entities_to_add.__class__,
+                                                                                                                                                self.__class__))
 
         return EntitiesState(new_groups)
 
@@ -58,8 +60,8 @@ class EntitiesState:
         """
 
         if not isinstance(other_entities_state, self.__class__):
-            raise TypeError('Incorrect type of operand to divide {} by: {}'.format(self.__class__.__name__,
-                                                                                   other_entities_state.__class__.__name__))
+            raise TypeError('Incorrect type of operand to divide {} by: {}'.format(self.__class__,
+                                                                                   type(other_entities_state)))
 
         division_result_raw = {}
         for entity_name, entity_group in self.entities_groups.items():
@@ -79,8 +81,8 @@ class EntitiesState:
         """
 
         if not isinstance(other_entities_state, self.__class__):
-            raise TypeError('Incorrect type of operand to take {} modulo: {}'.format(self.__class__.__name__,
-                                                                                     other_entities_state.__class__.__name__))
+            raise TypeError('Incorrect type of operand to take {} modulo: {}'.format(self.__class__,
+                                                                                     type(other_entities_state)))
 
         remainder_groups = {}
         for entity_name, entity_group in self.entities_groups.items():

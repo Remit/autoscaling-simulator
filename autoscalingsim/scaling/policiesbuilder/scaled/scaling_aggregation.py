@@ -27,7 +27,7 @@ class ScalingEffectAggregationRule(ABC):
     """
 
     def __init__(self,
-                 metrics_by_priority):
+                 metrics_by_priority : dict):
 
         self.metrics_by_priority = metrics_by_priority
 
@@ -45,8 +45,8 @@ class SequentialScalingEffectAggregationRule(ScalingEffectAggregationRule):
     """
 
     def __init__(self,
-                 metrics_by_priority,
-                 expected_deviation_ratio = 0.25):
+                 metrics_by_priority : dict,
+                 expected_deviation_ratio : float = 0.25):
 
         super().__init__(metrics_by_priority)
 
@@ -63,8 +63,9 @@ class SequentialScalingEffectAggregationRule(ScalingEffectAggregationRule):
                 timeline_df = pd.DataFrame(columns = ['datetime', 'value'])
                 timeline_df = timeline_df.set_index('datetime')
                 for timestamp, state in timeline_by_metric.items():
-                    aspect_value = state.get_value(regionalized_metric.region_name,
-                                                   regionalized_metric.scaled_entity_name)
+                    aspect_value = state.get_aspect_value(regionalized_metric.region_name,
+                                                          regionalized_metric.scaled_entity_name,
+                                                          regionalized_metric.aspect_name)
                     df_to_add = pd.DataFrame(data = {'datetime': timestamp, 'value': aspect_value})
                     df_to_add = df_to_add.set_index('datetime')
                     timeline_df = timeline_df.append(df_to_add)
@@ -83,7 +84,7 @@ class ParallelScalingEffectAggregationRule(ScalingEffectAggregationRule):
 
     def __init__(self,
                  metrics_by_priority : dict,
-                 aggregation_op_name : str): # TODO: propagate
+                 aggregation_op_name : str):
 
         super().__init__(metrics_by_priority)
         self.aggregation_op = aggregators.Registry.get(aggregation_op_name)
@@ -143,7 +144,7 @@ class MaxScalingEffectAggregationRule(ParallelScalingEffectAggregationRule):
     """
 
     def __init__(self,
-                 metrics_by_priority):
+                 metrics_by_priority : dict):
 
         super().__init__(metrics_by_priority,
                          'max')
@@ -155,7 +156,7 @@ class MinScalingEffectAggregationRule(ParallelScalingEffectAggregationRule):
     """
 
     def __init__(self,
-                 metrics_by_priority):
+                 metrics_by_priority : dict):
 
         super().__init__(metrics_by_priority,
                          'min')

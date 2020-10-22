@@ -39,7 +39,7 @@ class AdjustmentPolicy:
 
     def adjust(self,
                cur_timestamp : pd.Timestamp,
-               desired_state_per_scaled_entity : dict,
+               desired_state_regionalized_per_timestamp : dict,
                platform_state : PlatformState):
 
         # TODO: adapt
@@ -51,8 +51,21 @@ class AdjustmentPolicy:
         # Computing the delta in scaled entities' scaling aspect
         desired_scaled_entities_scaling_events = {}
         adjusted_desired_scaled_entities_scaling_events = {}
+        prev_entities_state = platform_state.extract_collective_entities_states()
+        # TODO: add implementation for sub to the entities state and regionalized version
+        for timestamp, desired_state_regionalized in desired_state_regionalized_per_timestamp.items():
 
-        for scaled_entity_name, desired_state in desired_state_per_scaled_entity.items():
+            # Rolling subtraction
+            entities_state_delta_on_ts = desired_state_regionalized - prev_entities_state
+
+            # TODO: 3. Convert entities state reg sub result into the dict differences representation:
+            # region -> entity -> ts: +/- aspect_val // with different aspects vals. Then propagate
+            # the aspect-specific handling of cases to the adjusters. default to handle only 'count'
+
+            prev_entities_state = desired_state_regionalized
+
+
+            
 
             scaled_entity_name_search_key = scaled_entity_name
             if not scaled_entity_name_search_key in self.scaling_settings.services_scaling_config:
@@ -81,12 +94,6 @@ class AdjustmentPolicy:
                 desired_state_in_deltas = desired_state_in_deltas[~(desired_state_in_deltas.value == 0)]
 
             desired_scaled_entities_scaling_events[scaled_entity_name] = desired_state_in_deltas
-
-            # Adjusting starting times of the scaled entities based on booting times
-            booting_delta_to_add = self.scaling_model.application_scaling_model.service_scaling_infos[scaled_entity_name].boot_up_ms
-            adjusted_desired_state_in_deltas = desired_state_in_deltas.copy()
-            adjusted_desired_state_in_deltas.index = adjusted_desired_state_in_deltas.index + booting_delta_to_add
-            adjusted_desired_scaled_entities_scaling_events[scaled_entity_name] = adjusted_desired_state_in_deltas
 
         # Determining the desired configuration of the set of nodes according to the
         # adjustment goal (e.g. cost) and the adjustment preference (e.g. specialized

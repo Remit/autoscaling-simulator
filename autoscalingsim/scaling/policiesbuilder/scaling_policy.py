@@ -42,9 +42,10 @@ class ScalingPolicy:
 
     class ScalingState:
 
-        def __init__(self):
+        def __init__(self,
+                     starting_time : pd.Timestamp):
 
-            self.last_sync_timestamp = pd.Timestamp(0)
+            self.last_sync_timestamp = starting_time
 
         def get_val(self,
                     attribute_name):
@@ -65,12 +66,13 @@ class ScalingPolicy:
 
     def __init__(self,
                  config_file : str,
+                 starting_time : pd.Timestamp,
                  scaling_model : ScalingModel,
                  platform_model : PlatformModel):
 
         self.scaling_manager = None
         self.platform_model = platform_model
-        self.state = ScalingPolicy.ScalingState()
+        self.state = ScalingPolicy.ScalingState(starting_time)
 
         if not os.path.isfile(config_file):
             raise ValueError('No {} configuration file found under the path {}'.format(self.__class__.__name__, config_file))

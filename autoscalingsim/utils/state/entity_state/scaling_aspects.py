@@ -4,20 +4,25 @@ class ScalingAspect(ABC):
 
     """
     An abstract interface for various scaling aspects associated with
-    scaled entities.
+    scaled entities. Scaling aspect can only take on non-negative vals.
     """
 
     def __init__(self,
                  name : str,
-                 value : float):
+                 value : float,
+                 minval : float):
 
         self.name = name
-        self.value = value
+        self.value = max(value, minval)
 
     def set_value(self,
                   value : float):
 
         self.value = value
+
+    def get_value(self):
+
+        return self.value
 
     @abstractmethod
     def __add__(self,
@@ -39,6 +44,74 @@ class ScalingAspect(ABC):
                 other_aspect_val):
         pass
 
+class ScalingAspectDelta:
+
+    """
+    Changes to the scaling aspect.
+    Arithmetical operations on objects of this class yield the objects of the same class.
+    """
+
+    def __init__(self,
+                 scaling_aspect : ScalingAspect,
+                 sign : int = 1):
+
+        if not isinstance(scaling_aspect, ScalingAspect):
+            raise TypeError('The provided scaling_aspect argument is not of ScalingAspect type: {}'.format(type(scaling_aspect)))
+        self.scaling_aspect = scaling_aspect
+
+        if not isinstance(sign, int):
+            raise TypeError('The provided sign argument is not of int type: {}'.format(type(sign)))
+        self.sign = sign
+
+    def __add__(self,
+                other_delta : 'ScalingAspectDelta'):
+
+        if not isinstance(other_delta, ScalingAspectDelta):
+            raise TypeError('An attempt to add an object of unknown class to {}: {}'.format(self.__class__,
+                                                                                            type(other_delta)))
+
+        if type(other_delta.scaling_aspect) != type(self.scaling_aspect):
+            raise ValueError('An attempt to add different scaling aspects: {} and {}'.format(type(self.scaling_aspect),
+                                                                                             type(other_delta.scaling_aspect)))
+
+        res_val = self.sign * self.scaling_aspect.get_value() + other_delta.sign * other_delta.scaling_aspect.get_value()
+        if res_val < 0:
+            return ScalingAspectDelta(type(self.scaling_aspect)(abs(res_val)),
+                                      -1)
+        else:
+            return ScalingAspectDelta(type(self.scaling_aspect)(abs(res_val)))
+
+    def __sub__(self,
+                other_delta : 'ScalingAspectDelta'):
+
+        if not isinstance(other_delta, ScalingAspectDelta):
+            raise TypeError('An attempt to subtract an object of unknown class from {}: {}'.format(self.__class__,
+                                                                                                   type(other_delta)))
+
+        self.__add__(ScalingAspectDelta(other_delta.scaling_aspect,
+                                        -other_delta.sign))
+
+    def __mul__(self,
+                scalar : float):
+
+        if not isinstance(scalar, numbers.Number):
+            raise TypeError('An attempt to multiply {} by a non-scalar type {}'.format(self.__class__,
+                                                                                       type(scalar)))
+
+        sign = self.sign
+        if scalar < 0:
+            sign = -sign
+
+        return ScalingAspectDelta(self.scaling_aspect * abs(scalar),
+                                  sign)
+
+    def to_raw_change(self):
+
+        return self.sign * self.scaling_aspect.get_value()
+
+    def get_aspect_type(self):
+        return type(self.scaling_aspect)
+
 class Count(ScalingAspect):
 
     """
@@ -48,29 +121,35 @@ class Count(ScalingAspect):
     def __init__(self,
                  value : float):
 
-        if value < 0:
-            raise ValueError('Count cannot be negative')
-
         super().__init__('count',
-                         value)
+                         value,
+                         0)
 
     def __add__(self,
-                other_aspect_val : 'Count'):
+                other_aspect_or_delta):
 
-        if not isinstance(other_aspect_val, Count):
-            raise TypeError('An attempt to add an object of unknown type {} to {}'.format(other_aspect_val.__class__.__name__,
-                                                                                          self.__class__.__name__))
+        if isinstance(other_aspect_or_delta, Count):
+            return Count(self.value + other_aspect_or_delta.get_value())
+        elif isinstance(other_aspect_or_delta, ScalingAspectDelta):
+            if self.__class__ != other_aspect_or_delta.get_aspect_type():
+                raise ValueError('An attempt to add different scaling aspects: {} and {}'.format(self.__class__,
+                                                                                                 other_aspect_or_delta.get_aspect_type()))
 
-        return Count(self.value + other_aspect_val.value)
+            return Count(self.value + other_aspect_or_delta.to_raw_change())
+        else:
+            raise TypeError('An attempt to add an object of unknown type {} to {}'.format(type(other_aspect_or_delta),
+                                                                                          self.__class__))
 
     def __sub__(self,
-                other_aspect_val : 'Count'):
+                other_aspect_or_delta):
 
-        if not isinstance(other_aspect_val, Count):
-            raise TypeError('An attempt to subtract an object of unknown type {} from {}'.format(other_aspect_val.__class__.__name__,
-                                                                                                 self.__class__.__name__))
-
-        return Count(self.value - other_aspect_val.value)
+        if isinstance(other_aspect_or_delta, Count):
+            return self.__add__(ScalingAspectDelta(other_aspect_or_delta, -1))
+        elif isinstance(other_aspect_or_delta, ScalingAspectDelta):
+            return self.__add__(other_aspect_or_delta)
+        else:
+            raise TypeError('An attempt to subtract an object of unknown type {} from {}'.format(type(other_aspect_or_delta),
+                                                                                                 self.__class__))
 
     def __mul__(self,
                 scalar : int):
@@ -84,8 +163,8 @@ class Count(ScalingAspect):
                 other_aspect_val : 'Count'):
 
         if not isinstance(other_aspect_val, Count):
-            raise TypeError('An attempt to perform modulo operation on {} with an object of unknown type {}'.format(self.__class__.__name__,
-                                                                                                                    other_aspect_val.__class__.__name__))
+            raise TypeError('An attempt to perform modulo operation on {} with an object of unknown type {}'.format(self.__class__,
+                                                                                                                    other_aspect_val.__class__))
 
         return Count(self.value % other_aspect_val.value)
 
