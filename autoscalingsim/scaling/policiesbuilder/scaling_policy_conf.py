@@ -61,35 +61,17 @@ class ScalingPolicyConfiguration:
                         metric_name = ErrorChecker.key_check_and_load('metric_name', metric_description_json, service_key, service_name)
 
                         # TODO: think of non-obligatory parameters that can be identified as none
-                        values_filter_conf = self._conf_obj_check(metric_description_json,
-                                                                  'values_filter_conf',
-                                                                  ValuesFilter)
-                        values_aggregator_conf = self._conf_obj_check(metric_description_json,
-                                                                     'values_aggregator_conf',
-                                                                      ValuesAggregator)
-                        stabilizer_conf = self._conf_obj_check(metric_description_json,
-                                                               'stabilizer_conf',
-                                                               Stabilizer)
-                        forecaster_conf = self._conf_obj_check(metric_description_json,
-                                                               'forecaster_conf',
-                                                               MetricForecaster)
-
-                        capacity_adaptation_type = MetricDescription.config_check(metric_description_json,
-                                                                                  'capacity_adaptation_type')
-                        timing_type = MetricDescription.config_check(metric_description_json,
-                                                                     'timing_type')
-
-                        target_value = self._conf_numeric_check(metric_description_json,
-                                                                'target_value',
-                                                                1.0)
-                        priority = self._conf_numeric_check(metric_description_json,
-                                                            'priority')
-                        initial_max_limit = self._conf_numeric_check(metric_description_json,
-                                                                     'initial_max_limit')
-                        initial_min_limit = self._conf_numeric_check(metric_description_json,
-                                                                     'initial_min_limit')
-                        initial_entity_representation_in_metric = self._conf_numeric_check(metric_description_json,
-                                                                                           'initial_entity_representation_in_metric')
+                        values_filter_conf = ErrorChecker.key_check_and_load('values_filter_conf', metric_description_json, service_key, service_name)
+                        values_aggregator_conf = ErrorChecker.key_check_and_load('values_aggregator_conf', metric_description_json, service_key, service_name)
+                        stabilizer_conf = ErrorChecker.key_check_and_load('stabilizer_conf', metric_description_json, service_key, service_name)
+                        forecaster_conf = ErrorChecker.key_check_and_load('forecaster_conf', metric_description_json, service_key, service_name)
+                        capacity_adaptation_type = ErrorChecker.key_check_and_load('capacity_adaptation_type', metric_description_json, service_key, service_name)
+                        timing_type = ErrorChecker.key_check_and_load('timing_type', metric_description_json, service_key, service_name)
+                        target_value = ErrorChecker.key_check_and_load('target_value', metric_description_json, service_key, service_name)
+                        priority = ErrorChecker.key_check_and_load('priority', metric_description_json, service_key, service_name)
+                        initial_max_limit = ErrorChecker.key_check_and_load('initial_max_limit', metric_description_json, service_key, service_name)
+                        initial_min_limit = ErrorChecker.key_check_and_load('initial_min_limit', metric_description_json, service_key, service_name)
+                        initial_entity_representation_in_metric = ErrorChecker.key_check_and_load('initial_entity_representation_in_metric', metric_description_json, service_key, service_name)
 
                         metric_descr = MetricDescription(scaled_entity_name,
                                                          scaled_aspect_name,
@@ -120,33 +102,3 @@ class ScalingPolicyConfiguration:
 
             except json.JSONDecodeError:
                 raise ValueError('The config file {} is an invalid JSON.'.format(config_file))
-
-    def _conf_numeric_check(self,
-                            metric_description_json,
-                            conf_key,
-                            default_value = 0):
-
-        numeric_conf = default_value
-        if conf_key in metric_description_json:
-            numeric_conf = metric_description_json[conf_key]
-
-            if not isinstance(numeric_conf, numbers.Number):
-                raise ValueError('{} is not a number: {}'.format(conf_key, numeric_conf))
-
-            if numeric_conf < 0:
-                raise ValueError('{} should be positive or zero, provided: {}'.format(conf_key, numeric_conf))
-
-        return numeric_conf
-
-    def _conf_obj_check(self,
-                        metric_description_json,
-                        conf_key,
-                        checker,
-                        default_value = None):
-
-        obj_conf = None
-        if conf_key in metric_description_json:
-            obj_conf = metric_description_json[conf_key]
-            checker.config_check(obj_conf)
-
-        return obj_conf

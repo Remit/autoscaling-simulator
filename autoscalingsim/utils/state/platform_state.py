@@ -141,31 +141,31 @@ class PlatformState:
                            True)
 
     # TODO: consider deleting
-    #def update(self,
-    #           homogeneous_groups_deltas_per_region,
-    #           is_virtual = False):
+    def update(self,
+               homogeneous_groups_deltas_per_region,
+               is_virtual = False):
 
-    #    """
-    #    Invokes updates of homogeneous groups for each region present in the state.
-    #    If the region is not yet in this state, then it is created from the given
-    #    homogeneous groups.
+        """
+        Invokes updates of homogeneous groups for each region present in the state.
+        If the region is not yet in this state, then it is created from the given
+        homogeneous groups.
 
-    #    Changes the state if is_virtual == False.
-    #    """
+        Changes the state if is_virtual == False.
+    """
 
-    #    state_to_update = self
-    #    if is_virtual:
-    #        state_to_update = PlatformState(self.regions.copy())
+        state_to_update = self
+        if is_virtual:
+            state_to_update = PlatformState(self.regions.copy())
 
-    #    for region_name, homogeneous_groups_deltas in homogeneous_groups_deltas_per_region:
-    #        if region_name in state_to_update.regions:
-    #            state_to_update.regions[region_name].update_groups(homogeneous_groups_deltas)
-    #        else:
-    #            # Adding a new region
-    #            state_to_update.regions[region_name] = Region(region_name,
-    #                                                          homogeneous_groups_deltas)
+        for region_name, homogeneous_groups_deltas in homogeneous_groups_deltas_per_region:
+            if region_name in state_to_update.regions:
+                state_to_update.regions[region_name].update_groups(homogeneous_groups_deltas)
+            else:
+                # Adding a new region
+                state_to_update.regions[region_name] = Region(region_name,
+                                                              homogeneous_groups_deltas)
 
-    #    return state_to_update
+        return state_to_update
 
     # TODO: consider deleting
     #def finish_change_for_entities(self,

@@ -75,22 +75,6 @@ class MetricDescription:
                                          self.initial_entity_representation_in_metric,
                                          self.state_reader)
 
-    @staticmethod
-    def config_check(config_raw,
-                     name_to_check):
-
-        config_res = MetricDescription.reference_configs_dict[name_to_check][0] # default
-        if name_to_check in config_raw:
-            if config_raw[name_to_check] in MetricDescription.reference_configs_dict[name_to_check]:
-                config_res = config_raw[name_to_check]
-            else:
-                raise ValueError('Value {} of the config parameter {} is unknown for class {}'.format(config_raw[name_to_check],
-                                                                                                      name_to_check,
-                                                                                                      __class__.__name__))
-
-        return config_res
-
-
 class ScalingMetricRegionalized:
 
     """

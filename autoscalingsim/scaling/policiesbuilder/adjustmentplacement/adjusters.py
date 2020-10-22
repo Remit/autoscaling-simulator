@@ -89,7 +89,7 @@ class Adjuster(ABC):
         """
 
         timeline_of_unmet_changes = TimelineOfDesiredEntitiesChanges(self.combiner,
-                                                                     entities_scaling_events,
+                                                                     entities_scaling_events,# TODO: fix on init, consider aspects
                                                                      cur_timestamp)
         timeline_of_deltas = DeltaTimeline(self.platform_scaling_model,
                                            self.application_scaling_model,
@@ -97,7 +97,8 @@ class Adjuster(ABC):
         ts_of_unmet_change, unmet_change = timeline_of_unmet_changes.next()
         in_work_state = current_state
 
-        while not unmet_change is None:
+        while not unmet_change is None: # TODO: should it be while???
+            # TODO: unmet_change now per aspect!!!
             # 1. We try to accommodate the unmet_change on the existing containers.
             # This may result in the scale down. The scale down is performed in such
             # a way that the largest possible group of unused containers is removed.
@@ -115,7 +116,7 @@ class Adjuster(ABC):
 
                 ts_next = timeline_of_unmet_changes.peek(ts_of_unmet_change)
                 state_duration_h = (ts_next - ts_of_unmet_change) / pd.Timedelta(1, unit = 'h')
-                unmet_change_state = EntitiesStatesRegionalized(unmet_change)
+                unmet_change_state = EntitiesStatesRegionalized(unmet_change) # TODO: check
 
                 # 2.a: Addition of new containers
                 state_simple_addition_deltas, state_score_simple_addition = self.desired_change_calculator(unmet_change_state,
