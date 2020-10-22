@@ -54,9 +54,9 @@ class Adjuster(ABC):
                                                                  scaled_entity_instance_requirements_by_entity)
 
     def adjust(self,
-               cur_timestamp,
-               entities_scaling_events, # TODO: propagate per region
-               current_state):
+               cur_timestamp : pd.Timestamp,
+               entities_scaling_events : dict,
+               current_state : PlatformState):
 
         """
         Implements the collaborative platform and application adjustment logic,
@@ -102,6 +102,7 @@ class Adjuster(ABC):
             # This may result in the scale down. The scale down is performed in such
             # a way that the largest possible group of unused containers is removed.
             # Otherwise, only the number of entities is affected.
+            # !!!! TODO: propagate the aspect-specific handling of cases to the adjusters. default to handle only 'count'
             in_work_state_delta, unmet_change = in_work_state.compute_soft_adjustment(unmet_change,
                                                                                       self.scaled_entity_instance_requirements_by_entity)
             timeline_of_deltas.add_state_delta(ts_of_unmet_change, in_work_state_delta)

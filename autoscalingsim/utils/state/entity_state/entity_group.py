@@ -342,6 +342,14 @@ class EntitiesGroupDelta:
 
         self.deltas[other_delta.entity_name] = other_delta
 
+    def extract_raw_scaling_aspects_changes(self):
+
+        raw_representation = {}
+        for entity_name, entity_delta in self.deltas.items():
+            raw_representation[entity_name] = entity_delta.to_raw_change()
+
+        return raw_representation
+
 
     def enforce(self,
                 entities_lst : list):
