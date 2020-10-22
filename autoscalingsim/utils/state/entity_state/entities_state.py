@@ -13,7 +13,7 @@ class EntitiesState:
 
         self.entities_groups = {}
         if len(groups_or_aspects) > 0:
-            for entity_name, group_or_aspects_dict in entities_aspects_vals.items():
+            for entity_name, group_or_aspects_dict in groups_or_aspects.items():
                 if isinstance(group_or_aspects_dict, EntityGroup):
                     self.entities_groups[entity_name] = group_or_aspects_dict
                 elif isinstance(group_or_aspects_dict, dict):
@@ -22,27 +22,49 @@ class EntitiesState:
                 else:
                     raise TypeError('Unknown type of the init parameter: {}'.format(type(groups_or_aspects)))
 
+    def copy(self):
+
+        return EntitiesState(self.entities_groups.copy())
+
     def __add__(self,
                 entities_state_or_delta):
 
+        return self._add(entities_state_or_delta, 1)
+
+    def __sub__(self,
+                entities_state_or_delta):
+
+        return self._add(entities_state_or_delta, -1)
+
+    def _add(self,
+             entities_state_or_delta,
+             sign : int):
+
         """
-        Adds an argument to the current Entities State. The argument can be either
-        of an EntitiesGroupDelta class or of an EntitiesState class.
+        Adds an argument to the current Entities State taking sign into account.
+        The argument can be either of an EntitiesGroupDelta class or of an EntitiesState class.
+        Acts as a common part for __add__ and __sub__.
         """
 
         new_groups = {}
         if isinstance(entities_state_or_delta, EntitiesGroupDelta):
             for entity_name, entity_delta in entities_state_or_delta.deltas.items():
                 if entity_name in self.entities_groups:
-                    new_groups[entity_name] = self.entities_groups[entity_name] + entity_delta
-                else:
+                    if sign == -1:
+                        new_groups[entity_name] = self.entities_groups[entity_name] - entity_delta
+                    elif sign == 1:
+                        new_groups[entity_name] = self.entities_groups[entity_name] + entity_delta
+                elif sign == 1:
                     new_groups[entity_name] = entity_delta.to_entity_group()
 
         elif isinstance(entities_state_or_delta, EntitiesState):
             for entity_name, entity_group_to_add in entities_state_or_delta.items():
                 if entity_name in self.entities_groups:
-                    new_groups[entity_name] = self.entities_groups[entity_name] + entity_group_to_add
-                else:
+                    if sign == -1:
+                        new_groups[entity_name] = self.entities_groups[entity_name] - entity_group_to_add
+                    elif sign == 1:
+                        new_groups[entity_name] = self.entities_groups[entity_name] + entity_group_to_add
+                elif sign == 1:
                     new_groups[entity_name] = entity_group_to_add
         else:
             raise TypeError('An attempt to add the operand of type {} to the {} when expecting type EntitiesGroupDelta or EntitiesState'.format(entities_to_add.__class__,

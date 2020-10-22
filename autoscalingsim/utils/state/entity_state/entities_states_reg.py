@@ -17,39 +17,57 @@ class EntitiesStatesRegionalized:
                 self._entities_states_per_region[region_name] = EntitiesState(value)
 
     def __add__(self,
-                other_regionalized_states):
+                other_regionalized_states : 'EntitiesStatesRegionalized'):
+
+        return self._add(other_regionalized_states, 1)
+
+    def __sub__(self,
+                other_regionalized_states : 'EntitiesStatesRegionalized'):
+
+        return self._add(other_regionalized_states, -1)
+
+    def _add(self,
+             other_regionalized_states : 'EntitiesStatesRegionalized',
+             sign : int):
 
         result = self.copy()
-        if not isinstance(other_regionalized_states, result.__class__):
-            if not isinstance(other_regionalized_states, dict):
-                raise TypeError('Unknown type of parameter to add to {}: {}'.format(result.__class__,
-                                                                                    type(other_regionalized_states)))
-            for region_name, state in other_regionalized_states.items():
-                if not isinstance(state, EntitiesState):
-                    raise TypeError('Unknown type of parameters in dict: {}'.format(state.__class__))
-
-                result.add_state(region_name, state)
-
+        other_regionalized_states_items = None
+        if isinstance(other_regionalized_states, EntitiesStatesRegionalized):
+            other_regionalized_states_items = other_regionalized_states
+        elif isinstance(other_regionalized_states, dict):
+            other_regionalized_states_items = other_regionalized_states.items()
         else:
-            for region_name, state in other_regionalized_states.items():
-                result.add_state(region_name, state)
+            raise TypeError('Unknown type of parameter to add to {}: {}'.format(result.__class__,
+                                                                                type(other_regionalized_states)))
+
+        for region_name, state in other_regionalized_states_items:
+            if not region_name in self._entities_states_per_region:
+                result._entities_states_per_region[region_name] = EntitiesState()
+            if sign == -1:
+                result._entities_states_per_region[region_name] -= entities_state
+            elif sign == 1:
+                result._entities_states_per_region[region_name] += entities_state
 
         return result
 
-    def __iter__(self):
-        return EntitiesStatesIterator(self)
+    #def add_state(self,
+    #              region_name : str,
+    #              entities_state : EntitiesState
+    #              sign : int = 1):
 
-    def add_state(self,
-                  region_name : str,
-                  entities_state : EntitiesState):
-
-        if not isinstance(entities_state, EntitiesState):
-            raise TypeError('An attempt to add to {} an operand of a wrong type {}'.format(self.__class__,
+    #    if not isinstance(entities_state, EntitiesState):
+    #        raise TypeError('An attempt to add to {} an operand of a wrong type {}'.format(self.__class__,
                                                                                            type(entities_state)))
 
-        if not region_name in self._entities_states_per_region:
-            self._entities_states_per_region[region_name] = EntitiesState()
-        self._entities_states_per_region[region_name] += entities_state
+    #    if not region_name in self._entities_states_per_region:
+    #        self._entities_states_per_region[region_name] = EntitiesState()
+    #    if sign == -1:
+    #        self._entities_states_per_region[region_name] -= entities_state
+    #    elif sign == 1:
+    #        self._entities_states_per_region[region_name] += entities_state
+
+    def __iter__(self):
+        return EntitiesStatesIterator(self)
 
     def get_value(self,
                   region_name : str,

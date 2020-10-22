@@ -37,24 +37,38 @@ class EntityGroup:
     def __add__(self,
                 other_group_or_delta):
 
+        return self._add(other_group_or_delta, 1)
+
+    def __sub__(self,
+                other_group_or_delta):
+
+        return self._add(other_group_or_delta, -1)
+
+    def _add(self,
+             other_group_or_delta,
+             sign : int):
+
         to_add = None
         if isinstance(other_group_or_delta, EntityGroup):
             to_add = other_group_or_delta.scaling_aspects
         elif isinstance(other_group_or_delta, EntityGroupDelta):
             to_add = self.aspects_deltas
         else:
-            raise TypeError('Incorrect type of operand to add to {}: {}'.format(self.__class__.__name__,
-                                                                                type(other_group_or_delta)))
+            raise TypeError('Incorrect type of operand to _add to {}: {}'.format(self.__class__.__name__,
+                                                                                 type(other_group_or_delta)))
 
         if self.entity_name != other_group_or_delta.entity_name:
-            raise ValueError('Non-matching names of operands to add: {} and {}'.format(self.entity_name,
-                                                                                       other_group_or_delta.entity_name))
+            raise ValueError('Non-matching names of operands to _add: {} and {}'.format(self.entity_name,
+                                                                                        other_group_or_delta.entity_name))
 
         new_group = self.copy()
         for aspect_name in to_add:
             if aspect_name in new_group.scaling_aspects:
-                new_group.scaling_aspects[aspect_name] += to_add[aspect_name]
-            else:
+                if sign == -1:
+                    new_group.scaling_aspects[aspect_name] -= to_add[aspect_name]
+                elif sign == 1:
+                    new_group.scaling_aspects[aspect_name] += to_add[aspect_name]
+            elif sign == 1:
                 new_group.scaling_aspects[aspect_name] = to_add[aspect_name]
 
         return new_group
