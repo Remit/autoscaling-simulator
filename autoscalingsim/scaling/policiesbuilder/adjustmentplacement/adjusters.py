@@ -11,6 +11,7 @@ from ....utils import combiners
 from ....utils.deltarepr.timelines.entities_changes_timeline import TimelineOfDesiredEntitiesChanges
 from ....utils.deltarepr.timelines.delta_timeline import DeltaTimeline
 from ....utils.state.entity_state.entities_states_reg import EntitiesStatesRegionalized
+from ....utils.state.platform_state import PlatformState
 
 class Adjuster(ABC):
 

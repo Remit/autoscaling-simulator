@@ -189,7 +189,7 @@ class EntityGroupDelta:
                 self.aspects_deltas[aspect_name] = scaling_aspects.ScalingAspectDelta(aspect_value)
             elif isinstance(aspect_value, numbers.Number):
                 self.aspects_deltas[aspect_name] = scaling_aspects.ScalingAspectDelta(scaling_aspects.Registry.get(aspect_name)(abs(aspect_value)),
-                                                                                      np.sign(aspect_value))
+                                                                                      int(np.sign(aspect_value)))
             else:
                 raise TypeError('Unexpected type of scaling aspects values to initialize the {}'.format(self.__class__))
 

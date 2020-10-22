@@ -66,6 +66,8 @@ class ApplicationScalingModel:
                 change_enforcement_delay = pd.Timedelta(0, unit = 'ms')
                 entity_group_delta = entities_group_delta.get_entity_group_delta(entity_name)
 
+                # TODO: below -> provide the scaling aspect to the model on init
+                # and use it to take the sign of the correct aspect in the entity group delta
                 if entity_group_delta.sign < 0:
                     change_enforcement_delay = self.service_scaling_infos[entity_name].booting_duration
                 elif entity_group_delta.sign > 0:
