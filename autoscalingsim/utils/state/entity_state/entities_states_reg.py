@@ -57,7 +57,7 @@ class EntitiesStatesRegionalized:
 
     #    if not isinstance(entities_state, EntitiesState):
     #        raise TypeError('An attempt to add to {} an operand of a wrong type {}'.format(self.__class__,
-                                                                                           type(entities_state)))
+    #                                                                                       type(entities_state)))
 
     #    if not region_name in self._entities_states_per_region:
     #        self._entities_states_per_region[region_name] = EntitiesState()
@@ -82,6 +82,10 @@ class EntitiesStatesRegionalized:
 
         return EntitiesStatesRegionalized(self._entities_states_per_region.copy())
 
+    def to_delta(self):
+
+        return EntitiesStatesRegionalizedDelta.from_entities_states(self._entities_states_per_region.copy())
+
 class EntitiesStatesIterator:
 
     """
@@ -103,3 +107,52 @@ class EntitiesStatesIterator:
             return (region_name, self._regionalized_states[region_name])
 
         raise StopIteration
+
+class EntitiesStatesRegionalizedDelta:
+
+    @staticmethod
+    def from_entities_states(entities_states_per_region : dict):
+
+        deltas = {}
+        for region_name, entities_state in entities_states_per_region.items():
+            deltas[region_name] = entities_state.to_delta()
+
+        return EntitiesStatesRegionalizedDelta(deltas)
+
+    def __init__(self,
+                 deltas : dict):
+
+        self.deltas = deltas
+
+    def __add__(self,
+                other_delta : 'EntitiesStatesRegionalizedDelta'):
+
+        pass
+
+    def __sub__(self,
+                other_delta : 'EntitiesStatesRegionalizedDelta'):
+        pass
+
+    def _add(self,
+             other_delta : 'EntitiesStatesRegionalizedDelta',
+             sign : int):
+
+        if not isinstance(other_delta, EntitiesStatesRegionalizedDelta):
+            raise TypeError('The operand to be added is not of the expected type {}: instead got {}'.format(self.__class__,
+                                                                                                            type(other_delta)))
+
+        new_delta = self.copy()
+        for region_name in other_delta.deltas:
+            if region_name in new_delta.deltas:
+                if sign == -1:
+                    new_delta.deltas[region_name] -= other_delta.deltas[region_name]
+                elif sign == 1:
+                    new_delta.deltas[region_name] += other_delta.deltas[region_name]
+            else:
+                new_delta.deltas[region_name] = other_delta.deltas[region_name]
+
+        return new_delta
+
+    def copy(self):
+
+        return EntitiesStatesRegionalizedDelta(self.deltas.copy())

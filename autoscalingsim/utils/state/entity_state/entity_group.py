@@ -32,7 +32,7 @@ class EntityGroup:
                 elif isinstance(aspect_value, numbers.Number):
                     self.scaling_aspects[aspect_name] = scaling_aspects.Registry.get(aspect_name)(aspect_value)
                 else:
-                    raise TypeError('Unexpected type of scaling aspects values to initialize the {}'.format(self.__class__.__name__))
+                    raise TypeError('Unexpected type of scaling aspects values to initialize the {}'.format(self.__class__))
 
     def __add__(self,
                 other_group_or_delta):
@@ -54,7 +54,7 @@ class EntityGroup:
         elif isinstance(other_group_or_delta, EntityGroupDelta):
             to_add = self.aspects_deltas
         else:
-            raise TypeError('Incorrect type of operand to _add to {}: {}'.format(self.__class__.__name__,
+            raise TypeError('Incorrect type of operand to _add to {}: {}'.format(self.__class__,
                                                                                  type(other_group_or_delta)))
 
         if self.entity_name != other_group_or_delta.entity_name:
@@ -77,7 +77,7 @@ class EntityGroup:
                 multiplier : int):
 
         if not isinstance(multiplier, int):
-            raise TypeError('Incorrect type of mulitiplier to multiply {} by: {}'.format(self.__class__.__name__, multiplier.__class__.__name__))
+            raise TypeError('Incorrect type of mulitiplier to multiply {} by: {}'.format(self.__class__, multiplier.__class__))
 
         new_aspects = self.scaling_aspects.copy()
         for aspect_name, aspect in self.scaling_aspects.items():
@@ -108,7 +108,7 @@ class EntityGroup:
                 other_entity_group):
 
         if not isinstance(other_entity_group, self.__class__):
-            raise TypeError('Incorrect type of operand to take modulo of {}: {}'.format(self.__class__.__name__,
+            raise TypeError('Incorrect type of operand to take modulo of {}: {}'.format(self.__class__,
                                                                                         type(other_entity_group)))
 
         if self.entity_name != other_entity_group.entity_name:
@@ -169,7 +169,7 @@ class EntityGroupDelta:
             raise TypeError('The provided sign parameters is not of {} type'.format(int.__name__))
 
         if not isinstance(entity_group, EntityGroup):
-            raise TypeError('The provided argument is not of EntityGroup type: {}'.format(entity_group.__class__.__name__))
+            raise TypeError('The provided argument is not of EntityGroup type: {}'.format(entity_group.__class__))
 
         aspects_vals_raw_numbers = {}
         for aspect_name, aspect_value in entity_group.scaling_aspects.items():
@@ -191,24 +191,38 @@ class EntityGroupDelta:
                 self.aspects_deltas[aspect_name] = scaling_aspects.ScalingAspectDelta(scaling_aspects.Registry.get(aspect_name)(abs(aspect_value)),
                                                                                       np.sign(aspect_value))
             else:
-                raise TypeError('Unexpected type of scaling aspects values to initialize the {}'.format(self.__class__.__name__))
+                raise TypeError('Unexpected type of scaling aspects values to initialize the {}'.format(self.__class__))
 
     def __add__(self,
-                other_delta : EntityGroupDelta):
+                other_delta : 'EntityGroupDelta'):
+
+        return self._add(other_delta, 1)
+
+    def __sub__(self,
+                other_delta : 'EntityGroupDelta'):
+
+        return self._add(other_delta, -1)
+
+    def _add(self,
+             other_delta : 'EntityGroupDelta',
+             sign : int):
 
         if not isinstance(other_delta, EntityGroupDelta):
-            raise TypeError('The operand to be added is not of the expected type {}: instead got {}'.format(self.__class__.__name__,
+            raise TypeError('The operand to be added is not of the expected type {}: instead got {}'.format(self.__class__,
                                                                                                             type(other_delta)))
 
         if self.entity_name != other_delta.entity_name:
-            raise ValueError('An attempt to add {} with different names: {} and {}'.format(self.__class__.__name__,
+            raise ValueError('An attempt to add {} with different names: {} and {}'.format(self.__class__,
                                                                                            self.entity_name,
                                                                                            other_delta.entity_name))
 
         new_delta = self.copy()
         for aspect_name in other_delta.aspects_deltas:
             if aspect_name in new_delta.aspects_deltas:
-                new_delta.aspects_deltas[aspect_name] += other_delta.aspects_deltas[aspect_name]
+                if sign == -1:
+                    new_delta.aspects_deltas[aspect_name] -= other_delta.aspects_deltas[aspect_name]
+                elif sign == 1:
+                    new_delta.aspects_deltas[aspect_name] += other_delta.aspects_deltas[aspect_name]
             else:
                 new_delta.aspects_deltas[aspect_name] = other_delta.aspects_deltas[aspect_name]
 
@@ -279,8 +293,19 @@ class EntitiesGroupDelta:
     def __add__(self,
                 other_delta : 'EntitiesGroupDelta'):
 
-        if not isinstance(other_delta), EntitiesGroupDelta):
-            raise TypeError('The operand to be added is not of the expected type {}: instead got {}'.format(self.__class__.__name__,
+        return self._add(other_delta, 1)
+
+    def __sub__(self,
+                other_delta : 'EntitiesGroupDelta'):
+
+        return self._add(other_delta, -1)
+
+    def _add(self,
+             other_delta : 'EntitiesGroupDelta',
+             sign : int):
+
+        if not isinstance(other_delta, EntitiesGroupDelta):
+            raise TypeError('The operand to be added is not of the expected type {}: instead got {}'.format(self.__class__,
                                                                                                             type(other_delta)))
 
         if self.in_change != other_delta.in_change:
@@ -289,7 +314,10 @@ class EntitiesGroupDelta:
         new_delta = self.copy()
         for entity_name in other_delta.deltas:
             if entity_name in new_delta.deltas:
-                new_delta.deltas[entity_name] += other_delta.deltas[entity_name]
+                if sign == -1:
+                    new_delta.deltas[entity_name] -= other_delta.deltas[entity_name]
+                elif sign == 1:
+                    new_delta.deltas[entity_name] += other_delta.deltas[entity_name]
             else:
                 new_delta.deltas[entity_name] = other_delta.deltas[entity_name]
 
@@ -310,7 +338,7 @@ class EntitiesGroupDelta:
 
         if not isinstance(other_delta, EntityGroupDelta):
             raise TypeError('An attempt to add an object of unknown type {} to the list of deltas in {}'.format(type(other_delta),
-                                                                                                                self.__class__.__name__))
+                                                                                                                self.__class__))
 
         self.deltas[other_delta.entity_name] = other_delta
 
