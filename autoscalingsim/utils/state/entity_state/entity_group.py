@@ -52,7 +52,7 @@ class EntityGroup:
         if isinstance(other_group_or_delta, EntityGroup):
             to_add = other_group_or_delta.scaling_aspects
         elif isinstance(other_group_or_delta, EntityGroupDelta):
-            to_add = self.aspects_deltas
+            to_add = other_group_or_delta.aspects_deltas
         else:
             raise TypeError('Incorrect type of operand to _add to {}: {}'.format(self.__class__,
                                                                                  type(other_group_or_delta)))
@@ -69,7 +69,8 @@ class EntityGroup:
                 elif sign == 1:
                     new_group.scaling_aspects[aspect_name] += to_add[aspect_name]
             elif sign == 1:
-                new_group.scaling_aspects[aspect_name] = to_add[aspect_name]
+                new_group.scaling_aspects[aspect_name] = scaling_aspects.Registry.get(aspect_name)()
+                new_group.scaling_aspects[aspect_name] += to_add[aspect_name]
 
         return new_group
 

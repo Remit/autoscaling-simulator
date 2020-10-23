@@ -99,7 +99,8 @@ class LinkBuffer:
         self.requests_in_transfer = []
         self.used_throughput_MBps = 0
 
-    def update_settings(latency : pd.Timedelta,
+    def update_settings(self,
+                        latency : pd.Timedelta,
                         network_bandwidth_MBps : int):
 
         self.latency = latency

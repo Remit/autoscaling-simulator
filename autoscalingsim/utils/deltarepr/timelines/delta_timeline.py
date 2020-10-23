@@ -93,7 +93,12 @@ class DeltaTimeline:
             for timestamp, state_deltas in timeline_to_consider.items():
                 for state_delta in state_deltas:
                     self.actual_state += state_delta
+                    #for grp in self.actual_state.regions['eu'].homogeneous_groups:
+                    #    print(list(grp.entities_state.entities_groups.keys()))
+                    #print(state_delta.deltas_per_region['eu'].generalized_deltas[1])
+                    #print(state_delta.deltas_per_region['eu'].generalized_deltas[1].container_group_delta.virtual)
 
             self.time_of_last_state_update = borderline_ts_for_updates
+
 
         return self.actual_state

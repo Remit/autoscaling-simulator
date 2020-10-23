@@ -72,18 +72,19 @@ class ScalingManager(StateManager):
         """
 
         # Enforces scaling aspects values on scaled entities
+        #for grp in platform_state.regions['eu'].homogeneous_groups:
+        #    print(list(grp.entities_state.entities_groups.keys()))
         scaling_infos = platform_state.extract_container_groups(False)
-        #print(scaling_infos)
         for region_name, regional_container_groups in scaling_infos.items():
             for container_group in regional_container_groups:
 
-                self.update_placement(entity_name,
-                                      region_name,
-                                      container_group.container_info,
-                                      container_group.containers_count)
-
                 scaling_aspects = container_group.extract_scaling_aspects()
                 for entity_name, aspects in scaling_aspects.items():
+                    self.update_placement(entity_name,
+                                          region_name,
+                                          container_group.container_info,
+                                          container_group.containers_count)
+
                     for aspect_name, value in aspects.items():
                         self.set_aspect_value(entity_name,
                                               region_name,

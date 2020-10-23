@@ -27,7 +27,7 @@ class ScaledEntityState(ABC):
                            obs_value : float):
 
 
-            oldest_obs_timestamp = obs_timestamp - self.averaging_interval_timedelta
+            oldest_obs_timestamp = obs_timestamp - self.averaging_interval
             # Updating everything in the tmp_buffer, i.e. discarding the old data:
             self.tmp_buffer = self.tmp_buffer[self.tmp_buffer.index >= oldest_obs_timestamp]
 

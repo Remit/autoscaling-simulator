@@ -151,7 +151,7 @@ class PlatformState:
         homogeneous groups.
 
         Changes the state if is_virtual == False.
-    """
+        """
 
         state_to_update = self
         if is_virtual:

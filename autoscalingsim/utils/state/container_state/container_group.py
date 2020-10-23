@@ -51,15 +51,17 @@ class HomogeneousContainerGroup:
         if system_capacity is None:
             system_capacity = SystemCapacity(container_info)
         self.system_capacity = system_capacity
-        self.id = hash(self.container_name + \
-                       str(self.containers_count))
+        # TODO: needs modification -- based on entities???
+        self.id = id(self)
+        #self.id = hash(self.container_name + \
+        #               str(self.containers_count))
 
     def extract_scaling_aspects(self):
 
         return self.entities_state.extract_scaling_aspects()
 
-    def __add__(self,
-                entities_group_delta : EntitiesGroupDelta):
+    def add_to_entities_state(self,
+                              entities_group_delta : EntitiesGroupDelta):
 
         self.entities_state += entities_group_delta
 

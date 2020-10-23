@@ -70,17 +70,21 @@ class StateDelta:
                 application_scaling_model : ApplicationScalingModel,
                 delta_timestamp : pd.Timestamp):
 
-        new_timestamped_sd = {}
-        for region_name, regional_delta in self.deltas_per_region.items():
+
+        new_timestamped_rd_ts = {}
+        for regional_delta in self.deltas_per_region.values():
 
             new_timestamped_rd = regional_delta.enforce(platform_scaling_model,
                                                         application_scaling_model,
                                                         delta_timestamp)
 
+            for timestamp, regionalized_deltas in new_timestamped_rd.items():
+                new_timestamped_rd_ts[timestamp] = new_timestamped_rd_ts.get(timestamp, []) + regionalized_deltas
 
-            for timestamp, reg_delta_per_ts in new_timestamped_rd.items():
+        new_timestamped_sd = {}
+        for timestamp, reg_deltas_per_ts in new_timestamped_rd_ts.items():
 
-                new_timestamped_sd[timestamp] = StateDelta([reg_delta_per_ts])
+            new_timestamped_sd[timestamp] = StateDelta(reg_deltas_per_ts)
 
         return new_timestamped_sd
 

@@ -30,7 +30,7 @@ class Service(ScaledEntity):
                  request_processing_infos : dict,
                  scaling_setting_for_service : ScalingPolicyConfiguration,
                  state_reader : StateReader,
-                 averaging_interval : pd.Timedelta = pd.Timedelta(500, unit = 'ms'),
+                 averaging_interval : pd.Timedelta,
                  init_keepalive : pd.Timedelta = pd.Timedelta(-1, unit = 'ms')):
 
         # Initializing scaling-related functionality in the superclass

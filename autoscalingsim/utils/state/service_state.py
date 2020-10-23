@@ -108,25 +108,25 @@ class ServiceState:
         self.node_count = None
         self.system_capacity_reserved = None
 
-    def update_metric(self,
-                      metric_name : str,
-                      timestamp : pd.Timestamp,
-                      value : float):
-        # TODO: redo based on self.processor etc.
-        """
-        Updates the metric if it is present in the state. The method checks
-        what type of metric does the updated metric belong to, e.g. if it
-        is one of the utilization metrics.
-        """
+    #def update_metric(self,
+    #                  metric_name : str,
+    #                  timestamp : pd.Timestamp,
+    #                  value : float):
 
-        if self.utilization.has_metric(metric_name):
-            self.utilization.update(metric_name,
-                                    timestamp,
-                                    value)
-        else:
-            raise ValueError('A metric with the name {} was not found in {} for region {}'.format(metric_name,
-                                                                                                  self.__class__.__name__,
-                                                                                                  self.region_name))
+    #    """
+    #    Updates the metric if it is present in the state. The method checks
+    #    what type of metric does the updated metric belong to, e.g. if it
+    #    is one of the utilization metrics.
+    #    """
+
+    #    if self.utilization.has_metric(metric_name):
+    #        self.utilization.update(metric_name,
+    #                                timestamp,
+    #                                value)
+    #    else:
+    #        raise ValueError('A metric with the name {} was not found in {} for region {}'.format(metric_name,
+    #                                                                                              self.__class__.__name__,
+    #                                                                                              self.region_name))
 
     def update_aspect(self,
                       aspect_name : str,
@@ -149,10 +149,10 @@ class ServiceState:
         cap_taken = self.placed_on_node.resource_requirements_to_capacity(self.resource_requirements)
         self.system_capacity_reserved = cap_taken * self.node_count
 
-        self.upstream_buf.update_settings(self.placed_on_node.latency_ms,
+        self.upstream_buf.update_settings(self.placed_on_node.latency,
                                           self.placed_on_node.network_bandwidth_MBps)
 
-        self.downstream_buf.update_settings(self.placed_on_node.latency_ms,
+        self.downstream_buf.update_settings(self.placed_on_node.latency,
                                             self.placed_on_node.network_bandwidth_MBps)
 
     def get_aspect_value(self,
@@ -273,6 +273,7 @@ class ServiceStateRegionalized(ScaledEntityState):
                  init_keepalive_ms = pd.Timedelta(-1, unit = 'ms')):
 
         self.region_states = {}
+        self.service_name = service_name
         for region_name in service_regions:
             self.region_states[region_name] = ServiceState(service_name,
                                                            init_timestamp,

@@ -13,13 +13,14 @@ class ResourceUtilization:
                  resource_name : str,
                  init_timestamp : pd.Timestamp,
                  averaging_interval : pd.Timedelta,
-                 init_keepalive_ms = -1):
+                 init_keepalive : pd.Timedelta):
 
         self.resource_name = resource_name
         self.utilization = pd.DataFrame(columns = ['datetime', 'value'])
         self.utilization = self.utilization.set_index('datetime')
         self.tmp_state = ScaledEntityState.TempState(init_timestamp,
                                                      averaging_interval)
+        self.keepalive = init_keepalive
 
     def update(self,
                cur_ts : pd.Timestamp,
@@ -32,7 +33,7 @@ class ResourceUtilization:
         """
 
         if not isinstance(cur_ts, pd.Timestamp):
-            raise ValueError('Timestamp of unexpected type')
+            raise TypeError('Timestamp of unexpected type')
 
         oldest_to_keep_ts = cur_ts - self.keepalive
 
@@ -46,7 +47,6 @@ class ResourceUtilization:
         self.utilization = self.utilization.append(val_to_upd)
 
     def get(self):
-
         return self.utilization
 
 class ServiceUtilization:
@@ -55,12 +55,6 @@ class ServiceUtilization:
     Wraps utilization information for different types of resources on the service level.
     For instance, such system resources are represented as CPU and memory.
     """
-
-    system_resources = [
-        'cpu',
-        'memory',
-        'disk'
-    ]
 
     def __init__(self,
                  init_timestamp : pd.Timestamp,
@@ -83,8 +77,8 @@ class ServiceUtilization:
                              capacity_taken : SystemCapacity):
 
         for resource_name in self.resource_utilizations.keys():
-            self.resource_utilizations[resource_name].update(capacity_taken.normalized_capacity_consumption(resource_name),
-                                                             timestamp)
+            self.resource_utilizations[resource_name].update(timestamp,
+                                                             capacity_taken.normalized_capacity_consumption(resource_name))
 
     def update(self,
                resource_name : str,

@@ -54,17 +54,21 @@ class RegionalDelta:
                 application_scaling_model : ApplicationScalingModel,
                 delta_timestamp : pd.Timestamp):
 
-        new_timestamped_rd = {}
+        new_timestamped_gd_ts = {}
         for generalized_delta in self.generalized_deltas:
 
             new_timestamped_gd = generalized_delta.enforce(platform_scaling_model,
                                                            application_scaling_model,
                                                            delta_timestamp)
 
-            for timestamp, gen_deltas_per_ts in new_timestamped_gd.items():
+            for timestamp, generalized_deltas in new_timestamped_gd.items():
+                new_timestamped_gd_ts[timestamp] = new_timestamped_gd_ts.get(timestamp, []) + generalized_deltas
 
-                new_timestamped_rd[timestamp] = RegionalDelta(self.region_name,
-                                                              gen_deltas_per_ts)
+        new_timestamped_rd = {}
+        for timestamp, gen_deltas_per_ts in new_timestamped_gd_ts.items():
+
+            new_timestamped_rd[timestamp] = [RegionalDelta(self.region_name,
+                                                           gen_deltas_per_ts)]
 
         return new_timestamped_rd
 

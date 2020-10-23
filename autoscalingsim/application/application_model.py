@@ -36,7 +36,7 @@ class ApplicationModel:
                  platform_model : PlatformModel,
                  scaling_policy : ScalingPolicy,
                  config_file : str,
-                 averaging_interval : pd.Timedelta = pd.Timedelta(500, unit = 'ms')):
+                 averaging_interval : pd.Timedelta = pd.Timedelta(100, unit = 'ms')):
 
         # Dynamic state
         self.new_requests = []

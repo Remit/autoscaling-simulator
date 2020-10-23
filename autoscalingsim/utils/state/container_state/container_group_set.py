@@ -85,12 +85,12 @@ class HomogeneousContainerGroupSet:
             # entities given in entities_group_delta to/from the corresponding
             # container group
             if entities_group_delta.in_change == in_change:
-                groups_to_change[container_group_delta.container_group.id] += entities_group_delta
+                groups_to_change[container_group_delta.container_group.id].add_to_entities_state(entities_group_delta)
         else:
             # If the container group delta is not virtual, then add/remove it
             if container_group_delta.sign > 0:
                 groups_to_change[container_group_delta.container_group.id] = container_group_delta.container_group
-            elif container_group_delta.sign < 0:
+            elif container_group_delta.sign < 0: 
                 del groups_to_change[container_group_delta.container_group.id]
 
     def extract_container_groups(self,
@@ -170,7 +170,7 @@ class HomogeneousContainerGroupSetIterator:
     def __next__(self):
 
         if self._index < len(self._container_group._homogeneous_groups):
-            group = self._container_group._homogeneous_groups[self._container_group._homogeneous_groups.keys()[self._index]]
+            group = self._container_group._homogeneous_groups[list(self._container_group._homogeneous_groups.keys())[self._index]]
             self._index += 1
             return group
 
