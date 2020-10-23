@@ -12,11 +12,18 @@ class ServiceScalingInfo:
     """
 
     def __init__(self,
-                 booting_duration : pd.Timedelta,
-                 termination_duration : pd.Timedelta = pd.Timedelta(0, unit = 'ms')):
+                 booting_duration : pd.Timedelta = pd.Timedelta(0, unit = 'ms'),
+                 termination_duration : pd.Timedelta = pd.Timedelta(0, unit = 'ms'),
+                 scaled_aspect_name : str = None):
 
         self.booting_duration = booting_duration
         self.termination_duration = termination_duration
+        self.scaled_aspect_name = scaled_aspect_name
+
+    def set_scaled_aspect_name(self,
+                               scaled_aspect_name : str):
+
+        self.scaled_aspect_name = scaled_aspect_name
 
 class ApplicationScalingModel:
 
@@ -45,6 +52,21 @@ class ApplicationScalingModel:
             self.service_scaling_infos[service_name] = ServiceScalingInfo(booting_duration,
                                                                           termination_duration)
 
+    def initialize_with_entities_scaling_conf(self,
+                                              services_scaling_config : dict):
+
+            """
+            Initializes the application scaling model with the scaling configuration of
+            scaled entities (e.g. services). The configuration is stored in the
+            scaling policy configuration file, hence it is added separately.
+            """
+
+            default_service_conf = services_scaling_config.get('default', None)
+            for service_name, scaling_info in self.service_scaling_infos.items():
+                service_conf = services_scaling_config.get(service_name, default_service_conf)
+                scaled_aspect_name = service_conf.scaled_aspect_name if not service_conf is None else 'count'
+                scaling_info.set_scaled_aspect_name(scaled_aspect_name)
+
     def delay(self,
               entities_group_delta : EntitiesGroupDelta):
 
@@ -66,12 +88,12 @@ class ApplicationScalingModel:
                 change_enforcement_delay = pd.Timedelta(0, unit = 'ms')
                 entity_group_delta = entities_group_delta.get_entity_group_delta(entity_name)
 
-                # TODO: below -> provide the scaling aspect to the model on init
-                # and use it to take the sign of the correct aspect in the entity group delta
-                if entity_group_delta.sign < 0:
+                aspect_sign = entity_group_delta.get_aspect_change_sign(self.service_scaling_infos[entity_name].scaled_aspect_name)
+                if aspect_sign == -1:
                     change_enforcement_delay = self.service_scaling_infos[entity_name].booting_duration
-                elif entity_group_delta.sign > 0:
+                elif aspect_sign == 1:
                     change_enforcement_delay = self.service_scaling_infos[entity_name].termination_duration
+
 
                 if not change_enforcement_delay in entities_by_change_enforcement_delay:
                     entities_by_change_enforcement_delay[change_enforcement_delay] = []

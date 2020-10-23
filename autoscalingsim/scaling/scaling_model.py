@@ -39,3 +39,8 @@ class ScalingModel:
             service_scaling_infos_raw = ErrorChecker.key_check_and_load('services', app_config)
 
             self.application_scaling_model = ApplicationScalingModel(service_scaling_infos_raw)
+
+    def initialize_with_entities_scaling_conf(self,
+                                              services_scaling_config : dict):
+
+        self.application_scaling_model.initialize_with_entities_scaling_conf(services_scaling_config)

@@ -95,7 +95,7 @@ class ScalingAspectDelta:
                 scalar : float):
 
         if not isinstance(scalar, numbers.Number):
-            raise TypeError('An attempt to multiply {} by a non-scalar type {}'.format(self.__class__,
+            raise TypeError('An attempt to multiply {} by a non-scalar type {}'.format(self.__class__.__name__,
                                                                                        type(scalar)))
 
         sign = self.sign

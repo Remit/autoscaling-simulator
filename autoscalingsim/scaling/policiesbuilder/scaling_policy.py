@@ -78,6 +78,7 @@ class ScalingPolicy:
             raise ValueError('No {} configuration file found under the path {}'.format(self.__class__.__name__, config_file))
 
         self.scaling_settings = ScalingPolicyConfiguration(config_file)
+        scaling_model.initialize_with_entities_scaling_conf(self.scaling_settings.services_scaling_config)
         self.platform_model.set_adjustment_policy(AdjustmentPolicy(scaling_model,
                                                                    self.scaling_settings))
 

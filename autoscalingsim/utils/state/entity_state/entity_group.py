@@ -246,6 +246,15 @@ class EntityGroupDelta:
         return EntityGroup(self.entity_name,
                            self.to_raw_change())
 
+    def get_aspect_change_sign(self,
+                               scaled_aspect_name : str):
+
+        if scaled_aspect_name in self.aspects_deltas:
+            return self.aspects_deltas[scaled_aspect_name].sign
+        else:
+            raise ValueError('Aspect {} not found in {}'.format(scaled_aspect_name,
+                                                                self.__class__))
+
 
 class EntitiesGroupDelta:
 
