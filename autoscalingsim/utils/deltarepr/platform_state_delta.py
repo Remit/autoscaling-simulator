@@ -29,6 +29,9 @@ class StateDelta:
                                                                                                delta.__class__.__name__))
 
             self.deltas_per_region = regional_deltas
+        else:
+            raise TypeError('Unknown type of init argument for {}: {}'.format(self.__class__.__name__,
+                                                                              type(regional_deltas)))
 
     def __iter__(self):
         return StateDeltaIterator(self)
@@ -74,9 +77,10 @@ class StateDelta:
                                                         application_scaling_model,
                                                         delta_timestamp)
 
-            for timestamp, reg_deltas_per_ts in new_timestamped_rd.items():
 
-                new_timestamped_sd[timestamp] = StateDelta(reg_deltas_per_ts)
+            for timestamp, reg_delta_per_ts in new_timestamped_rd.items():
+
+                new_timestamped_sd[timestamp] = StateDelta([reg_delta_per_ts])
 
         return new_timestamped_sd
 

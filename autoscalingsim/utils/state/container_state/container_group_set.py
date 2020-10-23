@@ -37,7 +37,8 @@ class HomogeneousContainerGroupSet:
     """
 
     def __init__(self,
-                 homogeneous_groups = []):
+                 homogeneous_groups = [],
+                 homogeneous_groups_in_change = {}):
 
         if isinstance(homogeneous_groups, dict):
             self._homogeneous_groups = homogeneous_groups
@@ -49,7 +50,7 @@ class HomogeneousContainerGroupSet:
                                                                                                self.__class__.__name__))
                 self._homogeneous_groups[group.id] = group
 
-        self._in_change_homogeneous_groups = {}
+        self._in_change_homogeneous_groups = homogeneous_groups_in_change
 
     def __add__(self,
                 regional_delta : RegionalDelta):
@@ -127,7 +128,8 @@ class HomogeneousContainerGroupSet:
         return node_counts_per_type
 
     def copy(self):
-        return HomogeneousContainerGroupSet(self._homogeneous_groups.copy())
+        return HomogeneousContainerGroupSet(self._homogeneous_groups.copy(),
+                                            self._in_change_homogeneous_groups.copy())
 
     def __iter__(self):
         return HomogeneousContainerGroupSetIterator(self)

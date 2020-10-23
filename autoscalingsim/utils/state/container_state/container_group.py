@@ -385,4 +385,5 @@ class GeneralizedDelta:
                                                                   entities_group_delta))
 
         self.cached_enforcement[delta_timestamp] = new_deltas
+
         return new_deltas

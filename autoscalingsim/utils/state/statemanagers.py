@@ -73,6 +73,7 @@ class ScalingManager(StateManager):
 
         # Enforces scaling aspects values on scaled entities
         scaling_infos = platform_state.extract_container_groups(False)
+        #print(scaling_infos)
         for region_name, regional_container_groups in scaling_infos.items():
             for container_group in regional_container_groups:
 

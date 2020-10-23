@@ -57,7 +57,7 @@ class Region:
                                                    [generalized_delta])
 
                     self.homogeneous_groups += regional_delta
-                    
+
     def extract_node_counts(self,
                             in_change : bool):
 
