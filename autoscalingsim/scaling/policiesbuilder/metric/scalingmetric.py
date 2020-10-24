@@ -7,6 +7,7 @@ from . import forecasting
 from .limiter import Limiter
 
 from ....utils.state.statemanagers import StateReader
+from ....utils.error_check import ErrorChecker
 
 class MetricDescription:
 
@@ -200,13 +201,17 @@ class ScalingMetric:
         # on the criteria in it, e.g. takes only values for last 5 seconds.
         # Should be callable.
         # TODO: consider filter chains
-        self.values_filter = valuesfilter.Registry.get(values_filter_conf['name'])(values_filter_conf['config'])
+        vf_name = ErrorChecker.key_check_and_load('name', values_filter_conf, 'region', region_name)
+        vf_conf = ErrorChecker.key_check_and_load('config', values_filter_conf, 'region', region_name)
+        self.values_filter = valuesfilter.Registry.get(vf_name)(vf_conf)
 
         # an aggregator applicable to the time series metrics values
         # -- it aggregates metric values prior to the comparison
         # against the target. Should be callable.
         # TODO: consider values aggregators chains
-        self.values_aggregator = valuesaggregator.Registry.get(values_aggregator_conf['name'])(values_aggregator_conf['config'])
+        va_name = ErrorChecker.key_check_and_load('name', values_aggregator_conf, 'region', region_name)
+        va_conf = ErrorChecker.key_check_and_load('config', values_aggregator_conf, 'region', region_name)
+        self.values_aggregator = valuesaggregator.Registry.get(va_name)(va_conf)
 
         # Scaling determinants:
         # integer value that determines the position of the metric in the
@@ -227,18 +232,25 @@ class ScalingMetric:
         # used to stabilize scaling actions over time, e.g. if the scaling happens
         # many times over a short period of time, various start-up and termination
         # effects may severely impact the response time latency as well as other metrics
-        self.stabilizer = stabilizer.Registry.get(stabilizer_conf['name'])(stabilizer_conf['config'])
+        stab_name = ErrorChecker.key_check_and_load('name', stabilizer_conf, 'region', region_name)
+        stab_conf = ErrorChecker.key_check_and_load('config', stabilizer_conf, 'region', region_name)
+        self.stabilizer = stabilizer.Registry.get(stab_name)(stab_conf)
 
         # either predictive or reactive; depending on the value
         # either the real metric value or its forecast is used.
         # The use of the "predictive" demands presence of the
         # forecaster.
         self.timing_type = timing_type
-        self.forecaster = forecasting.MetricForecaster(fhorizon_in_steps = forecaster_conf['fhorizon_in_steps'],
-                                                       forecasting_model_name = forecaster_conf['name'],
-                                                       forecasting_model_params = forecaster_conf['config'],
-                                                       resolution_ms = forecaster_conf['resolution_ms'],
-                                                       history_data_buffer_size = forecaster_conf['history_data_buffer_size'])
+        fhorizon_in_steps = ErrorChecker.key_check_and_load('fhorizon_in_steps', forecaster_conf, 'region', region_name)
+        forecasting_model_name = ErrorChecker.key_check_and_load('name', forecaster_conf, 'region', region_name)
+        forecasting_model_params = ErrorChecker.key_check_and_load('config', forecaster_conf, 'region', region_name)
+        resolution = pd.Timdelta(ErrorChecker.key_check_and_load('resolution_ms', forecaster_conf, 'region', region_name), unit = 'ms')
+        history_data_buffer_size = int(ErrorChecker.key_check_and_load('history_data_buffer_size', forecaster_conf, 'region', region_name))
+        self.forecaster = forecasting.MetricForecaster(fhorizon_in_steps = fhorizon_in_steps,
+                                                       forecasting_model_name = forecasting_model_name,
+                                                       forecasting_model_params = forecasting_model_params,
+                                                       resolution = resolution,
+                                                       history_data_buffer_size = history_data_buffer_size)
 
         # either continuous (for vertical scaling) or discrete (for
         # horizontal scaling)

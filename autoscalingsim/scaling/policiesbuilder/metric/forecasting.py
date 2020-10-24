@@ -12,15 +12,15 @@ class MetricForecaster:
     are deemed to be very short-sighted.
     """
     def __init__(self,
-                 fhorizon_in_steps,
-                 forecasting_model_name = None,
-                 forecasting_model_params = None,
-                 resolution_ms = 10,
-                 history_data_buffer_size = 10):
+                 fhorizon_in_steps : int,
+                 forecasting_model_name : str = None,
+                 forecasting_model_params : dict = None,
+                 resolution : pd.Timedelta = pd.Timedelta(10, unit = 'ms'),
+                 history_data_buffer_size : int = 10):
 
         # Static State
         self.fhorizon_in_steps = fhorizon_in_steps
-        self.resolution_ms = resolution_ms
+        self.resolution = resolution
         self.history_data_buffer_size = history_data_buffer_size
 
         # Dynamic State
@@ -45,7 +45,7 @@ class MetricForecaster:
         if not self.model is None:
             forecast = self.model.predict(metric_vals,
                                           self.fhorizon_in_steps,
-                                          self.resolution_ms)
+                                          self.resolution)
 
             self._update()
 
@@ -66,13 +66,6 @@ class MetricForecaster:
         if self.history_data_buffer.shape[0] >= self.history_data_buffer_size:
             self.model.fit(self.history_data_buffer)
 
-    @staticmethod
-    def config_check(config_raw):
-        keys_to_check = ['name', 'config', 'resolution_ms', 'history_data_buffer_size', 'fhorizon_in_steps']
-        for key in keys_to_check:
-            if not key in config_raw:
-                raise ValueError('Key {} not found in the configuration for {}'.format(key, __class__.__name__))
-
 class ForecastingModel(ABC):
     """
     Wraps the forecasting model used by MetricForecaster.
@@ -91,7 +84,7 @@ class ForecastingModel(ABC):
     def predict(self,
                 metric_vals,
                 fhorizon_in_steps,
-                resolution_ms):
+                resolution):
         pass
 
 class SimpleAverage(ForecastingModel):
@@ -119,18 +112,17 @@ class SimpleAverage(ForecastingModel):
         self.averaged_value = data[-self.averaging_interval:].mean()[0]
 
     def predict(self,
-                metric_vals,
-                fhorizon_in_steps,
-                resolution_ms):
+                metric_vals : pd.DataFrame,
+                fhorizon_in_steps : int,
+                resolution : pd.Timedelta):
 
-        one_ms = pd.Timedelta(1, unit = 'ms')
-        forecasting_interval_start = metric_vals.iloc[-1:,].index[0] + resolution_ms * one_ms
-        forecasting_interval_end = forecasting_interval_start + fhorizon_in_steps * resolution_ms * one_ms
+        forecasting_interval_start = metric_vals.iloc[-1:,].index[0] + resolution
+        forecasting_interval_end = forecasting_interval_start + fhorizon_in_steps * resolution
         forecast_interval = pd.date_range(start = forecasting_interval_start,
                                           end = forecasting_interval_end,
-                                          freq = str(resolution_ms) + 'L')
+                                          freq = str(resolution.microseconds // 1000) + 'L')
         forecasts_df = pd.DataFrame(date_rng, columns = ['date'])
-        forecasts_df['value'] = [self.averaged_value] * len(date_rng)
+        forecasts_df['value'] = [self.averaged_value] * len(forecast_interval)
         forecasts_df['datetime'] = pd.to_datetime(forecasts_df['date'])
         forecasts_df = forecasts_df.set_index('datetime')
         forecasts_df.drop(['date'], axis=1, inplace=True)
