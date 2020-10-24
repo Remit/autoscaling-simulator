@@ -1,4 +1,10 @@
+import math
+import numbers
+import pandas as pd
+import operator
 from abc import ABC, abstractmethod
+
+from ....utils import df_convenience
 
 class ScalingAspect(ABC):
 
@@ -9,20 +15,59 @@ class ScalingAspect(ABC):
 
     def __init__(self,
                  name : str,
-                 value : float,
-                 minval : float):
+                 value : numbers.Number,
+                 minval : numbers.Number):
 
         self.name = name
         self.value = max(value, minval)
 
-    def set_value(self,
-                  value : float):
-
-        self.value = value
-
     def get_value(self):
 
         return self.value
+
+    def _comparison(self,
+                    other : 'ScalingAspect',
+                    comp_op):
+
+        if isinstance(other, ScalingAspect):
+            if self.name == other.name:
+                return comp_op(self.value, other.value)
+            else:
+                raise ValueError('An attempt to compare different scaling aspects: {} and {}'.format(self.name,
+                                                                                                     other.name))
+        else:
+            raise TypeError('An attempt to compare scaling aspect {} to the unsuppported type {}'.format(self.name,
+                                                                                                         type(other)))
+
+    def __gt__(self,
+               other : 'ScalingAspect'):
+
+        return self._comparison(other, operator.gt)
+
+    def __lt__(self,
+               other : 'ScalingAspect'):
+
+        return self._comparison(other, operator.lt)
+
+    def __ge__(self,
+               other : 'ScalingAspect'):
+
+        return self._comparison(other, operator.ge)
+
+    def __le__(self,
+               other : 'ScalingAspect'):
+
+        return self._comparison(other, operator.le)
+
+    def __eq__(self,
+               other : 'ScalingAspect'):
+
+        return self._comparison(other, operator.eq)
+
+    def __ne__(self,
+               other : 'ScalingAspect'):
+
+        return self._comparison(other, operator.ne)
 
     @abstractmethod
     def __add__(self,
@@ -36,7 +81,7 @@ class ScalingAspect(ABC):
 
     @abstractmethod
     def __mul__(self,
-                other_aspect_val):
+                scalar_or_df):
         pass
 
     @abstractmethod
@@ -122,7 +167,7 @@ class Count(ScalingAspect):
                  value : float):
 
         super().__init__('count',
-                         value,
+                         math.ceil(value),
                          0)
 
     def __add__(self,
@@ -152,12 +197,15 @@ class Count(ScalingAspect):
                                                                                                  self.__class__))
 
     def __mul__(self,
-                scalar : int):
+                scalar_or_df : numbers.Number):
 
-        if not isinstance(other_aspect_val, int):
+        if isinstance(scalar_or_df, numbers.Number):
+            return Count(self.value * scalar_or_df)
+        elif isinstance(scalar_or_df, pd.DataFrame):
+            return df_convenience.convert_to_class(scalar_or_df * self.value,
+                                                   self.__class__)
+        else:
             raise TypeError('An attempt to multiply by non-int of type {}'.format(type(scalar)))
-
-        return Count(self.value * scalar)
 
     def __mod__(self,
                 other_aspect_val : 'Count'):

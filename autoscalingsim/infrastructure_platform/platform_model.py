@@ -29,7 +29,7 @@ class ProviderNodes:
                       network_bandwidth_MBps : int,
                       price_p_h : float,
                       cpu_credits_h : float,
-                      latency_ms : float,
+                      latency : pd.Timedelta,
                       requests_acceleration_factor : float,
                       labels = []):
 
@@ -40,7 +40,7 @@ class ProviderNodes:
                                               network_bandwidth_MBps,
                                               price_p_h,
                                               cpu_credits_h,
-                                              latency_ms,
+                                              latency,
                                               requests_acceleration_factor,
                                               labels)
 
@@ -104,7 +104,7 @@ class PlatformModel:
                             network_bandwidth_MBps = ErrorChecker.key_check_and_load('network_bandwidth_MBps', node_type, type)
                             price_p_h = ErrorChecker.key_check_and_load('price_p_h', node_type, type)
                             cpu_credits_h = ErrorChecker.key_check_and_load('cpu_credits_h', node_type, type)
-                            latency_ms = ErrorChecker.key_check_and_load('latency_ms', node_type, type)
+                            latency = pd.Timedelta(ErrorChecker.key_check_and_load('latency_ms', node_type, type), unit = 'ms')
                             requests_acceleration_factor = ErrorChecker.key_check_and_load('requests_acceleration_factor', node_type, type)
 
                             self.providers_configs[provider].add_node_info(type,
@@ -113,7 +113,7 @@ class PlatformModel:
                                                                            network_bandwidth_MBps,
                                                                            price_p_h,
                                                                            cpu_credits_h,
-                                                                           latency_ms,
+                                                                           latency,
                                                                            requests_acceleration_factor)
 
                 except json.JSONDecodeError:

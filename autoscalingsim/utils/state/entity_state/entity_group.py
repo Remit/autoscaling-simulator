@@ -2,6 +2,7 @@ import numbers
 import numpy as np
 
 from . import scaling_aspects
+from .scaling_aspects import ScalingAspect, ScalingAspectDelta
 
 from ...error_check import ErrorChecker
 
@@ -27,7 +28,7 @@ class EntityGroup:
         self.scaling_aspects = {}
         if isinstance(aspects_vals, dict):
             for aspect_name, aspect_value in aspects_vals.items():
-                if isinstance(aspect_value, scaling_aspects.ScalingAspect):
+                if isinstance(aspect_value, ScalingAspect):
                     self.scaling_aspects[aspect_name] = aspect_value
                 elif isinstance(aspect_value, numbers.Number):
                     self.scaling_aspects[aspect_name] = scaling_aspects.Registry.get(aspect_name)(aspect_value)
@@ -139,13 +140,12 @@ class EntityGroup:
         return EntityGroupDelta.from_group(self, direction)
 
     def update_aspect(self,
-                      aspect_name : str,
-                      value : float):
+                      aspect : ScalingAspect):
 
-        if not aspect_name in self.scaling_aspects:
-            raise ValueError('Unexpected aspect for an update: {}'.format(aspect_name))
+        if not aspect.name in self.scaling_aspects:
+            raise ValueError('Unexpected aspect for an update: {}'.format(aspect.name))
 
-        self.scaling_aspects[aspect_name].set_value(value)
+        self.scaling_aspects[aspect.name] = aspect
 
     def get_aspect_value(self,
                          aspect_name : str):
@@ -186,10 +186,10 @@ class EntityGroupDelta:
         self.entity_name = entity_name
         self.aspects_deltas = {}
         for aspect_name, aspect_value in aspects_vals.items():
-            if isinstance(aspect_value, scaling_aspects.ScalingAspect):
-                self.aspects_deltas[aspect_name] = scaling_aspects.ScalingAspectDelta(aspect_value)
+            if isinstance(aspect_value, ScalingAspect):
+                self.aspects_deltas[aspect_name] = ScalingAspectDelta(aspect_value)
             elif isinstance(aspect_value, numbers.Number):
-                self.aspects_deltas[aspect_name] = scaling_aspects.ScalingAspectDelta(scaling_aspects.Registry.get(aspect_name)(abs(aspect_value)),
+                self.aspects_deltas[aspect_name] = ScalingAspectDelta(scaling_aspects.Registry.get(aspect_name)(abs(aspect_value)),
                                                                                       int(np.sign(aspect_value)))
             else:
                 raise TypeError('Unexpected type of scaling aspects values to initialize the {}'.format(self.__class__))

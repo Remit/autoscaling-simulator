@@ -2,6 +2,7 @@ import pandas as pd
 
 from .state import ScaledEntityState
 from .entity_state.entity_group import EntityGroup
+from .entity_state.scaling_aspects import ScalingAspect
 
 from ..requirements import ResourceRequirements
 
@@ -129,15 +130,14 @@ class ServiceState:
     #                                                                                              self.region_name))
 
     def update_aspect(self,
-                      aspect_name : str,
-                      value : float):
+                      aspect : ScalingAspect):
 
         """
         Updates the scaling aspect value. This value is stored in the entity
         group, e.g. the count of instances or the resource limit.
         """
 
-        self.entity_group.update_aspect(aspect_name, value)
+        self.entity_group.update_aspect(aspect)
 
     def update_placement(self,
                          node_info : NodeInfo,
@@ -218,7 +218,7 @@ class ServiceState:
                     if not req is None:
                         cap_taken = self.placed_on_node.resource_requirements_to_capacity(self.request_processing_infos[req.request_type].resource_requirements)
                         if not (total_capacity_taken + cap_taken).is_exhausted():
-                            req = self.upstream_buf.pop(req)
+                            req = self.upstream_buf.pop()
                             self.processor.start_processing(req)
                         else:
                             self.upstream_buf.shift()
@@ -314,14 +314,12 @@ class ServiceStateRegionalized(ScaledEntityState):
 
     def update_aspect(self,
                       region_name : str,
-                      aspect_name : str,
-                      value : float):
+                      aspect : ScalingAspect):
 
         if not region_name in self.region_states:
             raise ValueError('A state for the given region name {} was not found'.format(region_name))
 
-        self.region_states[region_name].update_aspect(aspect_name,
-                                                      value)
+        self.region_states[region_name].update_aspect(aspect)
 
     def update_placement(self,
                          region_name : str,

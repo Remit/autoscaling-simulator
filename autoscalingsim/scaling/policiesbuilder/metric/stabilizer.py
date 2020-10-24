@@ -1,5 +1,8 @@
 import pandas as pd
+import collections
 from abc import ABC, abstractmethod
+
+from ....utils.error_check import ErrorChecker
 
 class Stabilizer(ABC):
     """
@@ -24,38 +27,31 @@ class MaxStabilizer(Stabilizer):
     value found in the previous time window. Tends to overprovision the capacity.
     """
     def __init__(self,
-                 config):
+                 config : dict):
 
-        param_key = 'resolution_window_ms'
-        if param_key in config:
-            self.resolution_window_ms = config[param_key]
-        else:
-            raise ValueError('Not found key {} in the parameters of the {} stabilizer.'.format(param_key, self.__class__.__name__))
+        self.resolution_window = pd.Timedelta(ErrorChecker.key_check_and_load('resolution_window_ms', config), unit = 'ms')
 
     def __call__(self,
-                 values):
+                 values : pd.DataFrame):
 
-        resolution_delta = self.resolution_window_ms * pd.Timedelta(1, unit = 'ms')
         window_start = values.index[0]
-        window_end = window_start + resolution_delta
+        window_end = window_start + self.resolution_window
 
-        stabilized_vals = pd.DataFrame(columns=['datetime', 'value'])
-        stabilized_vals = stabilized_vals.set_index('datetime')
-        max_val = values.min()[0]
+        stabilized_vals = collections.defaultdict(list)
+        stabilized_vals.update((k, []) for k in ([values.index.name] + values.columns.to_list()))
+
         while window_start <= values.index[-1]:
-
             selected_vals = values[(values.index >= window_start) & (values.index < window_end)]
-            max_val = max([selected_vals.max()[0], max_val])
-            data_to_add = {'datetime': selected_vals.index,
-                           'value': [max_val] * selected_vals.shape[0]}
-            df_to_add = pd.DataFrame(data_to_add)
-            df_to_add = df_to_add.set_index('datetime')
-            stabilized_vals = stabilized_vals.append(df_to_add)
+
+            for colname, vals_dict in selected_vals.to_dict().items():
+                max_val = max(list(vals_dict.values()))
+                stabilized_vals[colname].extend([max_val] * selected_vals.shape[0])
+            stabilized_vals[values.index.name].extend(selected_vals.index)
 
             window_start = window_end
-            window_end = window_start + resolution_delta
+            window_end = window_start + self.resolution_window
 
-        return stabilized_vals
+        return pd.DataFrame(stabilized_vals).set_index(values.index.name)
 
 class Registry:
 

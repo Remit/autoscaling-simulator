@@ -1,7 +1,8 @@
 import pandas as pd
 
 from abc import ABC, abstractmethod
-from datetime import timedelta
+
+from ....utils.error_check import ErrorChecker
 
 class MetricForecaster:
     """
@@ -29,10 +30,10 @@ class MetricForecaster:
         else:
             self.model = None
 
-        self.history_data_buffer = pd.DataFrame(columns=['value'])
+        self.history_data_buffer = pd.DataFrame(columns=['datetime', 'value']).set_index('datetime')
 
     def __call__(self,
-                 metric_vals):
+                 metric_vals : pd.DataFrame):
 
         """
         If the forecasting model is not yet fit, then return the metric values
@@ -47,12 +48,12 @@ class MetricForecaster:
                                           self.fhorizon_in_steps,
                                           self.resolution)
 
-            self._update()
+            self._update(metric_vals)
 
         return forecast
 
     def _update(self,
-                metric_vals):
+                metric_vals : pd.DataFrame):
 
         """
         Adds the available metric values until the internal buffer of size
@@ -72,19 +73,19 @@ class ForecastingModel(ABC):
     """
     @abstractmethod
     def __init__(self,
-                 forecasting_model_params):
+                 forecasting_model_params : dict):
         pass
 
     @abstractmethod
     def fit(self,
-            data):
+            data : pd.DataFrame):
         pass
 
     @abstractmethod
     def predict(self,
-                metric_vals,
-                fhorizon_in_steps,
-                resolution):
+                metric_vals : pd.DataFrame,
+                fhorizon_in_steps : int,
+                resolution : pd.Timedelta):
         pass
 
 class SimpleAverage(ForecastingModel):
@@ -96,20 +97,15 @@ class SimpleAverage(ForecastingModel):
     """
 
     def __init__(self,
-                 forecasting_model_params):
+                 forecasting_model_params : dict):
 
-        param_key = 'averaging_interval'
-        if param_key in forecasting_model_params:
-            self.averaging_interval = forecasting_model_params['averaging_interval']
-        else:
-            raise ValueError('Not found key {} in the parameters of the {} forecasting model.'.format(param_key, self.__class__.__name__))
-
+        self.averaging_interval = int(ErrorChecker.key_check_and_load('averaging_interval', forecasting_model_params))
         self.averaged_value = 0
 
     def fit(self,
-            data):
+            data : pd.DataFrame):
 
-        self.averaged_value = data[-self.averaging_interval:].mean()[0]
+        self.averaged_value = float(data[-self.averaging_interval:].mean())
 
     def predict(self,
                 metric_vals : pd.DataFrame,
@@ -121,7 +117,7 @@ class SimpleAverage(ForecastingModel):
         forecast_interval = pd.date_range(start = forecasting_interval_start,
                                           end = forecasting_interval_end,
                                           freq = str(resolution.microseconds // 1000) + 'L')
-        forecasts_df = pd.DataFrame(date_rng, columns = ['date'])
+        forecasts_df = pd.DataFrame(forecast_interval, columns = ['date'])
         forecasts_df['value'] = [self.averaged_value] * len(forecast_interval)
         forecasts_df['datetime'] = pd.to_datetime(forecasts_df['date'])
         forecasts_df = forecasts_df.set_index('datetime')

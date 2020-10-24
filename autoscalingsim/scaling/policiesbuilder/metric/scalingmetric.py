@@ -244,7 +244,7 @@ class ScalingMetric:
         fhorizon_in_steps = ErrorChecker.key_check_and_load('fhorizon_in_steps', forecaster_conf, 'region', region_name)
         forecasting_model_name = ErrorChecker.key_check_and_load('name', forecaster_conf, 'region', region_name)
         forecasting_model_params = ErrorChecker.key_check_and_load('config', forecaster_conf, 'region', region_name)
-        resolution = pd.Timdelta(ErrorChecker.key_check_and_load('resolution_ms', forecaster_conf, 'region', region_name), unit = 'ms')
+        resolution = pd.Timedelta(ErrorChecker.key_check_and_load('resolution_ms', forecaster_conf, 'region', region_name), unit = 'ms')
         history_data_buffer_size = int(ErrorChecker.key_check_and_load('history_data_buffer_size', forecaster_conf, 'region', region_name))
         self.forecaster = forecasting.MetricForecaster(fhorizon_in_steps = fhorizon_in_steps,
                                                        forecasting_model_name = forecasting_model_name,
@@ -308,7 +308,7 @@ class ScalingMetric:
             # desired amount of the scaled aspect is stabilized to avoid
             # oscillations in it that may cause too much overhead when scaling.
             metric_ratio = aggregated_metric_vals / self.target_value
-            desired_scaled_aspect = math.ceil(metric_ratio * self.entity_representation_in_metric * cur_aspect_val)
+            desired_scaled_aspect = cur_aspect_val * metric_ratio * self.entity_representation_in_metric
             desired_scaled_aspect_stabilized = self.stabilizer(desired_scaled_aspect)
 
             # Limiting the produced values of the desired scaled aspect
@@ -318,7 +318,7 @@ class ScalingMetric:
             # or if the adjustments to the desired scaled aspect must proceed
             # in a chained way using different metrics -> min/max limits
             # then serve as a communication channel.
-            desired_scaled_aspect_stabilized_limited = self.limiter(desired_scaled_aspect_stabilized)
+            desired_scaled_aspect_stabilized_limited = self.limiter(desired_scaled_aspect_stabilized) # TODO: check with scaling aspects
 
             return desired_scaled_aspect_stabilized_limited
         else:
