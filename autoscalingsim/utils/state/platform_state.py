@@ -59,6 +59,15 @@ class PlatformState:
 
         return modified_state
 
+    def extract_countable_representation(self,
+                                         conf : dict = {'in-change': True}):
+
+        """
+        Used to unify the aggregation scheme both for containers and entities.
+        """
+
+        return self.extract_node_counts(conf['in-change'])
+
     def extract_node_counts(self,
                             in_change : bool):
 

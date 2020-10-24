@@ -5,10 +5,11 @@ class Sum:
     """
 
     @staticmethod
-    def aggregate(states_list):
+    def aggregate(states_list : list,
+                  conf : dict = {}):
 
         aggregated_val = None
-        if len(states_list > 0):
+        if len(states_list) > 0:
             res_class = states_list[0].__class__
             aggregated_val = res_class()
 
@@ -24,20 +25,21 @@ class Max:
     """
 
     @staticmethod
-    def aggregate(states_list):
+    def aggregate(states_list : list,
+                  conf : dict = {}):
 
-        if len(states_list > 0):
-            res_class = states_list[0].__class__
-            selected_state = states_list[0]
+        selected_state = None
 
-            last_max_cnt = 0
-            for state in states_list:
-                if sum(list(state.extract_node_counts(True).values())) > last_max_cnt:
+        last_max_val = 0
+        for state in states_list:
+            regionalized_repr = state.extract_countable_representation(conf)
+            for reg_repr in regionalized_repr.values():
+                repr_val = sum(list(reg_repr.values()))
+                if repr_val > last_max_val:
+                    last_max_val = repr_val
                     selected_state = state
 
-            return selected_state
-        else:
-            return None
+        return selected_state
 
 class Min:
 
@@ -46,20 +48,21 @@ class Min:
     """
 
     @staticmethod
-    def aggregate(states_list):
+    def aggregate(states_list : list,
+                  conf : dict = {}):
 
-        if len(states_list > 0):
-            res_class = states_list[0].__class__
-            selected_state = states_list[0]
+        selected_state = None
 
-            last_min_cnt = float('Inf')
-            for state in states_list:
-                if sum(list(state.extract_node_counts(True).values())) < last_min_cnt:
+        last_min_val = float('Inf')
+        for state in states_list:
+            regionalized_repr = state.extract_countable_representation(conf)
+            for reg_repr in regionalized_repr.values():
+                repr_val = sum(list(reg_repr.values()))
+                if repr_val < last_min_val:
+                    last_min_val = repr_val
                     selected_state = state
 
-            return selected_state
-        else:
-            return None
+        return selected_state
 
 class Registry:
 
@@ -74,7 +77,7 @@ class Registry:
     }
 
     @staticmethod
-    def get(name):
+    def get(name : str):
 
         if not name in Registry.registry:
             raise ValueError('An attempt to use a non-existent aggregation for states {}'.format(name))

@@ -12,7 +12,7 @@ class EntitiesStatesRegionalized:
         self._entities_states_per_region = {}
         for region_name, value in entities_states_per_region.items():
             if isinstance(value, EntitiesState):
-                self.add_state(value)
+                self.add_state(region_name, value)
             elif isinstance(value, dict) and len(value) > 0:
                 self._entities_states_per_region[region_name] = EntitiesState(value)
 
@@ -40,31 +40,27 @@ class EntitiesStatesRegionalized:
             raise TypeError('Unknown type of parameter to add to {}: {}'.format(result.__class__,
                                                                                 type(other_regionalized_states)))
 
-        for region_name, state in other_regionalized_states_items:
-            if not region_name in self._entities_states_per_region:
-                result._entities_states_per_region[region_name] = EntitiesState()
-            if sign == -1:
-                result._entities_states_per_region[region_name] -= entities_state
-            elif sign == 1:
-                result._entities_states_per_region[region_name] += entities_state
+        for region_name, entities_state in other_regionalized_states_items:
+            result.add_state(region_name, entities_state, sign)
 
         return result
 
-    #def add_state(self,
-    #              region_name : str,
-    #              entities_state : EntitiesState
-    #              sign : int = 1):
+    def add_state(self,
+                  region_name : str,
+                  entities_state : EntitiesState,
+                  sign : int = 1):
 
-    #    if not isinstance(entities_state, EntitiesState):
-    #        raise TypeError('An attempt to add to {} an operand of a wrong type {}'.format(self.__class__,
-    #                                                                                       type(entities_state)))
+        if not isinstance(entities_state, EntitiesState):
+            raise TypeError('An attempt to add to {} an operand of a wrong type {}'.format(self.__class__,
+                                                                                           type(entities_state)))
 
-    #    if not region_name in self._entities_states_per_region:
-    #        self._entities_states_per_region[region_name] = EntitiesState()
-    #    if sign == -1:
-    #        self._entities_states_per_region[region_name] -= entities_state
-    #    elif sign == 1:
-    #        self._entities_states_per_region[region_name] += entities_state
+        if (not region_name in self._entities_states_per_region) and (sign == 1):
+            self._entities_states_per_region[region_name] = entities_state
+        else:
+            if sign == -1:
+                self._entities_states_per_region[region_name] -= entities_state
+            elif sign == 1:
+                self._entities_states_per_region[region_name] += entities_state
 
     def __iter__(self):
         return EntitiesStatesIterator(self)
@@ -86,6 +82,24 @@ class EntitiesStatesRegionalized:
 
         return EntitiesStatesRegionalizedDelta.from_entities_states(self._entities_states_per_region.copy())
 
+    def extract_aspect_representation(self,
+                                      scaled_aspect_name : str):
+
+        entities_counts_per_region = {}
+        for region_name, entities_state in self._entities_states_per_region.items():
+            entities_counts_per_region[region_name] = entities_state.extract_aspect_representation(scaled_aspect_name)
+
+        return entities_counts_per_region
+
+    def extract_countable_representation(self,
+                                         conf : dict):
+
+        """
+        Used to unify the aggregation scheme both for containers and entities.
+        """
+
+        return self.extract_aspect_representation(conf['scaled_aspect_name'])
+
 class EntitiesStatesIterator:
 
     """
@@ -96,7 +110,7 @@ class EntitiesStatesIterator:
                  regionalized_states : EntitiesStatesRegionalized):
 
         self._regionalized_states = regionalized_states
-        self._ordered_index = list(self._regionalized_states.keys())
+        self._ordered_index = list(self._regionalized_states._entities_states_per_region.keys())
         self._index = 0
 
     def __next__(self):
@@ -104,7 +118,7 @@ class EntitiesStatesIterator:
         if self._index < len(self._ordered_index):
             region_name = self._ordered_index[self._index]
             self._index += 1
-            return (region_name, self._regionalized_states[region_name])
+            return (region_name, self._regionalized_states._entities_states_per_region[region_name])
 
         raise StopIteration
 

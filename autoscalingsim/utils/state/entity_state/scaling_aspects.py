@@ -21,6 +21,10 @@ class ScalingAspect(ABC):
         self.name = name
         self.value = max(value, minval)
 
+    def copy(self):
+
+        return Registry.get(self.name)(self.value)
+
     def get_value(self):
 
         return self.value
@@ -215,6 +219,11 @@ class Count(ScalingAspect):
                                                                                                                     other_aspect_val.__class__))
 
         return Count(self.value % other_aspect_val.value)
+
+    def __radd__(self,
+                 other_aspect_val : numbers.Number):
+
+        return other_aspect_val + self.value
 
 class Registry:
 

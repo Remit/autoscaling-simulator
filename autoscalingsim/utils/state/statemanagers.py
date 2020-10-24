@@ -142,7 +142,8 @@ class ScalingManager(StateManager):
             entity_timeline = entity_ref.reconcile_desired_state()
             for timestamp, state_regionalized in entity_timeline.items():
                 if not timestamp in joint_timeline_desired_regionalized_entities_states:
-                    joint_timeline_desired_regionalized_entities_states[timestamp] = EntitiesStatesRegionalized()
-                joint_timeline_desired_regionalized_entities_states[timestamp] += state_regionalized
+                    joint_timeline_desired_regionalized_entities_states[timestamp] = state_regionalized
+                else:
+                    joint_timeline_desired_regionalized_entities_states[timestamp] += state_regionalized
 
         return joint_timeline_desired_regionalized_entities_states

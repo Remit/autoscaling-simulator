@@ -1,4 +1,5 @@
 import numpy as np
+import collections
 
 from .entity_group import EntityGroup, EntitiesGroupDelta
 
@@ -16,7 +17,7 @@ class EntitiesState:
             for entity_name, group_or_aspects_dict in groups_or_aspects.items():
                 if isinstance(group_or_aspects_dict, EntityGroup):
                     self.entities_groups[entity_name] = group_or_aspects_dict
-                elif isinstance(group_or_aspects_dict, dict):
+                elif isinstance(groups_or_aspects, collections.Mapping):
                     self.entities_groups[entity_name] = EntityGroup(entity_name,
                                                                     group_or_aspects_dict)
                 else:
@@ -58,7 +59,7 @@ class EntitiesState:
                     new_groups[entity_name] = entity_delta.to_entity_group()
 
         elif isinstance(entities_state_or_delta, EntitiesState):
-            for entity_name, entity_group_to_add in entities_state_or_delta.items():
+            for entity_name, entity_group_to_add in entities_state_or_delta.entities_groups.items():
                 if entity_name in self.entities_groups:
                     if sign == -1:
                         new_groups[entity_name] = self.entities_groups[entity_name] - entity_group_to_add
@@ -134,6 +135,15 @@ class EntitiesState:
         aspect_vals_dict = {}
         for entity_name, entity_group in self.entities_groups.items():
             aspect_vals_dict[entity_name] = entity_group.scaling_aspects
+
+        return aspect_vals_dict
+
+    def extract_aspect_representation(self,
+                                      aspect_name : str):
+
+        aspect_vals_dict = {}
+        for entity_name, entity_group in self.entities_groups.items():
+            aspect_vals_dict[entity_name] = entity_group.get_aspect_value(aspect_name)
 
         return aspect_vals_dict
 

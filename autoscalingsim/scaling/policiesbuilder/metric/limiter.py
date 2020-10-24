@@ -2,6 +2,8 @@ import pandas as pd
 
 from abc import ABC, abstractmethod
 
+from ....utils.state.entity_state.scaling_aspects import ScalingAspect
+
 class Limiter:
     """
     Defines hard and soft limits on the value. Hard limits are set on the
@@ -16,9 +18,10 @@ class Limiter:
     the soft max is used instead of the soft max, and the max value of the
     soft min is used instead of soft min.
     """
+
     def __init__(self,
-                 init_min,
-                 init_max):
+                 init_min : ScalingAspect,
+                 init_max : ScalingAspect):
 
         self.hard_min = init_min
         self.hard_max = init_max
@@ -39,7 +42,7 @@ class Limiter:
 
     def _min_comparison(self,
                         x_min,
-                        values):
+                        values : pd.DataFrame):
 
         result = None
         if isinstance(x_min, pd.DataFrame):
@@ -55,7 +58,7 @@ class Limiter:
 
     def _max_comparison(self,
                         x_max,
-                        values):
+                        values : pd.DataFrame):
 
         result = None
         if isinstance(x_max, pd.DataFrame):
@@ -71,8 +74,8 @@ class Limiter:
 
 
     def update_limits(self,
-                      new_min,
-                      new_max):
+                      new_min : ScalingAspect,
+                      new_max : ScalingAspect):
 
         self.soft_min = new_min
         self.soft_max = new_max

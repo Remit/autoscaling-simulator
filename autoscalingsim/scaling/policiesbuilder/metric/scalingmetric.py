@@ -7,6 +7,9 @@ from . import forecasting
 from .limiter import Limiter
 
 from ....utils.state.statemanagers import StateReader
+from ....utils.state.entity_state import scaling_aspects
+from ....utils.state.entity_state.entities_states_reg import EntitiesStatesRegionalized
+from ....utils.state.entity_state.scaling_aspects import ScalingAspect
 from ....utils.error_check import ErrorChecker
 
 class MetricDescription:
@@ -118,6 +121,9 @@ class ScalingMetricRegionalized:
 
         self.state_reader = state_reader
 
+        max_limit_aspect = scaling_aspects.Registry.get(self.aspect_name)(max_limit)
+        min_limit_aspect = scaling_aspects.Registry.get(self.aspect_name)(min_limit)
+
         self.metrics_per_region = {}
         for region_name in regions:
             self.metrics_per_region[region_name] = ScalingMetric(region_name,
@@ -129,8 +135,8 @@ class ScalingMetricRegionalized:
                                                                  forecaster_conf,
                                                                  capacity_adaptation_type,
                                                                  priority,
-                                                                 max_limit,
-                                                                 min_limit,
+                                                                 max_limit_aspect,
+                                                                 min_limit_aspect,
                                                                  entity_representation_in_metric)
 
     def __call__(self):
@@ -158,17 +164,21 @@ class ScalingMetricRegionalized:
                                                   cur_aspect_val)
 
             for timestamp, row_val in desired_scaled_aspect_val_pr.iterrows():
+                aspects_dict = {}
+                for aspect in row_val:
+                    aspects_dict[aspect.name] = aspect
                 if not timestamp in regionalized_desired_ts_raw:
                     regionalized_desired_ts_raw[timestamp] = {}
                 regionalized_desired_ts_raw[timestamp][region_name] = {}
-                regionalized_desired_ts_raw[timestamp][region_name][self.entity_name] = row_val[0]
+                regionalized_desired_ts_raw[timestamp][region_name][self.entity_name] = aspects_dict
 
         timeline_of_regionalized_desired_states = {}
         for timestamp, regionalized_desired_val in regionalized_desired_ts_raw.items():
+            print("scalingmetric")
+            print(regionalized_desired_val)
             timeline_of_regionalized_desired_states[timestamp] = EntitiesStatesRegionalized(regionalized_desired_val)
 
         return timeline_of_regionalized_desired_states
-
 
 class ScalingMetric:
 
@@ -182,17 +192,18 @@ class ScalingMetric:
 
     def __init__(self,
                  region_name : str,
-                 values_filter_conf,
-                 values_aggregator_conf,
-                 target_value,
-                 stabilizer_conf,
-                 timing_type,
-                 forecaster_conf,
-                 capacity_adaptation_type,
-                 priority,
-                 max_limit,
-                 min_limit,
-                 entity_representation_in_metric):
+                 values_filter_conf : dict,
+                 values_aggregator_conf : dict,
+                 target_value : float,
+                 stabilizer_conf : dict,
+                 timing_type : str,
+                 forecaster_conf : dict,
+                 capacity_adaptation_type : str,
+                 priority : int,
+                 max_limit_aspect : ScalingAspect,
+                 min_limit_aspect : ScalingAspect,
+                 entity_representation_in_metric : float):
+
         # Static state
         self.region_name = region_name
 
@@ -261,7 +272,8 @@ class ScalingMetric:
         # current min-max limits on the post-scaling result for the
         # aspect of the scaled entity (count of scaled entities in case of horizontal scaling
         # or resource limits of scaled entities in case of vertical scaling)
-        self.limiter = Limiter(min_limit, max_limit)
+        self.limiter = Limiter(min_limit_aspect,
+                               max_limit_aspect)
 
         # current representation of the entity in terms of metric, for instance
         # if the entity is the node and the metric is CPU utilization, and the capacity adaptation type is discrete,
@@ -274,8 +286,8 @@ class ScalingMetric:
         self.entity_representation_in_metric = entity_representation_in_metric
 
     def __call__(self,
-                 cur_metric_vals,
-                 cur_aspect_val):
+                 cur_metric_vals : pd.DataFrame,
+                 cur_aspect_val : ScalingAspect):
 
         """
         Computes the desired state of the associated scaled entity (e.g. service)

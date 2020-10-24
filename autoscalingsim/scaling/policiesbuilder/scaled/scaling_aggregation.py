@@ -27,9 +27,11 @@ class ScalingEffectAggregationRule(ABC):
     """
 
     def __init__(self,
-                 metrics_by_priority : dict):
+                 metrics_by_priority : dict,
+                 scaled_aspect_name : str):
 
         self.metrics_by_priority = metrics_by_priority
+        self.scaled_aspect_name = scaled_aspect_name
 
     @abstractmethod
     def __call__(self):
@@ -46,9 +48,10 @@ class SequentialScalingEffectAggregationRule(ScalingEffectAggregationRule):
 
     def __init__(self,
                  metrics_by_priority : dict,
+                 scaled_aspect_name : str,
                  expected_deviation_ratio : float = 0.25):
 
-        super().__init__(metrics_by_priority)
+        super().__init__(metrics_by_priority, scaled_aspect_name)
 
         if expected_deviation_ratio < 0:
             raise ValueError('expected_deviation_ratio cannot be negative')
@@ -84,9 +87,10 @@ class ParallelScalingEffectAggregationRule(ScalingEffectAggregationRule):
 
     def __init__(self,
                  metrics_by_priority : dict,
+                 scaled_aspect_name : str,
                  aggregation_op_name : str):
 
-        super().__init__(metrics_by_priority)
+        super().__init__(metrics_by_priority, scaled_aspect_name)
         self.aggregation_op = aggregators.Registry.get(aggregation_op_name)
 
     def __call__(self):
@@ -133,7 +137,8 @@ class ParallelScalingEffectAggregationRule(ScalingEffectAggregationRule):
 
         desired_states = {}
         for timestamp, states_per_ts in timestamped_states.items():
-            desired_states[timestamp] = self.aggregation_op.aggregate(states_per_ts)
+            desired_states[timestamp] = self.aggregation_op.aggregate(states_per_ts,
+                                                                      {'scaled_aspect_name': self.scaled_aspect_name})
 
         return desired_states
 
@@ -144,9 +149,11 @@ class MaxScalingEffectAggregationRule(ParallelScalingEffectAggregationRule):
     """
 
     def __init__(self,
-                 metrics_by_priority : dict):
+                 metrics_by_priority : dict,
+                 scaled_aspect_name : str):
 
         super().__init__(metrics_by_priority,
+                         scaled_aspect_name,
                          'max')
 
 class MinScalingEffectAggregationRule(ParallelScalingEffectAggregationRule):
@@ -156,9 +163,11 @@ class MinScalingEffectAggregationRule(ParallelScalingEffectAggregationRule):
     """
 
     def __init__(self,
-                 metrics_by_priority : dict):
+                 metrics_by_priority : dict,
+                 scaled_aspect_name : str):
 
         super().__init__(metrics_by_priority,
+                         scaled_aspect_name,
                          'min')
 
 class Registry:

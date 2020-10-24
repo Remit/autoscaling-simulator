@@ -1,4 +1,5 @@
 import numbers
+import collections
 import numpy as np
 
 from . import scaling_aspects
@@ -24,9 +25,9 @@ class EntityGroup:
         """
 
         self.entity_name = entity_name
-
         self.scaling_aspects = {}
-        if isinstance(aspects_vals, dict):
+
+        if isinstance(aspects_vals, collections.Mapping):
             for aspect_name, aspect_value in aspects_vals.items():
                 if isinstance(aspect_value, ScalingAspect):
                     self.scaling_aspects[aspect_name] = aspect_value
@@ -34,6 +35,8 @@ class EntityGroup:
                     self.scaling_aspects[aspect_name] = scaling_aspects.Registry.get(aspect_name)(aspect_value)
                 else:
                     raise TypeError('Unexpected type of scaling aspects values to initialize the {}'.format(self.__class__))
+        else:
+            raise TypeError('Unexpected type of scaling aspects dictionary to initialize the {}'.format(self.__class__))
 
     def __add__(self,
                 other_group_or_delta):
@@ -153,7 +156,7 @@ class EntityGroup:
         if not aspect_name in self.scaling_aspects:
             raise ValueError('Unexpected aspect for an update: {}'.format(aspect_name))
 
-        return self.scaling_aspects[aspect_name]
+        return self.scaling_aspects[aspect_name].copy()
 
 class EntityGroupDelta:
 

@@ -36,7 +36,7 @@ class RequestsProcessor:
             for req in self.in_processing_simultaneous:
                 new_time_left = req.processing_time_left - min_time_to_subtract
                 req.cumulative_time += min_time_to_subtract
-                if new_time_left > 0:
+                if new_time_left > pd.Timedelta(0, unit = 'ms'):
                     req.processing_time_left = new_time_left
                     new_in_processing_simultaneous.append(req)
                     if not req.request_type in self.stat:

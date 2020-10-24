@@ -50,7 +50,8 @@ class ScaledEntity:
             # scaling effect is the aggregated value of these effects (e.g. majority vote)
             if not scaling_setting_for_entity.scaling_effect_aggregation_rule_name is None:
                 self.scaling_effect_aggregation_rule = scaling_aggregation.Registry \
-                                                        .get(scaling_setting_for_entity.scaling_effect_aggregation_rule_name)(self.metrics_by_priority)
+                                                        .get(scaling_setting_for_entity.scaling_effect_aggregation_rule_name)(self.metrics_by_priority,
+                                                                                                                              scaling_setting_for_entity.scaled_aspect_name)
         else:
             self.scaling_effect_aggregation_rule = None
 
