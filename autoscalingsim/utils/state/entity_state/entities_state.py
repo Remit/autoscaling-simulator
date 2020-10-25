@@ -12,6 +12,9 @@ class EntitiesState:
     def __init__(self,
                  groups_or_aspects : dict = {}):
 
+        # TODO: add requirements for entities
+        raise ValueError('EntitieState')
+
         self.entities_groups = {}
         if len(groups_or_aspects) > 0:
             for entity_name, group_or_aspects_dict in groups_or_aspects.items():
@@ -143,6 +146,15 @@ class EntitiesState:
         aspect_vals_dict = {}
         for entity_name, entity_group in self.entities_groups.items():
             aspect_vals_dict[entity_name] = entity_group.get_aspect_value(aspect_name)
+
+        return aspect_vals_dict
+
+    def extract_aspect_value(self,
+                             aspect_name : str):
+
+        aspect_vals_dict = {}
+        for entity_name, entity_group in self.entities_groups.items():
+            aspect_vals_dict[entity_name] = entity_group.get_aspect_value(aspect_name).get_value()
 
         return aspect_vals_dict
 

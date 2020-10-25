@@ -27,10 +27,10 @@ class ScaledContainer(ABC):
     def get_performance(self):
         pass
 
-    @abstractmethod
-    def fits(self,
-             requirements_by_entity):
-        pass
+    #@abstractmethod
+    #def fits(self,
+    #         requirements_by_entity):
+    #    pass
 
     @abstractmethod
     def entities_require_capacity(self,

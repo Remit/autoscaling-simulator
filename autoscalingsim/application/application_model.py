@@ -158,7 +158,8 @@ class ApplicationModel:
                     self.deployment_model.add_service_deployment(service_name,
                                                                  init_service_aspects_regionalized,
                                                                  node_infos_regionalized,
-                                                                 node_counts_regionalized)
+                                                                 node_counts_regionalized,
+                                                                 system_requirements)
 
                     # Value that is less than 0 for the keepalive interval of the metric means that it is not discarded at all
                     init_metric_keepalive = pd.Timedelta(ErrorChecker.key_check_and_load('init_metric_keepalive_ms', service_config, 'service', service_name), unit = 'ms')

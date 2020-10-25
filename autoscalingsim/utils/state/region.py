@@ -81,8 +81,8 @@ class Region:
                              generalized_deltas_lst)
 
     def compute_soft_adjustment(self,
-                                entities_deltas,
-                                scaled_entity_instance_requirements_by_entity):
+                                entities_deltas_in_scaling_aspects : dict,
+                                scaled_entity_instance_requirements_by_entity : dict):
 
         """
         Tries to place the entities onto the existing nodes and returns
@@ -93,33 +93,46 @@ class Region:
         Does not result in changing the homogeneous groups in region.
         """
 
-
-        cur_groups = self.homogeneous_groups.get()
-        new_deltas_per_ts = []
-
-        entities_deltas_sorted = OrderedDict(sorted(entities_deltas.items(),
-                                                    key = lambda elem: elem[1]))
+        entities_deltas_in_scaling_aspects_sorted = OrderedDict(sorted(entities_deltas_in_scaling_aspects.items(),
+                                                                       key = lambda elem: elem[1]))
 
         unmet_cumulative_reduction_on_ts = {}
         unmet_cumulative_increase_on_ts = {}
-        for entity_name, entity_delta in entities_deltas_sorted:
-            if entity_delta < 0:
-                unmet_cumulative_reduction_on_ts[entity_name] = entity_delta
-            elif entity_delta > 0:
-                unmet_cumulative_increase_on_ts[entity_name] = entity_delta
+        for entity_name, entity_delta_in_scaling_aspects in entities_deltas_in_scaling_aspects_sorted.items():
+            for aspect_name, aspect_change_val in entity_delta_in_scaling_aspects.items():
+                if aspect_change_val < 0:
+                    entity_changes = unmet_cumulative_reduction_on_ts.get(entity_name, {})
+                    entity_changes[aspect_name] = aspect_change_val
+                    unmet_cumulative_reduction_on_ts[entity_name] = entity_changes
+                elif aspect_change_val > 0:
+                    entity_changes = unmet_cumulative_increase_on_ts.get(entity_name, {})
+                    entity_changes[aspect_name] = aspect_change_val
+                    unmet_cumulative_increase_on_ts[entity_name] = entity_changes
+                else: # TODO: delete
+                    entity_changes = unmet_cumulative_reduction_on_ts.get(entity_name, {})
+                    entity_changes[aspect_name] = -1
+                    unmet_cumulative_reduction_on_ts[entity_name] = entity_changes
+                    entity_changes = unmet_cumulative_increase_on_ts.get(entity_name, {})
+                    entity_changes[aspect_name] = 2
+                    unmet_cumulative_increase_on_ts[entity_name] = entity_changes
 
         non_enforced_scale_down_deltas = []
 
         # try to remove the entities from the groups sorted
         # in the order increasing by capacity used (decomission-fastest)
-        homogeneous_groups_sorted_increasing = OrderedDict(sorted(cur_groups,
-                                                                  key = lambda elem: elem.system_capacity.collapse()))
+        new_deltas_per_ts = []
+        cur_groups = self.homogeneous_groups.get()
+        homogeneous_groups_sorted_increasing = sorted(cur_groups, key = lambda elem: elem.system_capacity.collapse())
 
         for group in homogeneous_groups_sorted_increasing:
             if len(unmet_cumulative_reduction_on_ts) > 0:
                 generalized_deltas_lst, unmet_cumulative_reduction_on_ts = group.compute_soft_adjustment(unmet_cumulative_reduction_on_ts,
-                                                                                                         scaled_entity_instance_requirements_by_entity,
-                                                                                                         self.region_name)
+                                                                                                         scaled_entity_instance_requirements_by_entity)
+                print("compute_soft_adjustment")
+                print(generalized_deltas_lst)
+                print(unmet_cumulative_reduction_on_ts)
+                raise ValueError('haha')
+
                 if len(generalized_deltas_lst) > 0:
                     for gd in generalized_deltas_lst:
                         if gd.container_group_delta.sign < 0:
@@ -136,8 +149,7 @@ class Region:
 
         # try to accommodate the entities in the groups sorted
         # in the order decreasing by capacity used (fill-fastest)
-        homogeneous_groups_sorted_decreasing = OrderedDict(reversed(sorted(cur_groups,
-                                                                           key = lambda elem: elem.system_capacity.collapse())))
+        homogeneous_groups_sorted_decreasing = reversed(sorted(cur_groups, key = lambda elem: elem.system_capacity.collapse()))
 
         for group in homogeneous_groups_sorted_decreasing:
             if len(unmet_cumulative_increase_on_ts) > 0:

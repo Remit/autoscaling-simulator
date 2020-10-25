@@ -74,10 +74,13 @@ class DeltaTimeline:
         Returns the new current state with all the updates taken into account.
         """
 
+        print('roll_out_updates')
+
         if borderline_ts_for_updates > self.time_of_last_state_update:
 
             # Enforcing deltas if needed and updating the timeline with them
-            timeline_to_consider = { timestamp: state_deltas for timestamp, state_deltas in self.timeline.items() if (timestamp <= borderline_ts_for_updates) }
+            timeline_to_consider = { timestamp: state_deltas for timestamp, state_deltas in self.timeline.items() if (timestamp > self.time_of_last_state_update) and (timestamp <= borderline_ts_for_updates) }
+
             for timestamp, state_deltas in timeline_to_consider.items():
                 for state_delta in state_deltas:
                     new_timestamped_state_deltas = state_delta.enforce(self.platform_scaling_model,
@@ -88,13 +91,15 @@ class DeltaTimeline:
                         self.add_state_delta(new_timestamp, new_state_delta)
 
             # Updating the actual state using the enforced deltas
-            timeline_to_consider = { timestamp: state_deltas for timestamp, state_deltas in self.timeline.items() if (timestamp <= borderline_ts_for_updates) }
+            timeline_to_consider = { timestamp: state_deltas for timestamp, state_deltas in self.timeline.items() if (timestamp > self.time_of_last_state_update) and (timestamp <= borderline_ts_for_updates) }
 
             for timestamp, state_deltas in timeline_to_consider.items():
                 for state_delta in state_deltas:
                     self.actual_state += state_delta
                     #for grp in self.actual_state.regions['eu'].homogeneous_groups:
                     #    print(list(grp.entities_state.entities_groups.keys()))
+                    #    for entity_group in grp.entities_state.entities_groups.values():
+                    #        print(entity_group.scaling_aspects['count'].get_value())
                     #print(state_delta.deltas_per_region['eu'].generalized_deltas[1])
                     #print(state_delta.deltas_per_region['eu'].generalized_deltas[1].container_group_delta.virtual)
 

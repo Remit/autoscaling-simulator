@@ -50,7 +50,7 @@ class TimelineOfDesiredEntitiesChanges:
                     self.current_index[region_name] += 1
                     self.current_timestamp[region_name] = list(self.timeline_of_entities_changes[region_name].keys())[self.current_index[region_name]]
 
-            if len(entities_scalings_on_ts > 0):
+            if len(entities_scalings_on_ts) > 0:
                 return (min_cur_timestamp, entities_scalings_on_ts)
 
         return (None, None)

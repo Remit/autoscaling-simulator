@@ -60,17 +60,6 @@ class NodeInfo(ScaledContainer):
 
         return 0
 
-    def fits(self,
-             requirements_by_entity : dict):
-
-        """
-        Checks whether the node of given type can acommodate the requirements
-        of the entities considered for the placement on such node.
-        """
-
-        fits, _ = self.takes_capacity(requirements_by_entity)
-        return fits
-
     def resource_requirements_to_capacity(self,
                                           res_requirements : ResourceRequirements):
 
@@ -84,7 +73,7 @@ class NodeInfo(ScaledContainer):
 
     def entities_require_capacity(self,
                                   requirements_by_entity : dict,
-                                  entities_state : EntitiesState = None):
+                                  entities_state : EntitiesState = None) -> tuple:
 
         """
         Calculates how much capacity would be taken by the entities if they

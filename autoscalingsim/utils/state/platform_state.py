@@ -105,8 +105,8 @@ class PlatformState:
 
 
     def compute_soft_adjustment(self,
-                                scaled_entity_adjustment_in_existing_containers,
-                                scaled_entity_instance_requirements_by_entity):
+                                scaling_aspects_adjustment_in_existing_containers : dict,
+                                scaled_entity_instance_requirements_by_entity : dict) -> tuple:
         """
         Attempts to place the entities in the existing containers (nodes).
         Returns the deltas of homogeneous groups in regions (or none) and
@@ -118,8 +118,8 @@ class PlatformState:
         groups_deltas_raw = {}
         unmet_scaled_entity_adjustment = {}
 
-        for region_name, region in self.regions:
-            region_groups_deltas, region_unmet_scaled_entity_adjustment = region.compute_soft_adjustment(scaled_entity_adjustment_in_existing_containers,
+        for region_name, region in self.regions.items():
+            region_groups_deltas, region_unmet_scaled_entity_adjustment = region.compute_soft_adjustment(scaling_aspects_adjustment_in_existing_containers[region_name],
                                                                                                          scaled_entity_instance_requirements_by_entity)
             if len(region_groups_deltas) > 0:
                 groups_deltas_raw[region_name] = region_groups_deltas

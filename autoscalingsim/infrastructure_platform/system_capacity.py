@@ -1,3 +1,5 @@
+import operator
+
 from ..utils.state.capacity import Capacity
 from ..scaling.policiesbuilder.scaled.scaled_container import ScaledContainer
 
@@ -34,6 +36,12 @@ class SystemCapacity(Capacity):
             else:
                 self.system_capacity_taken[cap_type] = system_capacity_taken[cap_type]
 
+    def copy(self):
+
+        return SystemCapacity(self.container_info,
+                              self.instance_count,
+                              self.system_capacity_taken.copy())
+
     def __add__(self,
                 cap_to_add : 'SystemCapacity'):
 
@@ -44,7 +52,7 @@ class SystemCapacity(Capacity):
             raise ValueError('An attempt to add capacities with different unique IDs: {} and {}'.format(self.uid, cap_to_add.uid))
 
         sum_system_capacity = {}
-        for self_cap, other_cap in zip(self.system_capacity_taken, cap_to_add.system_capacity_taken):
+        for self_cap, other_cap in zip(self.system_capacity_taken.items(), cap_to_add.system_capacity_taken.items()):
             sum_system_capacity[self_cap[0]] = self_cap[1] + other_cap[1]
 
         return SystemCapacity(self.container_info,
@@ -61,7 +69,7 @@ class SystemCapacity(Capacity):
             raise ValueError('An attempt to subtract capacities with different unique IDs: {} and {}'.format(self.uid, cap_to_sub.uid))
 
         reduced_system_capacity = {}
-        for self_cap, other_cap in zip(self.system_capacity_taken, cap_to_sub.system_capacity_taken):
+        for self_cap, other_cap in zip(self.system_capacity_taken.items(), cap_to_sub.system_capacity_taken.items()):
             reduced_system_capacity[self_cap[0]] = self_cap[1] - other_cap[1]
 
         return SystemCapacity(self.container_info,
@@ -81,6 +89,46 @@ class SystemCapacity(Capacity):
         return SystemCapacity(self.container_info,
                               self.instance_count,
                               mult_system_capacity)
+
+    def _comp(self,
+              other_cap : 'SystemCapacity',
+              comparison_op):
+
+        if not isinstance(other_cap, SystemCapacity):
+            raise TypeError('Unexpected type of the operand when comparing with {}: {}'.format(self.__class__.__name__,
+                                                                                               type(other_cap)))
+
+        return comparison_op(self.collapse(), other_cap.collapse())
+
+    def __gt__(self,
+               other_cap : 'SystemCapacity'):
+
+        return self._comp(other_cap, operator.gt)
+
+    def __ge__(self,
+               other_cap : 'SystemCapacity'):
+
+        return self._comp(other_cap, operator.ge)
+
+    def __lt__(self,
+               other_cap : 'SystemCapacity'):
+
+        return self._comp(other_cap, operator.lt)
+
+    def __le__(self,
+               other_cap : 'SystemCapacity'):
+
+        return self._comp(other_cap, operator.le)
+
+    def __eq__(self,
+               other_cap : 'SystemCapacity'):
+
+        return self._comp(other_cap, operator.eq)
+
+    def __ne__(self,
+               other_cap : 'SystemCapacity'):
+
+        return self._comp(other_cap, operator.ne)
 
     def is_exhausted(self):
 
@@ -118,7 +166,6 @@ class SystemCapacity(Capacity):
         else:
             return 0
 
-# TODO: consider removing?where is it used?
     def collapse(self):
 
         joint_capacity = 0.0

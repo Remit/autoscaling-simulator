@@ -184,9 +184,11 @@ class EntityGroupDelta:
 
     def __init__(self,
                  entity_name : str,
-                 aspects_vals : dict):
+                 aspects_vals : dict,
+                 resource_reqs : ResourceRequirements):
 
         self.entity_name = entity_name
+        self.resource_requirements = resource_reqs
         self.aspects_deltas = {}
         for aspect_name, aspect_value in aspects_vals.items():
             if isinstance(aspect_value, ScalingAspect):
@@ -278,13 +280,18 @@ class EntitiesGroupDelta:
     def __init__(self,
                  aspects_vals_per_entity : dict = {},
                  in_change : bool = True,
-                 virtual : bool = False):
+                 virtual : bool = False,
+                 services_reqs = {}):
+
+        if len(services_reqs) == 0:
+            raise ValueError('empty services reqs')
 
         self.deltas = {}
         for entity_name, aspects_vals in aspects_vals_per_entity.items():
 
             self.deltas[entity_name] = EntityGroupDelta(entity_name,
-                                                        aspects_vals)
+                                                        aspects_vals,
+                                                        services_reqs[entity_name])
 
         # Signifies whether the delta should be considered during the enforcing or not.
         # The aim of 'virtual' property is to keep the connection between the deltas after the enforcement.
