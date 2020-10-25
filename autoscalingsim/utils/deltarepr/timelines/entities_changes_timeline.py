@@ -13,6 +13,7 @@ class TimelineOfDesiredEntitiesChanges:
                  scaling_events_timelines_per_region_per_entity : dict,
                  cur_timestamp : pd.Timestamp):
 
+        self.timeline_of_entities_changes = {}
         self.horizon = pd.Timedelta(10, unit = 'm')
         self.combiner = combiner
         self.current_timestamp = {}

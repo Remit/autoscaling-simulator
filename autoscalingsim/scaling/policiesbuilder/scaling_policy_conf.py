@@ -39,7 +39,7 @@ class ScalingPolicyConfiguration:
                 self.adjustment_goal = ErrorChecker.key_check_and_load('adjustment_goal', policy_config, self.__class__.__name__)
                 self.optimizer_type = ErrorChecker.key_check_and_load('optimizer_type', policy_config, self.__class__.__name__)
                 self.placement_hint = ErrorChecker.key_check_and_load('placement_hint', policy_config, self.__class__.__name__)
-                self.combiner_type = ErrorChecker.key_check_and_load('combiner_type', policy_config, self.__class__.__name__)
+                self.combiner_settings = ErrorChecker.key_check_and_load('combiner', policy_config, self.__class__.__name__)
 
                 structure_config = ErrorChecker.key_check_and_load('structure', app_config, self.__class__.__name__)
                 services_config = ErrorChecker.key_check_and_load('services', app_config, self.__class__.__name__)

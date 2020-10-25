@@ -8,6 +8,7 @@ from ...application_scaling_model import ApplicationScalingModel
 from ...platform_scaling_model import PlatformScalingModel
 
 from ....utils import combiners
+from ....utils.error_check import ErrorChecker
 from ....utils.deltarepr.timelines.entities_changes_timeline import TimelineOfDesiredEntitiesChanges
 from ....utils.deltarepr.timelines.delta_timeline import DeltaTimeline
 from ....utils.state.entity_state.entities_states_reg import EntitiesStatesRegionalized
@@ -22,7 +23,6 @@ class Adjuster(ABC):
     specific adjusters.
     """
 
-    @abstractmethod
     def __init__(self,
                  application_scaling_model : ApplicationScalingModel,
                  platform_scaling_model : PlatformScalingModel,
@@ -30,24 +30,16 @@ class Adjuster(ABC):
                  scaled_entity_instance_requirements_by_entity : dict,
                  optimizer_type : str,
                  placement_hint : str,
-                 combiner_type: str):
-        pass
-
-    def init_common(self,
-                    application_scaling_model : ApplicationScalingModel,
-                    platform_scaling_model : PlatformScalingModel,
-                    container_for_scaled_entities_types : dict,
-                    scaled_entity_instance_requirements_by_entity : dict,
-                    optimizer_type : str,
-                    placement_hint : str,
-                    combiner_type : str,
-                    score_calculator_class : score_calculators.ScoreCalculator):
+                 combiner_settings : dict,
+                 score_calculator_class : score_calculators.ScoreCalculator):
 
         self.application_scaling_model = application_scaling_model
         self.platform_scaling_model = platform_scaling_model
         self.scaled_entity_instance_requirements_by_entity = scaled_entity_instance_requirements_by_entity
 
-        self.combiner = combiners.Registry.get(combiner_type)
+        combiner_type = ErrorChecker.key_check_and_load('type', combiner_settings, self.__class__.__name__)
+        combiner_conf = ErrorChecker.key_check_and_load('conf', combiner_settings, self.__class__.__name__)
+        self.combiner = combiners.Registry.get(combiner_type)(combiner_conf)
         self.desired_change_calculator = DesiredChangeCalculator(placement_hint,
                                                                  score_calculator_class,
                                                                  optimizer_type,
@@ -92,6 +84,7 @@ class Adjuster(ABC):
         timeline_of_unmet_changes = TimelineOfDesiredEntitiesChanges(self.combiner,
                                                                      entities_scaling_events,# TODO: fix on init, consider aspects
                                                                      cur_timestamp)
+
         timeline_of_deltas = DeltaTimeline(self.platform_scaling_model,
                                            self.application_scaling_model,
                                            current_state)
@@ -176,14 +169,14 @@ class CostMinimizer(Adjuster):
                  combiner_type = 'windowed'):
 
         score_calculator_class = score_calculators.Registry.get(self.__class__.__name__)
-        super().init_common(application_scaling_model,
-                            platform_scaling_model,
-                            container_for_scaled_entities_types,
-                            scaled_entity_instance_requirements_by_entity,
-                            optimizer_type,
-                            placement_hint,
-                            combiner_type,
-                            score_calculator_class)
+        super().__init__(application_scaling_model,
+                         platform_scaling_model,
+                         container_for_scaled_entities_types,
+                         scaled_entity_instance_requirements_by_entity,
+                         optimizer_type,
+                         placement_hint,
+                         combiner_type,
+                         score_calculator_class)
 
 class PerformanceMaximizer(Adjuster):
 

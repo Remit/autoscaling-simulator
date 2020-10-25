@@ -19,7 +19,8 @@ class Combiner(ABC):
 
     @abstractmethod
     def combine(self,
-                scaled_entities_adjustments : dict):
+                scaled_entities_adjustments : dict,
+                cur_timestamp : pd.Timestamp):
 
         pass
 
@@ -37,7 +38,8 @@ class NoopCombiner(Combiner):
         pass
 
     def combine(self,
-                scaled_entities_adjustments : dict):
+                scaled_entities_adjustments : dict,
+                cur_timestamp : pd.Timestamp):
 
         pass
 
@@ -53,14 +55,11 @@ class WindowedCombiner(Combiner):
     def __init__(self,
                  settings : dict):
 
-        window = ErrorChecker.key_check_and_load('window', settings, self.__class__.__name__)
-        if not isinstance(window, pd.Timedelta):
-            raise TypeError('Parameter \'window\' in {} is not of type {}'.format(self.__class__.__name__, pd.Timedelta.__name__))
-        self.window = window
+        self.window = pd.Timedelta(ErrorChecker.key_check_and_load('window_size_ms', settings, self.__class__.__name__), unit = 'ms')
         self.aggregation_operation = sum # todo: consider parameterizing, should return single int
 
     def combine(self,
-                scaled_entities_adjustments : dict,
+                scaled_entities_adjustments : dict, # dict of dataframes
                 cur_timestamp : pd.Timestamp):
 
         unified_timeline_of_adjustments = {}
@@ -72,26 +71,19 @@ class WindowedCombiner(Combiner):
             if not cur_begin in unified_timeline_of_adjustments:
                 unified_timeline_of_adjustments[cur_begin] = {}
 
-            cur_scaled_entities_adjustments_df = {}
-            for scaled_entity, scaled_entity_adjustment_timeline in cur_scaled_entities_adjustments.items():
-                timeline_df = pd.DataFrame({'datetime': list(scaled_entity_adjustment_timeline.keys()),
-                                            'value': list(scaled_entity_adjustment_timeline.values())})
-                timeline_df = timeline_df.set_index('datetime')
-                cur_scaled_entities_adjustments[scaled_entity] = timeline_df
+            for scaled_entity, timeline_df in cur_scaled_entities_adjustments.items():
+                entity_adjustments_in_window = timeline_df[(timeline_df.index >= cur_begin) & (timeline_df.index < cur_end)]
+                unified_timeline_of_adjustments[cur_begin][scaled_entity] = entity_adjustments_in_window.apply(self.aggregation_operation).to_dict()
+                cur_scaled_entities_adjustments[scaled_entity] = timeline_df[timeline_df.index >= cur_end]
 
-            for scaled_entity, timeline_df in cur_scaled_entities_adjustments_df.items():
-                entity_adjustments_in_window = timeline_df[(timeline_df.index >= cur_begin) and (timeline_df.index < cur_end)]
-                cumulative_entity_adjustment_in_window = self.aggregation_operation(entity_adjustments_in_window['value'])
-                unified_timeline_of_adjustments[cur_begin][scaled_entity] = cumulative_entity_adjustment_in_window
-                cur_scaled_entities_adjustments_df[scaled_entity] = timeline_df[timeline_df.index >= cur_end]
-
-            cur_scaled_entities_adjustments_df = {(scaled_entity, scaled_entity_adjustment_timeline) for scaled_entity, scaled_entity_adjustment_timeline in cur_scaled_entities_adjustments_df.items() if len(scaled_entity_adjustment_timeline) > 0 }
+            cur_scaled_entities_adjustments = {scaled_entity: scaled_entity_adjustment_timeline for scaled_entity, scaled_entity_adjustment_timeline in cur_scaled_entities_adjustments.items() if len(scaled_entity_adjustment_timeline) > 0 }
 
             cur_begin = cur_end
             cur_end += self.window
 
         unified_timeline_of_adjustments = OrderedDict(sorted(unified_timeline_of_adjustments.items(),
-                                                             key = lambda elem: elem[0][0]))
+                                                             key = lambda elem: elem[0]))
+
         return unified_timeline_of_adjustments
 
 class Registry:

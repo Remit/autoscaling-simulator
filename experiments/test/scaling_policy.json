@@ -4,7 +4,12 @@
     "adjustment_goal": "cost_minimization",
     "optimizer_type": "OptimizerScoreMaximizer",
     "placement_hint": "shared",
-    "combiner_type": "windowed"
+    "combiner": {
+      "type": "windowed",
+      "conf": {
+        "window_size_ms": 50
+      }
+    }
   },
   "application": {
     "structure": {},
