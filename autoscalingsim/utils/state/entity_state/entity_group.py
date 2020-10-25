@@ -193,7 +193,7 @@ class EntityGroupDelta:
                 self.aspects_deltas[aspect_name] = ScalingAspectDelta(aspect_value)
             elif isinstance(aspect_value, numbers.Number):
                 self.aspects_deltas[aspect_name] = ScalingAspectDelta(scaling_aspects.Registry.get(aspect_name)(abs(aspect_value)),
-                                                                                      int(np.sign(aspect_value)))
+                                                                      int(np.sign(aspect_value)))
             else:
                 raise TypeError('Unexpected type of scaling aspects values to initialize the {}'.format(self.__class__))
 
@@ -340,7 +340,7 @@ class EntitiesGroupDelta:
 
         aspects_vals_per_entity = {}
         for entity_name, delta in self.deltas.items():
-            aspects_vals_per_entity[aspect_name] = delta.to_raw_change()
+            aspects_vals_per_entity[entity_name] = delta.to_raw_change()
 
         return EntitiesGroupDelta(aspects_vals_per_entity,
                                   self.in_change,

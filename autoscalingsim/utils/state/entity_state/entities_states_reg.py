@@ -141,11 +141,12 @@ class EntitiesStatesRegionalizedDelta:
     def __add__(self,
                 other_delta : 'EntitiesStatesRegionalizedDelta'):
 
-        pass
+        return self._add(other_delta, 1)
 
     def __sub__(self,
                 other_delta : 'EntitiesStatesRegionalizedDelta'):
-        pass
+
+        return self._add(other_delta, -1)
 
     def _add(self,
              other_delta : 'EntitiesStatesRegionalizedDelta',

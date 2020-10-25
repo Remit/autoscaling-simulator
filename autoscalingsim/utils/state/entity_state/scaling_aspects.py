@@ -137,8 +137,8 @@ class ScalingAspectDelta:
             raise TypeError('An attempt to subtract an object of unknown class from {}: {}'.format(self.__class__,
                                                                                                    type(other_delta)))
 
-        self.__add__(ScalingAspectDelta(other_delta.scaling_aspect,
-                                        -other_delta.sign))
+        return self.__add__(ScalingAspectDelta(other_delta.scaling_aspect,
+                                               -other_delta.sign))
 
     def __mul__(self,
                 scalar : float):

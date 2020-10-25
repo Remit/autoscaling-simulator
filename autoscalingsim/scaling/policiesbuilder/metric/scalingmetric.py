@@ -174,8 +174,6 @@ class ScalingMetricRegionalized:
 
         timeline_of_regionalized_desired_states = {}
         for timestamp, regionalized_desired_val in regionalized_desired_ts_raw.items():
-            print("scalingmetric")
-            print(regionalized_desired_val)
             timeline_of_regionalized_desired_states[timestamp] = EntitiesStatesRegionalized(regionalized_desired_val)
 
         return timeline_of_regionalized_desired_states

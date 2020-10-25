@@ -192,12 +192,11 @@ class PlatformState:
 
     def extract_collective_entities_states(self):
 
-        collective_entities_states = EntitiesStatesRegionalized()
+        collective_entities_states = {}
         for region_name, region in self.regions.items():
-            collective_entities_states.add_state(region_name,
-                                                 region.extract_collective_entities_state())
+            collective_entities_states[region_name] = region.extract_collective_entities_state()
 
-        return collective_entities_states
+        return EntitiesStatesRegionalized(collective_entities_states)
 
 class StateDuration:
 

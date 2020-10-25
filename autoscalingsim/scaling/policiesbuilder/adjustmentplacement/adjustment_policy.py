@@ -64,6 +64,8 @@ class AdjustmentPolicy:
 
             prev_entities_state = desired_state_regionalized
 
+        print('here')
+
         return self.adjuster.adjust(cur_timestamp,
                                     entities_scaling_events,
                                     platform_state)

@@ -10,7 +10,7 @@ class EntitiesState:
     """
 
     def __init__(self,
-                 groups_or_aspects : dict):
+                 groups_or_aspects : dict = {}):
 
         self.entities_groups = {}
         if len(groups_or_aspects) > 0:
@@ -70,7 +70,6 @@ class EntitiesState:
         else:
             raise TypeError('An attempt to add the operand of type {} to the {} when expecting type EntitiesGroupDelta or EntitiesState'.format(entities_to_add.__class__,
                                                                                                                                                 self.__class__))
-
         return EntitiesState(new_groups)
 
     def __truediv__(self,
