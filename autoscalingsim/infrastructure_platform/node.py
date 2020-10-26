@@ -20,6 +20,7 @@ class NodeInfo(ScaledContainer):
                  node_type : str,
                  vCPU : int,
                  memory : int,
+                 disk : int,
                  network_bandwidth_MBps : float,
                  price_p_h : float = 0.0,
                  cpu_credits_h : int = 0,
@@ -31,6 +32,7 @@ class NodeInfo(ScaledContainer):
         self.node_type = node_type
         self.vCPU = vCPU
         self.memory = memory
+        self.disk = disk
         self.network_bandwidth_MBps = network_bandwidth_MBps
         self.price_p_h = price_p_h
         self.cpu_credits_h = cpu_credits_h
@@ -48,6 +50,7 @@ class NodeInfo(ScaledContainer):
 
         capacity_dict = {'vCPU': self.vCPU,
                          'memory': self.memory,
+                         'disk': self.disk,
                          'network_bandwidth_MBps': self.network_bandwidth_MBps}
 
         return capacity_dict
@@ -72,8 +75,7 @@ class NodeInfo(ScaledContainer):
         return SystemCapacity(self, 1, res_requirements.to_dict())
 
     def entities_require_capacity(self,
-                                  requirements_by_entity : dict,
-                                  entities_state : EntitiesState = None) -> tuple:
+                                  entities_state : EntitiesState) -> tuple:
 
         """
         Calculates how much capacity would be taken by the entities if they
@@ -83,30 +85,23 @@ class NodeInfo(ScaledContainer):
         the entities can at all be accommodated on the node.
         """
 
-        labels_required = []
-        joint_system_reqs = {}
+        requirements_by_entity = entities_state.get_entities_requirements()
+        counts_by_entity = entities_state.get_entities_counts()
 
+        joint_resource_requirements = ResourceRequirements.new_empty_resource_requirements()
         for entity_name, requirements in requirements_by_entity.items():
-            labels_reqs = ErrorChecker.key_check_and_load('labels', requirements, self.node_type)
-            labels_required.extend(labels_reqs)
-
             factor = 1
             if not entities_state is None:
-                factor = entities_state.count(entity_name)
+                factor = counts_by_entity[entity_name]
 
-            system_reqs = ErrorChecker.key_check_and_load('system_requirements', requirements, self.node_type)
-            for system_req_name, system_req_volume in system_reqs.items():
-                if not system_req_name in joint_system_reqs:
-                    joint_system_reqs[system_req_name] = 0
-                joint_system_reqs[system_req_name] += factor * system_req_volume
+            joint_resource_requirements += factor * requirements
 
-        for label_required in labels_required:
-            if not label_required in self.labels:
+        for label in joint_resource_requirements.labels:
+            if not label in self.labels:
                 return (False, 0.0)
 
-        capacity_taken = SystemCapacity(self,
-                                        1,
-                                        joint_system_reqs)
+        capacity_taken = SystemCapacity(self, 1,
+                                        joint_resource_requirements.to_dict())
 
         allocated = not capacity_taken.is_exhausted()
 

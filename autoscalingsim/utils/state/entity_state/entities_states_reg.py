@@ -7,14 +7,16 @@ class EntitiesStatesRegionalized:
     """
 
     def __init__(self,
-                 entities_states_per_region : dict):
+                 entities_states_per_region : dict,
+                 entities_res_reqs : dict = {}):
 
         self._entities_states_per_region = {}
         for region_name, value in entities_states_per_region.items():
             if isinstance(value, EntitiesState):
                 self.add_state(region_name, value)
             elif isinstance(value, dict) and len(value) > 0:
-                self._entities_states_per_region[region_name] = EntitiesState(value)
+                self._entities_states_per_region[region_name] = EntitiesState(value,
+                                                                              entities_res_reqs)
 
     def __add__(self,
                 other_regionalized_states : 'EntitiesStatesRegionalized'):

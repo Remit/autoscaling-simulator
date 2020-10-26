@@ -26,6 +26,7 @@ class ProviderNodes:
                       node_type : str,
                       vCPU : int,
                       memory : int,
+                      disk : int,
                       network_bandwidth_MBps : int,
                       price_p_h : float,
                       cpu_credits_h : float,
@@ -37,6 +38,7 @@ class ProviderNodes:
                                               node_type,
                                               vCPU,
                                               memory,
+                                              disk,
                                               network_bandwidth_MBps,
                                               price_p_h,
                                               cpu_credits_h,
@@ -101,6 +103,7 @@ class PlatformModel:
 
                             vCPU = ErrorChecker.key_check_and_load('vCPU', node_type, type)
                             memory = ErrorChecker.key_check_and_load('memory', node_type, type)
+                            disk = ErrorChecker.key_check_and_load('disk', node_type, type)
                             network_bandwidth_MBps = ErrorChecker.key_check_and_load('network_bandwidth_MBps', node_type, type)
                             price_p_h = ErrorChecker.key_check_and_load('price_p_h', node_type, type)
                             cpu_credits_h = ErrorChecker.key_check_and_load('cpu_credits_h', node_type, type)
@@ -110,6 +113,7 @@ class PlatformModel:
                             self.providers_configs[provider].add_node_info(type,
                                                                            vCPU,
                                                                            memory,
+                                                                           disk,
                                                                            network_bandwidth_MBps,
                                                                            price_p_h,
                                                                            cpu_credits_h,

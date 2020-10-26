@@ -17,8 +17,8 @@ class HomogeneousContainerGroupSet:
 
             container_info = container_for_scaled_entities_types[entity_placement.container_name]
 
-            fit, system_capacity_taken = container_info.takes_capacity(requirements_by_entity,
-                                                                       entity_placement.entities_state)
+            fits, system_capacity_taken = container_info.entities_require_capacity(requirements_by_entity,
+                                                                                  entity_placement.entities_state)
             if not fits:
                raise ValueError('Attempt to fit EntitiesState on the container {} where it cannot fit'.format(entity_name, container_info.node_type))
 

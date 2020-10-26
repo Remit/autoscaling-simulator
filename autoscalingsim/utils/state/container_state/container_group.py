@@ -24,25 +24,28 @@ class HomogeneousContainerGroup:
         containers_count = ErrorChecker.key_check_and_load('containers_count', group_conf, self.__class__.__name__)
         entities_instances_counts = ErrorChecker.key_check_and_load('entities_instances_counts', group_conf, self.__class__.__name__)
         system_capacity = ErrorChecker.key_check_and_load('system_capacity', group_conf, self.__class__.__name__)
+        system_requirements = ErrorChecker.key_check_and_load('system_requirements', group_conf, self.__class__.__name__)
 
         return HomogeneousContainerGroup(container_info,
                                          containers_count,
                                          entities_instances_counts,
-                                         system_capacity)
+                                         system_capacity,
+                                         system_requirements)
 
     def __init__(self,
                  container_info : NodeInfo,
                  containers_count : int,
-                 entities_instances_counts = {},
+                 entities_instances_counts : dict = {},
                  system_capacity : SystemCapacity = None,
-                 requirements_by_entity : dict = None):
+                 requirements_by_entity : dict = {}):
 
         self.container_name = container_info.get_name()
         self.container_info = container_info
 
         self.containers_count = containers_count
         if isinstance(entities_instances_counts, dict):
-            self.entities_state = EntitiesState(entities_instances_counts)
+            self.entities_state = EntitiesState(entities_instances_counts,
+                                                requirements_by_entity)
         elif isinstance(entities_instances_counts, EntitiesState):
             self.entities_state = entities_instances_counts
         else:
@@ -50,9 +53,8 @@ class HomogeneousContainerGroup:
                                                                                                           entities_instances_counts.__class__.__name__))
 
         if system_capacity is None:
-            if not requirements_by_entity is None:
-                self.container_info.entities_require_capacity(requirements_by_entity,
-                                                              self.entities_state)
+            if len(requirements_by_entity) > 0:
+                _, system_capacity = self.container_info.entities_require_capacity(self.entities_state)
             else:
                 system_capacity = SystemCapacity(container_info)
 
@@ -64,13 +66,10 @@ class HomogeneousContainerGroup:
         return self.entities_state.extract_scaling_aspects()
 
     def add_to_entities_state(self,
-                              entities_group_delta : EntitiesGroupDelta,
-                              requirements_by_entity : dict):
+                              entities_group_delta : EntitiesGroupDelta):
 
-# TODO: entities_group_delta with resource reqs
         self.entities_state += entities_group_delta
-        _, self.system_capacity = self.container_info.entities_require_capacity(requirements_by_entity,
-                                                                                self.entities_state)
+        _, self.system_capacity = self.container_info.entities_require_capacity(self.entities_state)
 
     def nullify_entities_state(self):
 

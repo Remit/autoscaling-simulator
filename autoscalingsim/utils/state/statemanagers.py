@@ -56,6 +56,15 @@ class StateReader(StateManager):
         return self.entities[source_name].state.get_metric_value(region_name,
                                                                  metric_name)
 
+    def get_resource_requirements(self,
+                                  source_name : str,
+                                  region_name : str):
+
+        if not source_name in self.entities:
+            raise ValueError('An attempt to call the source {} that is not in the list of {}'.format(source_name, self.__class__.__name__))
+
+        return self.entities[source_name].state.get_resource_requirements(region_name)
+
 class ScalingManager(StateManager):
 
     """

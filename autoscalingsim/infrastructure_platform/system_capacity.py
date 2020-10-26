@@ -14,6 +14,7 @@ class SystemCapacity(Capacity):
 
     layout = ['vCPU',
               'memory',
+              'disk',
               'network_bandwidth_MBps']
 
     def __init__(self,
@@ -21,6 +22,7 @@ class SystemCapacity(Capacity):
                  instance_count : int = 1,
                  system_capacity_taken : dict = {'vCPU' : 0,
                                                  'memory' : 0,
+                                                 'disk': 0,
                                                  'network_bandwidth_MBps' : 0}):
 
         self.container_info = container_info

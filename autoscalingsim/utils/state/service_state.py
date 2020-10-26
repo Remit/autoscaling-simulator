@@ -92,8 +92,8 @@ class ServiceState:
         self.service_name = service_name
         self.region_name = region_name
         self.processor = RequestsProcessor()
-        self.entity_group = EntityGroup(service_name)
-        self.resource_requirements = resource_requirements
+        self.entity_group = EntityGroup(service_name,
+                                        resource_requirements)
         self.request_processing_infos = request_processing_infos
         self.utilization = ServiceUtilization(init_timestamp,
                                               averaging_interval,
@@ -108,6 +108,10 @@ class ServiceState:
         self.placed_on_node = None
         self.node_count = None
         self.system_capacity_reserved = None
+
+    def get_resource_requirements(self):
+
+        return self.entity_group.get_resource_requirements()
 
     #def update_metric(self,
     #                  metric_name : str,
@@ -146,7 +150,7 @@ class ServiceState:
         self.placed_on_node = node_info
         self.node_count = node_count
 
-        cap_taken = self.placed_on_node.resource_requirements_to_capacity(self.resource_requirements)
+        cap_taken = self.placed_on_node.resource_requirements_to_capacity(self.entity_group.get_resource_requirements())
         self.system_capacity_reserved = cap_taken * self.node_count
 
         self.upstream_buf.update_settings(self.placed_on_node.latency,
@@ -298,6 +302,14 @@ class ServiceStateRegionalized(ScaledEntityState):
 
         for service_state in self.region_states.values():
             service_state.step(cur_timestamp, simulation_step)
+
+    def get_resource_requirements(self,
+                                  region_name : str):
+
+        if not region_name in self.region_states:
+            raise ValueError('A state for the given region name {} was not found'.format(region_name))
+
+        return self.region_states[region_name].get_resource_requirements()
 
     def update_metric(self,
                       region_name : str,

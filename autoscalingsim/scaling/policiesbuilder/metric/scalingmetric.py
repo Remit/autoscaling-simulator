@@ -160,6 +160,9 @@ class ScalingMetricRegionalized:
                                                                 region_name,
                                                                 self.aspect_name)
 
+            entity_res_reqs = self.state_reader.get_resource_requirements(self.entity_name,
+                                                                          region_name)
+
             desired_scaled_aspect_val_pr = metric(metric_vals,
                                                   cur_aspect_val)
 
@@ -174,7 +177,8 @@ class ScalingMetricRegionalized:
 
         timeline_of_regionalized_desired_states = {}
         for timestamp, regionalized_desired_val in regionalized_desired_ts_raw.items():
-            timeline_of_regionalized_desired_states[timestamp] = EntitiesStatesRegionalized(regionalized_desired_val)
+            timeline_of_regionalized_desired_states[timestamp] = EntitiesStatesRegionalized(regionalized_desired_val,
+                                                                                            {self.entity_name: entity_res_reqs})
 
         return timeline_of_regionalized_desired_states
 

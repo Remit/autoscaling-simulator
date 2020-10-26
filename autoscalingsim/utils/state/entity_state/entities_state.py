@@ -10,10 +10,8 @@ class EntitiesState:
     """
 
     def __init__(self,
-                 groups_or_aspects : dict = {}):
-
-        # TODO: add requirements for entities
-        raise ValueError('EntitieState')
+                 groups_or_aspects : dict = {},
+                 entities_resource_reqs : dict = {}):
 
         self.entities_groups = {}
         if len(groups_or_aspects) > 0:
@@ -21,10 +19,29 @@ class EntitiesState:
                 if isinstance(group_or_aspects_dict, EntityGroup):
                     self.entities_groups[entity_name] = group_or_aspects_dict
                 elif isinstance(groups_or_aspects, collections.Mapping):
+                    if len(entities_resource_reqs) == 0:
+                        raise ValueError('No resource requirements provided for the initialization of {}'.format(self.__class__.__name__))
                     self.entities_groups[entity_name] = EntityGroup(entity_name,
+                                                                    entities_resource_reqs[entity_name],
                                                                     group_or_aspects_dict)
                 else:
                     raise TypeError('Unknown type of the init parameter: {}'.format(type(groups_or_aspects)))
+
+    def get_entities_counts(self):
+
+        entities_counts = {}
+        for entity_name, group in self.entities_groups.items():
+            entities_counts[entity_name] = group.get_aspect_value('count').get_value()
+
+        return entities_counts
+
+    def get_entities_requirements(self):
+
+        reqs_by_entity = {}
+        for entity_name, group in self.entities_groups.items():
+            reqs_by_entity[entity_name] = group.get_resource_requirements()
+
+        return reqs_by_entity
 
     def copy(self):
 
