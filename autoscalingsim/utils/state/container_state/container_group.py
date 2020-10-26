@@ -16,27 +16,24 @@ class HomogeneousContainerGroup:
     only the count of scaled entities instances and the container name.
     """
 
-    @staticmethod
-    def from_conf(self,
+    @classmethod
+    def from_conf(cls,
                   group_conf : dict):
 
         container_info = ErrorChecker.key_check_and_load('container_info', group_conf, self.__class__.__name__)
         containers_count = ErrorChecker.key_check_and_load('containers_count', group_conf, self.__class__.__name__)
         entities_instances_counts = ErrorChecker.key_check_and_load('entities_instances_counts', group_conf, self.__class__.__name__)
-        system_capacity = ErrorChecker.key_check_and_load('system_capacity', group_conf, self.__class__.__name__)
         system_requirements = ErrorChecker.key_check_and_load('system_requirements', group_conf, self.__class__.__name__)
 
-        return HomogeneousContainerGroup(container_info,
-                                         containers_count,
-                                         entities_instances_counts,
-                                         system_capacity,
-                                         system_requirements)
+        return cls(container_info,
+                   containers_count,
+                   entities_instances_counts,
+                   system_requirements)
 
     def __init__(self,
                  container_info : NodeInfo,
                  containers_count : int,
                  entities_instances_counts : dict = {},
-                 system_capacity : SystemCapacity = None,
                  requirements_by_entity : dict = {}):
 
         self.container_name = container_info.get_name()
@@ -52,13 +49,7 @@ class HomogeneousContainerGroup:
             raise TypeError('Incorrect type of the entities_instances_counts when creating {}: {}'.format(self.__class__.__name__,
                                                                                                           entities_instances_counts.__class__.__name__))
 
-        if system_capacity is None:
-            if len(requirements_by_entity) > 0:
-                _, system_capacity = self.container_info.entities_require_capacity(self.entities_state)
-            else:
-                system_capacity = SystemCapacity(container_info)
-
-        self.system_capacity = system_capacity
+        _, self.system_capacity = self.container_info.entities_require_capacity(self.entities_state)
         self.id = id(self)
 
     def extract_scaling_aspects(self):
@@ -80,8 +71,7 @@ class HomogeneousContainerGroup:
 
         return HomogeneousContainerGroup(self.container_info,
                                          self.containers_count,
-                                         self.entities_state,
-                                         self.system_capacity)
+                                         self.entities_state)
 
     def to_delta(self,
                  direction : int = 1):
@@ -101,7 +91,7 @@ class HomogeneousContainerGroup:
 
     def _count_aspect_soft_adjustment(self,
                                       unmet_changes : dict,
-                                      container_capacity_taken_by_entity_sorted : dict):
+                                      container_capacity_taken_by_entity_sorted : dict) -> tuple:
 
         containers_count_to_consider = self.containers_count
         generalized_deltas = []
@@ -113,8 +103,6 @@ class HomogeneousContainerGroup:
             # capacity requirements. This is made to reduce the capacity fragmentation.
             temp_change = {}
             dynamic_entities_instances_count = self.entities_state.extract_aspect_value('count')
-            print("TOK-1")
-            print("dynamic_entities_instances_count {}".format(dynamic_entities_instances_count))
 
             for entity_name, instance_cap_to_take in container_capacity_taken_by_entity_sorted.items():
                 if entity_name in unmet_changes:
@@ -133,9 +121,6 @@ class HomogeneousContainerGroup:
 
                     # Case of removing entities from the existing containers
                     while (unmet_changes[entity_name] - temp_change[entity_name] < 0) and (dynamic_entities_instances_count[entity_name] > 0):
-                        print("> capacity joint {}".format(self.system_capacity.collapse()))
-                        print("> instance_cap_to_take joint {}".format(instance_cap_to_take.collapse()))
-
                         container_capacity_taken -= instance_cap_to_take
                         dynamic_entities_instances_count[entity_name] -= 1
                         temp_change[entity_name] -= 1
@@ -143,15 +128,6 @@ class HomogeneousContainerGroup:
             # Trying the same solution temp_accommodation to reduce the amount of iterations by
             # considering whether it can be repeated multiple times
 
-            print("TOK-2")
-            print("dynamic_entities_instances_count {}".format(dynamic_entities_instances_count))
-            print("temp_change {}".format(temp_change))
-            print("capacity joint {}".format(container_capacity_taken.collapse()))
-
-
-            # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            # TODO: incorrect handling of downsizing! when the change is negative
-            # e.g. min_containers_needed = self.containers_count = 1
             containers_needed = []
             for entity_name, count_in_solution in temp_change.items():
                 containers_needed.append(unmet_changes[entity_name] // count_in_solution) # always positive floor
@@ -165,59 +141,43 @@ class HomogeneousContainerGroup:
             for entity_name, count_in_solution in temp_change.items():
                 unmet_changes[entity_name] -= count_in_solution * min_containers_needed
 
-            # Store new capacity taken, node count and the new entities_instances_counts as
-            # a description of a changed Homogeneous Container Group w/o the change
-            # in the container name.
-            unique_changes = set(temp_change.values())
-            if ((not 0 in unique_changes) or len(unique_changes) > 1) and (min_containers_needed > 0) and (min_containers_needed <= self.containers_count):
+            container_group_delta = None
+            entities_group_delta = None
+            temp_change_count = {}
+            for entity_name, change_val in temp_change.items():
+                temp_change_count[entity_name] = {'count': change_val * min_containers_needed}
 
+            if (container_capacity_taken.collapse() == 0) and (len(temp_change_count) > 0) and (min_containers_needed > 0):
+                # scale down for nodes
                 new_entities_instances_counts = self.entities_state.extract_aspect_value('count')
 
-                container_group_delta = None
-                entities_group_delta = None
+                container_group = HomogeneousContainerGroup(self.container_info,
+                                                            min_containers_needed,
+                                                            self.entities_state.copy())
 
-                for entity_name, count_in_solution in temp_change.items():
-                    #if entity_name in in_change_entities_instances_counts:#?
-                    #    in_change_entities_instances_counts[entity_name] = count_in_solution#?
+                # Planning scale down for min_containers_needed of containers
+                container_group_delta = ContainerGroupDelta(container_group,
+                                                            sign = -1,
+                                                            in_change = True,
+                                                            virtual = False)
 
-                    if entity_name in new_entities_instances_counts:
-                        new_entities_instances_counts[entity_name] += count_in_solution
-                    else:
-                        new_entities_instances_counts[entity_name] = count_in_solution
+            else:
+                # scale down/up only for entities, container group remains unchanged
+                container_group_delta = ContainerGroupDelta(self.copy(),
+                                                            sign = 1,
+                                                            in_change = False,
+                                                            virtual = True)
 
-                new_entities_instances_counts = { entity_name: count for entity_name, count in new_entities_instances_counts.items() if count > 0 }
+            # Planning scale down for all the entities count change from the solution
+            entities_group_delta = EntitiesGroupDelta(temp_change_count,
+                                                      in_change = True,
+                                                      virtual = False,
+                                                      services_reqs = self.entities_state.get_entities_requirements())
 
-                container_group = ContainerGroup(self.container_info,
-                                                 min_containers_needed,#format?
-                                                 new_entities_instances_counts,#? format?
-                                                 container_capacity_taken)
+            gd = GeneralizedDelta(container_group_delta,
+                                  entities_group_delta)
 
-                # TODO: take into account virtual parameter. If we just want to remove the entities
-                if len(new_entities_instances_counts) == 0:
-                    # Case 1: scale-down happens as a result of the
-                    # deletion. Scaled down containers and the entities are
-                    # both in changed state, not yet enforced.
-                    container_group_delta = ContainerGroupDelta(container_group,
-                                                                -1,
-                                                                True)
-                else:
-                    # Case 2: nothing changed. Simply making an enforced delta for
-                    # container group. Entities group delta does not exist (None).
-                    # Case 3: entities will start/be removed on/from the existing
-                    # container group.
-                    container_group_delta = ContainerGroupDelta(container_group,
-                                                                1,
-                                                                False)
-
-                if len(temp_change) > 0:
-                    # Case 1 and 2.
-                    entities_group_delta = EntitiesGroupDelta(temp_change)
-
-
-                gd = GeneralizedDelta(container_group_delta,
-                                      entities_group_delta)
-
-                generalized_deltas.append(gd)
+            generalized_deltas.append(gd)
 
         # Returning generalized deltas (enforced and not enforced) and the unmet changes in entities counts
         unmet_changes_res = {entity_name: count for entity_name, count in unmet_changes.items() if count != 0}

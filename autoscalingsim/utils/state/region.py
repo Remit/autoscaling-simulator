@@ -128,10 +128,6 @@ class Region:
             if len(unmet_cumulative_reduction_on_ts) > 0:
                 generalized_deltas_lst, unmet_cumulative_reduction_on_ts = group.compute_soft_adjustment(unmet_cumulative_reduction_on_ts,
                                                                                                          scaled_entity_instance_requirements_by_entity)
-                print("compute_soft_adjustment")
-                print(generalized_deltas_lst)
-                print(unmet_cumulative_reduction_on_ts)
-                raise ValueError('haha')
 
                 if len(generalized_deltas_lst) > 0:
                     for gd in generalized_deltas_lst:

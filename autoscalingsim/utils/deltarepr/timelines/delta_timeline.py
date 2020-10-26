@@ -74,8 +74,6 @@ class DeltaTimeline:
         Returns the new current state with all the updates taken into account.
         """
 
-        print('roll_out_updates')
-
         if borderline_ts_for_updates > self.time_of_last_state_update:
 
             # Enforcing deltas if needed and updating the timeline with them
