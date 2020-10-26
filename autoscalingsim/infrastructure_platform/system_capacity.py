@@ -139,7 +139,7 @@ class SystemCapacity(Capacity):
         """
 
         for sys_cap_type, sys_cap_taken in self.system_capacity_taken.items():
-            if sys_cap_taken >= self.instance_count * self.instance_capacity[sys_cap_type]:
+            if sys_cap_taken > self.instance_count * self.instance_capacity[sys_cap_type]:
                 return True
 
         return False

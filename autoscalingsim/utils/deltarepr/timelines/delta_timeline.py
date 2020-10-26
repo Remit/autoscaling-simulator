@@ -48,7 +48,8 @@ class DeltaTimeline:
         # between the timestamp of the last enforcement and the beginning of the update.
         min_timestamp_of_other_timeline = min(list(other_delta_timeline.timeline.keys()))
         borderline_ts = max(self.time_of_last_state_update, min_timestamp_of_other_timeline)
-        self.timeline = { (timestamp, deltas) for timestamp, deltas in self.timeline.items() if timestamp <= borderline_ts }
+        print(self.timeline)
+        self.timeline = { timestamp: deltas for timestamp, deltas in self.timeline.items() if timestamp <= borderline_ts }
 
         # Adding new deltas
         for timestamp, list_of_updates in other_delta_timeline.timeline.items():

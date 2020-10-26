@@ -206,7 +206,8 @@ class ApplicationModel:
         self.platform_model.init_platform_state_deltas(list(set(regions)),
                                                        starting_time,
                                                        self.deployment_model.to_init_platform_state_delta())
-        self.scaling_policy.init_adjustment_policy(entity_instance_requirements)
+        self.scaling_policy.init_adjustment_policy(entity_instance_requirements,
+                                                   self.state_reader)
 
     def step(self,
              cur_timestamp : pd.Timestamp,

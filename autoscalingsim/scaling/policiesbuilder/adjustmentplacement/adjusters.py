@@ -12,6 +12,7 @@ from ....utils.error_check import ErrorChecker
 from ....utils.deltarepr.timelines.entities_changes_timeline import TimelineOfDesiredEntitiesChanges
 from ....utils.deltarepr.timelines.delta_timeline import DeltaTimeline
 from ....utils.state.entity_state.entities_states_reg import EntitiesStatesRegionalized
+from ....utils.state.statemanagers import StateReader
 from ....utils.state.platform_state import PlatformState
 
 class Adjuster(ABC):
@@ -31,7 +32,8 @@ class Adjuster(ABC):
                  optimizer_type : str,
                  placement_hint : str,
                  combiner_settings : dict,
-                 score_calculator_class : score_calculators.ScoreCalculator):
+                 score_calculator_class : score_calculators.ScoreCalculator,
+                 state_reader : StateReader):
 
         self.application_scaling_model = application_scaling_model
         self.platform_scaling_model = platform_scaling_model
@@ -44,7 +46,8 @@ class Adjuster(ABC):
                                                                  score_calculator_class,
                                                                  optimizer_type,
                                                                  container_for_scaled_entities_types,
-                                                                 scaled_entity_instance_requirements_by_entity)
+                                                                 scaled_entity_instance_requirements_by_entity,
+                                                                 state_reader)
 
     def adjust(self,
                cur_timestamp : pd.Timestamp,
@@ -106,15 +109,19 @@ class Adjuster(ABC):
             # the changes on the considered timestamp, we need to consider the
             # alternatives: either to add new containers to accommodate the change
             # or to start a new cluster and migrate services there.
+            unmet_change = {'eu': {'frontend': {'count': 2}}}
             if len(unmet_change) > 0: # unmet_change can only be positive below
 
                 ts_next = timeline_of_unmet_changes.peek(ts_of_unmet_change)
                 state_duration_h = (ts_next - ts_of_unmet_change) / pd.Timedelta(1, unit = 'h')
-                unmet_change_state = EntitiesStatesRegionalized(unmet_change) # TODO: check
+                unmet_change_state = EntitiesStatesRegionalized(unmet_change,
+                                                                self.scaled_entity_instance_requirements_by_entity)
 
                 # 2.a: Addition of new containers
                 state_simple_addition_deltas, state_score_simple_addition = self.desired_change_calculator(unmet_change_state,
                                                                                                            state_duration_h)
+
+                raise ValueError('hoho')
                 score_simple_addition += in_work_state.state_score * state_duration_h
 
                 # 2.b: New cluster and migration
@@ -164,6 +171,7 @@ class CostMinimizer(Adjuster):
                  platform_scaling_model : PlatformScalingModel,
                  container_for_scaled_entities_types : dict,
                  scaled_entity_instance_requirements_by_entity : dict,
+                 state_reader : StateReader,
                  optimizer_type = 'OptimizerScoreMaximizer',
                  placement_hint = 'shared',
                  combiner_type = 'windowed'):
@@ -176,7 +184,8 @@ class CostMinimizer(Adjuster):
                          optimizer_type,
                          placement_hint,
                          combiner_type,
-                         score_calculator_class)
+                         score_calculator_class,
+                         state_reader)
 
 class PerformanceMaximizer(Adjuster):
 

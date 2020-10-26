@@ -7,6 +7,7 @@ from .scorer import Scorer
 from .score import StateScore
 
 from .....utils.state.region import Region
+from .....utils.state.statemanagers import StateReader
 from .....utils.state.platform_state import PlatformState
 from .....utils.state.entity_state.entities_states_reg import EntitiesStatesRegionalized
 
@@ -22,12 +23,14 @@ class DesiredChangeCalculator:
                  score_calculator_class : score_calculators.ScoreCalculator,
                  optimizer_type : str,
                  container_for_scaled_entities_types : dict,
-                 scaled_entity_instance_requirements_by_entity : dict):
+                 scaled_entity_instance_requirements_by_entity : dict,
+                 reader : StateReader):
 
         self.placer = Placer(placement_hint,
                              container_for_scaled_entities_types,
-                             scaled_entity_instance_requirements_by_entity)
-                             
+                             scaled_entity_instance_requirements_by_entity,
+                             reader)
+
         score_calculator = score_calculator_class(container_for_scaled_entities_types)
         self.scorer = Scorer(score_calculator)
         optimizer_class = optimizers.Registry.get(optimizer_type)
@@ -47,9 +50,12 @@ class DesiredChangeCalculator:
         for region_name, entities_state in entities_states:
             # Place
             placements_lst = self.placer.compute_containers_requirements(self.scaled_entity_instance_requirements_by_entity,
+                                                                         region_name,
                                                                          entities_state)
             # Score
             scored_placements_lst = self.scorer(placements_lst, state_duration_h)
+            print(placements_lst)
+            raise ValueError('hehe')
 
             # Optimize
             selected_placement = self.optimizer(scored_placements_lst)

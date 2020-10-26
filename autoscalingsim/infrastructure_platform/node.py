@@ -85,6 +85,9 @@ class NodeInfo(ScaledContainer):
         the entities can at all be accommodated on the node.
         """
 
+        if not isinstance(entities_state, EntitiesState):
+            raise TypeError('Unexpected type provided to compute the required capacity: {}'.format(type(entities_state)))
+
         requirements_by_entity = entities_state.get_entities_requirements()
         counts_by_entity = entities_state.get_entities_counts()
 

@@ -6,6 +6,7 @@ from .scaling_policy_conf import ScalingPolicyConfiguration
 
 from ..scaling_model import ScalingModel
 from ...infrastructure_platform.platform_model import PlatformModel
+from ...utils.state.statemanagers import StateReader
 
 class ScalingPolicy:
 
@@ -83,9 +84,11 @@ class ScalingPolicy:
                                                                    self.scaling_settings))
 
     def init_adjustment_policy(self,
-                               entity_instance_requirements : dict):
+                               entity_instance_requirements : dict,
+                               state_reader : StateReader):
 
-        self.platform_model.init_adjustment_policy(entity_instance_requirements)
+        self.platform_model.init_adjustment_policy(entity_instance_requirements,
+                                                   state_reader)
 
     def reconcile_state(self,
                         cur_timestamp : pd.Timestamp):

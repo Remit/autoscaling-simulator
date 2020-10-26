@@ -4,6 +4,7 @@ import pandas as pd
 from .node import NodeInfo
 
 from ..utils.state.platform_state import PlatformState
+from ..utils.state.statemanagers import StateReader
 from ..utils.deltarepr.platform_state_delta import StateDelta
 from ..utils.deltarepr.timelines.delta_timeline import DeltaTimeline
 from ..utils.error_check import ErrorChecker
@@ -54,6 +55,33 @@ class ProviderNodes:
                                                                            self.provider))
 
         return self.node_infos[node_type]
+
+    def __iter__(self):
+        return ProviderNodesIterator(self)
+
+class ProviderNodesIterator:
+
+    """
+    Iterator class for ProviderNodes.
+    """
+
+    def __init__(self,
+                 provider_nodes : ProviderNodes):
+
+        self._provider_nodes = provider_nodes
+        self._index = 0
+        self._keys = list(self._provider_nodes.node_infos.keys())
+
+    def __next__(self):
+
+        if self._index < len(self._provider_nodes.node_infos):
+            node_type = self._keys[self._index]
+            node_info = self._provider_nodes.node_infos[node_type]
+            self._index += 1
+            return (node_type, node_info)
+
+        raise StopIteration
+
 
 class PlatformModel:
     """
@@ -133,10 +161,12 @@ class PlatformModel:
         return self.state_deltas_timeline.roll_out_updates(cur_timestamp)
 
     def init_adjustment_policy(self,
-                               entity_instance_requirements : dict):
+                               entity_instance_requirements : dict,
+                               state_reader : StateReader):
 
         self.adjustment_policy.init_adjustment_policy(self.providers_configs,
-                                                      entity_instance_requirements)
+                                                      entity_instance_requirements,
+                                                      state_reader)
 
     def init_platform_state_deltas(self,
                                    regions : list,

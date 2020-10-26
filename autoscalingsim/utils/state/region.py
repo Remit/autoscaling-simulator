@@ -114,7 +114,7 @@ class Region:
                     entity_changes[aspect_name] = -1
                     unmet_cumulative_reduction_on_ts[entity_name] = entity_changes
                     entity_changes = unmet_cumulative_increase_on_ts.get(entity_name, {})
-                    entity_changes[aspect_name] = 2
+                    entity_changes[aspect_name] = 10
                     unmet_cumulative_increase_on_ts[entity_name] = entity_changes
                 # --------------------------------------------------------------------------
 
@@ -130,21 +130,19 @@ class Region:
             if len(unmet_cumulative_reduction_on_ts) > 0:
                 generalized_deltas_lst, unmet_cumulative_reduction_on_ts = group.compute_soft_adjustment(unmet_cumulative_reduction_on_ts,
                                                                                                          scaled_entity_instance_requirements_by_entity)
-
+                # TODO: in group's compute soft adj -> implement logic to instantly remove
+                # old group and add new one(reduced)
                 if len(generalized_deltas_lst) > 0:
                     for gd in generalized_deltas_lst:
-                        if gd.container_group_delta.sign < 0:
+                        if gd.container_group_delta.in_change:
                             non_enforced_scale_down_deltas.append(gd)
                         else:
-                            if not timestamp in timestamped_region_groups_deltas:
-                                timestamped_region_groups_deltas[timestamp] = []
-                            timestamped_region_groups_deltas[timestamp].append(gd)
+                            if gd.container_group_delta.sign == -1:
+                                cur_groups.remove(gd.container_group_delta.container_group)
+                            elif gd.container_group_delta.sign == 1:
+                                cur_groups.append(gd.container_group_delta.container_group)
 
-                            cur_groups.append(gd.container_group_delta.container_group)
-
-                    cur_groups.remove(group)
-                    new_deltas_per_ts.extend(generalized_deltas_lst)
-
+                            new_deltas_per_ts.append(gd)
 
         # try to accommodate the entities in the groups sorted
         # in the order decreasing by capacity used (fill-fastest)
@@ -157,13 +155,6 @@ class Region:
                                                                                                         scaled_entity_instance_requirements_by_entity)
 
                 if len(generalized_deltas_lst) > 0:
-                    for gd in generalized_deltas_lst:
-                        if not timestamp in timestamped_region_groups_deltas:
-                            timestamped_region_groups_deltas[timestamp] = []
-                        timestamped_region_groups_deltas[timestamp].append(gd)
-                        cur_groups.append(gd.container_group_delta.container_group)
-
-                    cur_groups.remove(group)
                     new_deltas_per_ts.extend(generalized_deltas_lst)
 
         # separately processing the to-be-scaled-down groups and trying to
@@ -176,20 +167,18 @@ class Region:
                                                                                                         scaled_entity_instance_requirements_by_entity)
 
                 if len(generalized_deltas_lst) > 0:
-                    for gd in generalized_deltas_lst:
-                        if not timestamp in timestamped_region_groups_deltas:
-                            timestamped_region_groups_deltas[timestamp] = []
-                        timestamped_region_groups_deltas[timestamp].append(gd)
-                        cur_groups.append(gd.container_group_delta.container_group)
-
-                    # TODO: check logic below
-                    # Compensating with virtual events for the scaled down
+                    # Compensating with virtual events for the scale down
                     # that did not happen -- still, the associated
                     # entities should be terminated.
+
+                    # Instant scale-down
+                    # TODO: think once again
                     generalized_deltas_lst.append(GeneralizedDelta(non_enforced_gd.container_group_delta.enforce(),
                                                                    non_enforced_gd.entities_group_delta))
+
                     virtual_cgd = non_enforced_gd.container_group_delta.enforce()
                     virtual_cgd.sign = 1
+                    virtual_cgd.virtual = True
                     generalized_deltas_lst.append(GeneralizedDelta(virtual_cgd,
                                                                    None))
 

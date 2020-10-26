@@ -6,6 +6,7 @@ from . import adjusters
 from ...scaling_model import ScalingModel
 from ..scaling_policy_conf import ScalingPolicyConfiguration
 from ....utils.state.platform_state import PlatformState
+from ....utils.state.statemanagers import StateReader
 
 class AdjustmentPolicy:
 
@@ -26,13 +27,15 @@ class AdjustmentPolicy:
 
     def init_adjustment_policy(self,
                                container_for_scaled_entities_types : dict,
-                               entity_instance_requirements : dict):
+                               entity_instance_requirements : dict,
+                               state_reader : StateReader):
 
         adjuster_class = adjusters.Registry.get(self.scaling_settings.adjustment_goal)
         self.adjuster = adjuster_class(self.scaling_model.application_scaling_model,
                                        self.scaling_model.platform_scaling_model,
                                        container_for_scaled_entities_types,
                                        entity_instance_requirements,
+                                       state_reader,
                                        self.scaling_settings.optimizer_type,
                                        self.scaling_settings.placement_hint,
                                        self.scaling_settings.combiner_settings)

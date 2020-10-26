@@ -39,12 +39,10 @@ class RequestsProcessor:
                 if new_time_left > pd.Timedelta(0, unit = 'ms'):
                     req.processing_time_left = new_time_left
                     new_in_processing_simultaneous.append(req)
-                    if not req.request_type in self.stat:
-                        self.stat[req.request_type] = 0
-                    self.stat[req.request_type] += 1
+                    self.stat[req.request_type] = self.stat.get(req.request_type, 0) + 1
                 else:
                     req.processing_time_left = 0
-                    self.stat[req.request_type] -= 1
+                    self.stat[req.request_type] = self.stat.get(req.request_type, 0) - 1
                     self.out.append(req)
 
             self.in_processing_simultaneous = new_in_processing_simultaneous
@@ -147,6 +145,8 @@ class ServiceState:
                          node_info : NodeInfo,
                          node_count : int):
 
+        # TODO: distinguishing between nodes??
+
         self.placed_on_node = node_info
         self.node_count = node_count
 
@@ -158,6 +158,17 @@ class ServiceState:
 
         self.downstream_buf.update_settings(self.placed_on_node.latency,
                                             self.placed_on_node.network_bandwidth_MBps)
+
+    def get_placement_parameter(self,
+                                parameter : str):
+
+        if self.placed_on_node is None:
+            return None
+        else:
+            try:
+                return self.placed_on_node.__getattribute__(parameter)
+            except AttributeError:
+                raise ValueError('Unknown parameter type {}'.format(parameter))
 
     def get_aspect_value(self,
                          aspect_name : str):
@@ -229,8 +240,10 @@ class ServiceState:
 
                         total_capacity_taken = total_capacity_taken + cap_taken
 
+                    time_budget -= simulation_step
+
                 if (self.downstream_buf.size() == 0) and (self.upstream_buf.size() == 0):
-                    time_budget = pd.Timedelta(0, unit = 'ms')
+                    time_budget -= simulation_step
 
         # Post-step maintenance actions
         # Increase the cumulative time for all the reqs left in the buffers waiting
@@ -310,6 +323,15 @@ class ServiceStateRegionalized(ScaledEntityState):
             raise ValueError('A state for the given region name {} was not found'.format(region_name))
 
         return self.region_states[region_name].get_resource_requirements()
+
+    def get_placement_parameter(self,
+                                region_name : str,
+                                parameter : str):
+
+        if not region_name in self.region_states:
+            raise ValueError('A state for the given region name {} was not found'.format(region_name))
+
+        return self.region_states[region_name].get_placement_parameter(parameter)
 
     def update_metric(self,
                       region_name : str,
