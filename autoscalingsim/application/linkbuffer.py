@@ -197,7 +197,7 @@ class LinkBuffer:
             del req
 
     def append_left(self, req):
-        self.requests.appendLeft(req)
+        self.requests.appendleft(req)
 
     def pop(self):
         req = None

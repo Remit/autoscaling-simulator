@@ -91,12 +91,15 @@ class HomogeneousContainerGroup:
 
     def _count_aspect_soft_adjustment(self,
                                       unmet_changes : dict,
+                                      scaled_entity_instance_requirements_by_entity : dict,
                                       container_capacity_taken_by_entity_sorted : dict) -> tuple:
 
         containers_count_to_consider = self.containers_count
         generalized_deltas = []
 
-        while containers_count_to_consider > 0:
+        unmet_changes_prev = {}
+        while (containers_count_to_consider > 0) and (unmet_changes_prev != unmet_changes):
+            unmet_changes_prev = unmet_changes.copy()
             container_capacity_taken = self.system_capacity.copy()
 
             # Starting with the largest entity and proceeding to the smallest one in terms of
@@ -111,13 +114,14 @@ class HomogeneousContainerGroup:
                     if not entity_name in temp_change:
                         temp_change[entity_name] = 0
 
-                    while (unmet_changes[entity_name] - temp_change[entity_name] > 0) and (not container_capacity_taken.is_exhausted()):
-                        container_capacity_taken += instance_cap_to_take
-                        temp_change[entity_name] += 1
+                    if (not container_capacity_taken.is_exhausted()) and (unmet_changes[entity_name] > 0):
+                        while (unmet_changes[entity_name] - temp_change[entity_name] > 0) and (not container_capacity_taken.is_exhausted()):
+                            container_capacity_taken += instance_cap_to_take
+                            temp_change[entity_name] += 1
 
-                    if container_capacity_taken.is_exhausted():
-                        container_capacity_taken -= instance_cap_to_take
-                        temp_change[entity_name] -= 1
+                        if container_capacity_taken.is_exhausted():
+                            container_capacity_taken -= instance_cap_to_take
+                            temp_change[entity_name] -= 1
 
                     # Case of removing entities from the existing containers
                     while (unmet_changes[entity_name] - temp_change[entity_name] < 0) and (dynamic_entities_instances_count[entity_name] > 0):
@@ -127,6 +131,7 @@ class HomogeneousContainerGroup:
 
             # Trying the same solution temp_accommodation to reduce the amount of iterations by
             # considering whether it can be repeated multiple times
+            temp_change = {entity_name: change_val for entity_name, change_val in temp_change.items() if change_val != 0}
 
             containers_needed = []
             for entity_name, count_in_solution in temp_change.items():
@@ -139,54 +144,55 @@ class HomogeneousContainerGroup:
             containers_count_to_consider -= min_containers_needed
 
             for entity_name, count_in_solution in temp_change.items():
-                unmet_changes[entity_name] -= count_in_solution * min_containers_needed
+                unmet_changes[entity_name] -= count_in_solution * max(min_containers_needed, 1)
 
             container_group_delta = None
             entities_group_delta = None
             temp_change_count = {}
             for entity_name, change_val in temp_change.items():
-                temp_change_count[entity_name] = {'count': change_val * min_containers_needed}
+                temp_change_count[entity_name] = {'count': change_val * max(min_containers_needed, 1)}
 
-            if (container_capacity_taken.collapse() == 0) and (len(temp_change_count) > 0) and (min_containers_needed > 0):
-                # scale down for nodes
-                new_entities_instances_counts = self.entities_state.extract_aspect_value('count')
+            if len(temp_change_count) > 0:
+                if container_capacity_taken.collapse() == 0:
+                    # scale down for nodes
+                    new_entities_instances_counts = self.entities_state.extract_aspect_value('count')
 
-                container_group = HomogeneousContainerGroup(self.container_info,
-                                                            min_containers_needed,
-                                                            self.entities_state.copy())
+                    container_group = HomogeneousContainerGroup(self.container_info,
+                                                                min_containers_needed,
+                                                                self.entities_state.copy())
 
-                # Planning scale down for min_containers_needed of containers
-                container_group_delta = ContainerGroupDelta(container_group,
-                                                            sign = -1,
-                                                            in_change = True,
-                                                            virtual = False)
+                    # Planning scale down for min_containers_needed of containers
+                    container_group_delta = ContainerGroupDelta(container_group,
+                                                                sign = -1,
+                                                                in_change = True,
+                                                                virtual = False)
 
-            else:
-                # scale down/up only for entities, container group remains unchanged
-                container_group_delta = ContainerGroupDelta(self.copy(),
-                                                            sign = 1,
-                                                            in_change = False,
-                                                            virtual = True)
+                else:
+                    # scale down/up only for entities, container group remains unchanged
+                    container_group_delta = ContainerGroupDelta(self.copy(),
+                                                                sign = 1,
+                                                                in_change = False,
+                                                                virtual = True)
 
-            # Planning scale down for all the entities count change from the solution
-            entities_group_delta = EntitiesGroupDelta(temp_change_count,
-                                                      in_change = True,
-                                                      virtual = False,
-                                                      services_reqs = self.entities_state.get_entities_requirements())
+                # Planning scale down for all the entities count change from the solution
+                entities_group_delta = EntitiesGroupDelta(temp_change_count,
+                                                          in_change = True,
+                                                          virtual = False,
+                                                          services_reqs = scaled_entity_instance_requirements_by_entity)
 
-            gd = GeneralizedDelta(container_group_delta,
-                                  entities_group_delta)
+                gd = GeneralizedDelta(container_group_delta,
+                                      entities_group_delta)
 
-            generalized_deltas.append(gd)
+                generalized_deltas.append(gd)
 
-        # Returning generalized deltas (enforced and not enforced) and the unmet changes in entities counts
-        unmet_changes_res = {entity_name: count for entity_name, count in unmet_changes.items() if count != 0}
+            # Returning generalized deltas (enforced and not enforced) and the unmet changes in entities counts
+            unmet_changes = {entity_name: count for entity_name, count in unmet_changes.items() if count != 0}
 
-        return (generalized_deltas, unmet_changes_res)
+        return (generalized_deltas, unmet_changes)
 
     def compute_soft_adjustment(self,
                                 scaled_entity_adjustment_in_aspects : dict,
-                                scaled_entity_instance_requirements_by_entity : dict):
+                                scaled_entity_instance_requirements_by_entity : dict) -> tuple:
 
         """
         Computes the adjustments to the current containers in the Homogeneous
@@ -224,6 +230,7 @@ class HomogeneousContainerGroup:
             method_name = '_{}_aspect_soft_adjustment'.format(aspect_name)
             try:
                 aspect_based_generalized_deltas, aspect_based_unmet_changes_res = self.__getattribute__(method_name)(entities_changes_dict,
+                                                                                                                     scaled_entity_instance_requirements_by_entity,
                                                                                                                      container_capacity_taken_by_entity_sorted)
 
                 generalized_deltas.extend(aspect_based_generalized_deltas)

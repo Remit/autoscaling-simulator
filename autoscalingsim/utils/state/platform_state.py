@@ -119,15 +119,18 @@ class PlatformState:
         unmet_scaled_entity_adjustment = {}
 
         for region_name, region in self.regions.items():
-            region_groups_deltas, region_unmet_scaled_entity_adjustment = region.compute_soft_adjustment(scaling_aspects_adjustment_in_existing_containers[region_name],
-                                                                                                         scaled_entity_instance_requirements_by_entity)
-            if len(region_groups_deltas) > 0:
-                groups_deltas_raw[region_name] = region_groups_deltas
+            region_groups_delta, region_unmet_scaled_entity_adjustment = region.compute_soft_adjustment(scaling_aspects_adjustment_in_existing_containers[region_name],
+                                                                                                        scaled_entity_instance_requirements_by_entity)
+            if not region_groups_delta is None:
+                groups_deltas_raw[region_name] = region_groups_delta
 
             if len(region_unmet_scaled_entity_adjustment) > 0:
                 # If we failed to accommodate the negative change in services counts, then
                 # we discard them (no such services to delete, first must add these)
-                unmet_change_positive = {(service_name, change) for service_name, change in region_unmet_scaled_entity_adjustment.items() if change > 0}
+                unmet_change_positive = {}
+                for service_name, aspects_changes in region_unmet_scaled_entity_adjustment.items():
+                    unmet_change_positive[service_name] = {aspect_name: change for aspect_name, change in aspects_changes.items() if change > 0}
+
                 unmet_scaled_entity_adjustment[region_name] = unmet_change_positive
 
         state_delta = StateDelta(groups_deltas_raw)

@@ -82,7 +82,7 @@ class Region:
 
     def compute_soft_adjustment(self,
                                 entities_deltas_in_scaling_aspects : dict,
-                                scaled_entity_instance_requirements_by_entity : dict):
+                                scaled_entity_instance_requirements_by_entity : dict) -> tuple:
 
         """
         Tries to place the entities onto the existing nodes and returns
@@ -109,12 +109,14 @@ class Region:
                     entity_changes[aspect_name] = aspect_change_val
                     unmet_cumulative_increase_on_ts[entity_name] = entity_changes
                 else: # TODO: delete
+                # --------------------------------------------------------------------------
                     entity_changes = unmet_cumulative_reduction_on_ts.get(entity_name, {})
                     entity_changes[aspect_name] = -1
                     unmet_cumulative_reduction_on_ts[entity_name] = entity_changes
                     entity_changes = unmet_cumulative_increase_on_ts.get(entity_name, {})
                     entity_changes[aspect_name] = 2
                     unmet_cumulative_increase_on_ts[entity_name] = entity_changes
+                # --------------------------------------------------------------------------
 
         non_enforced_scale_down_deltas = []
 
@@ -143,15 +145,16 @@ class Region:
                     cur_groups.remove(group)
                     new_deltas_per_ts.extend(generalized_deltas_lst)
 
+
         # try to accommodate the entities in the groups sorted
         # in the order decreasing by capacity used (fill-fastest)
         homogeneous_groups_sorted_decreasing = reversed(sorted(cur_groups, key = lambda elem: elem.system_capacity.collapse()))
 
         for group in homogeneous_groups_sorted_decreasing:
             if len(unmet_cumulative_increase_on_ts) > 0:
+
                 generalized_deltas_lst, unmet_cumulative_increase_on_ts = group.compute_soft_adjustment(unmet_cumulative_increase_on_ts,
-                                                                                                        scaled_entity_instance_requirements_by_entity,
-                                                                                                        self.region_name)
+                                                                                                        scaled_entity_instance_requirements_by_entity)
 
                 if len(generalized_deltas_lst) > 0:
                     for gd in generalized_deltas_lst:
@@ -170,8 +173,7 @@ class Region:
             for non_enforced_gd in non_enforced_scale_down_deltas:
                 group = non_enforced_gd.container_group_delta.container_group.copy()
                 generalized_deltas_lst, unmet_cumulative_increase_on_ts = group.compute_soft_adjustment(unmet_cumulative_increase_on_ts,
-                                                                                                        scaled_entity_instance_requirements_by_entity,
-                                                                                                        self.region_name)
+                                                                                                        scaled_entity_instance_requirements_by_entity)
 
                 if len(generalized_deltas_lst) > 0:
                     for gd in generalized_deltas_lst:
@@ -196,7 +198,9 @@ class Region:
                     remaining_non_enforced_scale_down_deltas.append(non_enforced_gd)
 
         new_deltas_per_ts.extend(remaining_non_enforced_scale_down_deltas)
-        regional_delta = RegionalDelta(self.region_name, new_deltas_per_ts)
+        regional_delta = None
+        if len(new_deltas_per_ts) > 0:
+            regional_delta = RegionalDelta(self.region_name, new_deltas_per_ts)
 
         unmet_changes_on_ts = {**unmet_cumulative_reduction_on_ts, **unmet_cumulative_increase_on_ts}
 
