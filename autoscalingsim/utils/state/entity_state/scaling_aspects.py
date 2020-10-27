@@ -93,6 +93,11 @@ class ScalingAspect(ABC):
                 other_aspect_val):
         pass
 
+    @abstractmethod
+    def __floordiv__(self,
+                     other_aspect_val):
+        pass
+
 class ScalingAspectDelta:
 
     """
@@ -219,6 +224,15 @@ class Count(ScalingAspect):
                                                                                                                     other_aspect_val.__class__))
 
         return Count(self.value % other_aspect_val.value)
+
+    def __floordiv__(self,
+                     other_aspect_val : 'Count'):
+
+        if not isinstance(other_aspect_val, Count):
+            raise TypeError('An attempt to perform floor division operation on {} with an object of unknown type {}'.format(self.__class__.__name__,
+                                                                                                                            type(other_aspect_val)))
+
+        return Count(self.value // other_aspect_val.value)
 
     def __radd__(self,
                  other_aspect_val : numbers.Number):

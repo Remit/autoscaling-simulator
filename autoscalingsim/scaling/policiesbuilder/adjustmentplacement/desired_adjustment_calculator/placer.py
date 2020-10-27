@@ -60,41 +60,37 @@ class Placer:
             # Computing how many containers are required to cover the placement option
             for placement_option in placement_options_per_container:
 
-                placement_entity_repr = EntitiesState(placement_option)
-                containers_required = entities_state / placement_entity_repr
-                container_count_required_per_option.append({'placement_entity_representation': placement_entity_repr,
-                                                            'containers': containers_required})
-
-            print(container_count_required_per_option)
-            raise ValueError('gihg')
+                containers_required_per_placement = entities_state / placement_option.placed_entities
+                container_count_required_per_option.append(EntitiesPlacement(placement_option.container_info,
+                                                                             containers_required_per_placement,
+                                                                             placement_option.placed_entities))
 
             if len(container_count_required_per_option) > 0:
                 # Selecting the best option for each container
-                selected_containers_required_per_cont = container_count_required_per_option[0]['containers']
-                selected_placement_per_cont = container_count_required_per_option[0]['placement_entity_representation']
-                for container_count_required in container_count_required_per_option:
-                    if container_count_required['containers'] < selected_containers_required_per_cont:
-                        selected_containers_required_per_cont = container_count_required['containers']
-                        selected_placement_per_cont = container_count_required['placement_entity_representation']
+                selected_entities_placement = EntitiesPlacement(container_info = None,
+                                                                containers_count = float('Inf'),
+                                                                entities_state = None)
+                for considered_entities_placement in container_count_required_per_option:
+                    if (considered_entities_placement.containers_count > 0) \
+                     and (considered_entities_placement.containers_count < selected_entities_placement.containers_count):
 
-                containers_required[container_name] = {'count': selected_containers_required_per_cont,
-                                                       'placement_entity_representation': selected_placement_per_cont}
+                        selected_entities_placement = considered_entities_placement
 
+                if not selected_entities_placement.container_info is None:
+                    containers_required[container_name] = selected_entities_placement
 
         # Correcting the EntitiesState for each selected option since not all the
         # containers might be filled equally
         placements = []
         for container_name, placement_option in containers_required.items():
-            leftover_entities_state = entities_state % placement_option['placement_entity_representation']
-            remainder_placement = EntitiesPlacement(container_name,
+            leftover_entities_state = entities_state % placement_option.entities_state
+            remainder_placement = EntitiesPlacement(placement_option.container_info,
                                                     1,
                                                     leftover_entities_state)
             placement = Placement([remainder_placement])
-            if placement_option['count'] > 1:
-                main_placement = EntitiesPlacement(container_name,
-                                                   placement_option['count'] - 1,
-                                                   placement_option['placement_entity_representation'])
-                placement.add_entities_placement(main_placement)
+            if placement_option.containers_count > 1:
+                placement_option.containers_count -= 1
+                placement.add_entities_placement(placement_option)
 
             placements.append(placement)
 
@@ -242,11 +238,22 @@ class Placer:
                         if cumulative_capacity.is_exhausted():
                             cumulative_capacity -= capacity_to_consider
                             entity_instances_count -= 1
-                        single_placement_option_instances[entity_name_to_consider] = entity_instances_count
 
-                    single_placement_option = InContainerPlacement(container_name,
+                        entity_placement_option = single_placement_option_instances.get(entity_name_to_consider, {})
+                        entity_placement_option['count'] = entity_instances_count
+                        single_placement_option_instances[entity_name_to_consider] = entity_placement_option
+
+                    filtered_res_reqs = {}
+                    for service_name, resource_req in self.scaled_entity_instance_requirements_by_entity.items():
+                        if service_name in single_placement_option_instances:
+                            filtered_res_reqs[service_name] = resource_req
+
+                    placement_entities_state = EntitiesState(single_placement_option_instances,
+                                                             filtered_res_reqs)
+
+                    single_placement_option = InContainerPlacement(container_info,
                                                                    cumulative_capacity,
-                                                                   single_placement_option_instances)
+                                                                   placement_entities_state)
 
                     placement_options_per_container.append(single_placement_option)
                     considered.append(entity_name)
@@ -266,7 +273,7 @@ class Placer:
         balanced_placement_options = {}
         for container_name, placement_options_per_container in shared_placement_options.items():
             balanced_placement_options_per_container = []
-            best_placement_option_so_far = InContainerPlacement()
+            best_placement_option_so_far = None
 
             for single_placement_option in placement_options_per_container:
 
@@ -278,7 +285,7 @@ class Placer:
                     best_placement_option_so_far = single_placement_option
 
             # Fallback option: taking the best-balanced solution so far, but not within the balancing threshold
-            if len(balanced_placement_options_per_container) == 0:
+            if (len(balanced_placement_options_per_container) == 0) and (not best_placement_option_so_far is None):
                 balanced_placement_options_per_container.append(best_placement_option_so_far)
 
         return balanced_placement_options_per_container
@@ -292,7 +299,6 @@ class Placer:
         for provider_name, provider_nodes in self.container_for_scaled_entities_types.items():
             for container_name, container_info in provider_nodes:
                 placement_options_per_container = []
-                single_placement_option_instances = {}
 
                 for scaled_entity, instance_requirements in self.scaled_entity_instance_requirements_by_entity.items():
                     current_provider = self.reader.get_placement_parameter(scaled_entity,
@@ -302,22 +308,29 @@ class Placer:
                     entity_state = EntitiesState(groups_or_aspects = {scaled_entity: {'count': 1}},
                                                  entities_resource_reqs = {scaled_entity: instance_requirements})
                     fits, cap_taken = container_info.entities_require_capacity(entity_state)
+                    single_placement_option_instances = {}
                     if fits:
                         cumulative_capacity = cap_taken
-                        instances_count = 1
+                        entity_instances_count = 1
 
                         while not cumulative_capacity.is_exhausted():
                             cumulative_capacity += cap_taken
-                            instances_count += 1
+                            entity_instances_count += 1
 
-                        cumulative_capacity -= cap_taken
-                        instances_count -= 1
+                        if cumulative_capacity.is_exhausted():
+                            cumulative_capacity -= cap_taken
+                            entity_instances_count -= 1
 
-                        single_placement_option_instances[scaled_entity] = instances_count
+                        entity_placement_option = single_placement_option_instances.get(scaled_entity, {})
+                        entity_placement_option['count'] = entity_instances_count
+                        single_placement_option_instances[scaled_entity] = entity_placement_option
 
-                        single_placement_option = InContainerPlacement(container_name,
+                        placement_entities_state = EntitiesState(single_placement_option_instances,
+                                                                 {scaled_entity: self.scaled_entity_instance_requirements_by_entity[scaled_entity]})
+
+                        single_placement_option = InContainerPlacement(container_info,
                                                                        cumulative_capacity,
-                                                                       single_placement_option_instances)
+                                                                       placement_entities_state)
 
                         placement_options_per_container.append(single_placement_option)
 
@@ -335,7 +348,6 @@ class Placer:
         for provider_name, provider_nodes in self.container_for_scaled_entities_types.items():
             for container_name, container_info in provider_nodes:
                 placement_options_per_container = []
-                single_placement_option_instances = {}
 
                 for scaled_entity, instance_requirements in self.scaled_entity_instance_requirements_by_entity.items():
                     current_provider = self.reader.get_placement_parameter(scaled_entity,
@@ -345,14 +357,21 @@ class Placer:
                     entity_state = EntitiesState(groups_or_aspects = {scaled_entity: {'count': 1}},
                                                  entities_resource_reqs = {scaled_entity: instance_requirements})
                     fits, cap_taken = container_info.entities_require_capacity(entity_state)
+                    single_placement_option_instances = {}
                     if fits:
                         cumulative_capacity = cap_taken
-                        instances_count = 1
-                        single_placement_option_instances[scaled_entity] = 1
+                        entity_instances_count = 1
 
-                        single_placement_option = InContainerPlacement(container_name,
+                        entity_placement_option = single_placement_option_instances.get(scaled_entity, {})
+                        entity_placement_option['count'] = entity_instances_count
+                        single_placement_option_instances[scaled_entity] = entity_placement_option
+
+                        placement_entities_state = EntitiesState(single_placement_option_instances,
+                                                                 {scaled_entity: self.scaled_entity_instance_requirements_by_entity[scaled_entity]})
+
+                        single_placement_option = InContainerPlacement(container_info,
                                                                        cap_taken,
-                                                                       single_placement_option_instances)
+                                                                       placement_entities_state)
 
                         placement_options_per_container.append(single_placement_option)
 

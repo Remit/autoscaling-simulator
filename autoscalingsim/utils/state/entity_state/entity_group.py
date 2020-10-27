@@ -111,7 +111,7 @@ class EntityGroup:
         division_results = []
         for aspect_name, aspect_value in self.scaling_aspects.items():
             if aspect_name in other_entity_group.scaling_aspects:
-                division_results.append(aspect_value // other_entity_group.scaling_aspects[aspect_name])
+                division_results.append((aspect_value // other_entity_group.scaling_aspects[aspect_name]).get_value())
 
         return division_results
 

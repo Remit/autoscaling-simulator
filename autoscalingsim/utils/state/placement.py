@@ -1,4 +1,6 @@
 from .entity_state.entities_state import EntitiesState
+from ...scaling.policiesbuilder.scaled.scaled_container import ScaledContainer
+from ...infrastructure_platform.system_capacity import SystemCapacity
 
 class InContainerPlacement:
 
@@ -13,11 +15,11 @@ class InContainerPlacement:
     """
 
     def __init__(self,
-                 container_type = None,
-                 capacity_taken = 0,
-                 placed_entities = 0):
+                 container_info : ScaledContainer,
+                 capacity_taken : SystemCapacity,
+                 placed_entities : EntitiesState):
 
-        self.container_type = container_type
+        self.container_info = container_info
         self.capacity_taken = capacity_taken
         self.placed_entities = placed_entities
 
@@ -29,13 +31,11 @@ class EntitiesPlacement:
     """
 
     def __init__(self,
-                 provider : str,
-                 container_name : str,
+                 container_info : ScaledContainer,
                  containers_count : int,
                  entities_state : EntitiesState):
 
-        self.provider = provider
-        self.container_name = container_name
+        self.container_info = container_info
         self.containers_count = containers_count
         self.entities_state = entities_state
 

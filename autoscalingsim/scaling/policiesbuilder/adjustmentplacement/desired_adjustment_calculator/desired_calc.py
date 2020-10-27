@@ -49,9 +49,8 @@ class DesiredChangeCalculator:
         joint_score = self.scorer.get_null_score()
         for region_name, entities_state in entities_states:
             # Place
-            placements_lst = self.placer.compute_containers_requirements(self.scaled_entity_instance_requirements_by_entity,
-                                                                         region_name,
-                                                                         entities_state)
+            placements_lst = self.placer.compute_containers_requirements(entities_state,
+                                                                         region_name)
             # Score
             scored_placements_lst = self.scorer(placements_lst, state_duration_h)
             print(placements_lst)
