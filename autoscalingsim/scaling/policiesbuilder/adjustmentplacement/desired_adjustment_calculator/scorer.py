@@ -21,19 +21,22 @@ class Scorer:
                  placements_lst : list,
                  state_duration_h : float):
 
+        sane_placements_lst = []
         for placement in placements_lst:
-            cumulative_score = self.get_null_score()
+            cumulative_score = self.score_calculator.score_class(0)
             for entities_placement in placement:
 
-                score, _ = self.score_calculator(entities_placement.container_name,
+                score, _ = self.score_calculator(entities_placement.container_info,
                                                  state_duration_h,
                                                  entities_placement.containers_count)
                 cumulative_score += score
 
-            placement.score = score
+            # In some cases, the score might not get modified by the above loop.
+            # For some types of scores, such as price-based, that would mean an
+            # infinetely appealing score, which we want to avoid. We do not select
+            # such placements.
+            if cumulative_score.is_sane():
+                placement.score = cumulative_score
+                sane_placements_lst.append(placement)
 
-        return placements_lst
-
-    def get_null_score(self):
-
-        return self.score_calculator.score_class()
+        return sane_placements_lst

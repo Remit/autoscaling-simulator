@@ -1,4 +1,5 @@
 import numbers
+import math
 from abc import ABC, abstractmethod
 
 from .....utils.functions import InvertingFunction
@@ -150,6 +151,15 @@ class Score(ABC):
 
     def get_original_value(self):
         return self.score_inverter(self.score)
+
+    def is_sane(self):
+
+        """
+        Checks whether such a score makes sense, i.e. no infinetely appealing
+        scores are allowed.
+        """
+
+        return (not math.isinf(self.score))
 
 class PriceScore(Score):
 

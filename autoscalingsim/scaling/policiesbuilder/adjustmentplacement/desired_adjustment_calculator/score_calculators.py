@@ -3,6 +3,8 @@ import pandas as pd
 
 from . import score
 
+from ...scaled.scaled_container import ScaledContainer
+
 class ScoreCalculator(ABC):
 
     """
@@ -15,15 +17,13 @@ class ScoreCalculator(ABC):
     """
 
     def __init__(self,
-                 score_class : type,
-                 container_for_scaled_entities_types : dict):
+                 score_class : type):
 
         self.score_class = score_class
-        self.container_for_scaled_entities_types = container_for_scaled_entities_types
 
     @abstractmethod
     def __call__(self,
-                 container_name : str,
+                 container_info : ScaledContainer,
                  duration : pd.Timedelta,
                  containers_count : int) -> tuple:
         pass
@@ -34,21 +34,17 @@ class PriceScoreCalculator(ScoreCalculator):
     Implements calculation of the score based on price.
     """
 
-    def __init__(self,
-                 container_for_scaled_entities_types : dict):
+    def __init__(self):
 
-        super().__init__(score.Registry.get(self.__class__.__name__),
-                         container_for_scaled_entities_types)
+        super().__init__(score.Registry.get(self.__class__.__name__))
 
     def __call__(self,
-                 container_name : str,
+                 container_info : ScaledContainer,
                  duration_h : float,
                  containers_count : int) -> tuple:
 
-        if not container_name in self.container_for_scaled_entities_types:
-            raise ValueError('Non-existent container type - {}'.format(container_name))
         # TODO: consider taking cpu_credits_h into account
-        price = duration_h * containers_count * self.container_for_scaled_entities_types[container_name].price_p_h
+        price = duration_h * containers_count * container_info.price_p_h
         score = self.score_class(price)
 
         return (score, price)

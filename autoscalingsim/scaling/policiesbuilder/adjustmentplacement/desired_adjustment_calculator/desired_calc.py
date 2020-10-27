@@ -31,8 +31,7 @@ class DesiredChangeCalculator:
                              scaled_entity_instance_requirements_by_entity,
                              reader)
 
-        score_calculator = score_calculator_class(container_for_scaled_entities_types)
-        self.scorer = Scorer(score_calculator)
+        self.scorer = Scorer(score_calculator_class())
         optimizer_class = optimizers.Registry.get(optimizer_type)
         self.optimizer = optimizer_class()
 
@@ -46,7 +45,7 @@ class DesiredChangeCalculator:
         # TODO: add logic to check whether empty results are returned
         regions = {}
         scores_per_region = {}
-        joint_score = self.scorer.get_null_score()
+
         for region_name, entities_state in entities_states:
             # Place
             placements_lst = self.placer.compute_containers_requirements(entities_state,

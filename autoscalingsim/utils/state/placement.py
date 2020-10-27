@@ -48,7 +48,7 @@ class Placement:
     def __init__(self,
                  entities_placements : list = []):
 
-        self._placements = entities_placements
+        self.entities_placements = entities_placements
         self.score = None
 
     def add_entities_placement(self,
@@ -57,7 +57,7 @@ class Placement:
         if not isinstance(other_entities_placement, EntitiesPlacement):
             raise TypeError('Wrong type on adding a new entities placement: {}'.format(other_entities_placement.__class__.__name__))
 
-        self._placements.append(other_entities_placement)
+        self.entities_placements.append(other_entities_placement)
 
     def __iter__(self):
         return PlacementIterator(self)
@@ -76,8 +76,8 @@ class PlacementIterator:
 
     def __next__(self):
 
-        if self._index < len(placement._placements):
-            placement = placement._placements[self._index]
+        if self._index < len(self._placement.entities_placements):
+            placement = self._placement.entities_placements[self._index]
             self._index += 1
             return placement
 
