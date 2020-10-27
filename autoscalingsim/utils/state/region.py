@@ -55,6 +55,10 @@ class Region:
 
                     self.homogeneous_groups += regional_delta
 
+    def to_placement(self):
+
+        return self.homogeneous_groups.to_placement()
+
     def extract_node_counts(self,
                             in_change : bool):
 

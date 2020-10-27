@@ -1,4 +1,4 @@
-from ..placement import Placement
+from ..placement import Placement, EntitiesPlacement
 from .container_group import HomogeneousContainerGroup, GeneralizedDelta
 from ...deltarepr.regional_delta import RegionalDelta
 
@@ -36,6 +36,16 @@ class HomogeneousContainerGroupSet:
                 self._homogeneous_groups[group.id] = group
 
         self._in_change_homogeneous_groups = homogeneous_groups_in_change
+
+    def to_placement(self):
+
+        entities_placements = []
+        for group in self._homogeneous_groups.values():
+            entities_placements.append(EntitiesPlacement(group.container_info,
+                                                         group.containers_count,
+                                                         group.entities_state))
+
+        return Placement(entities_placements)
 
     def __add__(self,
                 regional_delta : RegionalDelta):

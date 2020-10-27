@@ -15,6 +15,22 @@ class StateScore:
 
         self.scores_per_region = scores_per_region
 
+    def __add__(self,
+                other_state_score : 'StateScore'):
+
+        if not isinstance(other_state_score, StateScore):
+            raise TypeError('Unexpected type to add to {}: {}'.format(self.__class__.__name__,
+                                                                      type(other_state_score)))
+
+        scores_per_region = self.scores_per_region
+        for region_name, other_region_score in other_state_score.scores_per_region.items():
+            if not region_name in scores_per_region:
+                scores_per_region[region_name] = other_region_score
+            else:
+                scores_per_region[region_name] += other_region_score
+
+        return self.__class__(scores_per_region)
+
     def __mul__(self,
                 state_duration):
 

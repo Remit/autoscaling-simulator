@@ -20,7 +20,7 @@ class DesiredChangeCalculator:
 
     def __init__(self,
                  placement_hint : str,
-                 score_calculator_class : score_calculators.ScoreCalculator,
+                 scorer : Scorer,
                  optimizer_type : str,
                  container_for_scaled_entities_types : dict,
                  scaled_entity_instance_requirements_by_entity : dict,
@@ -31,7 +31,7 @@ class DesiredChangeCalculator:
                              scaled_entity_instance_requirements_by_entity,
                              reader)
 
-        self.scorer = Scorer(score_calculator_class())
+        self.scorer = scorer
         optimizer_class = optimizers.Registry.get(optimizer_type)
         self.optimizer = optimizer_class()
 

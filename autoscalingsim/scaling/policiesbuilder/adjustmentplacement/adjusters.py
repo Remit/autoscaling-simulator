@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 
 from .desired_adjustment_calculator import score_calculators
 from .desired_adjustment_calculator.desired_calc import DesiredChangeCalculator
+from .desired_adjustment_calculator.scorer import Scorer
 
 from ...application_scaling_model import ApplicationScalingModel
 from ...platform_scaling_model import PlatformScalingModel
@@ -13,7 +14,7 @@ from ....utils.deltarepr.timelines.entities_changes_timeline import TimelineOfDe
 from ....utils.deltarepr.timelines.delta_timeline import DeltaTimeline
 from ....utils.state.entity_state.entities_states_reg import EntitiesStatesRegionalized
 from ....utils.state.statemanagers import StateReader
-from ....utils.state.platform_state import PlatformState
+from ....utils.state.platform_state import PlatformState, StateDuration
 
 class Adjuster(ABC):
 
@@ -38,12 +39,14 @@ class Adjuster(ABC):
         self.application_scaling_model = application_scaling_model
         self.platform_scaling_model = platform_scaling_model
         self.scaled_entity_instance_requirements_by_entity = scaled_entity_instance_requirements_by_entity
+        self.scorer = Scorer(score_calculator_class())
 
         combiner_type = ErrorChecker.key_check_and_load('type', combiner_settings, self.__class__.__name__)
         combiner_conf = ErrorChecker.key_check_and_load('conf', combiner_settings, self.__class__.__name__)
         self.combiner = combiners.Registry.get(combiner_type)(combiner_conf)
+
         self.desired_change_calculator = DesiredChangeCalculator(placement_hint,
-                                                                 score_calculator_class,
+                                                                 self.scorer,
                                                                  optimizer_type,
                                                                  container_for_scaled_entities_types,
                                                                  scaled_entity_instance_requirements_by_entity,
@@ -117,12 +120,14 @@ class Adjuster(ABC):
                 unmet_change_state = EntitiesStatesRegionalized(unmet_change,
                                                                 self.scaled_entity_instance_requirements_by_entity)
 
+                in_work_placements_per_region = in_work_state.to_placements()
+
                 # 2.a: Addition of new containers
                 state_simple_addition_deltas, state_score_simple_addition = self.desired_change_calculator(unmet_change_state,
                                                                                                            state_duration_h)
 
-                raise ValueError('hoho')
-                score_simple_addition += in_work_state.state_score * state_duration_h
+                state_score_simple_addition += self.scorer.evaluate_placements(in_work_placements_per_region,
+                                                                               StateDuration.from_single_value(state_duration_h))
 
                 # 2.b: New cluster and migration
                 in_work_collective_entities_states = in_work_state.extract_collective_entities_states()
@@ -130,28 +135,25 @@ class Adjuster(ABC):
                 state_substitution_deltas, state_score_substitution = self.desired_change_calculator(in_work_collective_entities_states,
                                                                                                      state_duration_h)
 
+                raise ValueError('hoho')
+
                 till_state_substitution_h = state_substitution_deltas.till_full_enforcement(self.platform_scaling_model,
                                                                                             self.application_scaling_model,
                                                                                             ts_of_unmet_change)
-                state_score_substitution += in_work_state.state_score * till_state_substitution_h
+                state_score_substitution += self.scorer.evaluate_placements(in_work_placements_per_region,
+                                                                            till_state_substitution_h)
 
                 # Comparing and selecting an alternative
                 chosen_state_deltas = None
-                chosen_state_score = None
                 if state_score_simple_addition.collapse() > state_score_substitution.collapse():
                     chosen_state_deltas = state_simple_addition_deltas
-                    chosen_state_score = state_score_simple_addition
                 else:
                     chosen_state_deltas = state_substitution_deltas
-                    chosen_state_score = state_score_substitution
-
-                chosen_state_score_per_h = chosen_state_score / state_duration_h
 
                 timeline_of_deltas.add_state_delta(ts_of_unmet_change, chosen_state_deltas)
 
                 # Rolling out the enforced updates
                 in_work_state = timeline_of_deltas.roll_out_updates(ts_of_unmet_change)
-                in_work_state.state_score = chosen_state_score_per_h
 
             # If by this time len(unmet_change) > 0, then there were not enough
             # resources or budget.

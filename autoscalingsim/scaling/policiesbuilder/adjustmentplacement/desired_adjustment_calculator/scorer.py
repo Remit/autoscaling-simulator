@@ -1,6 +1,9 @@
 import pandas as pd
 
 from .score_calculators import *
+from .score import StateScore
+
+from .....utils.state.platform_state import StateDuration
 
 class Scorer:
 
@@ -40,3 +43,23 @@ class Scorer:
                 sane_placements_lst.append(placement)
 
         return sane_placements_lst
+
+    def evaluate_placements(self,
+                            placements_per_region : dict,
+                            state_duration : StateDuration):
+
+        if not isinstance(state_duration, StateDuration):
+            raise TypeError('Unexpected type of the state duration: {}'.format(type(state_duration)))
+
+        cumulative_scores_per_region = {}
+        for region_name, region_placement in placements_per_region.items():
+            cumulative_score = self.score_calculator.score_class(0)
+
+            sane_placements_lst = self.__call__([region_placement], state_duration[region_name])
+            for placement in sane_placements_lst:
+                cumulative_score += placement.score
+
+            if cumulative_score.is_sane():
+                cumulative_scores_per_region[region_name] = cumulative_score
+
+        return StateScore(cumulative_scores_per_region)
