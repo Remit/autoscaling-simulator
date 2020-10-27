@@ -3,7 +3,7 @@ import pandas as pd
 from .score_calculators import *
 from .score import StateScore
 
-from .....utils.state.platform_state import StateDuration
+from .....utils.state.state_duration import StateDuration
 
 class Scorer:
 

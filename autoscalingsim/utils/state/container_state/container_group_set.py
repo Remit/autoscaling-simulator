@@ -138,10 +138,10 @@ class HomogeneousContainerGroupSet:
 
         generalized_deltas_lst = []
         for group in self._homogeneous_groups.values():
-            generalized_deltas_lst.append(group.to_delta)
+            generalized_deltas_lst.append(group.to_delta())
 
         for group in self._in_change_homogeneous_groups.values():
-            generalized_deltas_lst.append(group.to_delta)
+            generalized_deltas_lst.append(group.to_delta())
 
         return generalized_deltas_lst
 

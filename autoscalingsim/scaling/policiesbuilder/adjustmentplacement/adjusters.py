@@ -14,7 +14,8 @@ from ....utils.deltarepr.timelines.entities_changes_timeline import TimelineOfDe
 from ....utils.deltarepr.timelines.delta_timeline import DeltaTimeline
 from ....utils.state.entity_state.entities_states_reg import EntitiesStatesRegionalized
 from ....utils.state.statemanagers import StateReader
-from ....utils.state.platform_state import PlatformState, StateDuration
+from ....utils.state.platform_state import PlatformState
+from ....utils.state.state_duration import StateDuration
 
 class Adjuster(ABC):
 
@@ -135,11 +136,10 @@ class Adjuster(ABC):
                 state_substitution_deltas, state_score_substitution = self.desired_change_calculator(in_work_collective_entities_states,
                                                                                                      state_duration_h)
 
-                raise ValueError('hoho')
-
                 till_state_substitution_h = state_substitution_deltas.till_full_enforcement(self.platform_scaling_model,
                                                                                             self.application_scaling_model,
                                                                                             ts_of_unmet_change)
+
                 state_score_substitution += self.scorer.evaluate_placements(in_work_placements_per_region,
                                                                             till_state_substitution_h)
 

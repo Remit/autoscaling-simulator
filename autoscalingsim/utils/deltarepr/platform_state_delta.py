@@ -2,6 +2,8 @@ import pandas as pd
 
 from .regional_delta import RegionalDelta
 
+from ..state.state_duration import StateDuration
+
 from ...scaling.platform_scaling_model import PlatformScalingModel
 from ...scaling.application_scaling_model import ApplicationScalingModel
 

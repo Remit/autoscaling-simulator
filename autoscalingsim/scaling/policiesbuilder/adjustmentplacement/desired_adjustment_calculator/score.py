@@ -66,7 +66,23 @@ class StateScore:
 
     def collapse(self):
 
-        return sum(list(self.scores_per_region.values()))
+        """
+        Produces joint score for the whole state without distinguishing between
+        regions.
+        """
+
+        joint_score = None
+        if len(self.scores_per_region) > 0:
+            scores_lst = list(self.scores_per_region.values())
+            joint_score = sum(scores_lst, type(scores_lst[0])(0))
+
+            if (not joint_score.is_sane()) or (joint_score is None):
+                return type(scores_lst[0])(float('Inf'))
+            else:
+                return joint_score
+
+        else:
+            raise ValueError('Empty {} to collapse'.format(self.__class__.__name__))
 
 class Score(ABC):
 

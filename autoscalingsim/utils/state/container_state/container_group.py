@@ -65,7 +65,8 @@ class HomogeneousContainerGroup:
     def nullify_entities_state(self):
 
         self.entities_state = EntitiesState()
-        self.system_capacity = SystemCapacity(self.container_name)
+        self.system_capacity = SystemCapacity(self.container_info,
+                                              self.containers_count)
 
     def copy(self):
 
