@@ -16,21 +16,18 @@ class Region:
     be marked with the 'default' name.
     """
 
-    @staticmethod
-    def from_conf(region_name : str,
-                  container_for_scaled_entities_types : dict,
-                  scaled_entity_instance_requirements_by_entity : dict,
-                  selected_placement : Placement):
+    @classmethod
+    def from_conf(cls : type,
+                  region_name : str,
+                  placement : Placement):
 
         """
         Alternative Region initialization. Useful for creation of the temporary
         platform state when computing the rolling adjustments.
         """
 
-        return Region(region_name,
-                      HomogeneousContainerGroupSet(container_for_scaled_entities_types,
-                                                   scaled_entity_instance_requirements_by_entity,
-                                                   selected_placement))
+        return cls(region_name,
+                   HomogeneousContainerGroupSet.from_conf(placement))
 
     def __init__(self,
                  region_name,

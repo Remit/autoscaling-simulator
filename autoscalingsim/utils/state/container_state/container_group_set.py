@@ -4,32 +4,17 @@ from ...deltarepr.regional_delta import RegionalDelta
 
 class HomogeneousContainerGroupSet:
 
-    @staticmethod
-    def from_conf(container_for_scaled_entities_types : dict,
-                  requirements_by_entity : dict,
-                  selected_placement : Placement):
+    @classmethod
+    def from_conf(cls : type,
+                  placement : Placement):
 
         homogeneous_groups = []
-        for entity_placement in selected_placement:
+        for entity_placement in placement:
+            homogeneous_groups.append(HomogeneousContainerGroup(entity_placement.container_info,
+                                                                entity_placement.containers_count,
+                                                                entity_placement.entities_state))
 
-            if not entity_placement.container_name in container_for_scaled_entities_types:
-               raise ValueError('Incorrect container type {}'.format(entity_placement.container_name))
-
-            container_info = container_for_scaled_entities_types[entity_placement.container_name]
-
-            fits, system_capacity_taken = container_info.entities_require_capacity(requirements_by_entity,
-                                                                                  entity_placement.entities_state)
-            if not fits:
-               raise ValueError('Attempt to fit EntitiesState on the container {} where it cannot fit'.format(entity_name, container_info.node_type))
-
-            hcg = HomogeneousContainerGroup(container_info,
-                                            entity_placement.containers_count,
-                                            entity_placement.entities_state,
-                                            system_capacity_taken)
-
-            homogeneous_groups.append(hcg)
-
-        return HomogeneousContainerGroupSet(homogeneous_groups)
+        return cls(homogeneous_groups)
 
     """
     Wraps multiple homogeneous container groups to allow the arithmetic operations
@@ -142,7 +127,10 @@ class HomogeneousContainerGroupSet:
         """
 
         generalized_deltas_lst = []
-        for group in generalized_deltas_lst.values():
+        for group in self._homogeneous_groups.values():
+            generalized_deltas_lst.append(group.to_delta)
+
+        for group in self._in_change_homogeneous_groups.values():
             generalized_deltas_lst.append(group.to_delta)
 
         return generalized_deltas_lst

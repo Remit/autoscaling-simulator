@@ -94,7 +94,7 @@ class PlatformState:
         """
 
         per_region_deltas = []
-        for region_name, region in self.regions:
+        for region_name, region in self.regions.items():
             per_region_deltas.append(region.to_deltas())
 
         return StateDelta(per_region_deltas)

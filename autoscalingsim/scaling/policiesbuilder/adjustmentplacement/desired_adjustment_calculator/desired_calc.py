@@ -52,18 +52,14 @@ class DesiredChangeCalculator:
                                                                          region_name)
             # Score
             scored_placements_lst = self.scorer(placements_lst, state_duration_h)
-            print(placements_lst)
-            raise ValueError('hehe')
 
             # Optimize
             selected_placement = self.optimizer(scored_placements_lst)
 
-            regions[region_name] = Region(region_name,
-                                          self.container_for_scaled_entities_types,
-                                          self.scaled_entity_instance_requirements_by_entity,
-                                          selected_placement)
+            regions[region_name] = Region.from_conf(region_name,
+                                                    selected_placement)
 
-            scores_per_region[region] = selected_placement.score
+            scores_per_region[region_name] = selected_placement.score
 
         # Building the new state based on the selected container type
         desired_state = PlatformState(regions)
