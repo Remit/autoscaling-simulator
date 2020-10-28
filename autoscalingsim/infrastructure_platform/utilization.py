@@ -86,8 +86,7 @@ class ServiceUtilization:
                value : float):
 
         if not resource_name in self.resource_utilizations:
-            raise ValueError('Unexpected resource name {} when updating {}'.format(resource_name,
-                                                                                   self.__class__.__name__))
+            raise ValueError(f'Unexpected resource name {resource_name} when updating {self.__class__.__name__}')
 
         self.resource_utilizations[resource_name].update(timestamp, value)
 
@@ -95,8 +94,7 @@ class ServiceUtilization:
             resource_name : str):
 
         if not resource_name in self.resource_utilizations:
-            raise ValueError('Unexpected resource name {} when reading {}'.format(resource_name,
-                                                                                  self.__class__.__name__))
+            raise ValueError(f'Unexpected resource name {resource_name} when reading {self.__class__.__name__}')
 
         return self.resource_utilizations[resource_name].get()
 

@@ -48,10 +48,10 @@ class SystemCapacity(Capacity):
                 cap_to_add : 'SystemCapacity'):
 
         if not isinstance(cap_to_add, self.__class__):
-            raise ValueError('An attempt to add an object of type {} to the object of type {}'.format(cap_to_add.__class__.__name__, self.__class__.__name__))
+            raise ValueError(f'An attempt to add an object of type {type(cap_to_add)} to the object of type {self.__class__.__name__}')
 
         if self.uid != cap_to_add.uid:
-            raise ValueError('An attempt to add capacities with different unique IDs: {} and {}'.format(self.uid, cap_to_add.uid))
+            raise ValueError(f'An attempt to add capacities with different unique IDs: {self.uid} and {cap_to_add.uid}')
 
         sum_system_capacity = {}
         for self_cap, other_cap in zip(self.system_capacity_taken.items(), cap_to_add.system_capacity_taken.items()):
@@ -65,10 +65,10 @@ class SystemCapacity(Capacity):
                 cap_to_sub : 'SystemCapacity'):
 
         if not isinstance(cap_to_sub, self.__class__):
-            raise ValueError('An attempt to subtract an object of type {} to the object of type {}'.format(cap_to_sub.__class__.__name__, self.__class__.__name__))
+            raise ValueError(f'An attempt to subtract an object of type {type(cap_to_sub)} to the object of type {self.__class__.__name__}')
 
         if self.uid != cap_to_sub.uid:
-            raise ValueError('An attempt to subtract capacities with different unique IDs: {} and {}'.format(self.uid, cap_to_sub.uid))
+            raise ValueError(f'An attempt to subtract capacities with different unique IDs: {self.uid} and {cap_to_sub.uid}')
 
         reduced_system_capacity = {}
         for self_cap, other_cap in zip(self.system_capacity_taken.items(), cap_to_sub.system_capacity_taken.items()):
@@ -82,7 +82,7 @@ class SystemCapacity(Capacity):
                 scalar : int):
 
         if not isinstance(scalar, int):
-            raise ValueError('An attempt to mutiply the {} by non-int'.format(self.__class__.__name__))
+            raise ValueError(f'An attempt to mutiply the {self.__class__.__name__} by non-int')
 
         mult_system_capacity = {}
         for cap_name, self_cap in self.system_capacity_taken.items():
@@ -97,8 +97,7 @@ class SystemCapacity(Capacity):
               comparison_op):
 
         if not isinstance(other_cap, SystemCapacity):
-            raise TypeError('Unexpected type of the operand when comparing with {}: {}'.format(self.__class__.__name__,
-                                                                                               type(other_cap)))
+            raise TypeError(f'Unexpected type of the operand when comparing with {self.__class__.__name__}: {type(other_cap}')
 
         return comparison_op(self.collapse(), other_cap.collapse())
 

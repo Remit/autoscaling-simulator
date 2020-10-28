@@ -51,8 +51,7 @@ class ProviderNodes:
                       node_type : str):
 
         if not node_type in self.node_infos:
-            raise ValueError('Unknown node type {} for provider {}'.format(node_type,
-                                                                           self.provider))
+            raise ValueError(f'Unknown node type {node_type} for provider {self.provider}')
 
         return self.node_infos[node_type]
 
