@@ -85,7 +85,7 @@ class HomogeneousContainerGroupSet:
             # If the container group delta is not virtual, then add/remove it
             if container_group_delta.sign > 0:
                 groups_to_change[container_group_delta.container_group.id] = container_group_delta.container_group
-            elif container_group_delta.sign < 0:
+            elif (container_group_delta.sign < 0) and (container_group_delta.container_group.id in groups_to_change):
                 del groups_to_change[container_group_delta.container_group.id]
 
     def extract_container_groups(self,

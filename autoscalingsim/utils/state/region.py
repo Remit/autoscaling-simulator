@@ -3,8 +3,7 @@ from collections import OrderedDict
 from .placement import Placement
 from .container_state.container_group import HomogeneousContainerGroup, ContainerGroupDelta, GeneralizedDelta
 from .container_state.container_group_set import HomogeneousContainerGroupSet
-from .entity_state.entities_state import EntitiesState
-from .entity_state.entity_group import EntitiesGroupDelta
+from .entity_state.entity_group import EntitiesGroupDelta, EntitiesState
 
 from ..deltarepr.regional_delta import RegionalDelta
 
@@ -131,19 +130,30 @@ class Region:
             if len(unmet_cumulative_reduction_on_ts) > 0:
                 generalized_deltas_lst, unmet_cumulative_reduction_on_ts = group.compute_soft_adjustment(unmet_cumulative_reduction_on_ts,
                                                                                                          scaled_entity_instance_requirements_by_entity)
-                # TODO: in group's compute soft adj -> implement logic to instantly remove
-                # old group and add new one(reduced)
-                if len(generalized_deltas_lst) > 0:
-                    for gd in generalized_deltas_lst:
-                        if gd.container_group_delta.in_change:
-                            non_enforced_scale_down_deltas.append(gd)
-                        else:
-                            if gd.container_group_delta.sign == -1:
-                                cur_groups.remove(gd.container_group_delta.container_group)
-                            elif gd.container_group_delta.sign == 1:
-                                cur_groups.append(gd.container_group_delta.container_group)
 
-                            new_deltas_per_ts.append(gd)
+                for gd in generalized_deltas_lst:
+                    if gd.container_group_delta.in_change:
+                        # Non-enforced scale down:
+                        # - adding the generalized delta to the list of non-enforced
+                        # deltas s.t. it can be considered further down for
+                        # accommodating an unmet increase in entities.
+                        non_enforced_scale_down_deltas.append(gd)
+                        # - reducing the size of the considered homogeneous
+                        # container group s.t. the up-to-date state is
+                        # considered for accommodating the unmet increase on timestamp.
+                        group_shrinkage = gd.container_group_delta.container_group.copy()
+                        group_shrinkage.add_to_entities_state(gd.entities_group_delta.to_entities_state())
+                        group.shrink(group_shrinkage)
+
+                    else:
+                        # Semi-scale down case when only the entities get deleted
+                        # and no containers scale down is performed.
+                        new_deltas_per_ts.append(gd)
+
+            # If group became empty as a result of the above manipulations,
+            # we delete it from the list
+            if group.is_empty():
+                del group
 
         # try to accommodate the entities in the groups sorted
         # in the order decreasing by capacity used (fill-fastest)
@@ -155,8 +165,7 @@ class Region:
                 generalized_deltas_lst, unmet_cumulative_increase_on_ts = group.compute_soft_adjustment(unmet_cumulative_increase_on_ts,
                                                                                                         scaled_entity_instance_requirements_by_entity)
 
-                if len(generalized_deltas_lst) > 0:
-                    new_deltas_per_ts.extend(generalized_deltas_lst)
+                new_deltas_per_ts.extend(generalized_deltas_lst)
 
         # separately processing the to-be-scaled-down groups and trying to
         # save them by trying to accommodate unmet_cumulative_increase_on_ts
@@ -168,23 +177,16 @@ class Region:
                                                                                                         scaled_entity_instance_requirements_by_entity)
 
                 if len(generalized_deltas_lst) > 0:
-                    # Compensating with virtual events for the scale down
-                    # that did not happen -- still, the associated
-                    # entities should be terminated.
-
-                    # Instant scale-down
-                    # TODO: think once again
-                    generalized_deltas_lst.append(GeneralizedDelta(non_enforced_gd.container_group_delta.enforce(),
-                                                                   non_enforced_gd.entities_group_delta))
-
-                    virtual_cgd = non_enforced_gd.container_group_delta.enforce()
-                    virtual_cgd.sign = 1
-                    virtual_cgd.virtual = True
-                    generalized_deltas_lst.append(GeneralizedDelta(virtual_cgd,
-                                                                   None))
-
+                    # The intended scale down did not happen, hence
+                    # we drop the non-enforced generalized delta and
+                    # add the semi-scale up deltas to the joint list
+                    # for the timestamp.
                     new_deltas_per_ts.extend(generalized_deltas_lst)
                 else:
+                    # No entities instances to accommodate on the
+                    # non-enforced scale down container group, hence
+                    # the corresponding generalized delta is added
+                    # to the list for enforcement.
                     remaining_non_enforced_scale_down_deltas.append(non_enforced_gd)
 
         new_deltas_per_ts.extend(remaining_non_enforced_scale_down_deltas)

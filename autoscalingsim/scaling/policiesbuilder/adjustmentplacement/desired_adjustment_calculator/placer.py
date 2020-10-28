@@ -2,7 +2,7 @@ from collections import OrderedDict
 
 from .....infrastructure_platform.system_capacity import SystemCapacity
 from .....utils.state.placement import *
-from .....utils.state.entity_state.entities_state import EntitiesState
+from .....utils.state.entity_state.entity_group import EntitiesState
 from .....utils.state.statemanagers import StateReader
 
 class Placer:

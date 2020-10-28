@@ -164,7 +164,10 @@ class SystemCapacity(Capacity):
                                         capacity_type : str):
 
         if capacity_type in self.system_capacity_taken:
-            return self.system_capacity_taken[capacity_type] / (self.instance_count * self.instance_capacity[capacity_type])
+            if self.instance_count == 0:
+                return 0
+            else:
+                return self.system_capacity_taken[capacity_type] / (self.instance_count * self.instance_capacity[capacity_type])
         else:
             return 0
 

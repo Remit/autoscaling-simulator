@@ -1,8 +1,7 @@
 import pandas as pd
 from collections import OrderedDict
 
-from ..entity_state.entities_state import EntitiesState
-from ..entity_state.entity_group import EntitiesGroupDelta
+from ..entity_state.entity_group import EntitiesGroupDelta, EntitiesState
 
 from ....infrastructure_platform.system_capacity import SystemCapacity
 from ....infrastructure_platform.node import NodeInfo
@@ -51,6 +50,30 @@ class HomogeneousContainerGroup:
 
         _, self.system_capacity = self.container_info.entities_require_capacity(self.entities_state)
         self.id = id(self)
+
+    def is_empty(self):
+
+        return self.containers_count == 0
+
+    def shrink(self,
+               other_container_group : 'HomogeneousContainerGroup'):
+
+        """
+        This scale down operation results in reducing the containers count
+        in the group and may also affect the entities state.
+        """
+
+        if not isinstance(other_container_group, HomogeneousContainerGroup):
+            raise TypeError('An attempt to subtract unrecognized type from the {}: {}'.format(self.__class__.__name__,
+                                                                                              type(other_container_group)))
+
+        if self.container_name != other_container_group.container_name:
+            raise ValueError('An attempt to remove containers of other type {} whereas the current container type is {}'.format(other_container_group.container_name,
+                                                                                                                                self.container_name))
+
+        self.containers_count -= other_container_group.containers_count
+        self.entities_state -= other_container_group.entities_state
+        _, self.system_capacity = self.container_info.entities_require_capacity(self.entities_state)
 
     def extract_scaling_aspects(self):
 
@@ -109,7 +132,7 @@ class HomogeneousContainerGroup:
             dynamic_entities_instances_count = self.entities_state.extract_aspect_value('count')
 
             for entity_name, instance_cap_to_take in container_capacity_taken_by_entity_sorted.items():
-                if entity_name in unmet_changes:
+                if (entity_name in unmet_changes) and (entity_name in dynamic_entities_instances_count):
 
                     # Case of adding entities to the existing containers
                     if not entity_name in temp_change:
@@ -292,19 +315,6 @@ class ContainerGroupDelta:
     def get_container_type(self):
 
         return self.container_group.container_info.node_type
-
-    #def to_be_scaled_down(self):
-
-    #    entities_instances_counts_after_change = {}
-    #    if self.container_group.entities_state.entities_instances_counts.keys() == self.container_group.entities_state.in_change_entities_instances_counts.keys():
-    #        for entity_instances_count, in_change_entity_instances_count in zip(self.container_group.entities_state.entities_instances_counts.items(),
-    #                                                                            self.container_group.entities_state.in_change_entities_instances_counts.items()):
-    #            entities_instances_counts_after_change[entity_instances_count[0]] = entity_instances_count[1] + in_change_entity_instances_count[1]
-
-    #    if len(entities_instances_counts_after_change) > 0:
-    #        return all(count_after_change == 0 for count_after_change in entities_instances_counts_after_change.values())
-
-    #    return False
 
 class GeneralizedDelta:
 

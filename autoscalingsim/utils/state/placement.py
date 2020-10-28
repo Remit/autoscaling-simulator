@@ -1,4 +1,4 @@
-from .entity_state.entities_state import EntitiesState
+from .entity_state.entity_group import EntitiesState
 from ...scaling.policiesbuilder.scaled.scaled_container import ScaledContainer
 from ...infrastructure_platform.system_capacity import SystemCapacity
 

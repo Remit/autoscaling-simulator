@@ -1,4 +1,4 @@
-from .entities_state import EntitiesState
+from .entity_group import EntitiesState
 
 class EntitiesStatesRegionalized:
 

@@ -141,62 +141,6 @@ class PlatformState:
 
         return (state_delta, unmet_scaled_entity_adjustment)
 
-    # TODO: consider deleting
-    def update_virtually(self,
-                         region_groups_deltas):
-
-        """
-        Computes the new platform state after applying the update provided
-        as a parameter region_groups_deltas. The timestamp of the update is also provided
-        to account for the scale up and scale down delays.
-
-        Returns a new state. Does not change the current state object.
-        """
-
-        return self.update(region_groups_deltas,
-                           True)
-
-    # TODO: consider deleting
-    def update(self,
-               homogeneous_groups_deltas_per_region,
-               is_virtual = False):
-
-        """
-        Invokes updates of homogeneous groups for each region present in the state.
-        If the region is not yet in this state, then it is created from the given
-        homogeneous groups.
-
-        Changes the state if is_virtual == False.
-        """
-
-        state_to_update = self
-        if is_virtual:
-            state_to_update = PlatformState(self.regions.copy())
-
-        for region_name, homogeneous_groups_deltas in homogeneous_groups_deltas_per_region:
-            if region_name in state_to_update.regions:
-                state_to_update.regions[region_name].update_groups(homogeneous_groups_deltas)
-            else:
-                # Adding a new region
-                state_to_update.regions[region_name] = Region(region_name,
-                                                              homogeneous_groups_deltas)
-
-        return state_to_update
-
-    # TODO: consider deleting
-    #def finish_change_for_entities(self,
-    #                               entities_booting_period_expired,
-    #                               entities_termination_period_expired):
-
-    #    """
-    #    Advances in-change entities for all the regions s.t. each region has new
-    #    container groups with current entities updated by the applied change.
-    #    """
-
-    #    for region_name, region in self.regions.items():
-    #        region.finish_change_for_entities(entities_booting_period_expired,
-    #                                          entities_termination_period_expired)
-
     def extract_collective_entities_states(self):
 
         collective_entities_states = {}
