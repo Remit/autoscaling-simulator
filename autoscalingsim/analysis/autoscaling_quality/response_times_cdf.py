@@ -47,7 +47,7 @@ class ResponseTimesCDF:
                 plt.hlines(percentile, min(x_axis), max(x_axis),
                            colors='k', linestyles='dashed', lw = 0.5)
                 plt.text(0, percentile + 0.001,
-                         "{}th percentile".format(int(percentile * 100)),
+                         f"{(int(percentile * 100))}th percentile",
                          fontdict = font)
 
             plt.xlabel('Response time, ms')
@@ -57,5 +57,5 @@ class ResponseTimesCDF:
                 figure_path = os.path.join(figures_dir, plotting_constants.filename_format.format(region_name, ResponseTimesCDF.FILENAME))
                 plt.savefig(figure_path)
             else:
-                plt.title('CDF of requests by response time in region {}'.format(region_name))
+                plt.title(f'CDF of requests by response time in region {region_name}')
                 plt.show()

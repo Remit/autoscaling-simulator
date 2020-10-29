@@ -36,7 +36,7 @@ class WaitingServiceBuffersHistogram:
             for req_type, buffers_waiting_times_raw in buffer_times_by_request.items():
 
                 ax_out = plt.Subplot(fig, outer[i])
-                ax_out.set_title('Request type {}'.format(req_type),
+                ax_out.set_title(f'Request type {req_type}',
                                  y = 1.2,
                                  fontdict = font)
 
@@ -80,7 +80,7 @@ class WaitingServiceBuffersHistogram:
 
                     ax.hist(service_buffer_waiting_times,
                             bins = bins_cnt)
-                    ax.title.set_text('Buffers of the {} service'.format(service_name))
+                    ax.title.set_text(f'Buffers of the {service_name} service')
 
 
                     if not ax.is_last_row():
@@ -98,5 +98,5 @@ class WaitingServiceBuffersHistogram:
                 figure_path = os.path.join(figures_dir, plotting_constants.filename_format.format(region_name, WaitingServiceBuffersHistogram.FILENAME))
                 plt.savefig(figure_path)
             else:
-                plt.suptitle('Distribution of requests by buffer waiting time in {}'.format(region_name), y = 1.05)
+                plt.suptitle(f'Distribution of requests by buffer waiting time in {region_name}', y = 1.05)
                 plt.show()

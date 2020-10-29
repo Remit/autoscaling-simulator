@@ -24,12 +24,10 @@ class RegionalDelta:
                 other_regional_delta : 'RegionalDelta'):
 
         if not isinstance(other_regional_delta, RegionalDelta):
-            raise TypeError('An attempt to add an object of type {} to an object of type {}'.format(other_regional_delta.__class__.__name__,
-                                                                                                    self.__class__.__name__))
+            raise TypeError(f'An attempt to add an object of type {other_regional_delta.__class__.__name__} to an object of type {self.__class__.__name__}')
 
         if self.region_name != other_regional_delta.region_name:
-            raise ValueError('An attempt to add the delta for region {} to the delta for region {}'.format(other_regional_delta.region_name,
-                                                                                                           self.region_name))
+            raise ValueError(f'An attempt to add the delta for region {other_regional_delta.region_name} to the delta for region {self.region_name}')
 
         new_generalized_deltas = self.generalized_deltas
         new_generalized_deltas.extend(other_regional_delta.generalized_deltas)

@@ -20,20 +20,17 @@ class StateDelta:
         if isinstance(regional_deltas, list):
             for regional_delta in regional_deltas:
                 if not isinstance(regional_delta, RegionalDelta):
-                    raise TypeError('Expected RegionalDelta on initializing {}, got {}'.format(self.__class__.__name__,
-                                                                                               delta.__class__.__name__))
+                    raise TypeError(f'Expected RegionalDelta on initializing {self.__class__.__name__}, got {delta.__class__.__name__}')
 
             self.deltas_per_region[regional_delta.region_name] = regional_delta
         elif isinstance(regional_deltas, dict):
             for regional_delta in regional_deltas.values():
                 if not isinstance(regional_delta, RegionalDelta):
-                    raise TypeError('Expected RegionalDelta on initializing {}, got {}'.format(self.__class__.__name__,
-                                                                                               delta.__class__.__name__))
+                    raise TypeError(f'Expected RegionalDelta on initializing {self.__class__.__name__}, got {delta.__class__.__name__}')
 
             self.deltas_per_region = regional_deltas
         else:
-            raise TypeError('Unknown type of init argument for {}: {}'.format(self.__class__.__name__,
-                                                                              type(regional_deltas)))
+            raise TypeError(f'Unknown type of init argument for {self.__class__.__name__}: {regional_deltas.__class__.__name__}')
 
     def __iter__(self):
         return StateDeltaIterator(self)
@@ -42,8 +39,7 @@ class StateDelta:
                 other_state_delta : 'StateDelta'):
 
         if not isinstance(other_state_delta, StateDelta):
-            raise TypeError('An attempt to add an object of type {} to an object of type {}'.format(other_state_delta.__class__.__name__,
-                                                                                                    self.__class__.__name__))
+            raise TypeError(f'An attempt to add an object of type {other_state_delta.__class__.__name__} to an object of type {self.__class__.__name__}')
 
         new_regional_deltas = self.deltas_per_region.copy()
         for region_name, regional_delta in other_state_delta:

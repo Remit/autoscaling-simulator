@@ -63,6 +63,6 @@ class Registry:
     def get(name):
 
         if not name in Registry.registry:
-            raise ValueError('An attempt to use the non-existent score calculator {}'.format(name))
+            raise ValueError(f'An attempt to use the non-existent score calculator {name}')
 
         return Registry.registry[name]

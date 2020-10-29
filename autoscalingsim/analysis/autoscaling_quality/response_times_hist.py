@@ -55,5 +55,5 @@ class ResponseTimesHistogram:
                 figure_path = os.path.join(figures_dir, plotting_constants.filename_format.format(region_name, ResponseTimesHistogram.FILENAME))
                 plt.savefig(figure_path)
             else:
-                plt.suptitle('Distribution of requests by response time in region {}'.format(region_name), y = 1.05)
+                plt.suptitle(f'Distribution of requests by response time in region {region_name}', y = 1.05)
                 plt.show()

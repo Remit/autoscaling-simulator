@@ -52,7 +52,7 @@ class ScalingPolicy:
                     attribute_name):
 
             if not hasattr(self, attribute_name):
-                raise ValueError('Attribute {} not found in {}'.format(attribute_name, self.__class__.__name__))
+                raise ValueError(f'Attribute {attribute_name} not found in {self.__class__.__name__}')
 
             return self.__getattribute__(attribute_name)
 
@@ -61,7 +61,7 @@ class ScalingPolicy:
                        attribute_val):
 
             if not hasattr(self, attribute_name):
-                raise ValueError('Untimed attribute {} not found in {}'.format(attribute_name, self.__class__.__name__))
+                raise ValueError(f'Untimed attribute {attribute_name} not found in {self.__class__.__name__}')
 
             self.__setattr__(attribute_name, attribute_val)
 
@@ -76,7 +76,7 @@ class ScalingPolicy:
         self.state = ScalingPolicy.ScalingState(starting_time)
 
         if not os.path.isfile(config_file):
-            raise ValueError('No {} configuration file found under the path {}'.format(self.__class__.__name__, config_file))
+            raise ValueError(f'No {self.__class__.__name__} configuration file found under the path {config_file}')
 
         self.scaling_settings = ScalingPolicyConfiguration(config_file)
         scaling_model.initialize_with_entities_scaling_conf(self.scaling_settings.services_scaling_config)

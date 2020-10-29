@@ -44,6 +44,6 @@ class Registry:
     def get(name):
 
         if not name in Registry.registry:
-            raise ValueError('An attempt to use the non-existent optimizer {}'.format(name))
+            raise ValueError(f'An attempt to use the non-existent optimizer {name}')
 
         return Registry.registry[name]

@@ -129,8 +129,7 @@ class RegionalWorkloadModel:
                     for day_id in range(5, 7):
                         self.monthly_vals[month_id][day_id] = ErrorChecker.key_check_and_load('values', pattern, 'region_name', self.region_name)
                 else:
-                    raise ValueError('day_of_week value {} undefined for {}.'.format(day_of_week,
-                                                                                     self.__class__.__name__))
+                    raise ValueError(f'day_of_week value {day_of_week} undefined for {self.__class__.__name__}')
 
         for conf in workloads_configs:
             req_type = ErrorChecker.key_check_and_load('request_type', conf, 'region_name', self.region_name)
@@ -138,7 +137,7 @@ class RegionalWorkloadModel:
             req_ratio = ErrorChecker.key_check_and_load('ratio', workload_config, 'region_name', self.region_name)
 
             if req_ratio < 0.0 or req_ratio > 1.0:
-                raise ValueError('Unacceptable ratio value for the request of type {}.'.format(req_type))
+                raise ValueError(f'Unacceptable ratio value for the request of type {req_type}')
             self.reqs_types_ratios[req_type] = req_ratio
 
             sliced_distribution = ErrorChecker.key_check_and_load('sliced_distribution', workload_config, 'region_name', self.region_name)

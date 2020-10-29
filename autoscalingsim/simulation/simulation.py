@@ -99,9 +99,8 @@ class Simulation:
                     if self.sim_round % self.stat_updates_every_round == 0:
                         left_to_simulate = self.simulation_end - self.cur_simulation_time
                         left_to_simulate_steps = left_to_simulate // self.simulation_step
-                        print('[{}] Left to simulate: {} min or {} steps'.format(str(pd.Timestamp.now()),
-                                                                                 str(left_to_simulate),
-                                                                                 left_to_simulate_steps))
+                        print(f'[{str(pd.Timestamp.now())}] Left to simulate: {str(left_to_simulate)} min or {left_to_simulate_steps} steps')
+
                 progress_bar.update(1)
 
         # Storing the simulation results on a disk

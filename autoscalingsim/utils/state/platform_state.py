@@ -28,17 +28,17 @@ class PlatformState:
         if isinstance(regions, dict):
             for region in regions.values():
                 if not isinstance(region, Region):
-                    raise ValueError('An incorrect type of region in the dict provided on init: {}'.format(region.__class__.__name__))
+                    raise ValueError(f'An incorrect type of region in the dict provided on init: {region.__class__.__name__}')
 
             self.regions = regions
         elif isinstance(regions, list):
             for region_name in regions:
                 if not isinstance(region_name, str):
-                    raise ValueError('An incorrect type of region name in the list provided on init: {}'.format(region_name.__class__.__name__))
+                    raise ValueError(f'An incorrect type of region name in the list provided on init: {region_name.__class__.__name__}')
 
             self.regions[region_name] = Region(region_name)
         else:
-            raise TypeError('Unknown type of regions on init: {}'.format(regions.__class__.__name__))
+            raise TypeError(f'Unknown type of regions on init: {regions.__class__.__name__}')
 
     def to_placements(self):
 
@@ -53,8 +53,7 @@ class PlatformState:
 
         modified_state = self.copy()
         if not isinstance(state_delta, StateDelta):
-            raise TypeError('An attempt to add an entity of type {} to the {}'.format(state_delta.__class__.__name__,
-                                                                                      self.__class__.__name__))
+            raise TypeError(f'An attempt to add an entity of type {state_delta.__class__.__name__} to the {self.__class__.__name__}')
 
         for region_name, regional_delta in state_delta:
             if not regional_delta.region_name in modified_state.regions:

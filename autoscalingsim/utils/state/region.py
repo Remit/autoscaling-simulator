@@ -45,7 +45,7 @@ class Region:
                 elif isinstance(group_or_delta, ContainerGroupDelta):
                     group_delta = group_or_delta
                 else:
-                    raise TypeError('Unexpected type on {} initialization'.format(group_or_delta.__class__.__name__))
+                    raise TypeError(f'Unexpected type on {group_or_delta.__class__.__name__} initialization')
 
                 if not group_delta is None:
                     generalized_delta = GeneralizedDelta(group_delta, None)
@@ -213,7 +213,7 @@ class Region:
             for group_delta in homogeneous_groups_deltas:
                 self.homogeneous_groups += group_delta
         except TypeError:
-            raise TypeError('An operand is not iterable for {}'.format(self.__class__.__name__))
+            raise TypeError(f'An operand is not iterable for {self.__class__.__name__}')
 
     # ToDO: consider deleting
     def update_entities(self,
@@ -227,12 +227,10 @@ class Region:
                 regional_delta : RegionalDelta):
 
         if not isinstance(regional_delta, RegionalDelta):
-            raise TypeError('An attempt to add an entity of type {} to the {}'.format(regional_delta.__class__.__name__,
-                                                                                      self.__class__.__name__))
+            raise TypeError(f'An attempt to add an entity of type {regional_delta.__class__.__name__} to the {self.__class__.__name__}')
 
         if regional_delta.region_name != self.region_name:
-            raise ValueError('An attempt to add the delta for region {} to the Region {}'.format(regional_delta.region_name,
-                                                                                                 self.region_name))
+            raise ValueError(f'An attempt to add the delta for region {regional_delta.region_name} to the Region {self.region_name}')
 
         homogeneous_groups = self.homogeneous_groups.copy()
         homogeneous_groups += regional_delta

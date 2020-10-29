@@ -74,5 +74,5 @@ class NodesUsageLineGraph:
                 figure_path = os.path.join(figures_dir, plotting_constants.filename_format.format(region_name, NodesUsageLineGraph.FILENAME))
                 plt.savefig(figure_path)
             else:
-                plt.suptitle('Desired and actual number of nodes per node type in region {}'.format(region_name), y = 1.05)
+                plt.suptitle(f'Desired and actual number of nodes per node type in region {region_name}', y = 1.05)
                 plt.show()

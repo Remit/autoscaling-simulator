@@ -42,8 +42,7 @@ class ResourceRequirements:
                 other_res_req : 'ResourceRequirements'):
 
         if not isinstance(other_res_req, ResourceRequirements):
-            raise TypeError('Unrecognized type to add to the {}: {}'.format(self.__class__.__name__,
-                                                                            type(other_res_req)))
+            raise TypeError(f'Unrecognized type to add to the {self.__class__.__name__}: {other_res_req.__class__.__name__}')
 
         sum_res_req_dict = self.to_dict()
         for req_name, req_val in other_res_req.to_dict().items():
@@ -63,8 +62,7 @@ class ResourceRequirements:
                 factor : numbers.Number):
 
         if not isinstance(factor, numbers.Number):
-            raise TypeError('An attempt to multiply {} by non-scalar: {}'.format(self.__class__.__name__,
-                                                                                 scalar))
+            raise TypeError(f'An attempt to multiply {self.__class__.__name__} by non-scalar: {factor.__class__.__name__}')
 
         new_res_req_dict = self.to_dict()
         for req_name, req_val in new_res_req_dict.items():

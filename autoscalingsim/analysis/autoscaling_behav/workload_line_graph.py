@@ -52,7 +52,7 @@ class WorkloadLineGraph:
                 df_workload = df_workload.set_index('time')
                 plt.plot(df_workload, label = req_type)
 
-                plt.ylabel('Workload, requests per {} s'.format(resolution_ms // 1000))
+                plt.ylabel(f'Workload, requests per {(resolution_ms // 1000)} s')
                 plt.legend(loc = "lower right")
                 plt.xticks(rotation = 70)
 
@@ -60,5 +60,5 @@ class WorkloadLineGraph:
                 figure_path = os.path.join(figures_dir, plotting_constants.filename_format.format(region_name, WorkloadLineGraph.FILENAME))
                 plt.savefig(figure_path)
             else:
-                plt.title('Generated workload over time in region {}'.format(region_name))
+                plt.title(f'Generated workload over time in region {region_name}')
                 plt.show()

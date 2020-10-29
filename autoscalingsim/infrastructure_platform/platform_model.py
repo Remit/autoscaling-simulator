@@ -113,7 +113,7 @@ class PlatformModel:
         self.state_deltas_timeline = None
 
         if config_file is None:
-            raise ValueError('Configuration file not provided for the {}'.format(self.__class__.__name__))
+            raise ValueError(f'Configuration file not provided for the {self.__class__.__name__}')
         else:
             with open(config_file) as f:
                 try:
@@ -148,7 +148,7 @@ class PlatformModel:
                                                                            requests_acceleration_factor)
 
                 except json.JSONDecodeError:
-                    raise ValueError('The config file {} provided for {} is an invalid JSON.'.format(config_file, self.__class__.__name__))
+                    raise ValueError(f'The config file {config_file} provided for {self.__class__.__name__} is an invalid JSON.')
 
     def step(self,
              cur_timestamp : pd.Timestamp):
@@ -189,7 +189,7 @@ class PlatformModel:
                       node_type : str):
 
         if not provider in self.providers_configs:
-            raise ValueError('Unknown provider {}'.format(provider))
+            raise ValueError(f'Unknown provider {provider}')
 
         return self.providers_configs[provider].get_node_info(node_type)
 

@@ -83,8 +83,7 @@ class ApplicationScalingModel:
             entities_by_change_enforcement_delay = {}
             for entity_name in entities_names:
                 if not entity_name in self.service_scaling_infos:
-                    raise ValueError('No scaling information for entity {} found in {}'.format(entity_name,
-                                                                                               self.__class__.__name__))
+                    raise ValueError(f'No scaling information for entity {entity_name} found in {self.__class__.__name__}')
                 change_enforcement_delay = pd.Timedelta(0, unit = 'ms')
                 entity_group_delta = entities_group_delta.get_entity_group_delta(entity_name)
 

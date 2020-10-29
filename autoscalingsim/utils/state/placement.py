@@ -55,7 +55,7 @@ class Placement:
                                other_entities_placement : EntitiesPlacement):
 
         if not isinstance(other_entities_placement, EntitiesPlacement):
-            raise TypeError('Wrong type on adding a new entities placement: {}'.format(other_entities_placement.__class__.__name__))
+            raise TypeError(f'Wrong type on adding a new entities placement: {other_entities_placement.__class__.__name__}')
 
         self.entities_placements.append(other_entities_placement)
 

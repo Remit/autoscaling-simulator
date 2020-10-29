@@ -39,8 +39,7 @@ class EntitiesStatesRegionalized:
         elif isinstance(other_regionalized_states, dict):
             other_regionalized_states_items = other_regionalized_states.items()
         else:
-            raise TypeError('Unknown type of parameter to add to {}: {}'.format(result.__class__,
-                                                                                type(other_regionalized_states)))
+            raise TypeError(f'Unknown type of parameter to add to {result.__class__.__name__}: {other_regionalized_states.__class__.__name__}')
 
         for region_name, entities_state in other_regionalized_states_items:
             result.add_state(region_name, entities_state, sign)
@@ -53,8 +52,7 @@ class EntitiesStatesRegionalized:
                   sign : int = 1):
 
         if not isinstance(entities_state, EntitiesState):
-            raise TypeError('An attempt to add to {} an operand of a wrong type {}'.format(self.__class__,
-                                                                                           type(entities_state)))
+            raise TypeError(f'An attempt to add to {self.__class__.__name__} an operand of a wrong type {entities_state.__class__.__name__}')
 
         if (not region_name in self._entities_states_per_region) and (sign == 1):
             self._entities_states_per_region[region_name] = entities_state
@@ -155,8 +153,7 @@ class EntitiesStatesRegionalizedDelta:
              sign : int):
 
         if not isinstance(other_delta, EntitiesStatesRegionalizedDelta):
-            raise TypeError('The operand to be added is not of the expected type {}: instead got {}'.format(self.__class__,
-                                                                                                            type(other_delta)))
+            raise TypeError(f'The operand to be added is not of the expected type {self.__class__.__name__}: instead got {other_delta.__class__.__name__}')
 
         new_delta = self.copy()
         for region_name in other_delta.deltas:

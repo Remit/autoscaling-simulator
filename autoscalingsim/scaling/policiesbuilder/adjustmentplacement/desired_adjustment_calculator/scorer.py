@@ -16,7 +16,7 @@ class Scorer:
                  score_calculator : ScoreCalculator):
 
         if not isinstance(score_calculator, ScoreCalculator):
-            raise TypeError('Incorrect type of the score calaculator'.format(score_calculator.__class__.__name__))
+            raise TypeError(f'Incorrect type of the score calaculator: {score_calculator.__class__.__name__}')
 
         self.score_calculator = score_calculator
 
@@ -49,7 +49,7 @@ class Scorer:
                             state_duration : StateDuration):
 
         if not isinstance(state_duration, StateDuration):
-            raise TypeError('Unexpected type of the state duration: {}'.format(type(state_duration)))
+            raise TypeError(f'Unexpected type of the state duration: {state_duration.__class__.__name__}')
 
         cumulative_scores_per_region = {}
         for region_name, region_placement in placements_per_region.items():

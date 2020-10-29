@@ -111,26 +111,6 @@ class ServiceState:
 
         return self.entity_group.get_resource_requirements()
 
-    #def update_metric(self,
-    #                  metric_name : str,
-    #                  timestamp : pd.Timestamp,
-    #                  value : float):
-
-    #    """
-    #    Updates the metric if it is present in the state. The method checks
-    #    what type of metric does the updated metric belong to, e.g. if it
-    #    is one of the utilization metrics.
-    #    """
-
-    #    if self.utilization.has_metric(metric_name):
-    #        self.utilization.update(metric_name,
-    #                                timestamp,
-    #                                value)
-    #    else:
-    #        raise ValueError('A metric with the name {} was not found in {} for region {}'.format(metric_name,
-    #                                                                                              self.__class__.__name__,
-    #                                                                                              self.region_name))
-
     def update_aspect(self,
                       aspect : ScalingAspect):
 
@@ -168,7 +148,7 @@ class ServiceState:
             try:
                 return self.placed_on_node.__getattribute__(parameter)
             except AttributeError:
-                raise ValueError('Unknown parameter type {}'.format(parameter))
+                raise ValueError(f'Unknown parameter type {parameter}')
 
     def get_aspect_value(self,
                          aspect_name : str):
@@ -181,9 +161,7 @@ class ServiceState:
         if self.utilization.has_metric(metric_name):
             return self.utilization.get(metric_name)
         else:
-            raise ValueError('A metric with the name {} was not found in {} for region {}'.format(metric_name,
-                                                                                                  self.__class__.__name__,
-                                                                                                  self.region_name))
+            raise ValueError(f'A metric with the name {metric_name} was not found in {self.__class__.__name__} for region {self.region_name}')
 
     def get_processed(self):
 
@@ -305,7 +283,7 @@ class ServiceStateRegionalized(ScaledEntityState):
                     req : Request):
 
         if not req.region_name in self.region_states:
-            raise ValueError('Received request with an unknown region name: {}'.format(req.region_name))
+            raise ValueError(f'Received request with an unknown region name: {req.region_name}')
 
         self.region_states[req.region_name].add_request(req)
 
@@ -320,7 +298,7 @@ class ServiceStateRegionalized(ScaledEntityState):
                                   region_name : str):
 
         if not region_name in self.region_states:
-            raise ValueError('A state for the given region name {} was not found'.format(region_name))
+            raise ValueError(f'A state for the given region name {region_name} was not found')
 
         return self.region_states[region_name].get_resource_requirements()
 
@@ -329,7 +307,7 @@ class ServiceStateRegionalized(ScaledEntityState):
                                 parameter : str):
 
         if not region_name in self.region_states:
-            raise ValueError('A state for the given region name {} was not found'.format(region_name))
+            raise ValueError(f'A state for the given region name {region_name} was not found')
 
         return self.region_states[region_name].get_placement_parameter(parameter)
 
@@ -340,7 +318,7 @@ class ServiceStateRegionalized(ScaledEntityState):
                       value : float):
 
         if not region_name in self.region_states:
-            raise ValueError('A state for the given region name {} was not found'.format(region_name))
+            raise ValueError(f'A state for the given region name {region_name} was not found')
 
         self.region_states[region_name].update_metric(metric_name,
                                                       timestamp,
@@ -351,7 +329,7 @@ class ServiceStateRegionalized(ScaledEntityState):
                       aspect : ScalingAspect):
 
         if not region_name in self.region_states:
-            raise ValueError('A state for the given region name {} was not found'.format(region_name))
+            raise ValueError(f'A state for the given region name {region_name} was not found')
 
         self.region_states[region_name].update_aspect(aspect)
 
@@ -361,7 +339,7 @@ class ServiceStateRegionalized(ScaledEntityState):
                          node_count : int):
 
         if not region_name in self.region_states:
-            raise ValueError('A state for the given region name {} was not found'.format(region_name))
+            raise ValueError(f'A state for the given region name {region_name} was not found')
 
         self.region_states[region_name].update_placement(node_info,
                                                          node_count)
@@ -371,7 +349,7 @@ class ServiceStateRegionalized(ScaledEntityState):
                          aspect_name : str):
 
         if not region_name in self.region_states:
-            raise ValueError('A state for the given region name {} was not found'.format(region_name))
+            raise ValueError(f'A state for the given region name {region_name} was not found')
 
         return self.region_states[region_name].get_aspect_value(aspect_name)
 
@@ -380,7 +358,7 @@ class ServiceStateRegionalized(ScaledEntityState):
                          metric_name : str):
 
         if not region_name in self.region_states:
-            raise ValueError('A state for the given region name {} was not found'.format(region_name))
+            raise ValueError(f'A state for the given region name {region_name} was not found')
 
         return self.region_states[region_name].get_metric_value(metric_name)
 

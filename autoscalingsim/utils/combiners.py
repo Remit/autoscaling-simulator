@@ -101,6 +101,6 @@ class Registry:
     def get(name):
 
         if not name in Registry.registry:
-            raise ValueError('No Combiner of type {} found'.format(combiner_type))
+            raise ValueError(f'No Combiner of type {name} found')
 
         return Registry.registry[name]

@@ -97,7 +97,7 @@ class Simulator:
 
         if not simulation_name is None:
             if not simulation_name in self.simulations:
-                raise ValueError('Given simulation {} not found.'.format(simulation_name))
+                raise ValueError(f'Given simulation {simulation_name} not found')
 
             self.simulations[simulation_name].start()
         else:

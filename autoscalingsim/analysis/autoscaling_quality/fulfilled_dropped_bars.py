@@ -54,5 +54,5 @@ class FulfilledDroppedBarchart:
                 figure_path = os.path.join(figures_dir, plotting_constants.filename_format.format(region_name, FulfilledDroppedBarchart.FILENAME))
                 plt.savefig(figure_path)
             else:
-                plt.suptitle('Fulfilled and failed requests in region {}'.format(region_name))
+                plt.suptitle(f'Fulfilled and failed requests in region {region_name}')
                 plt.show()

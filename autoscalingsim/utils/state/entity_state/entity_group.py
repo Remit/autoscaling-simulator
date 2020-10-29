@@ -30,7 +30,7 @@ class EntityGroup:
         self.scaling_aspects = {}
 
         if not isinstance(entity_resource_reqs, ResourceRequirements):
-            raise TypeError('Unexpected type for entity resource requirements: {}'.format(type(entity_resource_reqs)))
+            raise TypeError(f'Unexpected type for entity resource requirements: {entity_resource_reqs.__class__.__name__}')
         self.entity_resource_reqs = entity_resource_reqs
 
         if isinstance(aspects_vals, collections.Mapping):
@@ -40,9 +40,9 @@ class EntityGroup:
                 elif isinstance(aspect_value, numbers.Number):
                     self.scaling_aspects[aspect_name] = scaling_aspects.Registry.get(aspect_name)(aspect_value)
                 else:
-                    raise TypeError('Unexpected type of scaling aspects values to initialize the {}'.format(self.__class__))
+                    raise TypeError(f'Unexpected type of scaling aspects values to initialize the {self.__class__.__name__}')
         else:
-            raise TypeError('Unexpected type of scaling aspects dictionary to initialize the {}'.format(self.__class__))
+            raise TypeError(f'Unexpected type of scaling aspects dictionary to initialize the {self.__class__.__name__}')
 
     def __add__(self,
                 other_group_or_delta):
@@ -64,12 +64,10 @@ class EntityGroup:
         elif isinstance(other_group_or_delta, EntityGroupDelta):
             to_add = other_group_or_delta.aspects_deltas
         else:
-            raise TypeError('Incorrect type of operand to _add to {}: {}'.format(self.__class__,
-                                                                                 type(other_group_or_delta)))
+            raise TypeError(f'Incorrect type of operand to _add to {self.__class__.__name__}: {other_group_or_delta.__class__.__name__}')
 
         if self.entity_name != other_group_or_delta.entity_name:
-            raise ValueError('Non-matching names of operands to _add: {} and {}'.format(self.entity_name,
-                                                                                        other_group_or_delta.entity_name))
+            raise ValueError(f'Non-matching names of operands to _add: {self.entity_name} and {other_group_or_delta.entity_name}')
 
         new_group = self.copy()
         for aspect_name in to_add:
@@ -88,7 +86,7 @@ class EntityGroup:
                 multiplier : int):
 
         if not isinstance(multiplier, int):
-            raise TypeError('Incorrect type of mulitiplier to multiply {} by: {}'.format(self.__class__, multiplier.__class__))
+            raise TypeError(f'Incorrect type of mulitiplier to multiply {self.__class__.__name__} by: {multiplier.__class__.__name__}')
 
         new_aspects = self.scaling_aspects.copy()
         for aspect_name, aspect in self.scaling_aspects.items():
@@ -106,7 +104,7 @@ class EntityGroup:
         """
 
         if not isinstance(other_entity_group, EntityGroup):
-            raise TypeError('An attempt to floor-divide by an unknown type {}'.format(type(other_entity_group)))
+            raise TypeError(f'An attempt to floor-divide by an unknown type {other_entity_group.__class__.__name__}')
 
         division_results = []
         for aspect_name, aspect_value in self.scaling_aspects.items():
@@ -119,12 +117,10 @@ class EntityGroup:
                 other_entity_group):
 
         if not isinstance(other_entity_group, self.__class__):
-            raise TypeError('Incorrect type of operand to take modulo of {}: {}'.format(self.__class__,
-                                                                                        type(other_entity_group)))
+            raise TypeError(f'Incorrect type of operand to take modulo of {self.__class__.__name__}: {other_entity_group.__class__.__name__}')
 
         if self.entity_name != other_entity_group.entity_name:
-            raise ValueError('Non-matching names of EntityGroups to take modulo: {} and {}'.format(self.entity_name,
-                                                                                                   other_entity_group.entity_name))
+            raise ValueError(f'Non-matching names of EntityGroups to take modulo: {self.entity_name} and {other_entity_group.entity_name}')
 
         new_aspects = self.scaling_aspects.copy()
         for aspect_name, aspect in self.scaling_aspects.items():
@@ -153,7 +149,7 @@ class EntityGroup:
                       aspect : ScalingAspect):
 
         if not aspect.name in self.scaling_aspects:
-            raise ValueError('Unexpected aspect for an update: {}'.format(aspect.name))
+            raise ValueError(f'Unexpected aspect for an update: {aspect.name}')
 
         self.scaling_aspects[aspect.name] = aspect
 
@@ -161,7 +157,7 @@ class EntityGroup:
                          aspect_name : str):
 
         if not aspect_name in self.scaling_aspects:
-            raise ValueError('Unexpected aspect for an update: {}'.format(aspect_name))
+            raise ValueError(f'Unexpected aspect for an update: {aspect_name}')
 
         return self.scaling_aspects[aspect_name].copy()
 
@@ -181,10 +177,10 @@ class EntityGroupDelta:
                    sign = 1):
 
         if not isinstance(sign, int):
-            raise TypeError('The provided sign parameters is not of {} type'.format(int.__name__))
+            raise TypeError(f'The provided sign parameters is not of {int.__name__} type: {sign.__class__.__name__}')
 
         if not isinstance(entity_group, EntityGroup):
-            raise TypeError('The provided argument is not of EntityGroup type: {}'.format(entity_group.__class__))
+            raise TypeError(f'The provided argument is not of EntityGroup type: {entity_group.__class__.__name__}')
 
         aspects_vals_raw_numbers = {}
         for aspect_name, aspect_value in entity_group.scaling_aspects.items():
@@ -201,8 +197,7 @@ class EntityGroupDelta:
 
         self.entity_name = entity_name
         if not isinstance(entity_resource_reqs, ResourceRequirements):
-            raise TypeError('Unexpected type for entity resource requirements when initializing {}: {}'.format(self.__class__.__name__,
-                                                                                                               type(entity_resource_reqs)))
+            raise TypeError(f'Unexpected type for entity resource requirements when initializing {self.__class__.__name__}: {entity_resource_reqs.__class__.__name__}')
         self.entity_resource_reqs = entity_resource_reqs
         self.aspects_deltas = {}
         for aspect_name, aspect_value in aspects_vals.items():
@@ -212,7 +207,7 @@ class EntityGroupDelta:
                 self.aspects_deltas[aspect_name] = ScalingAspectDelta(scaling_aspects.Registry.get(aspect_name)(abs(aspect_value)),
                                                                       int(np.sign(aspect_value)))
             else:
-                raise TypeError('Unexpected type of scaling aspects values to initialize the {}'.format(self.__class__))
+                raise TypeError(f'Unexpected type of scaling aspects values to initialize the {self.__class__.__name__}')
 
     def __add__(self,
                 other_delta : 'EntityGroupDelta'):
@@ -229,13 +224,10 @@ class EntityGroupDelta:
              sign : int):
 
         if not isinstance(other_delta, EntityGroupDelta):
-            raise TypeError('The operand to be added is not of the expected type {}: instead got {}'.format(self.__class__,
-                                                                                                            type(other_delta)))
+            raise TypeError(f'The operand to be added is not of the expected type {self.__class__.__name__}, got {other_delta.__class__.__name__}')
 
         if self.entity_name != other_delta.entity_name:
-            raise ValueError('An attempt to add {} with different names: {} and {}'.format(self.__class__,
-                                                                                           self.entity_name,
-                                                                                           other_delta.entity_name))
+            raise ValueError(f'An attempt to add {self.__class__.__name__} with different names: {self.entity_name} and {other_delta.entity_name}')
 
         new_delta = self.copy()
         for aspect_name in other_delta.aspects_deltas:
@@ -275,8 +267,7 @@ class EntityGroupDelta:
         if scaled_aspect_name in self.aspects_deltas:
             return self.aspects_deltas[scaled_aspect_name].sign
         else:
-            raise ValueError('Aspect {} not found in {}'.format(scaled_aspect_name,
-                                                                self.__class__))
+            raise ValueError(f'Aspect {scaled_aspect_name} not found in {self.__class__.__name__}')
 
 class EntitiesState:
 
@@ -295,12 +286,12 @@ class EntitiesState:
                     self.entities_groups[entity_name] = group_or_aspects_dict
                 elif isinstance(groups_or_aspects, collections.Mapping):
                     if len(entities_resource_reqs) == 0:
-                        raise ValueError('No resource requirements provided for the initialization of {}'.format(self.__class__.__name__))
+                        raise ValueError(f'No resource requirements provided for the initialization of {self.__class__.__name__}')
                     self.entities_groups[entity_name] = EntityGroup(entity_name,
                                                                     entities_resource_reqs[entity_name],
                                                                     group_or_aspects_dict)
                 else:
-                    raise TypeError('Unknown type of the init parameter: {}'.format(type(groups_or_aspects)))
+                    raise TypeError(f'Unknown type of the init parameter: {groups_or_aspects.__class__.__name__}')
 
     def get_entities_counts(self):
 
@@ -366,8 +357,7 @@ class EntitiesState:
                 elif sign == 1:
                     new_groups[entity_name] = entity_group_to_add
         else:
-            raise TypeError('An attempt to add the operand of type {} to the {} when expecting type EntitiesGroupDelta or EntitiesState'.format(entities_to_add.__class__,
-                                                                                                                                                self.__class__))
+            raise TypeError(f'An attempt to add the operand of type {entities_to_add.__class__.__name__} to the {self.__class__.__name__} when expecting type EntitiesGroupDelta or EntitiesState')
         return EntitiesState(new_groups)
 
     def __truediv__(self,
@@ -380,8 +370,7 @@ class EntitiesState:
         """
 
         if not isinstance(other_entities_state, self.__class__):
-            raise TypeError('Incorrect type of operand to divide {} by: {}'.format(self.__class__,
-                                                                                   type(other_entities_state)))
+            raise TypeError(f'Incorrect type of operand to divide {self.__class__.__name__} by: {other_entities_state.__class__.__name__}')
 
         division_result_raw = {}
         for entity_name, entity_group in self.entities_groups.items():
@@ -401,8 +390,7 @@ class EntitiesState:
         """
 
         if not isinstance(other_entities_state, self.__class__):
-            raise TypeError('Incorrect type of operand to take {} modulo: {}'.format(self.__class__,
-                                                                                     type(other_entities_state)))
+            raise TypeError(f'Incorrect type of operand to take {self.__class__.__name__} modulo: {other_entities_state.__class__.__name__}')
 
         remainder_groups = {}
         for entity_name, entity_group in self.entities_groups.items():
@@ -489,7 +477,7 @@ class EntitiesGroupDelta:
         for entity_name, aspects_vals in aspects_vals_per_entity.items():
 
             if entity_name not in services_reqs:
-                raise ValueError('Resource requirements for entity {} were not provided'.format(entity_name))
+                raise ValueError(f'Resource requirements for entity {entity_name} were not provided')
 
             self.deltas[entity_name] = EntityGroupDelta(entity_name,
                                                         aspects_vals,
@@ -516,7 +504,7 @@ class EntitiesGroupDelta:
                                entity_name : str):
 
         if not entity_name in self.deltas:
-            raise ValueError('No entity group delta for entity name {} found'.format(entity_name))
+            raise ValueError(f'No entity group delta for entity name {entity_name} found')
 
         return self.deltas[entity_name]
 
@@ -535,8 +523,7 @@ class EntitiesGroupDelta:
              sign : int):
 
         if not isinstance(other_delta, EntitiesGroupDelta):
-            raise TypeError('The operand to be added is not of the expected type {}: instead got {}'.format(self.__class__,
-                                                                                                            type(other_delta)))
+            raise TypeError(f'The operand to be added is not of the expected type {self.__class__.__name__}, got {other_delta.__class__.__name__}')
 
         if self.in_change != other_delta.in_change:
             raise ValueError('Addition operands differ by the in_change status')
@@ -567,8 +554,7 @@ class EntitiesGroupDelta:
             other_delta : EntityGroupDelta):
 
         if not isinstance(other_delta, EntityGroupDelta):
-            raise TypeError('An attempt to add an object of unknown type {} to the list of deltas in {}'.format(type(other_delta),
-                                                                                                                self.__class__))
+            raise TypeError(f'An attempt to add an object of unknown type {other_delta.__class__.__name__} to the list of deltas in {self.__class__.__name__}')
 
         self.deltas[other_delta.entity_name] = other_delta
 

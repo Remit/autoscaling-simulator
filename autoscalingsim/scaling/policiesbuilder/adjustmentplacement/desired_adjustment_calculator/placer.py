@@ -32,7 +32,7 @@ class Placer:
                  reader : StateReader):
 
         if not placement_hint in Placer.placement_hints:
-            raise ValueError('Adjustment preference {} currently not supported in {}'.format(placement_hint, self.__class__.__name__))
+            raise ValueError(f'Adjustment preference {placement_hint} currently not supported in {self.__class__.__name__}')
 
         self.placement_hint = placement_hint
         self.container_for_scaled_entities_types = container_for_scaled_entities_types

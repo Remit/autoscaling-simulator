@@ -19,8 +19,7 @@ class StateScore:
                 other_state_score : 'StateScore'):
 
         if not isinstance(other_state_score, StateScore):
-            raise TypeError('Unexpected type to add to {}: {}'.format(self.__class__.__name__,
-                                                                      type(other_state_score)))
+            raise TypeError(f'Unexpected type to add to {self.__class__.__name__}: {other_state_score.__class__.__name__}')
 
         scores_per_region = self.scores_per_region
         for region_name, other_region_score in other_state_score.scores_per_region.items():
@@ -43,8 +42,7 @@ class StateScore:
             for region_name, score in self.scores_per_region.items():
                 scores_per_region[region_name] = score * state_duration
         else:
-            raise TypeError('An attempt to multiply {} by an unknown object: {}'.format(self.__class__.__name__,
-                                                                                        state_duration.__class__.__name__))
+            raise TypeError(f'An attempt to multiply {self.__class__.__name__} by an unknown type: {state_duration.__class__.__name__}')
 
         return StateScore(self.scores_per_region)
 
@@ -52,11 +50,10 @@ class StateScore:
                     scalar : numbers.Number):
 
         if not isinstance(scalar, numbers.Number):
-            raise TypeError('An attempt to divide {} by an unknown object: {}'.format(self.__class__.__name__,
-                                                                                      scalar.__class__.__name__))
+            raise TypeError(f'An attempt to divide {self.__class__.__name__} by an unknown type: {scalar.__class__.__name__}')
 
         if scalar <= 0:
-            raise ValueError('An attempt to divide the {} by a negative number or zero'.format(self.__class__.__name__))
+            raise ValueError(f'An attempt to divide the {self.__class__.__name__} by a negative number or zero')
 
         new_scores_per_region = {}
         for region_name, score in self.scores_per_region.items():
@@ -82,7 +79,7 @@ class StateScore:
                 return joint_score
 
         else:
-            raise ValueError('Empty {} to collapse'.format(self.__class__.__name__))
+            raise ValueError(f'Empty {self.__class__.__name__} to collapse')
 
 class Score(ABC):
 
@@ -113,8 +110,7 @@ class Score(ABC):
                other_score : 'Score'):
 
         if not isinstance(other_score, self.__class__):
-            raise TypeError('Incorrect type of the operand: {}. Expected {}'.format(other_score.__class__.__name__,
-                                                                                    self.__class__.__name__))
+            raise TypeError(f'Incorrect type of the operand: {other_score.__class__.__name__}. Expected {self.__class__.__name__}')
 
         if self.score < other_score.score:
             return True
@@ -125,8 +121,7 @@ class Score(ABC):
                other_score : 'Score'):
 
         if not isinstance(other_score, self.__class__):
-            raise TypeError('Incorrect type of the operand: {}. Expected {}'.format(other_score.__class__.__name__,
-                                                                                    self.__class__.__name__))
+            raise TypeError(f'Incorrect type of the operand: {other_score.__class__.__name__}. Expected {self.__class__.__name__}')
 
         if self.score <= other_score.score:
             return True
@@ -137,8 +132,7 @@ class Score(ABC):
                other_score : 'Score'):
 
         if not isinstance(other_score, self.__class__):
-            raise TypeError('Incorrect type of the operand: {}. Expected {}'.format(other_score.__class__.__name__,
-                                                                                    self.__class__.__name__))
+            raise TypeError(f'Incorrect type of the operand: {other_score.__class__.__name__}. Expected {self.__class__.__name__}')
 
         if self.score > other_score.score:
             return True
@@ -149,8 +143,7 @@ class Score(ABC):
                other_score : 'Score'):
 
         if not isinstance(other_score, self.__class__):
-            raise TypeError('Incorrect type of the operand: {}. Expected {}'.format(other_score.__class__.__name__,
-                                                                                    self.__class__.__name__))
+            raise TypeError(f'Incorrect type of the operand: {other_score.__class__.__name__}. Expected {self.__class__.__name__}')
 
         if self.score >= other_score.score:
             return True
@@ -161,8 +154,7 @@ class Score(ABC):
                other_score : 'Score'):
 
         if not isinstance(other_score, self.__class__):
-            raise TypeError('Incorrect type of the operand: {}. Expected {}'.format(other_score.__class__.__name__,
-                                                                                    self.__class__.__name__))
+            raise TypeError(f'Incorrect type of the operand: {other_score.__class__.__name__}. Expected {self.__class__.__name__}')
 
         if self.score == other_score.score:
             return True
@@ -173,8 +165,7 @@ class Score(ABC):
                other_score : 'Score'):
 
         if not isinstance(other_score, self.__class__):
-            raise TypeError('Incorrect type of the operand: {}. Expected {}'.format(other_score.__class__.__name__,
-                                                                                    self.__class__.__name__))
+            raise TypeError(f'Incorrect type of the operand: {other_score.__class__.__name__}. Expected {self.__class__.__name__}')
 
         if self.score != other_score.score:
             return True
@@ -212,8 +203,7 @@ class PriceScore(Score):
                 other_score : 'PriceScore'):
 
         if not isinstance(other_score, self.__class__):
-            raise TypeError('An attempt to add the score of type {} to the score of type {}'.format(other_score.__class__.__name__,
-                                                                                                    self.__class__.__name__))
+            raise TypeError(f'An attempt to add the score of type {other_score.__class__.__name__} to the score of type {self.__class__.__name__}')
 
         return self.__class__(self.get_original_value() + other_score.get_original_value())
 
@@ -222,7 +212,7 @@ class PriceScore(Score):
                 scalar):
 
         if not isinstance(scalar, numbers.Number):
-            raise TypeError('An attempt to multiply {} by non-number'.format(self.__class__.__name__))
+            raise TypeError(f'An attempt to multiply {self.__class__.__name__} by non-number')
 
         new_score = self.__class__()
         new_score.score = self.score * scalar
@@ -232,7 +222,7 @@ class PriceScore(Score):
                     scalar):
 
         if not isinstance(scalar, numbers.Number):
-            raise TypeError('An attempt to divide {} by non-number'.format(self.__class__.__name__))
+            raise TypeError(f'An attempt to divide {self.__class__.__name__} by non-number')
 
         new_score = self.__class__()
         if scalar == 0:
@@ -256,6 +246,6 @@ class Registry:
     def get(name):
 
         if not name in Registry.registry:
-            raise ValueError('An attempt to use the non-existent score {}'.format(name))
+            raise ValueError(f'An attempt to use the non-existent score {name}')
 
         return Registry.registry[name]

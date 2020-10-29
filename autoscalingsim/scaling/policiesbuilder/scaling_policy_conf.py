@@ -101,4 +101,4 @@ class ScalingPolicyConfiguration:
 
 
             except json.JSONDecodeError:
-                raise ValueError('The config file {} is an invalid JSON.'.format(config_file))
+                raise ValueError(f'The config file {config_file} is an invalid JSON.')

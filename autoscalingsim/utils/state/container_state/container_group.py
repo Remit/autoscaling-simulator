@@ -45,8 +45,7 @@ class HomogeneousContainerGroup:
         elif isinstance(entities_instances_counts, EntitiesState):
             self.entities_state = entities_instances_counts
         else:
-            raise TypeError('Incorrect type of the entities_instances_counts when creating {}: {}'.format(self.__class__.__name__,
-                                                                                                          entities_instances_counts.__class__.__name__))
+            raise TypeError(f'Incorrect type of the entities_instances_counts when creating {self.__class__.__name__}: {entities_instances_counts.__class__.__name__}')
 
         _, self.system_capacity = self.container_info.entities_require_capacity(self.entities_state)
         self.id = id(self)
@@ -64,12 +63,10 @@ class HomogeneousContainerGroup:
         """
 
         if not isinstance(other_container_group, HomogeneousContainerGroup):
-            raise TypeError('An attempt to subtract unrecognized type from the {}: {}'.format(self.__class__.__name__,
-                                                                                              type(other_container_group)))
+            raise TypeError(f'An attempt to subtract unrecognized type from the {self.__class__.__name__}: {other_container_group.__class__.__name__}')
 
         if self.container_name != other_container_group.container_name:
-            raise ValueError('An attempt to remove containers of other type {} whereas the current container type is {}'.format(other_container_group.container_name,
-                                                                                                                                self.container_name))
+            raise ValueError(f'An attempt to remove containers of other type {other_container_group.container_name} whereas the current container type is {self.container_name}')
 
         self.containers_count -= other_container_group.containers_count
         self.entities_state -= other_container_group.entities_state
@@ -251,7 +248,7 @@ class HomogeneousContainerGroup:
         generalized_deltas = []
         unmet_changes = {}
         for aspect_name, entities_changes_dict in unmet_changes_per_aspect.items():
-            method_name = '_{}_aspect_soft_adjustment'.format(aspect_name)
+            method_name = f'_{aspect_name}_aspect_soft_adjustment'
             try:
                 aspect_based_generalized_deltas, aspect_based_unmet_changes_res = self.__getattribute__(method_name)(entities_changes_dict,
                                                                                                                      scaled_entity_instance_requirements_by_entity,
@@ -264,7 +261,7 @@ class HomogeneousContainerGroup:
                     unmet_changes[entity_name] = unmet_changes_per_entity
 
             except AttributeError:
-                raise ValueError('Support for computing the soft adjustment for the desired aspect type is not implemented: {}'.format(aspect_name))
+                raise ValueError(f'Support for computing the soft adjustment for the desired aspect type is not implemented: {aspect_name}')
 
         return (generalized_deltas, unmet_changes)
 
@@ -282,11 +279,11 @@ class ContainerGroupDelta:
                  virtual : bool = False):
 
         if not isinstance(container_group, HomogeneousContainerGroup):
-            raise TypeError('The provided parameter is not of {} type'.format(HomogeneousContainerGroup.__name__))
+            raise TypeError(f'The provided parameter is not of {HomogeneousContainerGroup.__name__} type: {container_group.__class__.__name__}')
         self.container_group = container_group
 
         if not isinstance(sign, int):
-            raise TypeError('The provided sign parameters is not of {} type'.format(int.__name__))
+            raise TypeError(f'The provided sign parameters is not of {int.__name__} type: {sign.__class__.__name__}')
         self.sign = sign
 
         # Signifies whether the delta is just desired (True) or already delayed (False).
@@ -328,12 +325,10 @@ class GeneralizedDelta:
                  entities_group_delta : EntitiesGroupDelta):
 
         if (not isinstance(container_group_delta, ContainerGroupDelta)) and (not container_group_delta is None):
-            raise TypeError('The parameter provided for the initialization of {} is not of {} type'.format(self.__class__.__name__,
-                                                                                                           ContainerGroupDelta.__name__))
+            raise TypeError(f'The parameter provided for the initialization of {self.__class__.__name__} is not of {ContainerGroupDelta.__name__} type')
 
         if (not isinstance(entities_group_delta, EntitiesGroupDelta)) and (not entities_group_delta is None):
-            raise TypeError('The parameter provided for the initialization of {} is not of {} type'.format(self.__class__.__name__,
-                                                                                                           EntitiesGroupDelta.__name__))
+            raise TypeError(f'The parameter provided for the initialization of {self.__class__.__name__} is not of {EntitiesGroupDelta.__name__} type')
 
         self.container_group_delta = container_group_delta
         self.entities_group_delta = entities_group_delta

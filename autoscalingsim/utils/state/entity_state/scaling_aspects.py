@@ -37,11 +37,9 @@ class ScalingAspect(ABC):
             if self.name == other.name:
                 return comp_op(self.value, other.value)
             else:
-                raise ValueError('An attempt to compare different scaling aspects: {} and {}'.format(self.name,
-                                                                                                     other.name))
+                raise ValueError(f'An attempt to compare different scaling aspects: {self.name} and {other.name}')
         else:
-            raise TypeError('An attempt to compare scaling aspect {} to the unsuppported type {}'.format(self.name,
-                                                                                                         type(other)))
+            raise TypeError(f'An attempt to compare scaling aspect {self.name} to the unsuppported type {other.__class__.__name__}')
 
     def __gt__(self,
                other : 'ScalingAspect'):
@@ -110,23 +108,21 @@ class ScalingAspectDelta:
                  sign : int = 1):
 
         if not isinstance(scaling_aspect, ScalingAspect):
-            raise TypeError('The provided scaling_aspect argument is not of ScalingAspect type: {}'.format(type(scaling_aspect)))
+            raise TypeError(f'The provided scaling_aspect argument is not of ScalingAspect type: {scaling_aspect.__class__.__name__}')
         self.scaling_aspect = scaling_aspect
 
         if not isinstance(sign, int):
-            raise TypeError('The provided sign argument is not of int type: {}'.format(type(sign)))
+            raise TypeError(f'The provided sign argument is not of int type: {sign.__class__.__name__}')
         self.sign = sign
 
     def __add__(self,
                 other_delta : 'ScalingAspectDelta'):
 
         if not isinstance(other_delta, ScalingAspectDelta):
-            raise TypeError('An attempt to add an object of unknown class to {}: {}'.format(self.__class__,
-                                                                                            type(other_delta)))
+            raise TypeError(f'An attempt to add an object of unknown class to {self.__class__.__name__}: {other_delta.__class__.__name__}')
 
-        if type(other_delta.scaling_aspect) != type(self.scaling_aspect):
-            raise ValueError('An attempt to add different scaling aspects: {} and {}'.format(type(self.scaling_aspect),
-                                                                                             type(other_delta.scaling_aspect)))
+        if isinstance(other_delta.scaling_aspect, self.scaling_aspect.__class__):
+            raise ValueError(f'An attempt to add different scaling aspects: {self.scaling_aspect.__class__.__name__} and {other_delta.scaling_aspect.__class__.__name__}')
 
         res_val = self.sign * self.scaling_aspect.get_value() + other_delta.sign * other_delta.scaling_aspect.get_value()
         if res_val < 0:
@@ -139,8 +135,7 @@ class ScalingAspectDelta:
                 other_delta : 'ScalingAspectDelta'):
 
         if not isinstance(other_delta, ScalingAspectDelta):
-            raise TypeError('An attempt to subtract an object of unknown class from {}: {}'.format(self.__class__,
-                                                                                                   type(other_delta)))
+            raise TypeError(f'An attempt to subtract an object of unknown class from {self.__class__.__name__}: {other_delta.__class__.__name__}')
 
         return self.__add__(ScalingAspectDelta(other_delta.scaling_aspect,
                                                -other_delta.sign))
@@ -149,8 +144,7 @@ class ScalingAspectDelta:
                 scalar : float):
 
         if not isinstance(scalar, numbers.Number):
-            raise TypeError('An attempt to multiply {} by a non-scalar type {}'.format(self.__class__.__name__,
-                                                                                       type(scalar)))
+            raise TypeError(f'An attempt to multiply {self.__class__.__name__} by a non-scalar type {scalar.__class__.__name__}')
 
         sign = self.sign
         if scalar < 0:
@@ -185,14 +179,12 @@ class Count(ScalingAspect):
         if isinstance(other_aspect_or_delta, Count):
             return Count(self.value + other_aspect_or_delta.get_value())
         elif isinstance(other_aspect_or_delta, ScalingAspectDelta):
-            if self.__class__ != other_aspect_or_delta.get_aspect_type():
-                raise ValueError('An attempt to add different scaling aspects: {} and {}'.format(self.__class__,
-                                                                                                 other_aspect_or_delta.get_aspect_type()))
+            if not isinstance(self.__class__, other_aspect_or_delta.get_aspect_type()):
+                raise ValueError(f'An attempt to add different scaling aspects: {self.__class__.__name__} and {other_aspect_or_delta.get_aspect_type()}')
 
             return Count(self.value + other_aspect_or_delta.to_raw_change())
         else:
-            raise TypeError('An attempt to add an object of unknown type {} to {}'.format(type(other_aspect_or_delta),
-                                                                                          self.__class__))
+            raise TypeError(f'An attempt to add an object of unknown type {other_aspect_or_delta.__class__.__name__} to {self.__class__.__name__}')
 
     def __sub__(self,
                 other_aspect_or_delta):
@@ -202,8 +194,7 @@ class Count(ScalingAspect):
         elif isinstance(other_aspect_or_delta, ScalingAspectDelta):
             return self.__add__(other_aspect_or_delta)
         else:
-            raise TypeError('An attempt to subtract an object of unknown type {} from {}'.format(type(other_aspect_or_delta),
-                                                                                                 self.__class__))
+            raise TypeError(f'An attempt to subtract an object of unknown type {other_aspect_or_delta.__class__.__name__} from {self.__class__.__name__}')
 
     def __mul__(self,
                 scalar_or_df : numbers.Number):
@@ -214,14 +205,13 @@ class Count(ScalingAspect):
             return df_convenience.convert_to_class(scalar_or_df * self.value,
                                                    self.__class__)
         else:
-            raise TypeError('An attempt to multiply by non-int of type {}'.format(type(scalar)))
+            raise TypeError(f'An attempt to multiply by non-int of type {scalar.__class__.__name__}')
 
     def __mod__(self,
                 other_aspect_val : 'Count'):
 
         if not isinstance(other_aspect_val, Count):
-            raise TypeError('An attempt to perform modulo operation on {} with an object of unknown type {}'.format(self.__class__,
-                                                                                                                    other_aspect_val.__class__))
+            raise TypeError(f'An attempt to perform modulo operation on {self.__class__.__name__} with an object of unknown type {other_aspect_val.__class__.__name__}')
 
         return Count(self.value % other_aspect_val.value)
 
@@ -229,8 +219,7 @@ class Count(ScalingAspect):
                      other_aspect_val : 'Count'):
 
         if not isinstance(other_aspect_val, Count):
-            raise TypeError('An attempt to perform floor division operation on {} with an object of unknown type {}'.format(self.__class__.__name__,
-                                                                                                                            type(other_aspect_val)))
+            raise TypeError(f'An attempt to perform floor division operation on {self.__class__.__name__} with an object of unknown type {other_aspect_val.__class__.__name__}')
 
         return Count(self.value // other_aspect_val.value)
 
@@ -253,6 +242,6 @@ class Registry:
     def get(name):
 
         if not name in Registry.registry:
-            raise ValueError('An attempt to use a non-existent scaling aspect {}'.format(name))
+            raise ValueError(f'An attempt to use a non-existent scaling aspect {name}')
 
         return Registry.registry[name]

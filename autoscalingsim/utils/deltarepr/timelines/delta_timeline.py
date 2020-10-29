@@ -41,8 +41,7 @@ class DeltaTimeline:
         """
 
         if not isinstance(other_delta_timeline, DeltaTimeline):
-            raise TypeError('Expected value of type {} when merging, got {}'.format(self.__class__.__name__,
-                                                                                    other_delta_timeline.__class__.__name__))
+            raise TypeError(f'Expected value of type {self.__class__.__name__} when merging, got {other_delta_timeline.__class__.__name__}')
 
         # Keeping only already enforced deltas. We also keep the deltas that fall
         # between the timestamp of the last enforcement and the beginning of the update.
@@ -61,7 +60,7 @@ class DeltaTimeline:
                         state_delta : StateDelta):
 
         if not isinstance(state_delta, StateDelta):
-            raise TypeError('An attempt to add an unknown object to {}'.format(self.__class__.__name__))
+            raise TypeError(f'An attempt to add an unknown object to {self.__class__.__name__}')
 
         if not timestamp in self.timeline:
             self.timeline[timestamp] = []

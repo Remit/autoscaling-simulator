@@ -58,10 +58,10 @@ class ApplicationModel:
         entity_instance_requirements = {}
 
         if not isinstance(config_file, str):
-            raise ValueError('Incorrect format of the path to the configuration file for the {}, should be string'.format(self.__class__.__name__))
+            raise ValueError(f'Incorrect format of the path to the configuration file for the {self.__class__.__name__}, should be string')
         else:
             if not os.path.isfile(config_file):
-                raise ValueError('No {} configuration file found under the path {}'.format(self.__class__.__name__, config_file))
+                raise ValueError(f'No configuration file found under the path {config_file} for {self.__class__.__name__}')
 
             with open(config_file) as f:
                 config = json.load(f)
@@ -83,21 +83,21 @@ class ApplicationModel:
                         service_name = ErrorChecker.key_check_and_load('service', processing_time_service_entry, 'request_type', request_type)
 
                         upstream_time = ErrorChecker.key_check_and_load('upstream', processing_time_service_entry, 'request_type', request_type)
-                        ErrorChecker.value_check('upstream_time', upstream_time, operator.ge, 0, ['request_type {}'.format(request_type), 'service {}'.format(service_name)])
+                        ErrorChecker.value_check('upstream_time', upstream_time, operator.ge, 0, [f'request_type {request_type}', f'service {service_name}'])
 
                         downstream_time = ErrorChecker.key_check_and_load('downstream', processing_time_service_entry, 'request_type', request_type)
-                        ErrorChecker.value_check('downstream_time', downstream_time, operator.ge, 0, ['request_type {}'.format(request_type), 'service {}'.format(service_name)])
+                        ErrorChecker.value_check('downstream_time', downstream_time, operator.ge, 0, [f'request_type {request_type}', f'service {service_name}'])
 
                         processing_times[service_name] = [upstream_time, downstream_time]
 
                     timeout = pd.Timedelta(ErrorChecker.key_check_and_load('timeout_ms', request_info, 'request_type', request_type), unit = 'ms')
-                    ErrorChecker.value_check('timeout', timeout, operator.ge, pd.Timedelta(0, unit = 'ms'), ['request_type {}'.format(request_type)])
+                    ErrorChecker.value_check('timeout', timeout, operator.ge, pd.Timedelta(0, unit = 'ms'), [f'request_type {request_type}'])
 
                     request_size_b = ErrorChecker.key_check_and_load('request_size_b', request_info, 'request_type', request_type)
-                    ErrorChecker.value_check('request_size_b', request_size_b, operator.ge, 0, ['request_type {}'.format(request_type)])
+                    ErrorChecker.value_check('request_size_b', request_size_b, operator.ge, 0, [f'request_type {request_type}')])
 
                     response_size_b = ErrorChecker.key_check_and_load('response_size_b', request_info, 'request_type', request_type)
-                    ErrorChecker.value_check('response_size_b', response_size_b, operator.ge, 0, ['request_type {}'.format(request_type)])
+                    ErrorChecker.value_check('response_size_b', response_size_b, operator.ge, 0, [f'request_type {request_type}'])
 
                     request_operation_type = ErrorChecker.key_check_and_load('operation_type', request_info, 'request_type', request_type)
 
@@ -126,7 +126,7 @@ class ApplicationModel:
                         request_type = ErrorChecker.key_check_and_load('request_type', buffer_capacity_config, 'service', service_name)
 
                         capacity = ErrorChecker.key_check_and_load('capacity', buffer_capacity_config, 'service', service_name)
-                        ErrorChecker.value_check('capacity', capacity, operator.gt, 0, ['request_type {}'.format(request_type), 'service {}'.format(service_name)])
+                        ErrorChecker.value_check('capacity', capacity, operator.gt, 0, [f'request_type {request_type}', f'service {service_name}'])
 
                         buffer_capacity_by_request_type[request_type] = capacity
 
@@ -150,7 +150,7 @@ class ApplicationModel:
                         node_infos_regionalized[region_name] = node_info
 
                         node_count = ErrorChecker.key_check_and_load('count', platform_info, 'service', service_name)
-                        ErrorChecker.value_check('node_count', node_count, operator.gt, 0, ['service {}'.format(service_name)])
+                        ErrorChecker.value_check('node_count', node_count, operator.gt, 0, [f'service {service_name}'])
                         node_counts_regionalized[region_name] = node_count
 
                     regions.extend(service_regions)

@@ -80,6 +80,6 @@ class Registry:
     def get(name : str):
 
         if not name in Registry.registry:
-            raise ValueError('An attempt to use a non-existent aggregation for states {}'.format(name))
+            raise ValueError(f'An attempt to use a non-existent aggregation for states {name}')
 
         return Registry.registry[name]

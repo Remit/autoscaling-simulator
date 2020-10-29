@@ -31,8 +31,7 @@ class HomogeneousContainerGroupSet:
             self._homogeneous_groups = {}
             for group in homogeneous_groups:
                 if not isinstance(group, HomogeneousContainerGroup):
-                    raise TypeError('An entity of unknown type {} when initializing {}'.format(group.__class__.__name__,
-                                                                                               self.__class__.__name__))
+                    raise TypeError(f'An entity of unknown type {group.__class__.__name__} when initializing {self.__class__.__name__}')
                 self._homogeneous_groups[group.id] = group
 
         self._in_change_homogeneous_groups = homogeneous_groups_in_change
@@ -55,8 +54,7 @@ class HomogeneousContainerGroupSet:
             for generalized_delta in regional_delta:
                 homogeneous_groups._add_groups(generalized_delta)
         else:
-            raise TypeError('An attempt to add an object of type {} to the {}'.format(regional_delta.__class__.__name__,
-                                                                                      self.__class__.__name__))
+            raise TypeError(f'An attempt to add an object of type {regional_delta.__class__.__name__} to the {self.__class__.__name__}')
 
         return homogeneous_groups
 

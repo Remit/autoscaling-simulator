@@ -23,7 +23,7 @@ class StateDuration:
                     region_name : str):
 
         if not isinstance(region_name, str):
-            raise TypeError('Unrecognized type of key to extract the duration: {}'.format(type(region_name)))
+            raise TypeError(f'Unrecognized type of key to extract the duration: {region_name.__class__.__name__}')
 
         return self.durations_per_region_h.get(region_name, 0)
 
@@ -31,8 +31,7 @@ class StateDuration:
                 state_score : StateScore):
 
         if not isinstance(state_score, StateScore):
-            raise TypeError('An attempt to multiply {} by an unknown object: {}'.format(self.__class__.__name__,
-                                                                                        state_score.__class__.__name__))
+            raise TypeError(f'An attempt to multiply {self.__class__.__name__} by an unknown object: {state_score.__class__.__name__}')
 
         scores_per_region = {}
         for region_name, score in state_score.scores_per_region.items():

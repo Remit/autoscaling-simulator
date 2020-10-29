@@ -40,7 +40,7 @@ class StateReader(StateManager):
                          aspect_name : str):
 
         if not source_name in self.entities:
-            raise ValueError('An attempt to call the source {} that is not in the list of {}'.format(source_name, self.__class__.__name__))
+            raise ValueError(f'An attempt to call the source {source_name} that is not in the list of {self.__class__.__name__}')
 
         return self.entities[source_name].state.get_aspect_value(region_name,
                                                                  aspect_name)
@@ -51,7 +51,7 @@ class StateReader(StateManager):
                          metric_name : str):
 
         if not source_name in self.entities:
-            raise ValueError('An attempt to call the source {} that is not in the list of {}'.format(source_name, self.__class__.__name__))
+            raise ValueError(f'An attempt to call the source {source_name} that is not in the list of {self.__class__.__name__}')
 
         return self.entities[source_name].state.get_metric_value(region_name,
                                                                  metric_name)
@@ -61,7 +61,7 @@ class StateReader(StateManager):
                                   region_name : str):
 
         if not source_name in self.entities:
-            raise ValueError('An attempt to call the source {} that is not in the list of {}'.format(source_name, self.__class__.__name__))
+            raise ValueError(f'An attempt to call the source {source_name} that is not in the list of {self.__class__.__name__}')
 
         return self.entities[source_name].state.get_resource_requirements(region_name)
 
@@ -71,7 +71,7 @@ class StateReader(StateManager):
                                 parameter : str):
 
         if not source_name in self.entities:
-            raise ValueError('An attempt to call the source {} that is not in the list of {}'.format(source_name, self.__class__.__name__))
+            raise ValueError(f'An attempt to call the source {source_name} that is not in the list of {self.__class__.__name__}')
 
         return self.entities[source_name].state.get_placement_parameter(region_name,
                                                                         parameter)
@@ -124,8 +124,7 @@ class ScalingManager(StateManager):
         """
 
         if not entity_name in self.entities:
-            raise ValueError('An attempt to set the placement of {} that is unknown to {}'.format(entity_name,
-                                                                                                  self.__class__.__name__))
+            raise ValueError(f'An attempt to set the placement of {entity_name} that is unknown to {self.__class__.__name__}')
 
         self.entities[entity_name].state.update_placement(region_name,
                                                           node_info,
@@ -143,8 +142,7 @@ class ScalingManager(StateManager):
         """
 
         if not entity_name in self.entities:
-            raise ValueError('An attempt to set the scaling aspect of {} that is unknown to {}'.format(entity_name,
-                                                                                                       self.__class__.__name__))
+            raise ValueError(f'An attempt to set the scaling aspect of {entity_name} that is unknown to {self.__class__.__name__}')
 
         self.entities[entity_name].state.update_aspect(region_name,
                                                        aspect)

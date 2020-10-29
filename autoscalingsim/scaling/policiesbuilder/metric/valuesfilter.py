@@ -23,7 +23,7 @@ class ValuesFilter(ABC):
         keys_to_check = ['name', 'config']
         for key in keys_to_check:
             if not key in config_raw:
-                raise ValueError('Key {} not found in the configuration for {}'.format(key, __class__.__name__))
+                raise ValueError(f'Key {key} not found in the configuration for {__class__.__name__}')
 
 class DefaultNA(ValuesFilter):
 
@@ -38,7 +38,7 @@ class DefaultNA(ValuesFilter):
         if param_key in config:
             self.default_value = config[param_key]
         else:
-            raise ValueError('Not found key {} in the parameters of the {} filter.'.format(param_key, self.__class__.__name__))
+            raise ValueError(f'Not found key {param_key} in the parameters of the {self.__class__.__name__} filter.')
 
     def __call__(self,
                  values):
@@ -59,6 +59,6 @@ class Registry:
     def get(name):
 
         if not name in Registry.registry:
-            raise ValueError('An attempt to use the non-existent filter {}'.format(name))
+            raise ValueError(f'An attempt to use the non-existent filter {name}')
 
         return Registry.registry[name]

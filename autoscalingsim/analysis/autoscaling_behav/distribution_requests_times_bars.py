@@ -69,6 +69,6 @@ class DistributionRequestsTimesBarchart:
                 figure_path = os.path.join(figures_dir, plotting_constants.filename_format.format(region_name, DistributionRequestsTimesBarchart.FILENAME))
                 plt.savefig(figure_path)
             else:
-                plt.suptitle('Distribution of the request time in the application,\
-                \naggregated with the {} function in region {}'.format(aggregation_fn.__name__, region_name))
+                plt.suptitle(f'Distribution of the request time in the application,\
+                \naggregated with the {aggregation_fn.__name__} function in region {region_name}')
                 plt.show()

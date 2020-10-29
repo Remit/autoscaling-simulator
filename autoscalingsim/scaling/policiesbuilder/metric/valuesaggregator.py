@@ -33,7 +33,7 @@ class AvgAggregator(ValuesAggregator):
         if param_key in config:
             self.resolution_window_ms = config[param_key]
         else:
-            raise ValueError('Not found key {} in the parameters of the {} aggregator.'.format(param_key, self.__class__.__name__))
+            raise ValueError(f'Not found key {param_key} in the parameters of the {self.__class__.__name__} aggregator.')
 
     def __call__(self,
                  values):
@@ -72,6 +72,6 @@ class Registry:
     def get(name):
 
         if not name in Registry.registry:
-            raise ValueError('An attempt to use the non-existent aggregator {}'.format(name))
+            raise ValueError(f'An attempt to use the non-existent aggregator {name}')
 
         return Registry.registry[name]
