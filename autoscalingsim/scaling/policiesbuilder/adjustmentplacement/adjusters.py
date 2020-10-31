@@ -1,14 +1,14 @@
 import pandas as pd
 from abc import ABC, abstractmethod
 
-from .desired_adjustment_calculator import score_calculators
+from .desired_adjustment_calculator.score_calculators import ScoreCalculator
 from .desired_adjustment_calculator.desired_calc import DesiredChangeCalculator
 from .desired_adjustment_calculator.scorer import Scorer
 
 from ...application_scaling_model import ApplicationScalingModel
 from ...platform_scaling_model import PlatformScalingModel
 
-from ....utils import combiners
+from ....utils.combiners import Combiner
 from ....utils.error_check import ErrorChecker
 from ....utils.deltarepr.timelines.entities_changes_timeline import TimelineOfDesiredEntitiesChanges
 from ....utils.deltarepr.timelines.delta_timeline import DeltaTimeline
@@ -34,7 +34,7 @@ class Adjuster(ABC):
                  optimizer_type : str,
                  placement_hint : str,
                  combiner_settings : dict,
-                 score_calculator_class : score_calculators.ScoreCalculator,
+                 score_calculator_class : ScoreCalculator,
                  state_reader : StateReader):
 
         self.application_scaling_model = application_scaling_model
@@ -44,7 +44,7 @@ class Adjuster(ABC):
 
         combiner_type = ErrorChecker.key_check_and_load('type', combiner_settings, self.__class__.__name__)
         combiner_conf = ErrorChecker.key_check_and_load('conf', combiner_settings, self.__class__.__name__)
-        self.combiner = combiners.Registry.get(combiner_type)(combiner_conf)
+        self.combiner = Combiner.get(combiner_type)(combiner_conf)
 
         self.desired_change_calculator = DesiredChangeCalculator(placement_hint,
                                                                  self.scorer,
@@ -89,7 +89,7 @@ class Adjuster(ABC):
         """
 
         timeline_of_unmet_changes = TimelineOfDesiredEntitiesChanges(self.combiner,
-                                                                     entities_scaling_events,# TODO: fix on init, consider aspects
+                                                                     entities_scaling_events,
                                                                      cur_timestamp)
 
         timeline_of_deltas = DeltaTimeline(self.platform_scaling_model,
@@ -177,7 +177,7 @@ class CostMinimizer(Adjuster):
                  placement_hint = 'shared',
                  combiner_type = 'windowed'):
 
-        score_calculator_class = score_calculators.Registry.get(self.__class__.__name__)
+        score_calculator_class = ScoreCalculator.get(self.__class__.__name__)
         super().__init__(application_scaling_model,
                          platform_scaling_model,
                          container_for_scaled_entities_types,

@@ -26,6 +26,8 @@ class ScalingEffectAggregationRule(ABC):
 
     """
 
+    _Registry = {}
+
     def __init__(self,
                  metrics_by_priority : dict,
                  scaled_aspect_name : str):
@@ -37,6 +39,26 @@ class ScalingEffectAggregationRule(ABC):
     def __call__(self):
         pass
 
+    @classmethod
+    def register(cls,
+                 name : str):
+
+        def decorator(scaling_effect_aggregation_rule_class):
+            cls._Registry[name] = scaling_effect_aggregation_rule_class
+            return scaling_effect_aggregation_rule_class
+
+        return decorator
+
+    @classmethod
+    def get(cls,
+            name : str):
+
+        if not name in cls._Registry:
+            raise ValueError(f'An attempt to use the non-existent aggregation rule {name}')
+
+        return cls._Registry[name]
+
+@ScalingEffectAggregationRule.register('seqScale')
 class SequentialScalingEffectAggregationRule(ScalingEffectAggregationRule):
 
     """
@@ -142,6 +164,7 @@ class ParallelScalingEffectAggregationRule(ScalingEffectAggregationRule):
 
         return desired_states
 
+@ScalingEffectAggregationRule.register('maxScale')
 class MaxScalingEffectAggregationRule(ParallelScalingEffectAggregationRule):
 
     """
@@ -156,6 +179,7 @@ class MaxScalingEffectAggregationRule(ParallelScalingEffectAggregationRule):
                          scaled_aspect_name,
                          'max')
 
+@ScalingEffectAggregationRule.register('minScale')
 class MinScalingEffectAggregationRule(ParallelScalingEffectAggregationRule):
 
     """
@@ -169,23 +193,3 @@ class MinScalingEffectAggregationRule(ParallelScalingEffectAggregationRule):
         super().__init__(metrics_by_priority,
                          scaled_aspect_name,
                          'min')
-
-class Registry:
-
-    """
-    Stores the scaling aggregation rules classes and organizes access to them.
-    """
-
-    registry = {
-        'seqScale': SequentialScalingEffectAggregationRule,
-        'maxScale': MaxScalingEffectAggregationRule,
-        'minScale': MinScalingEffectAggregationRule
-    }
-
-    @staticmethod
-    def get(name):
-
-        if not name in Registry.registry:
-            raise ValueError(f'An attempt to use the non-existent aggregation rule {name}')
-
-        return Registry.registry[name]

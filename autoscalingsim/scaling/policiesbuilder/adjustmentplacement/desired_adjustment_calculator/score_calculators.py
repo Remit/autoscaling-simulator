@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import pandas as pd
 
-from . import score
+from .score import Score
 
 from ...scaled.scaled_container import ScaledContainer
 
@@ -16,6 +16,8 @@ class ScoreCalculator(ABC):
     reverse of the price or negative.
     """
 
+    _Registry = {}
+
     def __init__(self,
                  score_class : type):
 
@@ -28,6 +30,26 @@ class ScoreCalculator(ABC):
                  containers_count : int) -> tuple:
         pass
 
+    @classmethod
+    def register(cls,
+                 name : str):
+
+        def decorator(score_calculator_class):
+            cls._Registry[name] = score_calculator_class
+            return score_calculator_class
+
+        return decorator
+
+    @classmethod
+    def get(cls,
+            name : str):
+
+        if not name in cls._Registry:
+            raise ValueError(f'An attempt to use the non-existent score calculator {name}')
+
+        return cls._Registry[name]
+
+@ScoreCalculator.register('CostMinimizer')
 class PriceScoreCalculator(ScoreCalculator):
 
     """
@@ -36,7 +58,7 @@ class PriceScoreCalculator(ScoreCalculator):
 
     def __init__(self):
 
-        super().__init__(score.Registry.get(self.__class__.__name__))
+        super().__init__(Score.get(self.__class__.__name__))
 
     def __call__(self,
                  container_info : ScaledContainer,
@@ -48,21 +70,3 @@ class PriceScoreCalculator(ScoreCalculator):
         score = self.score_class(price)
 
         return (score, price)
-
-class Registry:
-
-    """
-    Stores the calculator classes and organizes access to them.
-    """
-
-    registry = {
-        'CostMinimizer': PriceScoreCalculator
-    }
-
-    @staticmethod
-    def get(name):
-
-        if not name in Registry.registry:
-            raise ValueError(f'An attempt to use the non-existent score calculator {name}')
-
-        return Registry.registry[name]

@@ -5,10 +5,14 @@ from abc import ABC, abstractmethod
 from ....utils.error_check import ErrorChecker
 
 class Stabilizer(ABC):
+
     """
     Defines how the scaled aspect is stabilized, i.e. tries to minimize the
     oscillations in the scaled aspect using the windowing.
     """
+
+    _Registry = {}
+
     @abstractmethod
     def __init__(self,
                  config):
@@ -19,6 +23,26 @@ class Stabilizer(ABC):
                  values):
         pass
 
+    @classmethod
+    def register(cls,
+                 name : str):
+
+        def decorator(stabilizer_class):
+            cls._Registry[name] = stabilizer_class
+            return stabilizer_class
+
+        return decorator
+
+    @classmethod
+    def get(cls,
+            name : str):
+
+        if not name in cls._Registry:
+            raise ValueError(f'An attempt to use the non-existent stabilizer {name}')
+
+        return cls._Registry[name]
+
+@Stabilizer.register('maxStabilizer')
 class MaxStabilizer(Stabilizer):
 
     """
@@ -52,21 +76,3 @@ class MaxStabilizer(Stabilizer):
             window_end = window_start + self.resolution_window
 
         return pd.DataFrame(stabilized_vals).set_index(values.index.name)
-
-class Registry:
-
-    """
-    Stores the stabilizer classes and organizes access to them.
-    """
-
-    registry = {
-        'maxStabilizer': MaxStabilizer
-    }
-
-    @staticmethod
-    def get(name):
-
-        if not name in Registry.registry:
-            raise ValueError(f'An attempt to use the non-existent stabilizer {name}')
-
-        return Registry.registry[name]

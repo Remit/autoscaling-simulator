@@ -1,8 +1,8 @@
 import pandas as pd
 
-from . import valuesfilter
-from . import valuesaggregator
-from . import stabilizer
+from .valuesfilter import ValuesFilter
+from .valuesaggregator import ValuesAggregator
+from .stabilizer import Stabilizer
 from . import forecasting
 from .limiter import Limiter
 
@@ -216,7 +216,7 @@ class ScalingMetric:
         # TODO: consider filter chains
         vf_name = ErrorChecker.key_check_and_load('name', values_filter_conf, 'region', region_name)
         vf_conf = ErrorChecker.key_check_and_load('config', values_filter_conf, 'region', region_name)
-        self.values_filter = valuesfilter.Registry.get(vf_name)(vf_conf)
+        self.values_filter = ValuesFilter.get(vf_name)(vf_conf)
 
         # an aggregator applicable to the time series metrics values
         # -- it aggregates metric values prior to the comparison
@@ -224,7 +224,7 @@ class ScalingMetric:
         # TODO: consider values aggregators chains
         va_name = ErrorChecker.key_check_and_load('name', values_aggregator_conf, 'region', region_name)
         va_conf = ErrorChecker.key_check_and_load('config', values_aggregator_conf, 'region', region_name)
-        self.values_aggregator = valuesaggregator.Registry.get(va_name)(va_conf)
+        self.values_aggregator = ValuesAggregator.get(va_name)(va_conf)
 
         # Scaling determinants:
         # integer value that determines the position of the metric in the
@@ -247,7 +247,7 @@ class ScalingMetric:
         # effects may severely impact the response time latency as well as other metrics
         stab_name = ErrorChecker.key_check_and_load('name', stabilizer_conf, 'region', region_name)
         stab_conf = ErrorChecker.key_check_and_load('config', stabilizer_conf, 'region', region_name)
-        self.stabilizer = stabilizer.Registry.get(stab_name)(stab_conf)
+        self.stabilizer = Stabilizer.get(stab_name)(stab_conf)
 
         # either predictive or reactive; depending on the value
         # either the real metric value or its forecast is used.

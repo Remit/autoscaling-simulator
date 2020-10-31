@@ -8,12 +8,34 @@ class Optimizer(ABC):
     scoring. For instance, it can search for maximal score.
     """
 
+    _Registry = {}
+
     @abstractmethod
     def __call__(self,
                  scored_options : dict):
 
         pass
 
+    @classmethod
+    def register(cls,
+                 name : str):
+
+        def decorator(optimizer_class):
+            cls._Registry[name] = optimizer_class
+            return optimizer_class
+
+        return decorator
+
+    @classmethod
+    def get(cls,
+            name : str):
+
+        if not name in cls._Registry:
+            raise ValueError(f'An attempt to use the non-existent optimizer {name}')
+
+        return cls._Registry[name]
+
+@Optimizer.register('OptimizerScoreMaximizer')
 class OptimizerScoreMaximizer(Optimizer):
 
     def __call__(self,
@@ -28,22 +50,4 @@ class OptimizerScoreMaximizer(Optimizer):
                 if placement.score > selected_placement.score:
                     selected_placement = placement
 
-        return selected_placement
-
-class Registry:
-
-    """
-    Stores the calculator classes and organizes access to them.
-    """
-
-    registry = {
-        'OptimizerScoreMaximizer': OptimizerScoreMaximizer
-    }
-
-    @staticmethod
-    def get(name):
-
-        if not name in Registry.registry:
-            raise ValueError(f'An attempt to use the non-existent optimizer {name}')
-
-        return Registry.registry[name]
+        return selected_placement    

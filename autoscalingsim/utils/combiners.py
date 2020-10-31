@@ -11,6 +11,8 @@ class Combiner(ABC):
     a unified timeline.
     """
 
+    _Registry = {}
+
     @abstractmethod
     def __init__(self,
                  settings : dict):
@@ -24,6 +26,26 @@ class Combiner(ABC):
 
         pass
 
+    @classmethod
+    def register(cls,
+                 name : str):
+
+        def decorator(combiner_class):
+            cls._Registry[name] = combiner_class
+            return combiner_class
+
+        return decorator
+
+    @classmethod
+    def get(cls,
+            name : str):
+
+        if not name in cls._Registry:
+            raise ValueError(f'No Combiner of type {name} found')
+
+        return cls._Registry[name]
+
+@Combiner.register('noop')
 class NoopCombiner(Combiner):
 
     """
@@ -43,6 +65,7 @@ class NoopCombiner(Combiner):
 
         pass
 
+@Combiner.register('windowed')
 class WindowedCombiner(Combiner):
 
     """
@@ -85,22 +108,3 @@ class WindowedCombiner(Combiner):
                                                              key = lambda elem: elem[0]))
 
         return unified_timeline_of_adjustments
-
-class Registry:
-
-    """
-    Stores the combiner classes and organizes access to them.
-    """
-
-    registry = {
-        'noop': NoopCombiner,
-        'windowed': WindowedCombiner
-    }
-
-    @staticmethod
-    def get(name):
-
-        if not name in Registry.registry:
-            raise ValueError(f'No Combiner of type {name} found')
-
-        return Registry.registry[name]

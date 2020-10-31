@@ -1,6 +1,6 @@
 import collections
 
-from . import scaling_aggregation
+from .scaling_aggregation import ScalingEffectAggregationRule
 
 from ....utils.state.statemanagers import StateReader
 from .scaled_entity_settings import ScaledEntityScalingSettings
@@ -49,9 +49,8 @@ class ScaledEntity:
             # all the metrics compute their scaling effects independently, and the cumulative
             # scaling effect is the aggregated value of these effects (e.g. majority vote)
             if not scaling_setting_for_entity.scaling_effect_aggregation_rule_name is None:
-                self.scaling_effect_aggregation_rule = scaling_aggregation.Registry \
-                                                        .get(scaling_setting_for_entity.scaling_effect_aggregation_rule_name)(self.metrics_by_priority,
-                                                                                                                              scaling_setting_for_entity.scaled_aspect_name)
+                self.scaling_effect_aggregation_rule = ScalingEffectAggregationRule.get(scaling_setting_for_entity.scaling_effect_aggregation_rule_name)(self.metrics_by_priority,
+                                                                                                                                                         scaling_setting_for_entity.scaled_aspect_name)
         else:
             self.scaling_effect_aggregation_rule = None
 

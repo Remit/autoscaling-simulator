@@ -94,7 +94,7 @@ class ApplicationModel:
                     ErrorChecker.value_check('timeout', timeout, operator.ge, pd.Timedelta(0, unit = 'ms'), [f'request_type {request_type}'])
 
                     request_size_b = ErrorChecker.key_check_and_load('request_size_b', request_info, 'request_type', request_type)
-                    ErrorChecker.value_check('request_size_b', request_size_b, operator.ge, 0, [f'request_type {request_type}')])
+                    ErrorChecker.value_check('request_size_b', request_size_b, operator.ge, 0, [f'request_type {request_type}'])
 
                     response_size_b = ErrorChecker.key_check_and_load('response_size_b', request_info, 'request_type', request_type)
                     ErrorChecker.value_check('response_size_b', response_size_b, operator.ge, 0, [f'request_type {request_type}'])

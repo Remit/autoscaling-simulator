@@ -1,6 +1,6 @@
 import pandas as pd
 
-from . import optimizers
+from .optimizers import Optimizer
 from . import score_calculators
 from .placer import Placer
 from .scorer import Scorer
@@ -32,7 +32,7 @@ class DesiredChangeCalculator:
                              reader)
 
         self.scorer = scorer
-        optimizer_class = optimizers.Registry.get(optimizer_type)
+        optimizer_class = Optimizer.get(optimizer_type)
         self.optimizer = optimizer_class()
 
         self.container_for_scaled_entities_types = container_for_scaled_entities_types

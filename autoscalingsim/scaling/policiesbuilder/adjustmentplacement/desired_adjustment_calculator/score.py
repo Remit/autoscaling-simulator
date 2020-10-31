@@ -88,6 +88,8 @@ class Score(ABC):
     operations are conducted on them, hence we have to offer a joint interface.
     """
 
+    _Registry = {}
+
     def __init__(self,
                  score_computer,
                  score_inverter):
@@ -105,6 +107,25 @@ class Score(ABC):
     def __mul__(self,
                 scalar):
         pass
+
+    @classmethod
+    def register(cls,
+                 name : str):
+
+        def decorator(score_class):
+            cls._Registry[name] = score_class
+            return score_class
+
+        return decorator
+
+    @classmethod
+    def get(cls,
+            name : str):
+
+        if not name in cls._Registry:
+            raise ValueError(f'An attempt to use the non-existent score {name}')
+
+        return cls._Registry[name]
 
     def __lt__(self,
                other_score : 'Score'):
@@ -184,6 +205,7 @@ class Score(ABC):
 
         return (not math.isinf(self.score))
 
+@Score.register('PriceScoreCalculator')
 class PriceScore(Score):
 
     """
@@ -231,21 +253,3 @@ class PriceScore(Score):
             new_score.score = self.score / scalar
 
         return new_score
-
-class Registry:
-
-    """
-    Stores the calculator classes and organizes access to them.
-    """
-
-    registry = {
-        'PriceScoreCalculator': PriceScore
-    }
-
-    @staticmethod
-    def get(name):
-
-        if not name in Registry.registry:
-            raise ValueError(f'An attempt to use the non-existent score {name}')
-
-        return Registry.registry[name]

@@ -26,7 +26,7 @@ class MetricForecaster:
 
         # Dynamic State
         if (not forecasting_model_name is None) and (not forecasting_model_params is None):
-            self.model = Registry.get(forecasting_model_name)(forecasting_model_params)
+            self.model = ForecastingModel.get(forecasting_model_name)(forecasting_model_params)
         else:
             self.model = None
 
@@ -71,6 +71,9 @@ class ForecastingModel(ABC):
     """
     Wraps the forecasting model used by MetricForecaster.
     """
+
+    _Registry = {}
+
     @abstractmethod
     def __init__(self,
                  forecasting_model_params : dict):
@@ -88,6 +91,26 @@ class ForecastingModel(ABC):
                 resolution : pd.Timedelta):
         pass
 
+    @classmethod
+    def register(cls,
+                 name : str):
+
+        def decorator(forecasting_model_cls):
+            cls._Registry[name] = forecasting_model_cls
+            return forecasting_model_cls
+
+        return decorator
+
+    @classmethod
+    def get(cls,
+            name : str):
+
+        if not name in cls._Registry:
+            raise ValueError(f'An attempt to use the non-existent forecasting model {name}')
+
+        return cls._Registry[name]
+
+@ForecastingModel.register('simpleAvg')
 class SimpleAverage(ForecastingModel):
 
     """
@@ -124,21 +147,3 @@ class SimpleAverage(ForecastingModel):
         forecasts_df.drop(['date'], axis=1, inplace=True)
 
         return forecasts_df
-
-class Registry:
-
-    """
-    Stores the forecasting model classes and organizes access to them.
-    """
-
-    registry = {
-        'simpleAvg': SimpleAverage
-    }
-
-    @staticmethod
-    def get(name):
-
-        if not name in Registry.registry:
-            raise ValueError(f'An attempt to use the non-existent forecasting model {name}')
-
-        return Registry.registry[name]

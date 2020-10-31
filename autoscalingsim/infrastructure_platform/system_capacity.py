@@ -97,7 +97,7 @@ class SystemCapacity(Capacity):
               comparison_op):
 
         if not isinstance(other_cap, SystemCapacity):
-            raise TypeError(f'Unexpected type of the operand when comparing with {self.__class__.__name__}: {type(other_cap}')
+            raise TypeError(f'Unexpected type of the operand when comparing with {self.__class__.__name__}: {type(other_cap)}')
 
         return comparison_op(self.collapse(), other_cap.collapse())
 

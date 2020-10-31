@@ -121,7 +121,7 @@ class ScalingAspectDelta:
         if not isinstance(other_delta, ScalingAspectDelta):
             raise TypeError(f'An attempt to add an object of unknown class to {self.__class__.__name__}: {other_delta.__class__.__name__}')
 
-        if isinstance(other_delta.scaling_aspect, self.scaling_aspect.__class__):
+        if not isinstance(other_delta.scaling_aspect, self.scaling_aspect.__class__):
             raise ValueError(f'An attempt to add different scaling aspects: {self.scaling_aspect.__class__.__name__} and {other_delta.scaling_aspect.__class__.__name__}')
 
         res_val = self.sign * self.scaling_aspect.get_value() + other_delta.sign * other_delta.scaling_aspect.get_value()
@@ -158,7 +158,7 @@ class ScalingAspectDelta:
         return self.sign * self.scaling_aspect.get_value()
 
     def get_aspect_type(self):
-        return type(self.scaling_aspect)
+        return self.scaling_aspect.__class__
 
 class Count(ScalingAspect):
 
@@ -179,8 +179,8 @@ class Count(ScalingAspect):
         if isinstance(other_aspect_or_delta, Count):
             return Count(self.value + other_aspect_or_delta.get_value())
         elif isinstance(other_aspect_or_delta, ScalingAspectDelta):
-            if not isinstance(self.__class__, other_aspect_or_delta.get_aspect_type()):
-                raise ValueError(f'An attempt to add different scaling aspects: {self.__class__.__name__} and {other_aspect_or_delta.get_aspect_type()}')
+            if not isinstance(self, other_aspect_or_delta.get_aspect_type()):
+                raise ValueError(f'An attempt to add different scaling aspects: {self.__class__.__name__} and {other_aspect_or_delta.get_aspect_type().__name__}')
 
             return Count(self.value + other_aspect_or_delta.to_raw_change())
         else:

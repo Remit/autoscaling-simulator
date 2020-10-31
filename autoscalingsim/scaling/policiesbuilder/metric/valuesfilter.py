@@ -8,6 +8,8 @@ class ValuesFilter(ABC):
     to the raw metrics values.
     """
 
+    _Registry = {}
+
     @abstractmethod
     def __init__(self,
                  config):
@@ -18,13 +20,26 @@ class ValuesFilter(ABC):
                  values):
         pass
 
-    @staticmethod
-    def config_check(config_raw):
-        keys_to_check = ['name', 'config']
-        for key in keys_to_check:
-            if not key in config_raw:
-                raise ValueError(f'Key {key} not found in the configuration for {__class__.__name__}')
+    @classmethod
+    def register(cls,
+                 name : str):
 
+        def decorator(values_filter_class):
+            cls._Registry[name] = values_filter_class
+            return values_filter_class
+
+        return decorator
+
+    @classmethod
+    def get(cls,
+            name : str):
+
+        if not name in cls._Registry:
+            raise ValueError(f'An attempt to use the non-existent filter {name}')
+
+        return cls._Registry[name]
+
+@ValuesFilter.register('defaultNA')
 class DefaultNA(ValuesFilter):
 
     """
@@ -44,21 +59,3 @@ class DefaultNA(ValuesFilter):
                  values):
 
         return values.fillna(self.default_value)
-
-class Registry:
-
-    """
-    Stores the filter classes and organizes access to them.
-    """
-
-    registry = {
-        'defaultNA': DefaultNA
-    }
-
-    @staticmethod
-    def get(name):
-
-        if not name in Registry.registry:
-            raise ValueError(f'An attempt to use the non-existent filter {name}')
-
-        return Registry.registry[name]
