@@ -3,14 +3,15 @@ import numpy as np
 
 from matplotlib import pyplot as plt
 
-import ..plotting_constants
+from .. import plotting_constants
 
 class DistributionRequestsTimesBarchart:
 
     FILENAME = 'bars_req_time_distribution_by_cat.png'
 
-    @staticmethod
-    def plot(response_times_regionalized : dict,
+    @classmethod
+    def plot(cls : type,
+             response_times_regionalized : dict,
              buffer_times_regionalized : dict,
              network_times_regionalized : dict,
              aggregation_fn = np.mean,
@@ -26,6 +27,7 @@ class DistributionRequestsTimesBarchart:
             raise ValueError('The aggregation function object is not callable.')
 
         for region_name, response_times_per_request_type in response_times_regionalized.items():
+            plt.figure()
             buffer_times_by_request = buffer_times_regionalized[region_name]
             network_times_by_request = network_times_regionalized[region_name]
 
@@ -66,7 +68,7 @@ class DistributionRequestsTimesBarchart:
             plt.legend(loc = 'upper right', bbox_to_anchor=(0.9, -0.1), ncol = 3)
 
             if not figures_dir is None:
-                figure_path = os.path.join(figures_dir, plotting_constants.filename_format.format(region_name, DistributionRequestsTimesBarchart.FILENAME))
+                figure_path = os.path.join(figures_dir, plotting_constants.filename_format.format(region_name, cls.FILENAME))
                 plt.savefig(figure_path)
             else:
                 plt.suptitle(f'Distribution of the request time in the application,\

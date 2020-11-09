@@ -4,14 +4,15 @@ import matplotlib.gridspec as gridspec
 
 from matplotlib import pyplot as plt
 
-import ..plotting_constants
+from .. import plotting_constants
 
 class WaitingServiceBuffersHistogram:
 
     FILENAME = 'hist_buf_waiting_time.png'
 
-    @staticmethod
-    def plot(buffer_times_regionalized : dict,
+    @classmethod
+    def plot(cls : type,
+             buffer_times_regionalized : dict,
              bins_size_ms : int = 10,
              figures_dir = None):
 
@@ -95,7 +96,7 @@ class WaitingServiceBuffersHistogram:
                 i += 1
 
             if not figures_dir is None:
-                figure_path = os.path.join(figures_dir, plotting_constants.filename_format.format(region_name, WaitingServiceBuffersHistogram.FILENAME))
+                figure_path = os.path.join(figures_dir, plotting_constants.filename_format.format(region_name, cls.FILENAME))
                 plt.savefig(figure_path)
             else:
                 plt.suptitle(f'Distribution of requests by buffer waiting time in {region_name}', y = 1.05)

@@ -4,7 +4,7 @@ from .autoscaling_quality.response_times_cdf import ResponseTimesCDF
 from .autoscaling_quality.response_times_hist import ResponseTimesHistogram
 from .autoscaling_quality.fulfilled_dropped_bars import FulfilledDroppedBarchart
 
-from .autoscaling_behav.workload_line_graph import WorkloadLineGraph
+from .autoscaling_behav.load_line_graph import LoadLineGraph
 from .autoscaling_behav.requests_by_type import GeneratedRequestsByType
 from .autoscaling_behav.nodes_usage_line_graph import NodesUsageLineGraph
 from .autoscaling_behav.waiting_service_buffers_hist import WaitingServiceBuffersHistogram
@@ -16,6 +16,8 @@ class AnalysisFramework:
     """
     Combines the functionality to build the figures based on the simulation
     results. The following figures are supported:
+        - Simulation quality evaluation category:
+            > load/latency graph
         - Autoscaling quality evaluation category:
             + CDF of the response times, all the request types on the same plot
             + Histogram of the response times, separately for each request type
@@ -42,7 +44,7 @@ class AnalysisFramework:
 
     def build_figures(self,
                       simulation : Simulation,
-                      results_dirs : str,
+                      results_dirs : str = '',
                       figures_dir = None):
         # TODO: figure settings from config file?
         # TODO: get results from the results_dir, also need to add storing into it
@@ -54,17 +56,17 @@ class AnalysisFramework:
 
         # Getting the data into the unified representation for processing
         # either from the simulation or from the results_dir
-        response_times_per_request_type = {}
-        workload_ts_per_request_type = {}
-        buffer_times_by_request = {}
-        network_times_by_request = {}
-        desired_node_count = {}
-        actual_node_count = {}
+        response_times_regionalized = {}
+        load_regionalized = {}
+        buffer_times_regionalized = {}
+        network_times_regionalized = {}
+        desired_node_count_regionalized = {}
+        actual_node_count_regionalized = {}
         if not simulation is None:
-            workload_regionalized = simulation.workload_model.get_generated_workload()
-            response_times_regionalized = simulation.application_model.workload_stats.get_response_times_by_request()
-            buffer_times_regionalized = simulation.application_model.workload_stats.get_buffer_times_by_request()
-            network_times_regionalized = simulation.application_model.workload_stats.get_network_times_by_request()
+            load_regionalized = simulation.load_model.get_generated_load()
+            response_times_regionalized = simulation.application_model.load_stats.get_response_times_by_request()
+            buffer_times_regionalized = simulation.application_model.load_stats.get_buffer_times_by_request()
+            network_times_regionalized = simulation.application_model.load_stats.get_network_times_by_request()
             desired_node_count_regionalized = simulation.application_model.platform_model.compute_desired_node_count(self.simulation_step,
                                                                                                                      simulation.simulation_end)
             actual_node_count_regionalized = simulation.application_model.platform_model.compute_actual_node_count(self.simulation_step,
@@ -81,15 +83,15 @@ class AnalysisFramework:
                                     figures_dir = figures_dir_in_use)
 
         FulfilledDroppedBarchart.plot(response_times_regionalized,
-                                      workload_regionalized,
+                                      load_regionalized,
                                       figures_dir = figures_dir_in_use)
 
         # Autoscaling behaviour characterization category
-        WorkloadLineGraph.plot(workload_regionalized,
-                               resolution_ms = 5000,
-                               figures_dir = figures_dir_in_use)
+        LoadLineGraph.plot(load_regionalized,
+                           resolution = pd.Timedelta(5000, unit = 'ms'),
+                           figures_dir = figures_dir_in_use)
 
-        GeneratedRequestsByType.plot(workload_regionalized,
+        GeneratedRequestsByType.plot(load_regionalized,
                                      figures_dir = figures_dir_in_use)
 
         NodesUsageLineGraph.plot(desired_node_count_regionalized,

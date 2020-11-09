@@ -5,15 +5,16 @@ import numpy as np
 
 from matplotlib import pyplot as plt
 
-import ..plotting_constants
+from .. import plotting_constants
 
 class ResponseTimesCDF:
 
     FILENAME = 'cdf_response_times.png'
 
-    @staticmethod
-    def plot(simulation_step : pd.Timedelta,
+    @classmethod
+    def plot(cls : type,
              response_times_regionalized : dict,
+             simulation_step : pd.Timedelta,
              figures_dir = None):
 
         """
@@ -22,6 +23,7 @@ class ResponseTimesCDF:
         """
 
         for region_name, response_times_per_request_type in response_times_regionalized.items():
+            plt.figure()
             simulation_step_ms = int(simulation_step.microseconds / 1000)
             max_response_time = max([max(response_times_of_req) for response_times_of_req in response_times_per_request_type.values()])
             cdf_xlim = max_response_time + 1 * simulation_step_ms + 1
@@ -37,7 +39,7 @@ class ResponseTimesCDF:
                 cdfs_per_req_type[req_type] = np.cumsum(reqs_count_binned) / sum(reqs_count_binned)
 
             for req_type, cdf_vals in cdfs_per_req_type.items():
-                plt.plot(x_axis, cdf_vals, label = req_type)
+                _ = plt.plot(x_axis, cdf_vals, label = req_type)
 
             percentiles = [0.99, 0.95, 0.90, 0.80, 0.50]
             font = {'color':  'black',
@@ -54,7 +56,7 @@ class ResponseTimesCDF:
             plt.legend(loc = "lower right")
 
             if not figures_dir is None:
-                figure_path = os.path.join(figures_dir, plotting_constants.filename_format.format(region_name, ResponseTimesCDF.FILENAME))
+                figure_path = os.path.join(figures_dir, plotting_constants.filename_format.format(region_name, cls.FILENAME))
                 plt.savefig(figure_path)
             else:
                 plt.title(f'CDF of requests by response time in region {region_name}')

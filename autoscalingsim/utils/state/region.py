@@ -108,14 +108,14 @@ class Region:
                     entity_changes = unmet_cumulative_increase_on_ts.get(entity_name, {})
                     entity_changes[aspect_name] = aspect_change_val
                     unmet_cumulative_increase_on_ts[entity_name] = entity_changes
-                else: # TODO: delete
+                #else: # TODO: delete
                 # --------------------------------------------------------------------------
-                    entity_changes = unmet_cumulative_reduction_on_ts.get(entity_name, {})
-                    entity_changes[aspect_name] = -1
-                    unmet_cumulative_reduction_on_ts[entity_name] = entity_changes
-                    entity_changes = unmet_cumulative_increase_on_ts.get(entity_name, {})
-                    entity_changes[aspect_name] = 10
-                    unmet_cumulative_increase_on_ts[entity_name] = entity_changes
+                #    entity_changes = unmet_cumulative_reduction_on_ts.get(entity_name, {})
+                #    entity_changes[aspect_name] = -1
+                #    unmet_cumulative_reduction_on_ts[entity_name] = entity_changes
+                #    entity_changes = unmet_cumulative_increase_on_ts.get(entity_name, {})
+                #    entity_changes[aspect_name] = 10
+                #    unmet_cumulative_increase_on_ts[entity_name] = entity_changes
                 # --------------------------------------------------------------------------
 
         non_enforced_scale_down_deltas = []

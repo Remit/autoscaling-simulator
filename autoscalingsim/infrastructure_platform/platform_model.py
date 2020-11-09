@@ -248,7 +248,7 @@ class PlatformModel:
         timeline_of_deltas_raw = self.state_deltas_timeline.to_dict()
         cur_state = PlatformState()
         interval_begins = list(timeline_of_deltas_raw.keys())
-        interval_ends = list(timeline_of_deltas_raw.keys())[-1]
+        interval_ends = list(timeline_of_deltas_raw.keys())[1:]
         interval_ends.append(pd.Timestamp.max)
         for timestamp_beg, timestamp_end in zip(interval_begins, interval_ends):
 
@@ -262,6 +262,7 @@ class PlatformModel:
             for region_name, node_count_per_type in node_counts_raw.items():
                 if not region_name in joint_node_count:
                     joint_node_count[region_name] = {}
+                if not region_name in repeated_data:
                     repeated_data[region_name] = {}
 
                 for node_type, node_count in node_count_per_type.items():

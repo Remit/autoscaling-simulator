@@ -51,8 +51,8 @@ class LoadModel:
 
     def get_generated_load(self):
 
-        workload = {}
-        for region_name, region_workload_model in self.region_models.items():
-            workload[region_name] = region_workload_model.workload
+        load = {}
+        for region_name, region_load_model in self.region_models.items():
+            load[region_name] = region_load_model.load
 
-        return workload
+        return load

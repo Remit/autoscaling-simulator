@@ -28,7 +28,7 @@ class DeltaTimeline:
 
     def to_dict(self):
 
-        return OrderedDict(sorted(self.timeline,
+        return OrderedDict(sorted(self.timeline.items(),
                                   key = lambda elem: elem[0]))
 
     def merge(self,

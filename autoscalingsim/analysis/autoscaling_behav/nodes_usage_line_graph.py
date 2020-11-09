@@ -4,14 +4,15 @@ import pandas as pd
 
 from matplotlib import pyplot as plt
 
-import ..plotting_constants
+from .. import plotting_constants
 
 class NodesUsageLineGraph:
 
     FILENAME = 'ts_line_nodes.png'
 
-    @staticmethod
-    def plot(desired_node_count_regionalized : dict,
+    @classmethod
+    def plot(cls : type,
+             desired_node_count_regionalized : dict,
              actual_node_count_regionalized : dict,
              resolution_ms : int = 5000,
              figures_dir = None):
@@ -22,6 +23,7 @@ class NodesUsageLineGraph:
         """
 
         for region_name, desired_node_count in desired_node_count_regionalized.items():
+            plt.figure()
             actual_node_count = actual_node_count_regionalized[region_name]
             node_types = list(desired_node_count.keys())
             plots_count = len(node_types)
@@ -48,20 +50,19 @@ class NodesUsageLineGraph:
                     actual_ts = actual_node_count[node_type]['timestamps']
                     actual_count = actual_node_count[node_type]['count']
 
+                #desired_ts_time = [datetime.fromtimestamp(desired_ts_el // 1000) for desired_ts_el in desired_ts]
+                #actual_ts_time = [datetime.fromtimestamp(actual_ts_el // 1000) for actual_ts_el in actual_ts]
 
-                desired_ts_time = [datetime.fromtimestamp(desired_ts_el // 1000) for desired_ts_el in desired_ts]
-                actual_ts_time = [datetime.fromtimestamp(actual_ts_el // 1000) for actual_ts_el in actual_ts]
-
-                df_desired = pd.DataFrame(data = {'time': desired_ts_time,
+                df_desired = pd.DataFrame(data = {'time': desired_ts,
                                                   'nodes': desired_count})
-                df_actual = pd.DataFrame(data = {'time': actual_ts_time,
+                df_actual = pd.DataFrame(data = {'time': actual_ts,
                                                  'nodes': actual_count})
                 df_desired = df_desired.set_index('time')
                 df_actual = df_actual.set_index('time')
 
-                axs.title.set_text("Node type {}".format(node_type))
-                axs.plot(df_desired, label = "Desired count")
-                axs.plot(df_actual, label = "Actual count")
+                axs.title.set_text(f'Node type {node_type}')
+                _ = axs.plot(df_desired, label = "Desired count")
+                _ = axs.plot(df_actual, label = "Actual count")
 
                 fig.canvas.draw()
                 axs.set_xticklabels([txt.get_text() for txt in axs.get_xticklabels()], rotation = 70)
@@ -71,7 +72,7 @@ class NodesUsageLineGraph:
                        borderaxespad = 4.0)
 
             if not figures_dir is None:
-                figure_path = os.path.join(figures_dir, plotting_constants.filename_format.format(region_name, NodesUsageLineGraph.FILENAME))
+                figure_path = os.path.join(figures_dir, plotting_constants.filename_format.format(region_name, cls.FILENAME))
                 plt.savefig(figure_path)
             else:
                 plt.suptitle(f'Desired and actual number of nodes per node type in region {region_name}', y = 1.05)

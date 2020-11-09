@@ -3,14 +3,15 @@ import numpy as np
 
 from matplotlib import pyplot as plt
 
-import ..plotting_constants
+from .. import plotting_constants
 
 class ResponseTimesHistogram:
 
     FILENAME = 'hist_response_times.png'
 
-    @staticmethod
-    def plot(response_times_regionalized : dict,
+    @classmethod
+    def plot(cls : type,
+             response_times_regionalized : dict,
              bins_size_ms : int = 10,
              figures_dir = None):
 
@@ -19,6 +20,7 @@ class ResponseTimesHistogram:
         """
 
         for region_name, response_times_per_request_type in response_times_regionalized.items():
+            plt.figure()
             max_response_time = max([max(response_times_of_req) for response_times_of_req in response_times_per_request_type.values()])
             bins_cnt = np.ceil(max_response_time / bins_size_ms)
 
@@ -52,7 +54,7 @@ class ResponseTimesHistogram:
             plt.ylabel('Completed requests')
 
             if not figures_dir is None:
-                figure_path = os.path.join(figures_dir, plotting_constants.filename_format.format(region_name, ResponseTimesHistogram.FILENAME))
+                figure_path = os.path.join(figures_dir, plotting_constants.filename_format.format(region_name, cls.FILENAME))
                 plt.savefig(figure_path)
             else:
                 plt.suptitle(f'Distribution of requests by response time in region {region_name}', y = 1.05)

@@ -112,7 +112,7 @@ class Adjuster(ABC):
             # the changes on the considered timestamp, we need to consider the
             # alternatives: either to add new containers to accommodate the change
             # or to start a new cluster and migrate services there.
-            unmet_change = {'eu': {'frontend': {'count': 2}}}
+            #unmet_change = {'eu': {'frontend': {'count': 2}}}
             if len(unmet_change) > 0: # unmet_change can only be positive below
 
                 ts_next = timeline_of_unmet_changes.peek(ts_of_unmet_change)

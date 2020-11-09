@@ -1,6 +1,6 @@
 {
   "policy": {
-    "sync_period_ms": 100,
+    "sync_period_ms": 30000,
     "adjustment_goal": "cost_minimization",
     "optimizer_type": "OptimizerScoreMaximizer",
     "placement_hint": "shared",
