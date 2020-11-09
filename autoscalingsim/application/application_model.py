@@ -4,9 +4,9 @@ import pandas as pd
 import os
 
 from .service import Service
-from .workload_stats import WorkloadStats
+from .load_stats import LoadStats
 
-from ..workload.request import RequestProcessingInfo
+from ..load.request import RequestProcessingInfo
 from ..deployment.deployment_model import DeploymentModel
 from ..infrastructure_platform.platform_model import PlatformModel
 from ..scaling.policiesbuilder.scaling_policy import ScalingPolicy
@@ -40,7 +40,7 @@ class ApplicationModel:
 
         # Dynamic state
         self.new_requests = []
-        self.workload_stats = WorkloadStats()
+        self.load_stats = LoadStats()
         self.state_reader = StateReader()
         self.platform_model = platform_model
         self.scaling_policy = scaling_policy
@@ -233,7 +233,7 @@ class ApplicationModel:
                 req = processed_requests.pop()
                 req_info = self.reqs_processing_infos[req.request_type]
 
-                if req.upstream:
+                if not req.upstream:
                     next_services_names = self.structure[service_name]['next']
                     if not next_services_names is None:
                         for next_service_name in next_services_names:
@@ -242,9 +242,9 @@ class ApplicationModel:
                                 self.services[next_service_name].add_request(req)
                     else:
                         # Sending response
-                        req.upstream = False
+                        req.upstream = True
 
-                if not req.upstream:
+                if req.upstream:
                     prev_services_names = self.structure[service_name]['prev']
 
                     if not prev_services_names is None:
@@ -260,7 +260,7 @@ class ApplicationModel:
                                 self.services[prev_service_name].add_request(req)
                     else:
                         # updating the stats
-                        self.workload_stats.add_request(req)
+                        self.load_stats.add_request(req)
 
         # Calling scaling policy that determines the need to scale
         self.scaling_policy.reconcile_state(cur_timestamp)

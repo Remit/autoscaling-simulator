@@ -1,7 +1,7 @@
 from collections import deque
 import pandas as pd
 
-from ..workload.request import Request, RequestProcessingInfo
+from ..load.request import Request, RequestProcessingInfo
 
 class LinkBuffer:
     """

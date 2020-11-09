@@ -8,7 +8,7 @@ from ..utils.state.service_state import ServiceStateRegionalized
 from ..utils.state.statemanagers import StateReader
 from ..scaling.policiesbuilder.scaled.scaled_entity import *
 from ..scaling.policiesbuilder.scaling_policy_conf import ScalingPolicyConfiguration
-from ..workload.request import Request
+from ..load.request import Request
 from ..deployment.deployment_model import DeploymentModel
 
 class Service(ScaledEntity):

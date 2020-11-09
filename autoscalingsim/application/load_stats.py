@@ -1,9 +1,9 @@
-from ..workload.request import Request
+from ..load.request import Request
 
-class WorkloadStatsRegional:
+class LoadStatsRegional:
 
     """
-    Workload statistics collected for a particular region.
+    Load statistics collected for a particular region.
     """
 
     def __init__(self):
@@ -31,7 +31,7 @@ class WorkloadStatsRegional:
                 self.buffer_times_by_request[req.request_type] = []
             self.buffer_times_by_request[req.request_type].append(req.buffer_time)
 
-class WorkloadStats:
+class LoadStats:
 
     """
     Container for the stats of the processed requests.
@@ -44,7 +44,7 @@ class WorkloadStats:
                     req : Request):
 
         if not req.region_name in self.regional_stats:
-            self.regional_stats[req.region_name] = WorkloadStatsRegional()
+            self.regional_stats[req.region_name] = LoadStatsRegional()
 
         self.regional_stats[req.region_name].add_request(req)
 

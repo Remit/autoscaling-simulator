@@ -4,7 +4,7 @@ import json
 import pandas as pd
 from datetime import datetime
 
-from .workload.workload_model import WorkloadModel
+from .load.load_model import LoadModel
 from .scaling.scaling_model import ScalingModel
 from .infrastructure_platform.platform_model import PlatformModel
 from .application.application_model import ApplicationModel
@@ -20,7 +20,7 @@ class Simulator:
     is specified, then all the simulations of Simulator are started.
     """
 
-    CONF_WORKLOAD_MODEL_KEY = "workload_model"
+    CONF_LOAD_MODEL_KEY = "load_model"
     CONF_PLATFORM_MODEL_KEY = "platform_model"
     CONF_APPLICATION_MODEL_KEY = "application_model"
     CONF_SCALING_MODEL_KEY = "scaling_model"
@@ -54,15 +54,15 @@ class Simulator:
             try:
                 config = json.load(f)
 
-                if (not Simulator.CONF_WORKLOAD_MODEL_KEY in config) or \
+                if (not Simulator.CONF_LOAD_MODEL_KEY in config) or \
                  (not Simulator.CONF_SCALING_MODEL_KEY in config) or \
                  (not Simulator.CONF_PLATFORM_MODEL_KEY in config) or \
                  (not Simulator.CONF_SCALING_POLICY_KEY in config) or \
                  (not Simulator.CONF_APPLICATION_MODEL_KEY in config):
                     raise ValueError('The config listing file misses at least one key model.')
 
-                workload_model = WorkloadModel(self.simulation_step,
-                                               os.path.join(configs_dir, config[Simulator.CONF_WORKLOAD_MODEL_KEY]))
+                load_model = LoadModel(self.simulation_step,
+                                       os.path.join(configs_dir, config[Simulator.CONF_LOAD_MODEL_KEY]))
 
                 scaling_model = ScalingModel(self.simulation_step,
                                              os.path.join(configs_dir, config[Simulator.CONF_SCALING_MODEL_KEY]))
@@ -81,7 +81,7 @@ class Simulator:
                                                      scaling_policy,
                                                      os.path.join(configs_dir, config[Simulator.CONF_APPLICATION_MODEL_KEY]))
 
-                self.simulations[simulation_name] = Simulation(workload_model,
+                self.simulations[simulation_name] = Simulation(load_model,
                                                                application_model,
                                                                self.starting_time,
                                                                self.time_to_simulate_days,

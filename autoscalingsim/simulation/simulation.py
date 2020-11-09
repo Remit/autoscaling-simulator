@@ -5,7 +5,7 @@ import pandas as pd
 from tqdm import tqdm
 
 from ..application.application_model import ApplicationModel
-from ..workload.workload_model import WorkloadModel
+from ..load.load_model import LoadModel
 
 class Simulation:
     """
@@ -65,7 +65,7 @@ class Simulation:
     """
 
     def __init__(self,
-                 workload_model : WorkloadModel,
+                 load_model : LoadModel,
                  application_model : ApplicationModel,
                  simulation_start : pd.Timestamp,
                  time_to_simulate_days : float = 0.0005,
@@ -74,7 +74,7 @@ class Simulation:
                  results_dir : str = None):
 
         # Static state
-        self.workload_model = workload_model
+        self.load_model = load_model
         self.application_model = application_model
         self.simulation_end = simulation_start + pd.Timedelta(time_to_simulate_days, unit = 'd')
         self.simulation_step = simulation_step
@@ -110,10 +110,10 @@ class Simulation:
                 os.mkdir(self.results_dir)
                 full_filename = os.path.join(results_dir, filename)
 
-                results_to_store = {'workload_regionalized': self.workload_model.get_generated_workload(),
-                                    'response_times_regionalized': self.application_model.workload_stats.get_response_times_by_request(),
-                                    'buffer_times_regionalized': self.application_model.workload_stats.get_buffer_times_by_request(),
-                                    'network_times_regionalized': self.application_model.workload_stats.get_network_times_by_request(),
+                results_to_store = {'load_regionalized': self.load_model.get_generated_load(),
+                                    'response_times_regionalized': self.application_model.load_stats.get_response_times_by_request(),
+                                    'buffer_times_regionalized': self.application_model.load_stats.get_buffer_times_by_request(),
+                                    'network_times_regionalized': self.application_model.load_stats.get_network_times_by_request(),
                                     'desired_node_count_regionalized': self.application_model.platform_model.compute_desired_node_count(self.simulation_step,
                                                                                                                                         self.simulation_end),
                                     'actual_node_count_regionalized': self.application_model.platform_model.compute_actual_node_count(self.simulation_step,
@@ -123,7 +123,7 @@ class Simulation:
                     pickle.dump(results_to_store, f)
 
     def _step(self):
-        new_requests = self.workload_model.generate_requests(self.cur_simulation_time)
+        new_requests = self.load_model.generate_requests(self.cur_simulation_time)
         self.application_model.enter_requests(new_requests)
         self.application_model.step(self.cur_simulation_time,
                                     self.simulation_step)

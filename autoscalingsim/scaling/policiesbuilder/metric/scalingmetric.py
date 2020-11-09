@@ -301,6 +301,7 @@ class ScalingMetric:
             # with the datetime index. Can be a single value or a sequence of
             # values (in this case, some metric history is incorporated)
 
+            metric_vals = cur_metric_vals
             if self.timing_type == 'predictive':
                 metric_vals = self.forecaster(cur_metric_vals)
 
@@ -308,7 +309,7 @@ class ScalingMetric:
             # abnormal values, or by smoothing the signal) and aggregating
             # these filtered values to produce the desired aggregated metric,
             # e.g. by averaging with the sliding window of a particular length
-            filtered_metric_vals = self.values_filter(cur_metric_vals)
+            filtered_metric_vals = self.values_filter(metric_vals)
             aggregated_metric_vals = self.values_aggregator(filtered_metric_vals)
 
             # Computing how does metric value related to the target --

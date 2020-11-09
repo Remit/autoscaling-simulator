@@ -9,7 +9,7 @@ from ..requirements import ResourceRequirements
 from ...infrastructure_platform.utilization import ServiceUtilization
 from ...infrastructure_platform.node import NodeInfo
 from ...infrastructure_platform.system_capacity import SystemCapacity
-from ...workload.request import Request
+from ...load.request import Request
 from ...application.linkbuffer import LinkBuffer
 
 class RequestsProcessor:

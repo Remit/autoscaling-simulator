@@ -1,11 +1,13 @@
 import pandas as pd
+import numpy as np
+import calendar
 
-from .requests_distributions import *
+from .requests_distributions import SlicedRequestsNumDistribution
 from .request import Request
 
 from ..utils.error_check import ErrorChecker
 
-class RegionalWorkloadModel:
+class RegionalLoadModel:
 
     """
     Represents the workload generation model.
@@ -16,7 +18,7 @@ class RegionalWorkloadModel:
         hour values are supported!) then each such value is uniformly split among seconds in the given
         hour (taken from the timestamp of the generate_requests call) s.t. each seconds in an hout gets
         its own quota in terms of requests to be produced during this second. These values are computed and
-        stored in current_means_split_across_hour_seconds only if they were not computed before for the
+        stored in current_means_split_across_seconds only if they were not computed before for the
         given hour current_hour.
 
         Following, these per-second values are used as parameters for the generative random distribution
@@ -59,7 +61,7 @@ class RegionalWorkloadModel:
 
         ********************************************************************************************************
 
-        current_means_split_across_hour_seconds (dict):    contains the uniform split of
+        current_means_split_across_seconds (dict):    contains the uniform split of
                                                            the avg requests number from monthly_vals (per hour)
                                                            into the seconds of the current_hour.
 
@@ -92,10 +94,14 @@ class RegionalWorkloadModel:
         implement support for holidays etc.
     """
 
+    SECONDS_IN_DAY = 86_400
+    MONTHS_IDS = {month: index for index, month in enumerate(calendar.month_abbr) if month}
+    MONTHS_IDS['all'] = 0
+
     def __init__(self,
                  region_name : str,
                  seasonal_pattern : dict,
-                 workloads_configs : dict,
+                 load_configs : dict,
                  simulation_step : pd.Timedelta):
 
         # Static state
@@ -104,20 +110,18 @@ class RegionalWorkloadModel:
         self.reqs_types_ratios = {}
         self.reqs_generators = {}
         self.monthly_vals = {}
-        self.discretion_s = 0
 
         seasonal_pattern_type = ErrorChecker.key_check_and_load('type', seasonal_pattern, 'region_name', self.region_name)
         if seasonal_pattern_type == 'values':
-            self.discretion_s = ErrorChecker.key_check_and_load('discretion_s', seasonal_pattern, 'region_name', self.region_name)
 
             params = ErrorChecker.key_check_and_load('params', seasonal_pattern, 'region_name', self.region_name)
             for pattern in params:
 
-                month_id = 0
                 month = ErrorChecker.key_check_and_load('month', pattern, 'region_name', self.region_name)
-                if month != 'all':
-                    month_id = int(month)
+                if not month in self.__class__.MONTHS_IDS:
+                    raise ValueError(f'Unknown month provided: {month}')
 
+                month_id = self.__class__.MONTHS_IDS[month]
                 if not month_id in self.monthly_vals:
                     self.monthly_vals[month_id] = {}
 
@@ -131,35 +135,22 @@ class RegionalWorkloadModel:
                 else:
                     raise ValueError(f'day_of_week value {day_of_week} undefined for {self.__class__.__name__}')
 
-        for conf in workloads_configs:
+        for conf in load_configs:
             req_type = ErrorChecker.key_check_and_load('request_type', conf, 'region_name', self.region_name)
-            workload_config = ErrorChecker.key_check_and_load('workload_config', conf, 'region_name', self.region_name)
-            req_ratio = ErrorChecker.key_check_and_load('ratio', workload_config, 'region_name', self.region_name)
+            load_config = ErrorChecker.key_check_and_load('load_config', conf, 'region_name', self.region_name)
+            req_ratio = ErrorChecker.key_check_and_load('ratio', load_config, 'region_name', self.region_name)
 
             if req_ratio < 0.0 or req_ratio > 1.0:
                 raise ValueError(f'Unacceptable ratio value for the request of type {req_type}')
             self.reqs_types_ratios[req_type] = req_ratio
 
-            sliced_distribution = ErrorChecker.key_check_and_load('sliced_distribution', workload_config, 'region_name', self.region_name)
+            sliced_distribution = ErrorChecker.key_check_and_load('sliced_distribution', load_config, 'region_name', self.region_name)
             req_distribution_type = ErrorChecker.key_check_and_load('type', sliced_distribution, 'region_name', self.region_name)
             req_distribution_params = ErrorChecker.key_check_and_load('params', sliced_distribution, 'region_name', self.region_name)
-
-            # TODO: consider registry structure for distributions types
-            if req_distribution_type == 'normal':
-                mu = 0.0
-                sigma = 0.1
-
-                if len(req_distribution_params) > 0:
-                    mu = req_distribution_params[0]
-                if len(req_distribution_params) > 1:
-                    sigma = req_distribution_params[1]
-
-                self.reqs_generators[req_type] = NormalDistribution(mu, sigma)
+            self.reqs_generators[req_type] = SlicedRequestsNumDistribution.get(req_distribution_type)(req_distribution_params)
 
         # Dynamic state
-        self.current_means_split_across_hour_seconds = {}
-        for s in range(self.discretion_s):
-            self.current_means_split_across_hour_seconds[s] = 0
+        self.current_means_split_across_seconds = {}
         self.current_second_leftover_reqs = {}
         for req_type, _ in self.reqs_types_ratios.items():
             self.current_second_leftover_reqs[req_type] = -1
@@ -169,44 +160,47 @@ class RegionalWorkloadModel:
             for ms_bucket_id in range(pd.Timedelta(1000, unit = 'ms') // self.simulation_step):
                 ms_division[ms_bucket_id] = 0
             self.current_req_split_across_simulation_steps[req_type] = ms_division
-        self.current_hour = -1
-        self.cur_second_in_hour = -1
-        self.workload = {}
+
+        self.current_month = -1
+        self.current_time_unit = -1
+        self.cur_second_in_time_unit = -1
+        self.load = {}
 
     def generate_requests(self,
                           timestamp : pd.Timestamp):
         gen_reqs = []
+        month = 0
+        if timestamp.month in self.monthly_vals:
+            month = timestamp.month
 
-        # Check if the split of the seasonal workload across the seconds of the hour is available
-        if not timestamp.hour == self.current_hour:
+        time_units_per_day = len(self.monthly_vals[month][timestamp.weekday()])
+        seconds_per_time_unit = self.__class__.SECONDS_IN_DAY // time_units_per_day
+        ts_in_seconds = int(timestamp.timestamp())
+        time_unit = int((ts_in_seconds % self.__class__.SECONDS_IN_DAY) // seconds_per_time_unit)
+
+        # Check if the split of the seasonal load across the seconds is available
+        if month != self.current_month and time_unit != self.current_time_unit:
             # Generate the split if not available
-            self.current_hour = timestamp.hour
+            self.current_month = month
+            self.current_time_unit = time_unit
 
-            if len(self.monthly_vals) > 0:
-                month_id = 0
-                if timestamp.month in self.monthly_vals:
-                    month_id = timestamp.month
+            for s in range(seconds_per_time_unit):
+                self.current_means_split_across_seconds[s] = 0
 
-                # TODO: currently only supported per hour vals
-                avg_reqs_val = self.monthly_vals[month_id][timestamp.weekday()][timestamp.hour]
-                if not self.discretion_s == 3600:
-                    raise ValueError('Currently, only hourly discretion is supported for the requests generation.')
-                else:
-                    for s in range(self.discretion_s):
-                        self.current_means_split_across_hour_seconds[s] = 0
+            avg_reqs_val = self.monthly_vals[month][timestamp.weekday()][time_unit]
 
-                    for _ in range(avg_reqs_val):
-                        hour_sec_picked = np.random.randint(self.discretion_s)
-                        self.current_means_split_across_hour_seconds[hour_sec_picked] += 1
+            for _ in range(avg_reqs_val):
+                sec_picked = np.random.randint(seconds_per_time_unit)
+                self.current_means_split_across_seconds[sec_picked] += 1
 
         # Generating initial number of requests for the current second
-        cur_second_in_hour = timestamp.minute * 60 + timestamp.second
-        avg_param = self.current_means_split_across_hour_seconds[cur_second_in_hour]
+        second_in_time_unit = ts_in_seconds % seconds_per_time_unit
+        avg_param = self.current_means_split_across_seconds[second_in_time_unit]
 
-        if not self.cur_second_in_hour == cur_second_in_hour:
+        if self.cur_second_in_time_unit != second_in_time_unit:
             for key, _ in self.current_second_leftover_reqs.items():
                 self.current_second_leftover_reqs[key] = -1
-            self.cur_second_in_hour = cur_second_in_hour
+            self.cur_second_in_time_unit = second_in_time_unit
 
         for req_type, ratio in self.reqs_types_ratios.items():
             if self.current_second_leftover_reqs[req_type] < 0:
@@ -231,14 +225,13 @@ class RegionalWorkloadModel:
             req_types_reqs_num = self.current_req_split_across_simulation_steps[req_type][ms_bucket_picked]
 
             for i in range(req_types_reqs_num):
-                req = Request(self.region_name,
-                              req_type)
+                req = Request(self.region_name, req_type)
                 gen_reqs.append(req)
                 self.current_req_split_across_simulation_steps[req_type][ms_bucket_picked] -= 1
 
-            if req_type in self.workload:
-                self.workload[req_type].append((timestamp, req_types_reqs_num))
+            if req_type in self.load:
+                self.load[req_type].append((timestamp, req_types_reqs_num))
             else:
-                self.workload[req_type] = [(timestamp, req_types_reqs_num)]
+                self.load[req_type] = [(timestamp, req_types_reqs_num)]
 
         return gen_reqs

@@ -4,7 +4,6 @@
 			"region_name": "eu",
 			"seasonal_pattern": {
 				"type": "values",
-				"discretion_s": 3600,
 				"params": [
 					{
 						"month": "all",
@@ -66,24 +65,28 @@
 					}
 				]
 			},
-			"workloads_configs": [{
+			"load_configs": [{
 					"request_type": "auth",
-					"workload_config": {
+					"load_config": {
 						"ratio": 0.8,
 						"sliced_distribution": {
 							"type": "normal",
-							"params": [20, 1]
+							"params": {
+								"mu": 20,
+								"sigma": 1}
 						}
 
 					}
 				},
 				{
 					"request_type": "buy",
-					"workload_config": {
+					"load_config": {
 						"ratio": 0.2,
 						"sliced_distribution": {
 							"type": "normal",
-							"params": [1, 1]
+							"params": {
+								"mu": 1,
+								"sigma": 1}
 						}
 					}
 				}
