@@ -32,6 +32,7 @@ class Request:
         self.network_time = pd.Timedelta(0, unit = 'ms')
         self.buffer_time = {}
 
+        self.destination_service = None
         self.upstream = False
         self.replies_expected = 1 # to implement the fan-in on the level of service
 

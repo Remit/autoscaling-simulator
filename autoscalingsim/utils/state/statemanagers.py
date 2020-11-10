@@ -99,6 +99,8 @@ class ScalingManager(StateManager):
         for region_name, regional_container_groups in scaling_infos.items():
             for container_group in regional_container_groups:
 
+                # TODO: make shared placements, by moving the container group
+                # directly into the placement
                 scaling_aspects = container_group.extract_scaling_aspects()
                 for entity_name, aspects in scaling_aspects.items():
                     self.update_placement(entity_name,

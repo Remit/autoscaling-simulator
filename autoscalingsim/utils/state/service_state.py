@@ -200,21 +200,21 @@ class ServiceState:
                     if not req is None:
                         cap_taken = self.placed_on_node.resource_requirements_to_capacity(self.request_processing_infos[req.request_type].resource_requirements)
                         if not (total_capacity_taken + cap_taken).is_exhausted():
-                            req = self.downstream_buf.fan_in(req)
+                            req = self.downstream_buf.fan_in()
                             self.processor.start_processing(req)
                         else:
-                            self.downstream_buf.shift()
+                            self.downstream_buf.shuffle()
 
                         total_capacity_taken = total_capacity_taken + cap_taken
 
-                    req = self.upstream_buf.attempt_pop()
+                    req = self.upstream_buf.attempt_take()
                     if not req is None:
                         cap_taken = self.placed_on_node.resource_requirements_to_capacity(self.request_processing_infos[req.request_type].resource_requirements)
                         if not (total_capacity_taken + cap_taken).is_exhausted():
-                            req = self.upstream_buf.pop()
+                            req = self.upstream_buf.take()
                             self.processor.start_processing(req)
                         else:
-                            self.upstream_buf.shift()
+                            self.upstream_buf.shuffle()
 
                         total_capacity_taken = total_capacity_taken + cap_taken
 
