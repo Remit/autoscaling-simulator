@@ -39,19 +39,18 @@ class NodesUsageLineGraph:
             fig.add_subplot(111, frameon = False)
             plt.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
 
+            max_desired_count = 1
             for node_type in node_types:
 
                 desired_ts = desired_node_count[node_type]['timestamps']
                 desired_count = desired_node_count[node_type]['count']
+                max_desired_count = max(max_desired_count, max(desired_count))
 
                 actual_ts = []
                 actual_count = []
                 if node_type in actual_node_count:
                     actual_ts = actual_node_count[node_type]['timestamps']
                     actual_count = actual_node_count[node_type]['count']
-
-                #desired_ts_time = [datetime.fromtimestamp(desired_ts_el // 1000) for desired_ts_el in desired_ts]
-                #actual_ts_time = [datetime.fromtimestamp(actual_ts_el // 1000) for actual_ts_el in actual_ts]
 
                 df_desired = pd.DataFrame(data = {'time': desired_ts,
                                                   'nodes': desired_count})
@@ -64,16 +63,21 @@ class NodesUsageLineGraph:
                 _ = axs.plot(df_desired, label = "Desired count")
                 _ = axs.plot(df_actual, label = "Actual count")
 
-                fig.canvas.draw()
-                axs.set_xticklabels([txt.get_text() for txt in axs.get_xticklabels()], rotation = 70)
+                #fig.canvas.draw()
+                #axs.set_xticklabels([txt.get_text() for txt in axs.get_xticklabels()], rotation = 70)
 
-            plt.ylabel('Nodes')
-            axs.legend(loc = 'upper right', bbox_to_anchor=(0.9, -0.1), ncol = 2,
-                       borderaxespad = 4.0)
+            axs.set_ylabel('Node count')
+            axs.set_ylim(top = math.ceil(1.2 * max_desired_count))
+
+            handles, labels = axs.get_legend_handles_labels()
+            legend = axs.legend(handles, labels, loc = 'upper center', ncol = 2)
+
+            fig.canvas.draw()
+            axs.set_xticklabels([txt.get_text() for txt in axs.get_xticklabels()], rotation = 70)
 
             if not figures_dir is None:
                 figure_path = os.path.join(figures_dir, plotting_constants.filename_format.format(region_name, cls.FILENAME))
-                plt.savefig(figure_path, dpi = plotting_constants.PUBLISHING_DPI)
+                plt.savefig(figure_path, dpi = plotting_constants.PUBLISHING_DPI, bbox_inches='tight')
             else:
                 plt.suptitle(f'Desired and actual number of nodes per node type in region {region_name}', y = 1.05)
                 plt.show()

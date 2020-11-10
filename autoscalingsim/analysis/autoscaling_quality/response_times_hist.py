@@ -55,7 +55,7 @@ class ResponseTimesHistogram:
 
             if not figures_dir is None:
                 figure_path = os.path.join(figures_dir, plotting_constants.filename_format.format(region_name, cls.FILENAME))
-                plt.savefig(figure_path, dpi = plotting_constants.PUBLISHING_DPI)
+                plt.savefig(figure_path, dpi = plotting_constants.PUBLISHING_DPI, bbox_inches='tight')
             else:
                 plt.suptitle(f'Distribution of requests by response time in region {region_name}', y = 1.05)
                 plt.show()

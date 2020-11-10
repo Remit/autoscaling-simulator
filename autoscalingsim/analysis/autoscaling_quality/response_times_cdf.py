@@ -57,7 +57,7 @@ class ResponseTimesCDF:
 
             if not figures_dir is None:
                 figure_path = os.path.join(figures_dir, plotting_constants.filename_format.format(region_name, cls.FILENAME))
-                plt.savefig(figure_path, dpi = plotting_constants.PUBLISHING_DPI)
+                plt.savefig(figure_path, dpi = plotting_constants.PUBLISHING_DPI, bbox_inches='tight')
             else:
                 plt.title(f'CDF of requests by response time in region {region_name}')
                 plt.show()
