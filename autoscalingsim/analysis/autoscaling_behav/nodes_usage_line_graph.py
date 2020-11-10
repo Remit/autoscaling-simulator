@@ -73,7 +73,7 @@ class NodesUsageLineGraph:
 
             if not figures_dir is None:
                 figure_path = os.path.join(figures_dir, plotting_constants.filename_format.format(region_name, cls.FILENAME))
-                plt.savefig(figure_path)
+                plt.savefig(figure_path, dpi = plotting_constants.PUBLISHING_DPI)
             else:
                 plt.suptitle(f'Desired and actual number of nodes per node type in region {region_name}', y = 1.05)
                 plt.show()

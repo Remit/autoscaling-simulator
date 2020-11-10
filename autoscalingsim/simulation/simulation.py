@@ -76,6 +76,7 @@ class Simulation:
         # Static state
         self.load_model = load_model
         self.application_model = application_model
+        self.simulation_start = simulation_start
         self.simulation_end = simulation_start + pd.Timedelta(time_to_simulate_days, unit = 'd')
         self.simulation_step = simulation_step
         self.stat_updates_every_round = stat_updates_every_round

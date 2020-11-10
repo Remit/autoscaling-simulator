@@ -28,8 +28,12 @@ class LoadStatsRegional:
         # Time spent waiting in the buffers
         if len(req.buffer_time) > 0:
             if not req.request_type in self.buffer_times_by_request:
-                self.buffer_times_by_request[req.request_type] = []
-            self.buffer_times_by_request[req.request_type].append(req.buffer_time.microseconds / 1000)
+                self.buffer_times_by_request[req.request_type] = {}
+
+            for service_name, buffer_time_val in req.buffer_time.items():
+                if not service_name in self.buffer_times_by_request[req.request_type]:
+                    self.buffer_times_by_request[req.request_type][service_name] = []
+                self.buffer_times_by_request[req.request_type][service_name].append(buffer_time_val.microseconds / 1000)
 
 class LoadStats:
 

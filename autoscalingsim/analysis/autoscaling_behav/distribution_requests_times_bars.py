@@ -71,7 +71,7 @@ class DistributionRequestsTimesBarchart:
 
             if not figures_dir is None:
                 figure_path = os.path.join(figures_dir, plotting_constants.filename_format.format(region_name, cls.FILENAME))
-                plt.savefig(figure_path)
+                plt.savefig(figure_path, dpi = plotting_constants.PUBLISHING_DPI)
             else:
                 plt.suptitle(f'Distribution of the request time in the application,\
                 \naggregated with the {aggregation_fn.__name__} function in region {region_name}')

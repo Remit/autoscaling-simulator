@@ -219,22 +219,27 @@ class PlatformModel:
 
 
     def compute_desired_node_count(self,
+                                   simulation_start : pd.Timestamp,
                                    simulation_step : pd.Timedelta,
                                    simulation_end : pd.Timestamp):
 
-        return self._compute_usage(simulation_step,
+        return self._compute_usage(simulation_start,
+                                   simulation_step,
                                    simulation_end,
                                    True)
 
     def compute_actual_node_count(self,
+                                  simulation_start : pd.Timestamp,
                                   simulation_step : pd.Timedelta,
                                   simulation_end : pd.Timestamp):
 
-        return self._compute_usage(simulation_step,
+        return self._compute_usage(simulation_start,
+                                   simulation_step,
                                    simulation_end,
                                    False)
 
     def _compute_usage(self,
+                       simulation_start : pd.Timestamp,
                        simulation_step : pd.Timedelta,
                        simulation_end : pd.Timestamp,
                        in_change : bool):
@@ -285,5 +290,19 @@ class PlatformModel:
                         joint_node_count[region_name][node_type]['count'].append(node_count)
 
                 timestamp += simulation_step
+
+        # Adjusting the start of the intervals to be zeros since we do not have
+        # the information on possible node types before these nodes appear
+        for region_name in joint_node_count:
+            for node_type in joint_node_count[region_name]:
+                cur_start_timestamp = simulation_start + simulation_step
+                if len(joint_node_count[region_name][node_type]['timestamps']) > 0:
+                    cur_start_timestamp = joint_node_count[region_name][node_type]['timestamps'][0]
+                timestamp = cur_start_timestamp - simulation_step
+
+                while timestamp >= simulation_start:
+                    joint_node_count[region_name][node_type]['timestamps'].insert(0, timestamp)
+                    joint_node_count[region_name][node_type]['count'].insert(0, 0)
+                    timestamp -= simulation_step
 
         return joint_node_count
