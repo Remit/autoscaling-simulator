@@ -1,5 +1,5 @@
 import os
-import numpy as np
+import math
 
 from matplotlib import pyplot as plt
 
@@ -22,13 +22,13 @@ class ResponseTimesHistogram:
         for region_name, response_times_per_request_type in response_times_regionalized.items():
             plt.figure()
             max_response_time = max([max(response_times_of_req) for response_times_of_req in response_times_per_request_type.values()])
-            bins_cnt = np.ceil(max_response_time / bins_size_ms)
+            bins_cnt = math.ceil(max_response_time / bins_size_ms)
 
             plots_count = len(response_times_per_request_type)
             rows_cnt = 1
             cols_cnt = plots_count
             if plots_count > plotting_constants.MAX_PLOTS_CNT_ROW:
-                rows_cnt = np.ceil(plots_count / plotting_constants.MAX_PLOTS_CNT_ROW)
+                rows_cnt = math.ceil(plots_count / plotting_constants.MAX_PLOTS_CNT_ROW)
 
             fig, axs = plt.subplots(rows_cnt, cols_cnt,
                                     sharey = True, tight_layout = True)

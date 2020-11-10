@@ -23,10 +23,10 @@ class ResponseTimesCDF:
         """
 
         for region_name, response_times_per_request_type in response_times_regionalized.items():
+            simulation_step_ms = simulation_step.microseconds // 1000
             plt.figure()
-            simulation_step_ms = int(simulation_step.microseconds / 1000)
             max_response_time = max([max(response_times_of_req) for response_times_of_req in response_times_per_request_type.values()])
-            cdf_xlim = max_response_time + 1 * simulation_step_ms + 1
+            cdf_xlim = int(max_response_time + simulation_step_ms)
             x_axis = range(0, cdf_xlim, simulation_step_ms)
 
             cdfs_per_req_type = {}
@@ -34,7 +34,7 @@ class ResponseTimesCDF:
                 reqs_count_binned = [0] * len(x_axis)
 
                 for response_time in response_times:
-                    reqs_count_binned[response_time // simulation_step] += 1
+                    reqs_count_binned[int(response_time // simulation_step_ms)] += 1
 
                 cdfs_per_req_type[req_type] = np.cumsum(reqs_count_binned) / sum(reqs_count_binned)
 

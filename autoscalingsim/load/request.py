@@ -50,7 +50,7 @@ class RequestProcessingInfo:
     def __init__(self,
                  request_type : str,
                  entry_service : str,
-                 processing_times : {},
+                 processing_times : dict,
                  timeout : pd.Timedelta,
                  request_size_b : int,
                  response_size_b : int,
@@ -59,7 +59,9 @@ class RequestProcessingInfo:
 
         self.request_type = request_type
         self.entry_service = entry_service
-        self.processing_times = processing_times
+        self.processing_times = {}
+        for req_type, processing_times_lst in processing_times.items():
+            self.processing_times[req_type] = [pd.Timedelta(processing_time_raw_val, unit = 'ms') for processing_time_raw_val in processing_times_lst]
         self.timeout = timeout
         self.request_size_b = request_size_b
         self.response_size_b = response_size_b

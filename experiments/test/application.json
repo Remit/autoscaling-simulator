@@ -14,7 +14,7 @@
 				}
 			],
 			"system_requirements": {
-				"vCPU": 2,
+				"vCPU": 1,
 		    "memory": 2000,
 		    "disk": 0
 			},
@@ -47,7 +47,7 @@
 				}
 			],
 			"system_requirements": {
-				"vCPU": 4,
+				"vCPU": 1,
 		    "memory": 2000,
 		    "disk": 0
 			},
@@ -80,7 +80,7 @@
 				}
 			],
 			"system_requirements": {
-				"vCPU": 4,
+				"vCPU": 1,
 		    "memory": 4000,
 		    "disk": 1024
 			},
@@ -113,12 +113,12 @@
 				},
 				{
 					"service": "appserver",
-					"upstream": 50,
-					"downstream": 20
+					"upstream": 10,
+					"downstream": 0
 				},
 				{
 					"service": "db",
-					"upstream": 100,
+					"upstream": 10,
 					"downstream": 0
 				}
 			],
@@ -143,12 +143,12 @@
 				},
 				{
 					"service": "appserver",
-					"upstream": 100,
-					"downstream": 30
+					"upstream": 10,
+					"downstream": 0
 				},
 				{
 					"service": "db",
-					"upstream": 110,
+					"upstream": 10,
 					"downstream": 0
 				}
 			],

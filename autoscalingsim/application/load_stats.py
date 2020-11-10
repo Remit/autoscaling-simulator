@@ -18,18 +18,18 @@ class LoadStatsRegional:
         # Response received by the user
         if not req.request_type in self.response_times_by_request:
             self.response_times_by_request[req.request_type] = []
-        self.response_times_by_request[req.request_type].append(req.cumulative_time)
+        self.response_times_by_request[req.request_type].append(req.cumulative_time.microseconds / 1000)
 
         # Time spent transferring between the nodes
         if not req.request_type in self.network_times_by_request:
             self.network_times_by_request[req.request_type] = []
-        self.network_times_by_request[req.request_type].append(req.network_time)
+        self.network_times_by_request[req.request_type].append(req.network_time.microseconds / 1000)
 
         # Time spent waiting in the buffers
         if len(req.buffer_time) > 0:
             if not req.request_type in self.buffer_times_by_request:
                 self.buffer_times_by_request[req.request_type] = []
-            self.buffer_times_by_request[req.request_type].append(req.buffer_time)
+            self.buffer_times_by_request[req.request_type].append(req.buffer_time.microseconds / 1000)
 
 class LoadStats:
 

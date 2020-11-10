@@ -1,5 +1,5 @@
 import os
-import numpy as np
+import math
 import matplotlib.gridspec as gridspec
 
 from matplotlib import pyplot as plt
@@ -60,13 +60,13 @@ class WaitingServiceBuffersHistogram:
                         buffers_waiting_times[service_name] = [buffer_waiting_time_for_service]
 
                 max_waiting_time = max([max(sublist) for sublist in list(buffers_waiting_times.values())])
-                bins_cnt = np.ceil(max_waiting_time / bins_size_ms)
+                bins_cnt = math.ceil(max_waiting_time / bins_size_ms)
 
                 plots_count = len(buffers_waiting_times)
                 rows_cnt = 1
                 cols_cnt = plots_count
                 if plots_count > plotting_constants.MAX_PLOTS_CNT_ROW:
-                    rows_cnt = np.ceil(plots_count / plotting_constants.MAX_PLOTS_CNT_ROW)
+                    rows_cnt = math.ceil(plots_count / plotting_constants.MAX_PLOTS_CNT_ROW)
 
                 # Plotting for req type
                 inner = gridspec.GridSpecFromSubplotSpec(rows_cnt,

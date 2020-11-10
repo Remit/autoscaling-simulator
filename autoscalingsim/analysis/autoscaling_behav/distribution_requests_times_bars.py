@@ -43,11 +43,13 @@ class DistributionRequestsTimesBarchart:
                 req_type_network_times = [0.0]
                 if req_type in network_times_by_request:
                     req_type_network_times = network_times_by_request[req_type]
+
                 aggregated_network_time_per_req_type.append(aggregation_fn(req_type_network_times))
 
                 req_type_buf_waiting_times = [0.0]
                 if req_type in buffer_times_by_request:
                     req_type_buf_waiting_times = [list(buf_wait_time.values())[0] for buf_wait_time in buffer_times_by_request[req_type]]
+
                 aggregated_buf_waiting_time_per_req_type.append(aggregation_fn(req_type_buf_waiting_times))
 
                 agg_proc_time = aggregation_fn(req_type_response_times) - (aggregated_buf_waiting_time_per_req_type[-1] + aggregated_network_time_per_req_type[-1])

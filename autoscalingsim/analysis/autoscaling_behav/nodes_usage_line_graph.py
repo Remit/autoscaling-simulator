@@ -1,5 +1,5 @@
 import os
-import numpy as np
+import math
 import pandas as pd
 
 from matplotlib import pyplot as plt
@@ -30,7 +30,7 @@ class NodesUsageLineGraph:
             rows_cnt = 1
             cols_cnt = plots_count
             if plots_count > plotting_constants.MAX_PLOTS_CNT_ROW:
-                rows_cnt = np.ceil(plots_count / plotting_constants.MAX_PLOTS_CNT_ROW)
+                rows_cnt = math.ceil(plots_count / plotting_constants.MAX_PLOTS_CNT_ROW)
 
             fig, axs = plt.subplots(rows_cnt, cols_cnt,
                                     sharey = True, tight_layout = True)

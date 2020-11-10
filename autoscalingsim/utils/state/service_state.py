@@ -39,9 +39,8 @@ class RequestsProcessor:
                 if new_time_left > pd.Timedelta(0, unit = 'ms'):
                     req.processing_time_left = new_time_left
                     new_in_processing_simultaneous.append(req)
-                    self.stat[req.request_type] = self.stat.get(req.request_type, 0) + 1
                 else:
-                    req.processing_time_left = 0
+                    req.processing_time_left = pd.Timedelta(0, unit = 'ms')
                     self.stat[req.request_type] = self.stat.get(req.request_type, 0) - 1
                     self.out.append(req)
 
@@ -53,6 +52,7 @@ class RequestsProcessor:
     def start_processing(self,
                          req : Request):
 
+        self.stat[req.request_type] = self.stat.get(req.request_type, 0) + 1
         self.in_processing_simultaneous.append(req)
 
     def requests_in_processing(self):
@@ -195,7 +195,6 @@ class ServiceState:
                 # Assumption: first we try to process the downstream reqs to
                 # provide the response faster, but overall it is application-dependent
                 while ((self.downstream_buf.size() > 0) or (self.upstream_buf.size() > 0)) and not total_capacity_taken.is_exhausted():
-
                     req = self.downstream_buf.attempt_fan_in()
                     if not req is None:
                         cap_taken = self.placed_on_node.resource_requirements_to_capacity(self.request_processing_infos[req.request_type].resource_requirements)

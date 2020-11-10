@@ -216,7 +216,7 @@ class ApplicationModel:
         if len(self.new_requests) > 0:
             for req in self.new_requests:
                 entry_service = self.reqs_processing_infos[req.request_type].entry_service
-                req.processing_left = self.reqs_processing_infos[req.request_type].processing_times[entry_service][1]
+                req.processing_time_left = self.reqs_processing_infos[req.request_type].processing_times[entry_service][1]
                 self.services[entry_service].add_request(req)
 
             self.new_requests = []
@@ -225,9 +225,9 @@ class ApplicationModel:
         # is done in the app logic since it knows the structure and times
         for service_name, service in self.services.items():
             # Simulation step in service
-            service.step(cur_timestamp,
-                         simulation_step)
+            service.step(cur_timestamp, simulation_step)
 
+        for service_name, service in self.services.items():
             processed_requests = service.get_processed()
             while len(processed_requests) > 0:
                 req = processed_requests.pop()
@@ -235,10 +235,11 @@ class ApplicationModel:
 
                 if not req.upstream:
                     next_services_names = self.structure[service_name]['next']
+
                     if not next_services_names is None:
                         for next_service_name in next_services_names:
                             if next_service_name in req_info.processing_times:
-                                req.processing_left = req_info.processing_times[next_service_name][0]
+                                req.processing_time_left = req_info.processing_times[next_service_name][0]
                                 self.services[next_service_name].add_request(req)
                     else:
                         # Sending response
@@ -255,7 +256,7 @@ class ApplicationModel:
 
                         for prev_service_name in prev_services_names:
                             if prev_service_name in req_info.processing_times:
-                                req.processing_left = req_info.processing_times[prev_service_name][1]
+                                req.processing_time_left = req_info.processing_times[prev_service_name][1]
                                 req.replies_expected = replies_expected
                                 self.services[prev_service_name].add_request(req)
                     else:
