@@ -8,9 +8,10 @@ from ..requirements import ResourceRequirements
 
 from ...infrastructure_platform.utilization import ServiceUtilization
 from ...infrastructure_platform.node import NodeInfo
+from ...infrastructure_platform.link import NodeGroupLink
 from ...infrastructure_platform.system_capacity import SystemCapacity
 from ...load.request import Request
-from ...application.linkbuffer import LinkBuffer
+from ...application.requests_buffer import RequestsBuffer
 
 class RequestsProcessor:
 
@@ -98,10 +99,8 @@ class ServiceState:
                                               init_keepalive,
                                               resource_requirements.tracked_resources())
 
-        self.upstream_buf = LinkBuffer(buffer_capacity_by_request_type,
-                                       request_processing_infos)
-        self.downstream_buf = LinkBuffer(buffer_capacity_by_request_type,
-                                         request_processing_infos)
+        self.upstream_buf = RequestsBuffer(buffer_capacity_by_request_type)
+        self.downstream_buf = RequestsBuffer(buffer_capacity_by_request_type)
 
         self.placed_on_node = None
         self.node_count = None
@@ -133,11 +132,13 @@ class ServiceState:
         cap_taken = self.placed_on_node.resource_requirements_to_capacity(self.entity_group.get_resource_requirements())
         self.system_capacity_reserved = cap_taken * self.node_count
 
-        self.upstream_buf.update_settings(self.placed_on_node.latency,
-                                          self.placed_on_node.network_bandwidth_MBps)
+        self.upstream_buf.set_link(NodeGroupLink(self.request_processing_infos,
+                                                 self.placed_on_node.latency,
+                                                 self.placed_on_node.network_bandwidth_MBps * self.node_count))
 
-        self.downstream_buf.update_settings(self.placed_on_node.latency,
-                                            self.placed_on_node.network_bandwidth_MBps)
+        self.downstream_buf.set_link(NodeGroupLink(self.request_processing_infos,
+                                                   self.placed_on_node.latency,
+                                                   self.placed_on_node.network_bandwidth_MBps * self.node_count))
 
     def get_placement_parameter(self,
                                 parameter : str):
@@ -181,11 +182,10 @@ class ServiceState:
 
         time_budget = simulation_step
 
-        # Propagating requests in the link
-        self.downstream_buf.step(simulation_step)
-        self.upstream_buf.step(simulation_step)
-
         if not self.placed_on_node is None:
+            self.downstream_buf.step(simulation_step)
+            self.upstream_buf.step(simulation_step)
+
             while(time_budget > pd.Timedelta(0, unit = 'ms')):
 
                 time_budget = self.processor.step(time_budget)
@@ -194,6 +194,7 @@ class ServiceState:
 
                 # Assumption: first we try to process the downstream reqs to
                 # provide the response faster, but overall it is application-dependent
+
                 while ((self.downstream_buf.size() > 0) or (self.upstream_buf.size() > 0)) and not total_capacity_taken.is_exhausted():
                     req = self.downstream_buf.attempt_fan_in()
                     if not req is None:
@@ -222,12 +223,11 @@ class ServiceState:
                 if (self.downstream_buf.size() == 0) and (self.upstream_buf.size() == 0):
                     time_budget -= simulation_step
 
-        # Post-step maintenance actions
-        # Increase the cumulative time for all the reqs left in the buffers waiting
-        self.upstream_buf.add_cumulative_time(simulation_step, self.service_name)
-        self.downstream_buf.add_cumulative_time(simulation_step, self.service_name)
-        # Update resource utilization at the end of the step
-        if not self.placed_on_node is None:
+            # Post-step maintenance actions
+            # Increase the cumulative time for all the reqs left in the buffers waiting
+            self.upstream_buf.add_cumulative_time(simulation_step, self.service_name)
+            self.downstream_buf.add_cumulative_time(simulation_step, self.service_name)
+            # Update resource utilization at the end of the step
             self.utilization.update_with_capacity(cur_timestamp,
                                                   self._compute_capacity_taken_by_requests())
 

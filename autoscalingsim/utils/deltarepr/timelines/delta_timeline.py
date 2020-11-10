@@ -74,6 +74,8 @@ class DeltaTimeline:
         Returns the new current state with all the updates taken into account.
         """
 
+        updates_applied = False
+
         if borderline_ts_for_updates > self.time_of_last_state_update:
 
             # Enforcing deltas if needed and updating the timeline with them
@@ -94,6 +96,7 @@ class DeltaTimeline:
             for timestamp, state_deltas in timeline_to_consider.items():
                 for state_delta in state_deltas:
                     self.actual_state += state_delta
+                    updates_applied = True
                     #for grp in self.actual_state.regions['eu'].homogeneous_groups:
                     #    print(list(grp.entities_state.entities_groups.keys()))
                     #    for entity_group in grp.entities_state.entities_groups.values():
@@ -103,5 +106,7 @@ class DeltaTimeline:
 
             self.time_of_last_state_update = borderline_ts_for_updates
 
-
-        return self.actual_state
+        if updates_applied:
+            return self.actual_state
+        else:
+            return None

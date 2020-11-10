@@ -229,6 +229,7 @@ class ApplicationModel:
 
         for service_name, service in self.services.items():
             processed_requests = service.get_processed()
+
             while len(processed_requests) > 0:
                 req = processed_requests.pop()
                 req_info = self.reqs_processing_infos[req.request_type]

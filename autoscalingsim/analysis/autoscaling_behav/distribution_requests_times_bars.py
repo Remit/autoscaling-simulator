@@ -48,7 +48,9 @@ class DistributionRequestsTimesBarchart:
 
                 req_type_buf_waiting_times = [0.0]
                 if req_type in buffer_times_by_request:
-                    req_type_buf_waiting_times = [list(buf_wait_time.values())[0] for buf_wait_time in buffer_times_by_request[req_type]]
+                    req_type_buf_waiting_times = []
+                    for buf_wait_time_per_service in buffer_times_by_request[req_type].values():
+                        req_type_buf_waiting_times.extend(list(buf_wait_time_per_service))
 
                 aggregated_buf_waiting_time_per_req_type.append(aggregation_fn(req_type_buf_waiting_times))
 

@@ -6,11 +6,11 @@
 			"buffer_capacity_by_request_type": [
 				{
 					"request_type": "auth",
-					"capacity": 20
+					"capacity": 5
 				},
 				{
 					"request_type": "buy",
-					"capacity": 10
+					"capacity": 1
 				}
 			],
 			"system_requirements": {

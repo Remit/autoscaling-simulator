@@ -1,8 +1,6 @@
 import numpy as np
 import pandas as pd
 
-from .linkbuffer import LinkBuffer
-
 from ..utils.requirements import ResourceRequirements
 from ..utils.state.service_state import ServiceStateRegionalized
 from ..utils.state.statemanagers import StateReader

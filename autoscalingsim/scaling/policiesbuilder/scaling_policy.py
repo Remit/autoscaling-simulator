@@ -118,7 +118,7 @@ class ScalingPolicy:
         # implementing the scaling decision which is e.g. in desired state, not taking it
 
         actual_state = self.platform_model.step(cur_timestamp)
-        if not self.scaling_manager is None:
+        if (not self.scaling_manager is None) and (not actual_state is None):
             self.scaling_manager.set_aspects_values(actual_state)
 
     def get_services_scaling_settings(self):
