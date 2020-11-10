@@ -3,16 +3,19 @@
 	"services": [
 		{
 			"name": "frontend",
-			"buffer_capacity_by_request_type": [
-				{
-					"request_type": "auth",
-					"capacity": 5
-				},
-				{
-					"request_type": "buy",
-					"capacity": 1
-				}
-			],
+			"buffers_config": {
+				"discipline": "FIFO",
+				"buffer_capacity_by_request_type": [
+					{
+						"request_type": "auth",
+						"capacity": 5
+					},
+					{
+						"request_type": "buy",
+						"capacity": 1
+					}
+				]
+			},
 			"system_requirements": {
 				"vCPU": 1,
 		    "memory": 2000,
@@ -36,16 +39,19 @@
 		},
 		{
 			"name": "appserver",
-			"buffer_capacity_by_request_type": [
-				{
-					"request_type": "auth",
-					"capacity": 20
-				},
-				{
-					"request_type": "buy",
-					"capacity": 10
-				}
-			],
+			"buffers_config": {
+				"discipline": "FIFO",
+				"buffer_capacity_by_request_type": [
+					{
+						"request_type": "auth",
+						"capacity": 20
+					},
+					{
+						"request_type": "buy",
+						"capacity": 10
+					}
+				]
+			},
 			"system_requirements": {
 				"vCPU": 1,
 		    "memory": 2000,
@@ -69,16 +75,19 @@
 		},
 		{
 			"name": "db",
-			"buffer_capacity_by_request_type": [
-				{
-					"request_type": "auth",
-					"capacity": 10
-				},
-				{
-					"request_type": "buy",
-					"capacity": 5
-				}
-			],
+			"buffers_config": {
+				"discipline": "FIFO",
+				"buffer_capacity_by_request_type": [
+					{
+						"request_type": "auth",
+						"capacity": 10
+					},
+					{
+						"request_type": "buy",
+						"capacity": 5
+					}
+				]
+			},
 			"system_requirements": {
 				"vCPU": 1,
 		    "memory": 4000,

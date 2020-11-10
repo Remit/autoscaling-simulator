@@ -1,10 +1,12 @@
 import pandas as pd
+import operator
 
 from .state import ScaledEntityState
 from .entity_state.entity_group import EntityGroup
 from .entity_state.scaling_aspects import ScalingAspect
 
 from ..requirements import ResourceRequirements
+from ..error_check import ErrorChecker
 
 from ...infrastructure_platform.utilization import ServiceUtilization
 from ...infrastructure_platform.node import NodeInfo
@@ -85,7 +87,7 @@ class ServiceState:
                  averaging_interval : pd.Timedelta,
                  resource_requirements : ResourceRequirements,
                  request_processing_infos : dict,
-                 buffer_capacity_by_request_type : dict,
+                 buffers_config : dict,
                  init_keepalive : pd.Timedelta):
 
         self.service_name = service_name
@@ -99,8 +101,19 @@ class ServiceState:
                                               init_keepalive,
                                               resource_requirements.tracked_resources())
 
-        self.upstream_buf = RequestsBuffer(buffer_capacity_by_request_type)
-        self.downstream_buf = RequestsBuffer(buffer_capacity_by_request_type)
+        buffer_capacity_by_request_type = {}
+        buffer_capacity_by_request_type_raw = ErrorChecker.key_check_and_load('buffer_capacity_by_request_type', buffers_config, 'service', service_name)
+        for buffer_capacity_config in buffer_capacity_by_request_type_raw:
+            request_type = ErrorChecker.key_check_and_load('request_type', buffer_capacity_config, 'service', service_name)
+
+            capacity = ErrorChecker.key_check_and_load('capacity', buffer_capacity_config, 'service', service_name)
+            ErrorChecker.value_check('capacity', capacity, operator.gt, 0, [f'request_type {request_type}', f'service {service_name}'])
+
+            buffer_capacity_by_request_type[request_type] = capacity
+        queuing_discipline = ErrorChecker.key_check_and_load('discipline', buffers_config, 'service', service_name)
+
+        self.upstream_buf = RequestsBuffer(buffer_capacity_by_request_type, queuing_discipline)
+        self.downstream_buf = RequestsBuffer(buffer_capacity_by_request_type, queuing_discipline)
 
         self.placed_on_node = None
         self.node_count = None
@@ -263,7 +276,7 @@ class ServiceStateRegionalized(ScaledEntityState):
                  averaging_interval_ms,
                  resource_requirements : ResourceRequirements,
                  request_processing_infos : dict,
-                 buffer_capacity_by_request_type : dict,
+                 buffers_config : dict,
                  init_keepalive_ms = pd.Timedelta(-1, unit = 'ms')):
 
         self.region_states = {}
@@ -275,7 +288,7 @@ class ServiceStateRegionalized(ScaledEntityState):
                                                            averaging_interval_ms,
                                                            resource_requirements,
                                                            request_processing_infos,
-                                                           buffer_capacity_by_request_type,
+                                                           buffers_config,
                                                            init_keepalive_ms)
 
     def add_request(self,

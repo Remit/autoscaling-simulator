@@ -24,7 +24,7 @@ class Service(ScaledEntity):
                  init_timestamp : pd.Timestamp,
                  service_regions : list,
                  resource_requirements : ResourceRequirements,
-                 buffer_capacity_by_request_type : dict,
+                 buffers_config : dict,
                  request_processing_infos : dict,
                  scaling_setting_for_service : ScalingPolicyConfiguration,
                  state_reader : StateReader,
@@ -48,7 +48,7 @@ class Service(ScaledEntity):
                                               averaging_interval,
                                               resource_requirements,
                                               request_processing_infos,
-                                              buffer_capacity_by_request_type,
+                                              buffers_config,
                                               init_keepalive)
 
     def add_request(self,

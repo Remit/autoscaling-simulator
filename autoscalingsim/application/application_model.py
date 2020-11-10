@@ -118,18 +118,8 @@ class ApplicationModel:
                 for service_config in services_confs:
 
                     service_name = ErrorChecker.key_check_and_load('name', service_config, 'service')
-
-                    # By default treat the absence as unlimited buffers
-                    buffer_capacity_by_request_type = {}
-                    buffer_capacity_by_request_type_raw = ErrorChecker.key_check_and_load('buffer_capacity_by_request_type', service_config, 'service', service_name)
-                    for buffer_capacity_config in buffer_capacity_by_request_type_raw:
-                        request_type = ErrorChecker.key_check_and_load('request_type', buffer_capacity_config, 'service', service_name)
-
-                        capacity = ErrorChecker.key_check_and_load('capacity', buffer_capacity_config, 'service', service_name)
-                        ErrorChecker.value_check('capacity', capacity, operator.gt, 0, [f'request_type {request_type}', f'service {service_name}'])
-
-                        buffer_capacity_by_request_type[request_type] = capacity
-
+                    
+                    buffers_config = ErrorChecker.key_check_and_load('buffers_config', service_config, 'service', service_name)
                     system_requirements = ResourceRequirements(ErrorChecker.key_check_and_load('system_requirements', service_config, 'service', service_name))
                     entity_instance_requirements[service_name] = system_requirements
 
@@ -177,7 +167,7 @@ class ApplicationModel:
                                       starting_time,
                                       service_regions,
                                       system_requirements,
-                                      buffer_capacity_by_request_type,
+                                      buffers_config,
                                       self.reqs_processing_infos,
                                       service_scaling_settings,
                                       self.state_reader,
