@@ -2,8 +2,8 @@ from ..discipline import QueuingDiscipline
 
 from ....load.request import Request
 
-@QueuingDiscipline.register('FIFO')
-class FIFOQueue(QueuingDiscipline):
+@QueuingDiscipline.register('LIFO')
+class LIFOQueue(QueuingDiscipline):
 
     def insert(self,
                req : Request):
@@ -15,7 +15,7 @@ class FIFOQueue(QueuingDiscipline):
         """ Provides a copy of the earliest request in the queue """
 
         if len(self.requests) > 0:
-            return self.requests[0]
+            return self.requests[-1]
         else:
             return None
 
@@ -23,7 +23,7 @@ class FIFOQueue(QueuingDiscipline):
 
         req = None
         if len(self.requests) > 0:
-            req = self.requests.popleft()
+            req = self.requests.pop()
 
         return req
 
