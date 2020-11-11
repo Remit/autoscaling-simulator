@@ -1,6 +1,7 @@
 from .platform_state import PlatformState
 from .entity_state.entities_states_reg import EntitiesStatesRegionalized
 from .entity_state.scaling_aspects import ScalingAspect
+from .container_state.container_group import HomogeneousContainerGroup
 
 from ...infrastructure_platform.node import NodeInfo
 
@@ -105,8 +106,7 @@ class ScalingManager(StateManager):
                 for entity_name, aspects in scaling_aspects.items():
                     self.update_placement(entity_name,
                                           region_name,
-                                          container_group.container_info,
-                                          container_group.containers_count)
+                                          container_group)
 
                     for aspect in aspects.values():
                         self.set_aspect_value(entity_name,
@@ -116,8 +116,7 @@ class ScalingManager(StateManager):
     def update_placement(self,
                          entity_name : str,
                          region_name : str,
-                         node_info : NodeInfo,
-                         node_count : int):
+                         container_group : HomogeneousContainerGroup):
 
         """
         This method of the Scaling Manager is used by the Enforce step in the
@@ -128,9 +127,7 @@ class ScalingManager(StateManager):
         if not entity_name in self.entities:
             raise ValueError(f'An attempt to set the placement of {entity_name} that is unknown to {self.__class__.__name__}')
 
-        self.entities[entity_name].state.update_placement(region_name,
-                                                          node_info,
-                                                          node_count)
+        self.entities[entity_name].state.update_placement(region_name, container_group)
 
     def set_aspect_value(self,
                          entity_name : str,

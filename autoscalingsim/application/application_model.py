@@ -118,7 +118,7 @@ class ApplicationModel:
                 for service_config in services_confs:
 
                     service_name = ErrorChecker.key_check_and_load('name', service_config, 'service')
-                    
+
                     buffers_config = ErrorChecker.key_check_and_load('buffers_config', service_config, 'service', service_name)
                     system_requirements = ResourceRequirements(ErrorChecker.key_check_and_load('system_requirements', service_config, 'service', service_name))
                     entity_instance_requirements[service_name] = system_requirements
@@ -207,6 +207,7 @@ class ApplicationModel:
             for req in self.new_requests:
                 entry_service = self.reqs_processing_infos[req.request_type].entry_service
                 req.processing_time_left = self.reqs_processing_infos[req.request_type].processing_times[entry_service][1]
+                req.processing_service = entry_service
                 self.services[entry_service].add_request(req)
 
             self.new_requests = []
@@ -231,6 +232,7 @@ class ApplicationModel:
                         for next_service_name in next_services_names:
                             if next_service_name in req_info.processing_times:
                                 req.processing_time_left = req_info.processing_times[next_service_name][0]
+                                req.processing_service = next_service_name
                                 self.services[next_service_name].add_request(req)
                     else:
                         # Sending response
@@ -248,6 +250,7 @@ class ApplicationModel:
                         for prev_service_name in prev_services_names:
                             if prev_service_name in req_info.processing_times:
                                 req.processing_time_left = req_info.processing_times[prev_service_name][1]
+                                req.processing_service = prev_service_name
                                 req.replies_expected = replies_expected
                                 self.services[prev_service_name].add_request(req)
                     else:

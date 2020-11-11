@@ -4,6 +4,7 @@ import operator
 from .state import ScaledEntityState
 from .entity_state.entity_group import EntityGroup
 from .entity_state.scaling_aspects import ScalingAspect
+from .container_state.container_group import HomogeneousContainerGroup
 
 from ..requirements import ResourceRequirements
 from ..error_check import ErrorChecker
@@ -15,63 +16,43 @@ from ...infrastructure_platform.system_capacity import SystemCapacity
 from ...load.request import Request
 from ...application.requests_buffer import RequestsBuffer
 
-class RequestsProcessor:
+class Deployment:
 
-    """
-    Wraps the logic of requests processing for the given region.
-    """
+    def __init__(self,
+                 service_name : str,
+                 node_group : HomogeneousContainerGroup):
 
-    def __init__(self):
+        self.node_group = node_group
 
-        self.in_processing_simultaneous = []
-        self.out = []
-        self.stat = {}
+        deployed_service_count = self.node_group.entities_state.get_entity_count(service_name)
+        deployed_service_instance_resource_reqs = self.node_group.entities_state.get_entity_resource_requirements(service_name)
+        cap_taken = self.node_group.container_info.resource_requirements_to_capacity(deployed_service_instance_resource_reqs)
+        self.system_capacity_reserved = cap_taken * deployed_service_count
 
     def step(self,
              time_budget : pd.Timedelta):
 
-        if len(self.in_processing_simultaneous) > 0:
-            # Find minimal leftover duration, subtract it, and propagate the request
-            min_leftover_time = min([req.processing_time_left for req in self.in_processing_simultaneous])
-            min_time_to_subtract = min(min_leftover_time, time_budget)
-            new_in_processing_simultaneous = []
+        return self.node_group.step(time_budget)
 
-            for req in self.in_processing_simultaneous:
-                new_time_left = req.processing_time_left - min_time_to_subtract
-                req.cumulative_time += min_time_to_subtract
-                if new_time_left > pd.Timedelta(0, unit = 'ms'):
-                    req.processing_time_left = new_time_left
-                    new_in_processing_simultaneous.append(req)
-                else:
-                    req.processing_time_left = pd.Timedelta(0, unit = 'ms')
-                    self.stat[req.request_type] = self.stat.get(req.request_type, 0) - 1
-                    self.out.append(req)
+    def compute_capacity_taken_by_requests(self,
+                                           request_processing_infos : dict):
 
-            self.in_processing_simultaneous = new_in_processing_simultaneous
-            time_budget -= min_time_to_subtract
+        return self.node_group.compute_capacity_taken_by_requests(request_processing_infos)
 
-        return time_budget
+    def resource_requirements_to_capacity(self,
+                                          res_reqs : ResourceRequirements):
+
+        return self.node_group.resource_requirements_to_capacity(res_reqs)
 
     def start_processing(self,
                          req : Request):
 
-        self.stat[req.request_type] = self.stat.get(req.request_type, 0) + 1
-        self.in_processing_simultaneous.append(req)
+        self.node_group.start_processing(req)
 
-    def requests_in_processing(self):
+    def get_processed_for_service(self,
+                                  service_name : str):
 
-        return len(self.in_processing_simultaneous)
-
-    def get_processed(self):
-
-        processed = self.out.copy()
-        self.out = []
-        return processed
-
-    def get_in_processing_stat(self):
-
-        return self.stat
-
+        return self.node_group.get_processed_for_service(service_name)
 
 class ServiceState:
 
@@ -92,7 +73,6 @@ class ServiceState:
 
         self.service_name = service_name
         self.region_name = region_name
-        self.processor = RequestsProcessor()
         self.entity_group = EntityGroup(service_name,
                                         resource_requirements)
         self.request_processing_infos = request_processing_infos
@@ -115,9 +95,8 @@ class ServiceState:
         self.upstream_buf = RequestsBuffer(buffer_capacity_by_request_type, queuing_discipline)
         self.downstream_buf = RequestsBuffer(buffer_capacity_by_request_type, queuing_discipline)
 
-        self.placed_on_node = None
-        self.node_count = None
-        self.system_capacity_reserved = None
+        self.deployments = {} # Container groups that this service is currently deployed on
+        self.unschedulable = [] # Container gtoup IDs for groups that no new request should be scheduled on
 
     def get_resource_requirements(self):
 
@@ -134,24 +113,38 @@ class ServiceState:
         self.entity_group.update_aspect(aspect)
 
     def update_placement(self,
-                         node_info : NodeInfo,
-                         node_count : int):
+                         node_group : HomogeneousContainerGroup):
 
-        # TODO: distinguishing between nodes??
+        self.deployments[node_group.id] = Deployment(self.service_name, node_group)
 
-        self.placed_on_node = node_info
-        self.node_count = node_count
-
-        cap_taken = self.placed_on_node.resource_requirements_to_capacity(self.entity_group.get_resource_requirements())
-        self.system_capacity_reserved = cap_taken * self.node_count
-
+        # TODO: push into the deployment?
         self.upstream_buf.set_link(NodeGroupLink(self.request_processing_infos,
-                                                 self.placed_on_node.latency,
-                                                 self.placed_on_node.network_bandwidth_MBps * self.node_count))
+                                                 node_group.container_info.latency,
+                                                 node_group.container_info.network_bandwidth_MBps * node_group.containers_count))
 
         self.downstream_buf.set_link(NodeGroupLink(self.request_processing_infos,
-                                                   self.placed_on_node.latency,
-                                                   self.placed_on_node.network_bandwidth_MBps * self.node_count))
+                                                   node_group.container_info.latency,
+                                                   node_group.container_info.network_bandwidth_MBps * node_group.containers_count))
+
+    def prepare_group_for_removal(self,
+                                  container_group_id : int):
+
+        """
+        Adds the provided ID of the container group to the list of groups
+        that are soon to be removed. This should force the simulator
+        not to schedule any requests on such groups.
+        """
+
+        self.unschedulable.append(container_group_id)
+
+    def force_remove_group(self,
+                           container_group_id : int):
+
+        if container_group_id in self.to_be_removed:
+            self.unschedulable.remove(container_group_id)
+
+        if container_group_id in self.deployments:
+            del self.deployments[container_group_id]
 
     def get_placement_parameter(self,
                                 parameter : str):
@@ -179,7 +172,11 @@ class ServiceState:
 
     def get_processed(self):
 
-        return self.processor.get_processed()
+        processed_requests = []
+        for deployment in self.deployments.values():
+            processed_requests.extend(deployment.get_processed_for_service(self.service_name))
+
+        return processed_requests
 
     def add_request(self,
                     req : Request):
@@ -195,65 +192,55 @@ class ServiceState:
 
         time_budget = simulation_step
 
-        if not self.placed_on_node is None:
+        if len(self.deployments) > 0:
             self.downstream_buf.step(simulation_step)
             self.upstream_buf.step(simulation_step)
 
-            while(time_budget > pd.Timedelta(0, unit = 'ms')):
+            for deployment in self.deployments.values():
+                if not deployment.node_group.id in self.unschedulable:
+                    time_budget = min(time_budget, deployment.step(time_budget))
+                    deployment_capacity_taken = deployment.system_capacity_reserved + deployment.compute_capacity_taken_by_requests(self.request_processing_infos)
 
-                time_budget = self.processor.step(time_budget)
-                capacity_taken_by_reqs = self._compute_capacity_taken_by_requests()
-                total_capacity_taken = self.system_capacity_reserved + capacity_taken_by_reqs
+                    if not deployment_capacity_taken.is_exhausted():
+                        while(time_budget > pd.Timedelta(0, unit = 'ms')):
 
-                # Assumption: first we try to process the downstream reqs to
-                # provide the response faster, but overall it is application-dependent
+                            # Assumption: first we try to process the downstream reqs to
+                            # provide the response faster, but overall it is application-dependent
+                            while ((self.downstream_buf.size() > 0) or (self.upstream_buf.size() > 0)) and not deployment_capacity_taken.is_exhausted():
+                                req = self.downstream_buf.attempt_fan_in()
+                                if not req is None:
+                                    cap_taken = deployment.resource_requirements_to_capacity(self.request_processing_infos[req.request_type].resource_requirements)
+                                    if not (deployment_capacity_taken + cap_taken).is_exhausted():
+                                        req = self.downstream_buf.fan_in()
+                                        deployment.start_processing(req)
+                                    else:
+                                        self.downstream_buf.shuffle()
 
-                while ((self.downstream_buf.size() > 0) or (self.upstream_buf.size() > 0)) and not total_capacity_taken.is_exhausted():
-                    req = self.downstream_buf.attempt_fan_in()
-                    if not req is None:
-                        cap_taken = self.placed_on_node.resource_requirements_to_capacity(self.request_processing_infos[req.request_type].resource_requirements)
-                        if not (total_capacity_taken + cap_taken).is_exhausted():
-                            req = self.downstream_buf.fan_in()
-                            self.processor.start_processing(req)
-                        else:
-                            self.downstream_buf.shuffle()
+                                    deployment_capacity_taken += cap_taken
 
-                        total_capacity_taken = total_capacity_taken + cap_taken
+                                req = self.upstream_buf.attempt_take()
+                                if not req is None:
+                                    cap_taken = deployment.resource_requirements_to_capacity(self.request_processing_infos[req.request_type].resource_requirements)
+                                    if not (deployment_capacity_taken + cap_taken).is_exhausted():
+                                        req = self.upstream_buf.take()
+                                        deployment.start_processing(req)
+                                    else:
+                                        self.upstream_buf.shuffle()
 
-                    req = self.upstream_buf.attempt_take()
-                    if not req is None:
-                        cap_taken = self.placed_on_node.resource_requirements_to_capacity(self.request_processing_infos[req.request_type].resource_requirements)
-                        if not (total_capacity_taken + cap_taken).is_exhausted():
-                            req = self.upstream_buf.take()
-                            self.processor.start_processing(req)
-                        else:
-                            self.upstream_buf.shuffle()
+                                    deployment_capacity_taken += cap_taken
 
-                        total_capacity_taken = total_capacity_taken + cap_taken
+                                time_budget -= simulation_step
 
-                    time_budget -= simulation_step
-
-                if (self.downstream_buf.size() == 0) and (self.upstream_buf.size() == 0):
-                    time_budget -= simulation_step
+                            if (self.downstream_buf.size() == 0) and (self.upstream_buf.size() == 0):
+                                time_budget -= simulation_step
 
             # Post-step maintenance actions
             # Increase the cumulative time for all the reqs left in the buffers waiting
             self.upstream_buf.add_cumulative_time(simulation_step, self.service_name)
             self.downstream_buf.add_cumulative_time(simulation_step, self.service_name)
-            # Update resource utilization at the end of the step
-            self.utilization.update_with_capacity(cur_timestamp,
-                                                  self._compute_capacity_taken_by_requests())
-
-    def _compute_capacity_taken_by_requests(self):
-
-        reqs_count_by_type = self.processor.get_in_processing_stat()
-        capacity_taken_by_reqs = SystemCapacity(self.placed_on_node,
-                                                self.node_count)
-        for request_type, request_count in reqs_count_by_type.items():
-            cap_taken = self.placed_on_node.resource_requirements_to_capacity(self.request_processing_infos[request_type].resource_requirements)
-            capacity_taken_by_reqs += cap_taken
-
-        return capacity_taken_by_reqs
+            # Update resource utilization at the end of the step # TODO:
+            #self.utilization.update_with_capacity(cur_timestamp,
+            #                                      self._compute_capacity_taken_by_requests())
 
 class ServiceStateRegionalized(ScaledEntityState):
 
@@ -347,14 +334,12 @@ class ServiceStateRegionalized(ScaledEntityState):
 
     def update_placement(self,
                          region_name : str,
-                         node_info : NodeInfo,
-                         node_count : int):
+                         node_group : HomogeneousContainerGroup):
 
         if not region_name in self.region_states:
             raise ValueError(f'A state for the given region name {region_name} was not found')
 
-        self.region_states[region_name].update_placement(node_info,
-                                                         node_count)
+        self.region_states[region_name].update_placement(node_group)
 
     def get_aspect_value(self,
                          region_name : str,

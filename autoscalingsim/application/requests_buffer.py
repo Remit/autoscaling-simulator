@@ -77,13 +77,13 @@ class RequestsBuffer:
 
         return req
 
-    def shift(self):
+    def shuffle(self):
 
         """
         Shifts requests queue to give other requests a chance to get processed.
         """
 
-        self.discipline.shift()
+        self.discipline.shuffle()
 
     def size(self):
 

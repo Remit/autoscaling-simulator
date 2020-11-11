@@ -1,10 +1,13 @@
 import pandas as pd
 from collections import OrderedDict
 
+from .requests_processor import RequestsProcessor
 from ..entity_state.entity_group import EntitiesGroupDelta, EntitiesState
 
 from ....infrastructure_platform.system_capacity import SystemCapacity
 from ....infrastructure_platform.node import NodeInfo
+from ....load.request import Request
+from ....utils.requirements import ResourceRequirements
 
 class HomogeneousContainerGroup:
 
@@ -49,6 +52,38 @@ class HomogeneousContainerGroup:
 
         _, self.system_capacity = self.container_info.entities_require_capacity(self.entities_state)
         self.id = id(self)
+        self.shared_processor = RequestsProcessor()
+
+    def get_processed_for_service(self,
+                                  service_name : str):
+
+        return self.shared_processor.get_processed_for_service(service_name)
+
+    def resource_requirements_to_capacity(self,
+                                          res_reqs : ResourceRequirements):
+
+        return self.container_info.resource_requirements_to_capacity(res_reqs)
+
+    def compute_capacity_taken_by_requests(self,
+                                           request_processing_infos : dict):
+
+        reqs_count_by_type = self.shared_processor.get_in_processing_stat()
+        capacity_taken_by_reqs = SystemCapacity(self.container_info, self.containers_count)
+        for request_type, request_count in reqs_count_by_type.items():
+            cap_taken = self.container_info.resource_requirements_to_capacity(request_processing_infos[request_type].resource_requirements)
+            capacity_taken_by_reqs += cap_taken
+
+        return capacity_taken_by_reqs
+
+    def step(self,
+             time_budget : pd.Timedelta):
+
+        return self.shared_processor.step(time_budget)
+
+    def start_processing(self,
+                         req : Request):
+
+        self.shared_processor.start_processing(req)
 
     def is_empty(self):
 

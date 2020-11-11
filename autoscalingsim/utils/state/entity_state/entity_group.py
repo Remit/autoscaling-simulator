@@ -450,6 +450,19 @@ class EntitiesState:
         else:
             return 0
 
+    def get_entity_count(self,
+                         entity_name : str):
+
+        return self.get_aspect_value(entity_name, 'count').get_value()
+
+    def get_entity_resource_requirements(self,
+                                         entity_name : str):
+
+        if entity_name in self.entities_groups:
+            return self.entities_groups[entity_name].get_resource_requirements()
+        else:
+            raise ValueError(f'An attempt to get the resource requirements for an unknown entity {entity_name}')
+
 class EntitiesGroupDelta:
 
     """
