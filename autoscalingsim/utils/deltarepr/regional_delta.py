@@ -34,6 +34,36 @@ class RegionalDelta:
 
         return RegionalDelta(self.region_name, new_generalized_deltas)
 
+    def get_container_groups_ids_for_removal(self):
+
+        ids_for_removal_per_entity = {}
+        for gd in self.generalized_deltas:
+            if (not gd.container_group_delta is None) and (not gd.entities_group_delta is None):
+                if (not gd.container_group_delta.virtual) and (gd.container_group_delta.sign == -1):
+                    affected_entities = gd.entities_group_delta.get_entities()
+                    container_group_id = gd.container_group_delta.get_container_group_id()
+                    for entity_name in affected_entities:
+                        if not entity_name in ids_for_removal_per_entity:
+                            ids_for_removal_per_entity[entity_name] = []
+                        ids_for_removal_per_entity[entity_name].append(container_group_id)
+
+        return ids_for_removal_per_entity
+
+    def get_container_groups_ids_for_removal_flat(self):
+
+        """
+        Provides a list of container groups ids that are clean from entities,
+        and are scheduled for the scale down.
+        """
+
+        ids_for_removal_per_region = []
+        for gd in self.generalized_deltas:
+            if not gd.container_group_delta is None:
+                if (not gd.container_group_delta.virtual) and (gd.container_group_delta.sign == -1):
+                    ids_for_removal_per_region.append(gd.container_group_delta.get_container_group_id())
+
+        return ids_for_removal_per_region
+
     def till_full_enforcement(self,
                               platform_scaling_model : PlatformScalingModel,
                               application_scaling_model : ApplicationScalingModel,

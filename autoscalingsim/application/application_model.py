@@ -45,6 +45,7 @@ class ApplicationModel:
         self.platform_model = platform_model
         self.scaling_policy = scaling_policy
         self.scaling_manager = ScalingManager()
+        self.platform_model.set_scaling_manager(self.scaling_manager)
         self.scaling_policy.set_scaling_manager(self.scaling_manager)
         self.scaling_policy.set_state_reader(self.state_reader)
         self.deployment_model = DeploymentModel()

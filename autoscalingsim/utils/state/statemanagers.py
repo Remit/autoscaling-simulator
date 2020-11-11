@@ -94,14 +94,10 @@ class ScalingManager(StateManager):
         """
 
         # Enforces scaling aspects values on scaled entities
-        #for grp in platform_state.regions['eu'].homogeneous_groups:
-        #    print(list(grp.entities_state.entities_groups.keys()))
         scaling_infos = platform_state.extract_container_groups(False)
         for region_name, regional_container_groups in scaling_infos.items():
             for container_group in regional_container_groups:
 
-                # TODO: make shared placements, by moving the container group
-                # directly into the placement
                 scaling_aspects = container_group.extract_scaling_aspects()
                 for entity_name, aspects in scaling_aspects.items():
                     self.update_placement(entity_name,
@@ -112,6 +108,23 @@ class ScalingManager(StateManager):
                         self.set_aspect_value(entity_name,
                                               region_name,
                                               aspect)
+
+    def mark_groups_for_removal(self,
+                                entity_name : str,
+                                node_groups_ids_mark_for_removal_regionalized : dict):
+
+        if not entity_name in self.entities:
+            raise ValueError(f'An attempt to mark groups for removal for {entity_name} that is unknown to {self.__class__.__name__}')
+
+        for region_name, container_group_ids in node_groups_ids_mark_for_removal_regionalized.items():
+            self.entities[entity_name].state.prepare_groups_for_removal(region_name, container_group_ids)
+
+    def remove_groups_for_region(self,
+                                 region_name : str,
+                                 container_groups_ids : list):
+
+        for entity in self.entities.values():
+            entity.state.force_remove_groups(region_name, container_groups_ids)
 
     def update_placement(self,
                          entity_name : str,

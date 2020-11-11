@@ -6,7 +6,7 @@ from .scaling_policy_conf import ScalingPolicyConfiguration
 
 from ..scaling_model import ScalingModel
 from ...infrastructure_platform.platform_model import PlatformModel
-from ...utils.state.statemanagers import StateReader
+from ...utils.state.statemanagers import StateReader, ScalingManager
 
 class ScalingPolicy:
 
@@ -117,21 +117,23 @@ class ScalingPolicy:
         # this part goes independent of the sync period since it's about
         # implementing the scaling decision which is e.g. in desired state, not taking it
 
-        actual_state = self.platform_model.step(cur_timestamp)
-        if (not self.scaling_manager is None) and (not actual_state is None):
-            self.scaling_manager.set_aspects_values(actual_state)
+        self.platform_model.step(cur_timestamp)
+        #actual_state = self.platform_model.step(cur_timestamp)
+        #if (not self.scaling_manager is None) and (not actual_state is None):
+        #    self.scaling_manager.set_aspects_values(actual_state)
+
 
     def get_services_scaling_settings(self):
 
         return self.scaling_settings.services_scaling_config
 
     def set_scaling_manager(self,
-                            scaling_manager):
+                            scaling_manager : ScalingManager):
 
         self.scaling_manager = scaling_manager
 
     def set_state_reader(self,
-                         state_reader):
+                         state_reader : StateReader):
 
         self.state_reader = state_reader
         #self.adjustment_policy.set_state_reader(state_reader)

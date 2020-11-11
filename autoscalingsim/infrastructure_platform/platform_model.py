@@ -4,12 +4,13 @@ import pandas as pd
 from .node import NodeInfo
 
 from ..utils.state.platform_state import PlatformState
-from ..utils.state.statemanagers import StateReader
+from ..utils.state.statemanagers import StateReader, ScalingManager
 from ..utils.deltarepr.platform_state_delta import StateDelta
 from ..utils.deltarepr.timelines.delta_timeline import DeltaTimeline
 from ..utils.error_check import ErrorChecker
 from ..scaling.platform_scaling_model import PlatformScalingModel
 from ..scaling.application_scaling_model import ApplicationScalingModel
+from ..scaling.policiesbuilder.adjustmentplacement.adjustment_policy import AdjustmentPolicy
 
 class ProviderNodes:
 
@@ -109,6 +110,7 @@ class PlatformModel:
         self.platform_scaling_model = platform_scaling_model
         self.application_scaling_model = application_scaling_model
         self.adjustment_policy = None
+        self.scaling_manager = None
         self.providers_configs = {}
         self.state_deltas_timeline = None
 
@@ -157,7 +159,22 @@ class PlatformModel:
         Rolls out the planned updates that are to occur before or at the provided time.
         """
 
-        return self.state_deltas_timeline.roll_out_updates(cur_timestamp)
+        actual_state, node_groups_ids_mark_for_removal, node_groups_ids_remove = self.state_deltas_timeline.roll_out_updates(cur_timestamp)
+
+        if not self.scaling_manager is None:
+
+            if not actual_state is None:
+                self.scaling_manager.set_aspects_values(actual_state)
+
+            if len(node_groups_ids_mark_for_removal) > 0:
+                for service_name, node_groups_ids_mark_for_removal_regionalized in node_groups_ids_mark_for_removal.items():
+                    self.scaling_manager.mark_groups_for_removal(service_name,
+                                                                 node_groups_ids_mark_for_removal_regionalized)
+
+            if len(node_groups_ids_remove) > 0:
+                for region_name, node_groups_ids in node_groups_ids_remove.items():
+                    self.scaling_manager.remove_groups_for_region(region_name,
+                                                                  node_groups_ids)
 
     def init_adjustment_policy(self,
                                entity_instance_requirements : dict,
@@ -207,16 +224,15 @@ class PlatformModel:
 
         self.state_deltas_timeline.merge(adjusted_timeline_of_deltas)
 
+    def set_scaling_manager(self,
+                            scaling_manager : ScalingManager):
+
+        self.scaling_manager = scaling_manager
+
     def set_adjustment_policy(self,
-                              adjustment_policy):
+                              adjustment_policy : AdjustmentPolicy):
 
         self.adjustment_policy = adjustment_policy
-
-    def set_placement_policy(self,
-                             placement_policy):
-
-        self.placement_policy = placement_policy
-
 
     def compute_desired_node_count(self,
                                    simulation_start : pd.Timestamp,

@@ -75,6 +75,9 @@ class DeltaTimeline:
         """
 
         updates_applied = False
+        cur_platform_state = None
+        node_groups_ids_mark_for_removal = {}
+        node_groups_ids_remove = {}
 
         if borderline_ts_for_updates > self.time_of_last_state_update:
 
@@ -83,30 +86,44 @@ class DeltaTimeline:
 
             for timestamp, state_deltas in timeline_to_consider.items():
                 for state_delta in state_deltas:
-                    new_timestamped_state_deltas = state_delta.enforce(self.platform_scaling_model,
-                                                                       self.application_scaling_model,
-                                                                       timestamp)
+                    if not state_delta.is_enforced:
+                        new_timestamped_state_deltas = state_delta.enforce(self.platform_scaling_model,
+                                                                           self.application_scaling_model,
+                                                                           timestamp)
 
-                    for new_timestamp, new_state_delta in new_timestamped_state_deltas.items():
-                        self.add_state_delta(new_timestamp, new_state_delta)
+                        # Marking node groups ids that should prepare for the removal, i.e. no requests should be sent there
+                        state_delta_regionalized_ids_for_removal = state_delta.get_container_groups_ids_for_removal()
+                        for entity_name, state_delta_ids_for_removal_per_entity in state_delta_regionalized_ids_for_removal.items():
+                            if not entity_name in node_groups_ids_mark_for_removal:
+                                node_groups_ids_mark_for_removal[entity_name] = {}
+
+                            for region_name, state_delta_ids_for_removal_per_entity_region in state_delta_ids_for_removal_per_entity.items():
+                                if not region_name in node_groups_ids_mark_for_removal[entity_name]:
+                                    node_groups_ids_mark_for_removal[entity_name][region_name] = []
+                                node_groups_ids_mark_for_removal[entity_name][region_name].extend(state_delta_ids_for_removal_per_entity_region)
+
+                        for new_timestamp, new_state_delta in new_timestamped_state_deltas.items():
+                            self.add_state_delta(new_timestamp, new_state_delta)
 
             # Updating the actual state using the enforced deltas
             timeline_to_consider = { timestamp: state_deltas for timestamp, state_deltas in self.timeline.items() if (timestamp > self.time_of_last_state_update) and (timestamp <= borderline_ts_for_updates) }
 
             for timestamp, state_deltas in timeline_to_consider.items():
                 for state_delta in state_deltas:
-                    self.actual_state += state_delta
-                    updates_applied = True
-                    #for grp in self.actual_state.regions['eu'].homogeneous_groups:
-                    #    print(list(grp.entities_state.entities_groups.keys()))
-                    #    for entity_group in grp.entities_state.entities_groups.values():
-                    #        print(entity_group.scaling_aspects['count'].get_value())
-                    #print(state_delta.deltas_per_region['eu'].generalized_deltas[1])
-                    #print(state_delta.deltas_per_region['eu'].generalized_deltas[1].container_group_delta.virtual)
+                    if state_delta.is_enforced:
+                        # Marking node groups ids that should be removed right away (scale-down enforced)
+                        state_delta_regionalized_ids_for_removal = state_delta.get_container_groups_ids_for_removal_flat()
+                        for region_name, container_ids_list in state_delta_regionalized_ids_for_removal.items():
+                            if not region_name in node_groups_ids_remove:
+                                node_groups_ids_remove[region_name] = []
+                            node_groups_ids_remove[region_name].extend(container_ids_list)
+
+                        self.actual_state += state_delta
+                        updates_applied = True
 
             self.time_of_last_state_update = borderline_ts_for_updates
 
         if updates_applied:
-            return self.actual_state
-        else:
-            return None
+            cur_platform_state = self.actual_state
+
+        return cur_platform_state, node_groups_ids_mark_for_removal, node_groups_ids_remove

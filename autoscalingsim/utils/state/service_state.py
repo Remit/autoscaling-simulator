@@ -370,3 +370,19 @@ class ServiceStateRegionalized(ScaledEntityState):
             processed_requests.extend(service_state.get_processed())
 
         return processed_requests
+
+    def prepare_groups_for_removal(self,
+                                   region_name : str,
+                                   node_group_ids : list):
+
+        if region_name in self.region_states:
+            for node_group_id in node_group_ids:
+                self.region_states[region_name].prepare_group_for_removal(node_group_id)
+
+    def force_remove_groups(self,
+                            region_name : str,
+                            node_group_ids : list):
+
+        if region_name in self.region_states:
+            for node_group_id in node_group_ids:
+                self.region_states[region_name].force_remove_group(node_group_id)

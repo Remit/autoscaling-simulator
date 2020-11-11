@@ -14,8 +14,10 @@ class StateDelta:
     """
 
     def __init__(self,
-                 regional_deltas = {}):
+                 regional_deltas : dict = {},
+                 is_enforced : bool = False):
 
+        self.is_enforced = is_enforced
         self.deltas_per_region = {}
         if isinstance(regional_deltas, list):
             for regional_delta in regional_deltas:
@@ -50,6 +52,26 @@ class StateDelta:
 
         return StateDelta(new_regional_deltas)
 
+    def get_container_groups_ids_for_removal(self):
+
+        regionalized_ids = {}
+        for region_name, regional_delta in self.deltas_per_region.items():
+            ids_for_removal_per_entity = regional_delta.get_container_groups_ids_for_removal()
+            for entity_name, ids_for_removal in ids_for_removal_per_entity.items():
+                if not entity_name in regionalized_ids:
+                    regionalized_ids[entity_name] = {}
+                regionalized_ids[entity_name][region_name] = ids_for_removal
+
+        return regionalized_ids
+
+    def get_container_groups_ids_for_removal_flat(self):
+
+        regionalized_ids = {}
+        for region_name, regional_delta in self.deltas_per_region.items():
+            regionalized_ids[region_name] = regional_delta.get_container_groups_ids_for_removal_flat()
+
+        return regionalized_ids
+
     def till_full_enforcement(self,
                               platform_scaling_model : PlatformScalingModel,
                               application_scaling_model : ApplicationScalingModel,
@@ -68,7 +90,6 @@ class StateDelta:
                 application_scaling_model : ApplicationScalingModel,
                 delta_timestamp : pd.Timestamp):
 
-
         new_timestamped_rd_ts = {}
         for regional_delta in self.deltas_per_region.values():
 
@@ -82,7 +103,7 @@ class StateDelta:
         new_timestamped_sd = {}
         for timestamp, reg_deltas_per_ts in new_timestamped_rd_ts.items():
 
-            new_timestamped_sd[timestamp] = StateDelta(reg_deltas_per_ts)
+            new_timestamped_sd[timestamp] = StateDelta(reg_deltas_per_ts, True)
 
         return new_timestamped_sd
 

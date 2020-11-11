@@ -348,6 +348,10 @@ class ContainerGroupDelta:
 
         return self.container_group.container_info.node_type
 
+    def get_container_group_id(self):
+
+        return self.container_group.id
+
 class GeneralizedDelta:
 
     """
