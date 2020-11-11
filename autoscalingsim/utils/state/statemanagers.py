@@ -100,14 +100,10 @@ class ScalingManager(StateManager):
 
                 scaling_aspects = container_group.extract_scaling_aspects()
                 for entity_name, aspects in scaling_aspects.items():
-                    self.update_placement(entity_name,
-                                          region_name,
-                                          container_group)
+                    self.update_placement(entity_name, region_name, container_group)
 
                     for aspect in aspects.values():
-                        self.set_aspect_value(entity_name,
-                                              region_name,
-                                              aspect)
+                        self.set_aspect_value(entity_name, region_name, aspect)
 
     def mark_groups_for_removal(self,
                                 entity_name : str,

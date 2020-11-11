@@ -6,6 +6,7 @@ from ..entity_state.entity_group import EntitiesGroupDelta, EntitiesState
 
 from ....infrastructure_platform.system_capacity import SystemCapacity
 from ....infrastructure_platform.node import NodeInfo
+from ....infrastructure_platform.link import NodeGroupLink
 from ....load.request import Request
 from ....utils.requirements import ResourceRequirements
 
@@ -42,6 +43,10 @@ class HomogeneousContainerGroup:
         self.container_info = container_info
 
         self.containers_count = containers_count
+        self.link = NodeGroupLink(self.container_info.latency,
+                                  self.containers_count,
+                                  self.container_info.network_bandwidth_MBps)
+
         if isinstance(entities_instances_counts, dict):
             self.entities_state = EntitiesState(entities_instances_counts,
                                                 requirements_by_entity)
@@ -104,6 +109,8 @@ class HomogeneousContainerGroup:
             raise ValueError(f'An attempt to remove containers of other type {other_container_group.container_name} whereas the current container type is {self.container_name}')
 
         self.containers_count -= other_container_group.containers_count
+        self.link.update_bandwidth(self.containers_count)
+
         self.entities_state -= other_container_group.entities_state
         _, self.system_capacity = self.container_info.entities_require_capacity(self.entities_state)
 

@@ -9,18 +9,29 @@ class NodeGroupLink:
     """
 
     def __init__(self,
-                 request_processing_infos : dict,
                  latency : pd.Timedelta,
-                 network_bandwidth_MBps : int):
+                 count_of_nodes_in_group : int,
+                 single_link_network_bandwidth_MBps : int):
 
         # Static state
         self.latency = latency
-        self.bandwidth_MBps = network_bandwidth_MBps
-        self.request_processing_infos = request_processing_infos
+        self.single_link_network_bandwidth_MBps = single_link_network_bandwidth_MBps
+        self.request_processing_infos = None
 
         # Dynamic state
+        self.bandwidth_MBps = self.single_link_network_bandwidth_MBps * count_of_nodes_in_group
         self.requests_in_transfer = []
         self.used_bandwidth_MBps = 0
+
+    def set_request_processing_infos(self,
+                                     request_processing_infos : dict):
+
+        self.request_processing_infos = request_processing_infos
+
+    def update_bandwidth(self,
+                         new_nodes_count : int):
+
+        self.bandwidth_MBps = self.single_link_network_bandwidth_MBps * new_nodes_count
 
     def step(self,
              simulation_step : pd.Timedelta):

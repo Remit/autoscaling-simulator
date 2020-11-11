@@ -117,14 +117,9 @@ class ServiceState:
 
         self.deployments[node_group.id] = Deployment(self.service_name, node_group)
 
-        # TODO: push into the deployment?
-        self.upstream_buf.set_link(NodeGroupLink(self.request_processing_infos,
-                                                 node_group.container_info.latency,
-                                                 node_group.container_info.network_bandwidth_MBps * node_group.containers_count))
-
-        self.downstream_buf.set_link(NodeGroupLink(self.request_processing_infos,
-                                                   node_group.container_info.latency,
-                                                   node_group.container_info.network_bandwidth_MBps * node_group.containers_count))
+        node_group.link.set_request_processing_infos(self.request_processing_infos)
+        self.upstream_buf.set_link(node_group.link)
+        self.downstream_buf.set_link(node_group.link)
 
     def prepare_group_for_removal(self,
                                   container_group_id : int):
