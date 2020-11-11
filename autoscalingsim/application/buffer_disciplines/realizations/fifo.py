@@ -1,3 +1,5 @@
+import pandas as pd
+
 from ..discipline import QueuingDiscipline
 
 from ....load.request import Request
@@ -31,3 +33,16 @@ class FIFOQueue(QueuingDiscipline):
 
         req = self.take()
         self.requests.appendleft(req)
+
+    def add_cumulative_time(self,
+                            delta : pd.Timedelta,
+                            service_name : str):
+
+        for req in self.requests:
+            req.cumulative_time += delta
+            # Below is for the monitoring purposes - to estimate,
+            # which service did the request spend the longest time waiting at
+            if not service_name in req.buffer_time:
+                req.buffer_time[service_name] = delta
+            else:
+                req.buffer_time[service_name] += delta
