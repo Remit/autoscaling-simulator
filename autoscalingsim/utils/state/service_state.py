@@ -9,7 +9,6 @@ from .container_state.container_group import HomogeneousContainerGroup
 from ..requirements import ResourceRequirements
 from ..error_check import ErrorChecker
 
-from ...infrastructure_platform.utilization import ServiceUtilization
 from ...infrastructure_platform.node import NodeInfo
 from ...infrastructure_platform.link import NodeGroupLink
 from ...infrastructure_platform.system_capacity import SystemCapacity
@@ -54,6 +53,21 @@ class Deployment:
 
         return self.node_group.get_processed_for_service(service_name)
 
+    def update_utilization(self,
+                           request_processing_infos : dict,
+                           timestamp : pd.Timestamp,
+                           averaging_interval : pd.Timedelta):
+
+        self.node_group.update_utilization(request_processing_infos,
+                                           timestamp,
+                                           averaging_interval)
+
+    def get_utilization(self,
+                        resource_name : str,
+                        interval : pd.Timedelta):
+
+        return self.node_group.get_utilization(resource_name, interval)
+
 class ServiceState:
 
     """
@@ -76,10 +90,8 @@ class ServiceState:
         self.entity_group = EntityGroup(service_name,
                                         resource_requirements)
         self.request_processing_infos = request_processing_infos
-        self.utilization = ServiceUtilization(init_timestamp,
-                                              averaging_interval,
-                                              init_keepalive,
-                                              resource_requirements.tracked_resources())
+        self.averaging_interval = averaging_interval
+        self.keepalive = init_keepalive
 
         buffer_capacity_by_request_type = {}
         buffer_capacity_by_request_type_raw = ErrorChecker.key_check_and_load('buffer_capacity_by_request_type', buffers_config, 'service', service_name)
@@ -157,13 +169,25 @@ class ServiceState:
 
         return self.entity_group.get_aspect_value(aspect_name)
 
+    # TODO: think of other kinds of metrics e.g. req count
     def get_metric_value(self,
-                         metric_name : str):
+                         metric_name : str,
+                         interval : pd.Timedelta = pd.Timedelta(0, unit = 'ms')):
 
-        if self.utilization.has_metric(metric_name):
-            return self.utilization.get(metric_name)
-        else:
-            raise ValueError(f'A metric with the name {metric_name} was not found in {self.__class__.__name__} for region {self.region_name}')
+        service_metric_value = pd.DataFrame(columns = ['datetime', 'value']).set_index('datetime')
+        # Case of resource utilization metric
+        if metric_name in SystemCapacity.layout:
+            for deployment in self.deployments.values():
+                cur_deployment_util = deployment.get_utilization(metric_name, interval)
+                # Aligning the time series
+                common_index = cur_deployment_util.index.union(service_metric_value.index)
+                cur_deployment_util = cur_deployment_util.reindex(common_index, fill_value = 0)
+                service_metric_value = service_metric_value.reindex(common_index, fill_value = 0)
+                service_metric_value += cur_deployment_util
+
+            service_metric_value /= len(self.deployments) # normalization
+
+        return service_metric_value
 
     def get_processed(self):
 
@@ -233,9 +257,11 @@ class ServiceState:
             # Increase the cumulative time for all the reqs left in the buffers waiting
             self.upstream_buf.add_cumulative_time(simulation_step, self.service_name)
             self.downstream_buf.add_cumulative_time(simulation_step, self.service_name)
-            # Update resource utilization at the end of the step # TODO:
-            #self.utilization.update_with_capacity(cur_timestamp,
-            #                                      self._compute_capacity_taken_by_requests())
+            # Update resource utilization at the end of the step
+            for deployment in self.deployments.values():
+                deployment.update_utilization(self.request_processing_infos,
+                                              cur_timestamp,
+                                              self.averaging_interval)
 
 class ServiceStateRegionalized(ScaledEntityState):
 

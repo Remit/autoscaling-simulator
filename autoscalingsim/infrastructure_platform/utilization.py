@@ -10,21 +10,16 @@ class ResourceUtilization:
     """
 
     def __init__(self,
-                 resource_name : str,
-                 init_timestamp : pd.Timestamp,
-                 averaging_interval : pd.Timedelta,
-                 init_keepalive : pd.Timedelta):
+                 resource_name : str):
 
         self.resource_name = resource_name
-        self.utilization = pd.DataFrame(columns = ['datetime', 'value'])
-        self.utilization = self.utilization.set_index('datetime')
-        self.tmp_state = ScaledEntityState.TempState(init_timestamp,
-                                                     averaging_interval)
-        self.keepalive = init_keepalive
+        self.utilization = pd.DataFrame(columns = ['datetime', 'value']).set_index('datetime')
+        self.tmp_state = ScaledEntityState.TempState()
 
     def update(self,
                cur_ts : pd.Timestamp,
-               cur_val : float):
+               cur_val : float,
+               averaging_interval : pd.Timedelta):
 
         """
         Updates the resource utilization with help of the temporary state.
@@ -35,70 +30,63 @@ class ResourceUtilization:
         if not isinstance(cur_ts, pd.Timestamp):
             raise TypeError('Timestamp of unexpected type')
 
-        oldest_to_keep_ts = cur_ts - self.keepalive
+        self.utilization = self.utilization.append(self.tmp_state.update_and_get(cur_ts, cur_val, averaging_interval))
 
-        # Discarding old observations
-        if oldest_to_keep_ts < cur_ts:
-            self.utilization = self.utilization[self.utilization.index > oldest_to_keep_ts]
+    def get(self,
+            interval : pd.Timedelta):
 
-        val_to_upd = self.tmp_state.update_and_get(cur_ts,
-                                                   cur_val)
+        """
+        Returns last utilization values that fall into the interval parameter.
+        If interval is 0, returns all the values.
+        """
 
-        self.utilization = self.utilization.append(val_to_upd)
+        if interval == pd.Timedelta(0, unit = 'ms'):
+            return self.utilization
+        else:
+            borderline_ts = max(self.utilization.index) - interval
+            return self.utilization[self.utilization.index >= borderline_ts]
 
-    def get(self):
-        return self.utilization
-
-class ServiceUtilization:
+class NodeGroupUtilization:
 
     """
-    Wraps utilization information for different types of resources on the service level.
+    Wraps utilization information for different types of resources on the node group level.
     For instance, such system resources are represented as CPU and memory.
     """
 
-    def __init__(self,
-                 init_timestamp : pd.Timestamp,
-                 averaging_interval : pd.Timedelta,
-                 init_keepalive : pd.Timedelta,
-                 resource_names : list = []):
-
-        if len(resource_names) == 0:
-            resource_names = ServiceUtilization.system_resources
+    def __init__(self):
 
         self.resource_utilizations = {}
-        for resource_name in resource_names:
-            self.resource_utilizations[resource_name] = ResourceUtilization(resource_name,
-                                                                            init_timestamp,
-                                                                            averaging_interval,
-                                                                            init_keepalive)
+        for resource_name in SystemCapacity.layout:
+            self.resource_utilizations[resource_name] = ResourceUtilization(resource_name)
 
     def update_with_capacity(self,
                              timestamp : pd.Timestamp,
-                             capacity_taken : SystemCapacity):
+                             capacity_taken : SystemCapacity,
+                             averaging_interval : pd.Timedelta):
 
         for resource_name in self.resource_utilizations.keys():
             self.resource_utilizations[resource_name].update(timestamp,
-                                                             capacity_taken.normalized_capacity_consumption(resource_name))
+                                                             capacity_taken.normalized_capacity_consumption(resource_name),
+                                                             averaging_interval)
 
     def update(self,
                resource_name : str,
                timestamp : pd.Timestamp,
-               value : float):
+               value : float,
+               averaging_interval : pd.Timedelta):
 
         if not resource_name in self.resource_utilizations:
             raise ValueError(f'Unexpected resource name {resource_name} when updating {self.__class__.__name__}')
 
-        self.resource_utilizations[resource_name].update(timestamp, value)
+        self.resource_utilizations[resource_name].update(timestamp,
+                                                         value,
+                                                         averaging_interval)
 
     def get(self,
-            resource_name : str):
+            resource_name : str,
+            interval : pd.Timedelta):
 
         if not resource_name in self.resource_utilizations:
             raise ValueError(f'Unexpected resource name {resource_name} when reading {self.__class__.__name__}')
 
-        return self.resource_utilizations[resource_name].get()
-
-    def has_metric(self,
-                   metric_name : str):
-
-        return metric_name in self.resource_utilizations
+        return self.resource_utilizations[resource_name].get(interval)

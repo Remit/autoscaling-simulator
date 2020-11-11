@@ -7,6 +7,7 @@ from ..entity_state.entity_group import EntitiesGroupDelta, EntitiesState
 from ....infrastructure_platform.system_capacity import SystemCapacity
 from ....infrastructure_platform.node import NodeInfo
 from ....infrastructure_platform.link import NodeGroupLink
+from ....infrastructure_platform.utilization import NodeGroupUtilization
 from ....load.request import Request
 from ....utils.requirements import ResourceRequirements
 
@@ -43,6 +44,7 @@ class HomogeneousContainerGroup:
         self.container_info = container_info
 
         self.containers_count = containers_count
+        self.utilization = NodeGroupUtilization()
         self.link = NodeGroupLink(self.container_info.latency,
                                   self.containers_count,
                                   self.container_info.network_bandwidth_MBps)
@@ -59,6 +61,21 @@ class HomogeneousContainerGroup:
         self.id = id(self)
         self.shared_processor = RequestsProcessor()
 
+    def update_utilization(self,
+                           request_processing_infos : dict,
+                           timestamp : pd.Timestamp,
+                           averaging_interval : pd.Timedelta):
+
+        self.utilization.update_with_capacity(timestamp,
+                                              self.compute_capacity_taken_by_requests(request_processing_infos),
+                                              averaging_interval)
+
+    def get_utilization(self,
+                        resource_name : str,
+                        interval : pd.Timedelta):
+
+        return self.utilization.get(resource_name, interval)
+
     def get_processed_for_service(self,
                                   service_name : str):
 
@@ -72,6 +89,7 @@ class HomogeneousContainerGroup:
     def compute_capacity_taken_by_requests(self,
                                            request_processing_infos : dict):
 
+        # TODO: think about per-service utilization computation?
         reqs_count_by_type = self.shared_processor.get_in_processing_stat()
         capacity_taken_by_reqs = SystemCapacity(self.container_info, self.containers_count)
         for request_type, request_count in reqs_count_by_type.items():
