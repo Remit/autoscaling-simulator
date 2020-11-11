@@ -62,12 +62,12 @@ class HomogeneousContainerGroup:
         self.shared_processor = RequestsProcessor()
 
     def update_utilization(self,
-                           request_processing_infos : dict,
+                           capacity_taken : SystemCapacity,
                            timestamp : pd.Timestamp,
                            averaging_interval : pd.Timedelta):
 
         self.utilization.update_with_capacity(timestamp,
-                                              self.compute_capacity_taken_by_requests(request_processing_infos),
+                                              capacity_taken,
                                               averaging_interval)
 
     def get_utilization(self,
@@ -87,13 +87,13 @@ class HomogeneousContainerGroup:
         return self.container_info.resource_requirements_to_capacity(res_reqs)
 
     def compute_capacity_taken_by_requests(self,
+                                           service_name : str,
                                            request_processing_infos : dict):
 
-        # TODO: think about per-service utilization computation?
-        reqs_count_by_type = self.shared_processor.get_in_processing_stat()
+        reqs_count_by_type = self.shared_processor.get_in_processing_stat(service_name)
         capacity_taken_by_reqs = SystemCapacity(self.container_info, self.containers_count)
         for request_type, request_count in reqs_count_by_type.items():
-            cap_taken = self.container_info.resource_requirements_to_capacity(request_processing_infos[request_type].resource_requirements)
+            cap_taken = self.container_info.resource_requirements_to_capacity(request_processing_infos[request_type].resource_requirements) * request_count
             capacity_taken_by_reqs += cap_taken
 
         return capacity_taken_by_reqs

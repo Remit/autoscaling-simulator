@@ -31,7 +31,7 @@ class RequestsProcessor:
                     new_in_processing_simultaneous.append(req)
                 else:
                     req.processing_time_left = pd.Timedelta(0, unit = 'ms')
-                    self.stat[req.request_type] = self.stat.get(req.request_type, 0) - 1
+                    self.stat[req.processing_service][req.request_type] -= 1
                     if not req.processing_service in self.out:
                         self.out[req.processing_service] = []
                     self.out[req.processing_service].append(req)
@@ -44,7 +44,9 @@ class RequestsProcessor:
     def start_processing(self,
                          req : Request):
 
-        self.stat[req.request_type] = self.stat.get(req.request_type, 0) + 1
+        if not req.processing_service in self.stat:
+            self.stat[req.processing_service] = {}
+        self.stat[req.processing_service][req.request_type] = self.stat[req.processing_service].get(req.request_type, 0) + 1
         self.in_processing_simultaneous.append(req)
 
     def requests_in_processing(self):
@@ -61,6 +63,7 @@ class RequestsProcessor:
 
         return processed_for_service
 
-    def get_in_processing_stat(self):
+    def get_in_processing_stat(self,
+                               service_name : str):
 
-        return self.stat
+        return self.stat.get(service_name, {})

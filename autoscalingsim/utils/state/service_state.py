@@ -34,9 +34,11 @@ class Deployment:
         return self.node_group.step(time_budget)
 
     def compute_capacity_taken_by_requests(self,
+                                           service_name : str,
                                            request_processing_infos : dict):
 
-        return self.node_group.compute_capacity_taken_by_requests(request_processing_infos)
+        return self.node_group.compute_capacity_taken_by_requests(service_name,
+                                                                  request_processing_infos)
 
     def resource_requirements_to_capacity(self,
                                           res_reqs : ResourceRequirements):
@@ -54,11 +56,11 @@ class Deployment:
         return self.node_group.get_processed_for_service(service_name)
 
     def update_utilization(self,
-                           request_processing_infos : dict,
+                           capacity_taken : SystemCapacity,
                            timestamp : pd.Timestamp,
                            averaging_interval : pd.Timedelta):
 
-        self.node_group.update_utilization(request_processing_infos,
+        self.node_group.update_utilization(capacity_taken,
                                            timestamp,
                                            averaging_interval)
 
@@ -218,7 +220,8 @@ class ServiceState:
             for deployment in self.deployments.values():
                 if not deployment.node_group.id in self.unschedulable:
                     time_budget = min(time_budget, deployment.step(time_budget))
-                    deployment_capacity_taken = deployment.system_capacity_reserved + deployment.compute_capacity_taken_by_requests(self.request_processing_infos)
+                    deployment_capacity_taken = deployment.system_capacity_reserved + deployment.compute_capacity_taken_by_requests(self.service_name,
+                                                                                                                                    self.request_processing_infos)
 
                     if not deployment_capacity_taken.is_exhausted():
                         while(time_budget > pd.Timedelta(0, unit = 'ms')):
@@ -259,7 +262,9 @@ class ServiceState:
             self.downstream_buf.add_cumulative_time(simulation_step, self.service_name)
             # Update resource utilization at the end of the step
             for deployment in self.deployments.values():
-                deployment.update_utilization(self.request_processing_infos,
+                deployment_capacity_taken = deployment.system_capacity_reserved + deployment.compute_capacity_taken_by_requests(self.service_name,
+                                                                                                                                self.request_processing_infos)
+                deployment.update_utilization(deployment_capacity_taken,
                                               cur_timestamp,
                                               self.averaging_interval)
 
