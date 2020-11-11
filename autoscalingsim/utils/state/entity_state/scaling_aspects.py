@@ -1,10 +1,7 @@
-import math
 import numbers
 import pandas as pd
 import operator
 from abc import ABC, abstractmethod
-
-from ....utils import df_convenience
 
 class ScalingAspect(ABC):
 
@@ -12,6 +9,27 @@ class ScalingAspect(ABC):
     An abstract interface for various scaling aspects associated with
     scaled entities. Scaling aspect can only take on non-negative vals.
     """
+
+    _Registry = {}
+
+    @classmethod
+    def register(cls,
+                 name : str):
+
+        def decorator(scaling_aspect_class):
+            cls._Registry[name] = scaling_aspect_class
+            return scaling_aspect_class
+
+        return decorator
+
+    @classmethod
+    def get(cls,
+            name : str):
+
+        if not name in cls._Registry:
+            raise ValueError(f'An attempt to use a non-existent scaling aspect {name}')
+
+        return cls._Registry[name]
 
     def __init__(self,
                  name : str,
@@ -23,7 +41,7 @@ class ScalingAspect(ABC):
 
     def copy(self):
 
-        return Registry.get(self.name)(self.value)
+        return self.__class__.get(self.name)(self.value)
 
     def get_value(self):
 
@@ -160,88 +178,4 @@ class ScalingAspectDelta:
     def get_aspect_type(self):
         return self.scaling_aspect.__class__
 
-class Count(ScalingAspect):
-
-    """
-    Count of scaled entities.
-    """
-
-    def __init__(self,
-                 value : float):
-
-        super().__init__('count',
-                         math.ceil(value),
-                         0)
-
-    def __add__(self,
-                other_aspect_or_delta):
-
-        if isinstance(other_aspect_or_delta, Count):
-            return Count(self.value + other_aspect_or_delta.get_value())
-        elif isinstance(other_aspect_or_delta, ScalingAspectDelta):
-            if not isinstance(self, other_aspect_or_delta.get_aspect_type()):
-                raise ValueError(f'An attempt to add different scaling aspects: {self.__class__.__name__} and {other_aspect_or_delta.get_aspect_type().__name__}')
-
-            return Count(self.value + other_aspect_or_delta.to_raw_change())
-        else:
-            raise TypeError(f'An attempt to add an object of unknown type {other_aspect_or_delta.__class__.__name__} to {self.__class__.__name__}')
-
-    def __sub__(self,
-                other_aspect_or_delta):
-
-        if isinstance(other_aspect_or_delta, Count):
-            return self.__add__(ScalingAspectDelta(other_aspect_or_delta, -1))
-        elif isinstance(other_aspect_or_delta, ScalingAspectDelta):
-            return self.__add__(other_aspect_or_delta)
-        else:
-            raise TypeError(f'An attempt to subtract an object of unknown type {other_aspect_or_delta.__class__.__name__} from {self.__class__.__name__}')
-
-    def __mul__(self,
-                scalar_or_df : numbers.Number):
-
-        if isinstance(scalar_or_df, numbers.Number):
-            return Count(self.value * scalar_or_df)
-        elif isinstance(scalar_or_df, pd.DataFrame):
-            return df_convenience.convert_to_class(scalar_or_df * self.value,
-                                                   self.__class__)
-        else:
-            raise TypeError(f'An attempt to multiply by non-int of type {scalar.__class__.__name__}')
-
-    def __mod__(self,
-                other_aspect_val : 'Count'):
-
-        if not isinstance(other_aspect_val, Count):
-            raise TypeError(f'An attempt to perform modulo operation on {self.__class__.__name__} with an object of unknown type {other_aspect_val.__class__.__name__}')
-
-        return Count(self.value % other_aspect_val.value)
-
-    def __floordiv__(self,
-                     other_aspect_val : 'Count'):
-
-        if not isinstance(other_aspect_val, Count):
-            raise TypeError(f'An attempt to perform floor division operation on {self.__class__.__name__} with an object of unknown type {other_aspect_val.__class__.__name__}')
-
-        return Count(self.value // other_aspect_val.value)
-
-    def __radd__(self,
-                 other_aspect_val : numbers.Number):
-
-        return other_aspect_val + self.value
-
-class Registry:
-
-    """
-    Stores scaling aspects classes and organizes access to them.
-    """
-
-    registry = {
-        'count': Count
-    }
-
-    @staticmethod
-    def get(name):
-
-        if not name in Registry.registry:
-            raise ValueError(f'An attempt to use a non-existent scaling aspect {name}')
-
-        return Registry.registry[name]
+from .scaling_aspects_realizations import *

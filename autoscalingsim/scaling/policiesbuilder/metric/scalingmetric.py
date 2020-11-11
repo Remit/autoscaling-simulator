@@ -7,7 +7,6 @@ from . import forecasting
 from .limiter import Limiter
 
 from ....utils.state.statemanagers import StateReader
-from ....utils.state.entity_state import scaling_aspects
 from ....utils.state.entity_state.entities_states_reg import EntitiesStatesRegionalized
 from ....utils.state.entity_state.scaling_aspects import ScalingAspect
 from ....utils.error_check import ErrorChecker
@@ -121,8 +120,8 @@ class ScalingMetricRegionalized:
 
         self.state_reader = state_reader
 
-        max_limit_aspect = scaling_aspects.Registry.get(self.aspect_name)(max_limit)
-        min_limit_aspect = scaling_aspects.Registry.get(self.aspect_name)(min_limit)
+        max_limit_aspect = ScalingAspect.get(self.aspect_name)(max_limit)
+        min_limit_aspect = ScalingAspect.get(self.aspect_name)(min_limit)
 
         self.metrics_per_region = {}
         for region_name in regions:

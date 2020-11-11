@@ -2,7 +2,6 @@ import numbers
 import collections
 import numpy as np
 
-from . import scaling_aspects
 from .scaling_aspects import ScalingAspect, ScalingAspectDelta
 
 from ...error_check import ErrorChecker
@@ -38,7 +37,7 @@ class EntityGroup:
                 if isinstance(aspect_value, ScalingAspect):
                     self.scaling_aspects[aspect_name] = aspect_value
                 elif isinstance(aspect_value, numbers.Number):
-                    self.scaling_aspects[aspect_name] = scaling_aspects.Registry.get(aspect_name)(aspect_value)
+                    self.scaling_aspects[aspect_name] = ScalingAspect.get(aspect_name)(aspect_value)
                 else:
                     raise TypeError(f'Unexpected type of scaling aspects values to initialize the {self.__class__.__name__}')
         else:
@@ -77,7 +76,7 @@ class EntityGroup:
                 elif sign == 1:
                     new_group.scaling_aspects[aspect_name] += to_add[aspect_name]
             elif sign == 1:
-                new_group.scaling_aspects[aspect_name] = scaling_aspects.Registry.get(aspect_name)()
+                new_group.scaling_aspects[aspect_name] = ScalingAspect.get(aspect_name)()
                 new_group.scaling_aspects[aspect_name] += to_add[aspect_name]
 
         return new_group
@@ -204,7 +203,7 @@ class EntityGroupDelta:
             if isinstance(aspect_value, ScalingAspect):
                 self.aspects_deltas[aspect_name] = ScalingAspectDelta(aspect_value)
             elif isinstance(aspect_value, numbers.Number):
-                self.aspects_deltas[aspect_name] = ScalingAspectDelta(scaling_aspects.Registry.get(aspect_name)(abs(aspect_value)),
+                self.aspects_deltas[aspect_name] = ScalingAspectDelta(ScalingAspect.get(aspect_name)(abs(aspect_value)),
                                                                       int(np.sign(aspect_value)))
             else:
                 raise TypeError(f'Unexpected type of scaling aspects values to initialize the {self.__class__.__name__}')
