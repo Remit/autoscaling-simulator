@@ -1,8 +1,9 @@
 {
+	"load_kind": "seasonal",
 	"regions_configs": [
 		{
 			"region_name": "eu",
-			"seasonal_pattern": {
+			"pattern": {
 				"type": "values",
 				"params": [
 					{

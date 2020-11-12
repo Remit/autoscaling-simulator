@@ -1,0 +1,27 @@
+{
+	"load_kind": "constant",
+	"regions_configs": [
+		{
+			"region_name": "eu",
+			"pattern": {
+        "type": "single_value",
+				"params": {
+          "value": {{ value }}
+        }
+			},
+			"load_configs": [{
+					"request_type": "auth",
+					"load_config": {
+						"ratio": 0.8
+					}
+				},
+				{
+					"request_type": "buy",
+					"load_config": {
+						"ratio": 0.2
+					}
+				}
+			]
+		}
+	]
+}

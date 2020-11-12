@@ -1,0 +1,176 @@
+{
+	"app_name": "test",
+	"services": [
+		{
+			"name": "frontend",
+			"buffers_config": {
+				"discipline": "FIFO",
+				"buffer_capacity_by_request_type": [
+					{
+						"request_type": "auth",
+						"capacity": 5
+					},
+					{
+						"request_type": "buy",
+						"capacity": 1
+					}
+				]
+			},
+			"system_requirements": {
+				"vCPU": 1,
+		    "memory": 2000,
+		    "disk": 0
+			},
+			"next": ["appserver"],
+			"prev": [],
+			"deployment": {
+				"eu": {
+					"init_aspects": {
+						"count": 1
+					},
+					"platform": {
+						"provider": "aws",
+						"node_type": "t3.xlarge",
+						"count": 1
+					}
+				}
+			},
+			"init_metric_keepalive_ms": 2000
+		},
+		{
+			"name": "appserver",
+			"buffers_config": {
+				"discipline": "FIFO",
+				"buffer_capacity_by_request_type": [
+					{
+						"request_type": "auth",
+						"capacity": 20
+					},
+					{
+						"request_type": "buy",
+						"capacity": 10
+					}
+				]
+			},
+			"system_requirements": {
+				"vCPU": 1,
+		    "memory": 2000,
+		    "disk": 0
+			},
+			"next": ["db"],
+			"prev": ["frontend"],
+			"deployment": {
+				"eu": {
+					"init_aspects": {
+						"count": 1
+					},
+					"platform": {
+						"provider": "aws",
+						"node_type": "t3.xlarge",
+						"count": 1
+					}
+				}
+			},
+			"init_metric_keepalive_ms": 2000
+		},
+		{
+			"name": "db",
+			"buffers_config": {
+				"discipline": "FIFO",
+				"buffer_capacity_by_request_type": [
+					{
+						"request_type": "auth",
+						"capacity": 10
+					},
+					{
+						"request_type": "buy",
+						"capacity": 5
+					}
+				]
+			},
+			"system_requirements": {
+				"vCPU": 1,
+		    "memory": 4000,
+		    "disk": 1024
+			},
+			"next": [],
+			"prev": ["appserver"],
+			"deployment": {
+				"eu": {
+					"init_aspects": {
+						"count": 1
+					},
+					"platform": {
+						"provider": "aws",
+						"node_type": "t3.xlarge",
+						"count": 1
+					}
+				}
+			},
+			"init_metric_keepalive_ms": 2000
+		}
+	],
+	"requests": [
+		{
+			"request_type": "auth",
+			"entry_service": "frontend",
+			"processing_times_ms": [
+				{
+					"service": "frontend",
+					"upstream": 10,
+					"downstream": 0
+				},
+				{
+					"service": "appserver",
+					"upstream": 10,
+					"downstream": 0
+				},
+				{
+					"service": "db",
+					"upstream": 10,
+					"downstream": 0
+				}
+			],
+			"timeout_ms": 300,
+			"request_size_b": 1024,
+			"response_size_b": 1024,
+			"operation_type": "rw",
+			"processing_requirements": {
+				"vCPU": 1,
+				"memory": 100,
+				"disk": 0
+			}
+		},
+		{
+			"request_type": "buy",
+			"entry_service": "frontend",
+			"processing_times_ms": [
+				{
+					"service": "frontend",
+					"upstream": 10,
+					"downstream": 0
+				},
+				{
+					"service": "appserver",
+					"upstream": 10,
+					"downstream": 0
+				},
+				{
+					"service": "db",
+					"upstream": 10,
+					"downstream": 0
+				}
+			],
+			"timeout_ms": 400,
+			"request_size_b": 2048,
+			"response_size_b": 1024,
+			"operation_type": "rw",
+			"processing_requirements": {
+				"vCPU": 1,
+				"memory": 100,
+				"disk": 0
+			}
+		}
+	],
+	"load_balancing": {}
+}

@@ -1,0 +1,19 @@
+{
+  "load_rps": {
+    "start": 100,
+    "end": 1000,
+    "step": 100
+  },
+  "experiment": {
+    "repeats": 5,
+    "configs_folder": "test",
+    "simulation_config": {
+      "starting_time": "2020-09-17T10:00:00",
+      "simulation_step": {
+        "value": 10,
+        "unit": "ms"
+      },
+      "time_to_simulate_days": 0.0001
+    }
+  }
+}
