@@ -6,7 +6,8 @@
   },
   "experiment": {
     "repeats": 5,
-    "configs_folder": "test",
+    "configs_folder": "evalconf/test",
+    "load_template_file": "evalconf/load.template",
     "simulation_config": {
       "starting_time": "2020-09-17T10:00:00",
       "simulation_step": {

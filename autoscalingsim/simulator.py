@@ -35,6 +35,7 @@ class Simulator:
         self.starting_time = starting_time
         self.time_to_simulate_days = time_to_simulate_days
         self.simulations = {}
+        self.simulations_configs = {}
 
     def add_simulation(self,
                        configs_dir : str,
@@ -89,6 +90,10 @@ class Simulator:
                                                                stat_updates_every_round,
                                                                results_dir)
 
+                self.simulations_configs[simulation_name] = {'configs_dir': configs_dir,
+                                                             'results_dir': results_dir,
+                                                             'stat_updates_every_round': stat_updates_every_round}
+
             except json.JSONDecodeError:
                 raise ValueError('The config listing file is an invalid JSON.')
 
@@ -104,3 +109,42 @@ class Simulator:
             # TODO: think about parallelism
             for _, sim in self.simulations.items():
                 sim.start()
+
+    def rewind(self):
+
+        """
+        Resets the simulations to their initial state by recreating them.
+        Used to simulate the same setting multiple times, e.g. to evaluate
+        the simulator itself (how stable it is in the generated results).
+        """
+
+        sim_confs = self.simulations_configs.copy()
+        for simulation_config in sim_confs.values():
+            self.add_simulation(**simulation_config)
+
+    def __iter__(self):
+
+        return SimulationsIterator(self)
+
+class SimulationsIterator:
+
+    """
+    Iterates over the simulations in the simulator.
+    """
+
+    def __init__(self,
+                 simulator : 'Simulator'):
+
+        self._simulator = simulator
+        self._indices = list(self._simulator.simulations.keys())
+        self._cur_index = 0
+
+    def __next__(self):
+
+        if self._cur_index < len(self._indices):
+            sim_name = self._indices[self._cur_index]
+            simulation = self._simulator.simulations[sim_name]
+            self._cur_index += 1
+            return (sim_name, simulation)
+        else:
+            raise StopIteration

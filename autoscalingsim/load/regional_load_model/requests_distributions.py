@@ -2,7 +2,7 @@ import numpy as np
 import numbers
 from abc import ABC, abstractmethod
 
-from ..utils.error_check import ErrorChecker
+from ...utils.error_check import ErrorChecker
 
 class SlicedRequestsNumDistribution(ABC):
 
