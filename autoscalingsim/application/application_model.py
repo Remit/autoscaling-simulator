@@ -49,6 +49,7 @@ class ApplicationModel:
         self.scaling_policy.set_scaling_manager(self.scaling_manager)
         self.scaling_policy.set_state_reader(self.state_reader)
         self.deployment_model = DeploymentModel()
+        self.utilization = {}
 
         # Static state
         self.name = None
@@ -265,3 +266,15 @@ class ApplicationModel:
                        new_requests : list):
 
         self.new_requests = new_requests
+
+    def post_process(self):
+
+        """
+        Wraps the actions that should be performed at the end of the simulation.
+        Since only the simulator knows, when the simulation ends, this method is
+        to be called by the simulator.
+        """
+
+        # Collect the utilization information from all the services
+        for service_name, service in self.services.items():
+            self.utilization[service_name] = service.check_out_utilization()

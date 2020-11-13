@@ -22,14 +22,8 @@ class GeneratedRequestsByType:
             reqs_cnts = {}
             max_req_cnt = 0
             for req_type, load_timeline in load_ts_per_request_type.items():
-
-                requests_cnt = 0
-                for _, cnt in load_timeline:
-                    requests_cnt += cnt
-
-                reqs_cnts[req_type] = requests_cnt
-
-                max_req_cnt = max([max_req_cnt, requests_cnt])
+                reqs_cnts[req_type] = sum(load_timeline.value)
+                max_req_cnt = max([max_req_cnt, reqs_cnts[req_type]])
 
             plt.bar(list(reqs_cnts.keys()), list(reqs_cnts.values()), bar_width)
 

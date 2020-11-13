@@ -99,7 +99,7 @@ class SimulationQualityEvaluationFramework:
         self.experiments_response_times = {}
 
         for experiment_id in range(self.repeats):
-            print(f'Evaluation run {(experiment_id + 1)}, please wait for all the simulations to finish...')
+            print(f'Evaluation run {(experiment_id + 1)} out of {self.repeats}, please wait for all the simulations to finish...')
             self.simulator.start_simulation()
 
             # Storing the results of the current run
@@ -114,7 +114,7 @@ class SimulationQualityEvaluationFramework:
                     for req_type, load_timeline in load_per_req_type.items():
                         if not req_type in self.experiments_load[region_name]:
                             self.experiments_load[region_name][req_type] = {}
-                        self.experiments_load[region_name][req_type][simulation_name] = sum([load_tuple[1] for load_tuple in load_timeline]) / (self.repeats * self.simulated_seconds)
+                        self.experiments_load[region_name][req_type][simulation_name] = sum(load_timeline.value) / (self.repeats * self.simulated_seconds)
 
                 # Response times
                 response_times_regionalized = simulation.application_model.load_stats.get_response_times_by_request()
@@ -137,4 +137,5 @@ class SimulationQualityEvaluationFramework:
                       figures_dir = None):
 
         LoadVsResponseTimeGraph.plot(self.experiments_load,
-                                     self.experiments_response_times)
+                                     self.experiments_response_times,
+                                     figures_dir)

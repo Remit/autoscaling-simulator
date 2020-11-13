@@ -22,36 +22,13 @@ class LoadLineGraph:
 
         for region_name, load_ts_per_request_type in load_regionalized.items():
             plt.figure()
-            for req_type, load_ts_raw in load_ts_per_request_type.items():
+            for req_type, load_ts in load_ts_per_request_type.items():
 
-                load_ts_times = []
-                load_ts_req_counts = []
-                new_frame_start = load_ts_raw[0][0] + resolution
-                cur_req_cnt = 0
-                last_added = False
-                for load_obs in load_ts_raw:
-                    last_added = False
+                load_ts.index = pd.to_datetime(load_ts.index)
+                load_ts.value = pd.to_numeric(load_ts.value)
+                resampled_load = load_ts.resample(resolution).sum()
 
-                    cur_ts = load_obs[0]
-                    reqs_cnt = load_obs[1]
-
-                    if cur_ts > new_frame_start:
-                        load_ts_times.append(new_frame_start)
-                        load_ts_req_counts.append(cur_req_cnt)
-                        cur_req_cnt = 0
-                        new_frame_start = cur_ts + resolution
-                        last_added = True
-
-                    cur_req_cnt += reqs_cnt
-
-                if not last_added:
-                    load_ts_times.append(new_frame_start)
-                    load_ts_req_counts.append(cur_req_cnt)
-
-                df_load = pd.DataFrame(data = {'time': load_ts_times,
-                                               'requests': load_ts_req_counts})
-                df_load = df_load.set_index('time')
-                _ = plt.plot(df_load, label = req_type)
+                _ = plt.plot(resampled_load, label = req_type)
 
                 unit = resolution // pd.Timedelta(1000, unit = 'ms')
                 plt.ylabel(f'load, requests per {unit} s')

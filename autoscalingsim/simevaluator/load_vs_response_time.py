@@ -43,7 +43,7 @@ class LoadVsResponseTimeGraph:
                     axes[i].set_title(f'Request type {req_type}',
                                       y = 1.2,
                                       fontdict = font)
-                    axes[i].set_xticklabels(data_dict.keys())
+                    axes[i].set_xticklabels(data_dict.keys(), rotation='vertical')
                     axes[i].set_xlabel(f'Load, rps')
                     axes[i].set_ylabel('Response time, ms')
                     i += 1

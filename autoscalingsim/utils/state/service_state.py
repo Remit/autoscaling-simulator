@@ -66,7 +66,7 @@ class Deployment:
 
     def get_utilization(self,
                         resource_name : str,
-                        interval : pd.Timedelta):
+                        interval : pd.Timedelta = pd.Timedelta(0, unit = 'ms')):
 
         return self.node_group.get_utilization(resource_name, interval)
 
@@ -112,6 +112,8 @@ class ServiceState:
         self.deployments = {} # Container groups that this service is currently deployed on
         self.unschedulable = [] # Container gtoup IDs for groups that no new request should be scheduled on
 
+        self.service_utilizations = {} # Utilization by different type of resource
+
     def get_resource_requirements(self):
 
         return self.entity_group.get_resource_requirements()
@@ -146,6 +148,34 @@ class ServiceState:
 
         self.unschedulable.append(container_group_id)
 
+    def check_out_utilization(self):
+
+        for deployment in self.deployments.values():
+            self._check_out_utilization_for_deployment(deployment)
+
+        return self.service_utilizations
+
+    def _check_out_utilization_for_deployment(self,
+                                              deployment : Deployment):
+
+        """
+        In contrast to getting the metric values on spot for scaling purposes,
+        here we a) take all the available utilization data, and b) do not normalize
+        by the deployments count to show the full utilization reached over the
+        lifetime of the application. It is especially useful along with the
+        information on the actual number of deployed instances.
+        """
+
+        for system_resource_name in SystemCapacity.layout:
+            if not system_resource_name in self.service_utilizations:
+                self.service_utilizations[system_resource_name] = pd.DataFrame(columns = ['datetime', 'value']).set_index('datetime')
+            deployment_util = deployment.get_utilization(system_resource_name) # take all the available data for the given resource
+            # Aligning the time series
+            common_index = deployment_util.index.union(self.service_utilizations[system_resource_name].index)
+            deployment_util = deployment_util.reindex(common_index, fill_value = 0)
+            self.service_utilizations[system_resource_name] = self.service_utilizations[system_resource_name].reindex(common_index, fill_value = 0)
+            self.service_utilizations[system_resource_name] += deployment_util
+
     def force_remove_group(self,
                            container_group_id : int):
 
@@ -153,6 +183,7 @@ class ServiceState:
             self.unschedulable.remove(container_group_id)
 
         if container_group_id in self.deployments:
+            self._check_out_utilization_for_deployment(self.deployments[container_group_id])
             del self.deployments[container_group_id]
 
     def get_placement_parameter(self,
@@ -318,6 +349,19 @@ class ServiceStateRegionalized(ScaledEntityState):
 
         for service_state in self.region_states.values():
             service_state.step(cur_timestamp, simulation_step)
+
+    def check_out_utilization(self):
+
+        """
+        Collects the utilization for the current state across all the regions that
+        it is deployed into.
+        """
+
+        utilization_per_region = {}
+        for region_name, region_state in self.region_states.items():
+            utilization_per_region[region_name] = region_state.check_out_utilization()
+
+        return utilization_per_region
 
     def get_resource_requirements(self,
                                   region_name : str):

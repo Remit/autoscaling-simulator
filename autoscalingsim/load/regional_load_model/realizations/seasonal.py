@@ -11,7 +11,7 @@ from ....utils.error_check import ErrorChecker
 class SeasonalLoadModel(RegionalLoadModel):
 
     """
-    Implementation of the seasonal load generation model. 
+    Implementation of the seasonal load generation model.
 
     TODO:
         implement support for holidays etc.
@@ -152,9 +152,6 @@ class SeasonalLoadModel(RegionalLoadModel):
                 gen_reqs.append(req)
                 self.current_req_split_across_simulation_steps[req_type][ms_bucket_picked] -= 1
 
-            if req_type in self.load:
-                self.load[req_type].append((timestamp, req_types_reqs_num))
-            else:
-                self.load[req_type] = [(timestamp, req_types_reqs_num)]
+            self._update_stat(timestamp, req_type, req_types_reqs_num)
 
         return gen_reqs

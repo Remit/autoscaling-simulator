@@ -104,6 +104,9 @@ class Simulation:
 
                 progress_bar.update(1)
 
+        # Post-processing, e.g. for metrics collection
+        self.application_model.post_process()
+
         # Storing the simulation results on a disk
         if not self.results_dir is None:
             filename = self.application_model.name + "DT" + datetime.now().strftime("%Y-%m-%dT%H-%M-%S") + ".pkl"
@@ -118,7 +121,8 @@ class Simulation:
                                     'desired_node_count_regionalized': self.application_model.platform_model.compute_desired_node_count(self.simulation_step,
                                                                                                                                         self.simulation_end),
                                     'actual_node_count_regionalized': self.application_model.platform_model.compute_actual_node_count(self.simulation_step,
-                                                                                                                                      self.simulation_end)}
+                                                                                                                                      self.simulation_end),
+                                    'utilization': self.application_model.utilization}
 
                 with open(full_filename, 'wb') as f:
                     pickle.dump(results_to_store, f)

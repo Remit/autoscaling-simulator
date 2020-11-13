@@ -87,13 +87,3 @@ class ConstantLoadModel(RegionalLoadModel):
                 self._update_stat(timestamp, req_type, reqs_num)
 
         return gen_reqs
-
-    def _update_stat(self,
-                     timestamp : pd.Timestamp,
-                     req_type : str,
-                     reqs_num : int):
-
-        if req_type in self.load:
-            self.load[req_type].append((timestamp, reqs_num))
-        else:
-            self.load[req_type] = [(timestamp, reqs_num)]

@@ -42,4 +42,15 @@ class RegionalLoadModel(ABC):
                           timestamp : pd.Timestamp):
         pass
 
+    def _update_stat(self,
+                     timestamp : pd.Timestamp,
+                     req_type : str,
+                     reqs_num : int):
+
+        if req_type in self.load:
+            self.load[req_type]['datetime'].append(timestamp)
+            self.load[req_type]['value'].append(reqs_num)
+        else:
+            self.load[req_type] = {'datetime': [timestamp], 'value': [reqs_num]}
+
 from .realizations import *

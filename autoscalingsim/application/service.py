@@ -66,3 +66,6 @@ class Service(ScaledEntity):
     def get_processed(self):
 
         return self.state.get_processed()
+
+    def check_out_utilization(self):
+        return self.state.check_out_utilization()
