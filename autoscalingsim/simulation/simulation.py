@@ -68,8 +68,8 @@ class Simulation:
                  load_model : LoadModel,
                  application_model : ApplicationModel,
                  simulation_start : pd.Timestamp,
-                 time_to_simulate_days : float = 0.0005,
-                 simulation_step : pd.Timedelta = pd.Timedelta(10, unit = 'ms'),
+                 time_to_simulate : pd.Timedelta,
+                 simulation_step : pd.Timedelta,
                  stat_updates_every_round : int = 0,
                  results_dir : str = None):
 
@@ -77,7 +77,7 @@ class Simulation:
         self.load_model = load_model
         self.application_model = application_model
         self.simulation_start = simulation_start
-        self.simulation_end = simulation_start + pd.Timedelta(time_to_simulate_days, unit = 'd')
+        self.simulation_end = simulation_start + time_to_simulate
         self.simulation_step = simulation_step
         self.stat_updates_every_round = stat_updates_every_round
         self.results_dir = results_dir

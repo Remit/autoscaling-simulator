@@ -29,11 +29,11 @@ class Simulator:
     def __init__(self,
                  simulation_step : pd.Timedelta = pd.Timedelta(10, unit = 'ms'),
                  starting_time : pd.Timestamp = pd.Timestamp.now(),
-                 time_to_simulate_days : float = 0.0005):
+                 time_to_simulate : pd.Timestamp = pd.Timedelta(1, unit = 'm')):
 
         self.simulation_step = simulation_step
         self.starting_time = starting_time
-        self.time_to_simulate_days = time_to_simulate_days
+        self.time_to_simulate = time_to_simulate
         self.simulations = {}
         self.simulations_configs = {}
 
@@ -86,7 +86,7 @@ class Simulator:
                 self.simulations[simulation_name] = Simulation(load_model,
                                                                application_model,
                                                                self.starting_time,
-                                                               self.time_to_simulate_days,
+                                                               self.time_to_simulate,
                                                                self.simulation_step,
                                                                stat_updates_every_round,
                                                                results_dir)

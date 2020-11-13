@@ -60,17 +60,22 @@ class SimulationQualityEvaluationFramework:
 
                 simulation_config = ErrorChecker.key_check_and_load('simulation_config', experiment_conf)
                 starting_time = pd.Timestamp(ErrorChecker.key_check_and_load('starting_time', simulation_config))
-                time_to_simulate_days = ErrorChecker.key_check_and_load('time_to_simulate_days', simulation_config)
+
+                time_to_simulate = ErrorChecker.key_check_and_load('time_to_simulate', simulation_config)
+                time_to_simulate_value = ErrorChecker.key_check_and_load('value', time_to_simulate)
+                time_to_simulate_unit = ErrorChecker.key_check_and_load('unit', time_to_simulate)
+                time_to_simulate = pd.Timedelta(time_to_simulate_value, unit = time_to_simulate_unit)
+
                 simulation_step = ErrorChecker.key_check_and_load('simulation_step', simulation_config)
                 simulation_step_value = ErrorChecker.key_check_and_load('value', simulation_step)
                 simulation_step_unit = ErrorChecker.key_check_and_load('unit', simulation_step)
                 simulation_step = pd.Timedelta(simulation_step_value, unit = simulation_step_unit)
 
-                self.simulated_seconds = time_to_simulate_days * 24 * 60 * 60
+                self.simulated_seconds = time_to_simulate.seconds
 
                 self.simulator = Simulator(simulation_step,
                                            starting_time,
-                                           time_to_simulate_days)
+                                           time_to_simulate)
 
     def create_simulations(self):
 
