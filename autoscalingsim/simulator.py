@@ -40,7 +40,7 @@ class Simulator:
     def add_simulation(self,
                        configs_dir : str,
                        results_dir : str = None,
-                       stat_updates_every_round : int = 1000):
+                       stat_updates_every_round : int = 0):
 
         simulation_name = ""
         if not os.path.exists(configs_dir):

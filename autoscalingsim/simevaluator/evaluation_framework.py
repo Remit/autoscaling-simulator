@@ -3,6 +3,7 @@ import distutils
 from distutils import dir_util
 import json
 import pandas as pd
+from time import sleep
 
 from jinja2 import Template
 
@@ -105,6 +106,7 @@ class SimulationQualityEvaluationFramework:
 
         for experiment_id in range(self.repeats):
             print(f'Evaluation run {(experiment_id + 1)} out of {self.repeats}, please wait for all the simulations to finish...')
+            sleep(0.5)
             self.simulator.start_simulation()
 
             # Storing the results of the current run
