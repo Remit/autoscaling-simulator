@@ -14,7 +14,7 @@
         "value": 10,
         "unit": "ms"
       },
-      "time_to_simulate_days": 0.00001
+      "time_to_simulate_days": 0.00005
     }
   }
 }

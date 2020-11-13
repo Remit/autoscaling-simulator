@@ -6,6 +6,7 @@ import pandas as pd
 
 from jinja2 import Template
 
+from .load_vs_response_time import LoadVsResponseTimeGraph
 from ..simulator import Simulator
 from ..utils.error_check import ErrorChecker
 
@@ -27,6 +28,7 @@ class SimulationQualityEvaluationFramework:
 
         self.experiments_load = None
         self.experiments_response_times = None
+        self.simulated_seconds = None
 
         if not isinstance(config_file, str):
             raise ValueError(f'Incorrect format of the path to the configuration file for the {self.__class__.__name__}, should be string')
@@ -63,6 +65,8 @@ class SimulationQualityEvaluationFramework:
                 simulation_step_value = ErrorChecker.key_check_and_load('value', simulation_step)
                 simulation_step_unit = ErrorChecker.key_check_and_load('unit', simulation_step)
                 simulation_step = pd.Timedelta(simulation_step_value, unit = simulation_step_unit)
+
+                self.simulated_seconds = time_to_simulate_days * 24 * 60 * 60
 
                 self.simulator = Simulator(simulation_step,
                                            starting_time,
@@ -104,30 +108,24 @@ class SimulationQualityEvaluationFramework:
                 # Load
                 load_regionalized = simulation.load_model.get_generated_load()
 
-                if not simulation_name in self.experiments_load:
-                    self.experiments_load[simulation_name] = {}
-
                 for region_name, load_per_req_type in load_regionalized.items():
-                    if not region_name in self.experiments_load[simulation_name]:
-                        self.experiments_load[simulation_name][region_name] = {}
+                    if not region_name in self.experiments_load:
+                        self.experiments_load[region_name] = {}
                     for req_type, load_timeline in load_per_req_type.items():
-                        if not req_type in self.experiments_load[simulation_name][region_name]:
-                            self.experiments_load[simulation_name][region_name][req_type] = sum([load_tuple[1] for load_tuple in load_timeline]) // self.repeats
+                        if not req_type in self.experiments_load[region_name]:
+                            self.experiments_load[region_name][req_type] = {}
+                        self.experiments_load[region_name][req_type][simulation_name] = sum([load_tuple[1] for load_tuple in load_timeline]) / (self.repeats * self.simulated_seconds)
 
                 # Response times
                 response_times_regionalized = simulation.application_model.load_stats.get_response_times_by_request()
 
-                if not simulation_name in self.experiments_response_times:
-                    self.experiments_response_times[simulation_name] = {}
-
                 for region_name, response_times_per_req_type in response_times_regionalized.items():
-                    if not region_name in self.experiments_response_times[simulation_name]:
-                        self.experiments_response_times[simulation_name][region_name] = {}
-
+                    if not region_name in self.experiments_response_times:
+                        self.experiments_response_times[region_name] = {}
                     for req_type, response_times in response_times_per_req_type.items():
-                        if not req_type in self.experiments_response_times[simulation_name][region_name]:
-                            self.experiments_response_times[simulation_name][region_name][req_type] = []
-                        self.experiments_response_times[simulation_name][region_name][req_type].extend(response_times)
+                        if not req_type in self.experiments_response_times[region_name]:
+                            self.experiments_response_times[region_name][req_type] = {}
+                        self.experiments_response_times[region_name][req_type][simulation_name] = response_times
 
             self.simulator.rewind()
 
@@ -135,5 +133,8 @@ class SimulationQualityEvaluationFramework:
         for dir_for_config in self.experimental_configs:
             distutils.dir_util.remove_tree(dir_for_config)
 
-    def build_graphs(self):
-        pass
+    def build_figures(self,
+                      figures_dir = None):
+
+        LoadVsResponseTimeGraph.plot(self.experiments_load,
+                                     self.experiments_response_times)
