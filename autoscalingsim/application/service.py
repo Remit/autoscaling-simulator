@@ -29,7 +29,7 @@ class Service(ScaledEntity):
                  scaling_setting_for_service : ScalingPolicyConfiguration,
                  state_reader : StateReader,
                  averaging_interval : pd.Timedelta,
-                 init_keepalive : pd.Timedelta = pd.Timedelta(-1, unit = 'ms')):
+                 sampling_interval : pd.Timedelta):
 
         # Initializing scaling-related functionality in the superclass
         super().__init__(self.__class__.__name__,
@@ -49,7 +49,7 @@ class Service(ScaledEntity):
                                               resource_requirements,
                                               request_processing_infos,
                                               buffers_config,
-                                              init_keepalive)
+                                              sampling_interval)
 
     def add_request(self,
                     req : Request):

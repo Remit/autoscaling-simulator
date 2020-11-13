@@ -85,7 +85,7 @@ class ServiceState:
                  resource_requirements : ResourceRequirements,
                  request_processing_infos : dict,
                  buffers_config : dict,
-                 init_keepalive : pd.Timedelta):
+                 sampling_interval : pd.Timedelta):
 
         self.service_name = service_name
         self.region_name = region_name
@@ -93,7 +93,7 @@ class ServiceState:
                                         resource_requirements)
         self.request_processing_infos = request_processing_infos
         self.averaging_interval = averaging_interval
-        self.keepalive = init_keepalive
+        self.sampling_interval = sampling_interval
 
         buffer_capacity_by_request_type = {}
         buffer_capacity_by_request_type_raw = ErrorChecker.key_check_and_load('buffer_capacity_by_request_type', buffers_config, 'service', service_name)
@@ -291,13 +291,15 @@ class ServiceState:
             # Increase the cumulative time for all the reqs left in the buffers waiting
             self.upstream_buf.add_cumulative_time(simulation_step, self.service_name)
             self.downstream_buf.add_cumulative_time(simulation_step, self.service_name)
-            # Update resource utilization at the end of the step
-            for deployment in self.deployments.values():
-                deployment_capacity_taken = deployment.system_capacity_reserved + deployment.compute_capacity_taken_by_requests(self.service_name,
-                                                                                                                                self.request_processing_infos)
-                deployment.update_utilization(deployment_capacity_taken,
-                                              cur_timestamp,
-                                              self.averaging_interval)
+
+            # Update resource utilization at the end of the step once per sampling interval
+            if (cur_timestamp - pd.Timestamp(0)) % self.sampling_interval == pd.Timedelta(0):
+                for deployment in self.deployments.values():
+                    deployment_capacity_taken = deployment.system_capacity_reserved + deployment.compute_capacity_taken_by_requests(self.service_name,
+                                                                                                                                    self.request_processing_infos)
+                    deployment.update_utilization(deployment_capacity_taken,
+                                                  cur_timestamp,
+                                                  self.averaging_interval)
 
 class ServiceStateRegionalized(ScaledEntityState):
 
@@ -321,7 +323,7 @@ class ServiceStateRegionalized(ScaledEntityState):
                  resource_requirements : ResourceRequirements,
                  request_processing_infos : dict,
                  buffers_config : dict,
-                 init_keepalive_ms = pd.Timedelta(-1, unit = 'ms')):
+                 sampling_interval : pd.Timestamp):
 
         self.region_states = {}
         self.service_name = service_name
@@ -333,7 +335,7 @@ class ServiceStateRegionalized(ScaledEntityState):
                                                            resource_requirements,
                                                            request_processing_infos,
                                                            buffers_config,
-                                                           init_keepalive_ms)
+                                                           sampling_interval)
 
     def add_request(self,
                     req : Request):

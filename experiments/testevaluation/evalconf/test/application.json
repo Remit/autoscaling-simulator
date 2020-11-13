@@ -35,7 +35,7 @@
 					}
 				}
 			},
-			"init_metric_keepalive_ms": 2000
+			"sampling_interval_ms": 200
 		},
 		{
 			"name": "appserver",
@@ -71,7 +71,7 @@
 					}
 				}
 			},
-			"init_metric_keepalive_ms": 2000
+			"sampling_interval_ms": 200
 		},
 		{
 			"name": "db",
@@ -107,7 +107,7 @@
 					}
 				}
 			},
-			"init_metric_keepalive_ms": 2000
+			"sampling_interval_ms": 200
 		}
 	],
 	"requests": [

@@ -16,7 +16,8 @@ class ScaledEntityState(ABC):
 
         def __init__(self):
 
-            self.tmp_buffer = pd.DataFrame(columns = ['datetime', 'value']).set_index('datetime')
+            self.tmp_buffer_datetimes = []#pd.DataFrame(columns = ['datetime', 'value']).set_index('datetime')
+            self.tmp_buffer_values = []
 
         def update_and_get(self,
                            obs_timestamp : pd.Timestamp,
@@ -26,16 +27,15 @@ class ScaledEntityState(ABC):
 
             oldest_obs_timestamp = obs_timestamp - averaging_interval
             # Updating everything in the tmp_buffer, i.e. discarding the old data:
-            self.tmp_buffer = self.tmp_buffer[self.tmp_buffer.index >= oldest_obs_timestamp]
+            self.tmp_buffer_datetimes = [datetime for datetime in self.tmp_buffer_datetimes if datetime >= oldest_obs_timestamp]
+            self.tmp_buffer_values = self.tmp_buffer_values[-len(self.tmp_buffer_datetimes):]
 
             # Adding new data to the given value type
-            df_to_add = pd.DataFrame({'datetime': [obs_timestamp], 'value': [obs_value]}).set_index('datetime')
-            self.tmp_buffer = self.tmp_buffer.append(df_to_add)
+            self.tmp_buffer_datetimes.append(obs_timestamp)
+            self.tmp_buffer_values.append(obs_value)
 
             # Averaging the given value type and returning it
-            df_to_return = pd.DataFrame({'datetime': [obs_timestamp], 'value': [self.tmp_buffer.mean()['value']]}).set_index('datetime')
-
-            return df_to_return
+            return (obs_timestamp, sum(self.tmp_buffer_values) / len(self.tmp_buffer_values))
 
     @abstractmethod
     def update_metric(self,

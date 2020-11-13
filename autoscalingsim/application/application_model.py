@@ -33,6 +33,7 @@ class ApplicationModel:
 
     def __init__(self,
                  starting_time : pd.Timestamp,
+                 simulation_step : pd.Timedelta,
                  platform_model : PlatformModel,
                  scaling_policy : ScalingPolicy,
                  config_file : str,
@@ -153,8 +154,9 @@ class ApplicationModel:
                                                                  node_counts_regionalized,
                                                                  system_requirements)
 
-                    # Value that is less than 0 for the keepalive interval of the metric means that it is not discarded at all
-                    init_metric_keepalive = pd.Timedelta(ErrorChecker.key_check_and_load('init_metric_keepalive_ms', service_config, 'service', service_name), unit = 'ms')
+                    sampling_interval = pd.Timedelta(ErrorChecker.key_check_and_load('sampling_interval_ms', service_config, 'service', service_name), unit = 'ms')
+                    if sampling_interval % simulation_step != pd.Timedelta(0):
+                        raise ValueError('Sampling interval is not a multiple of the provided simulation step')
 
                     # Taking correct scaling settings for the service which is derived from a ScaledEntity
                     services_scaling_settings = self.scaling_policy.get_services_scaling_settings()
@@ -174,7 +176,7 @@ class ApplicationModel:
                                       service_scaling_settings,
                                       self.state_reader,
                                       averaging_interval,
-                                      init_metric_keepalive)
+                                      sampling_interval)
 
                     # Adding services as sources to the state managers
                     self.state_reader.add_source(service_name,

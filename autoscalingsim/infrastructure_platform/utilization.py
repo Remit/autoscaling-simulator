@@ -13,7 +13,7 @@ class ResourceUtilization:
                  resource_name : str):
 
         self.resource_name = resource_name
-        self.utilization = pd.DataFrame(columns = ['datetime', 'value']).set_index('datetime')
+        self.utilization = {'datetime': [], 'value': []}
         self.tmp_state = ScaledEntityState.TempState()
 
     def update(self,
@@ -30,7 +30,9 @@ class ResourceUtilization:
         if not isinstance(cur_ts, pd.Timestamp):
             raise TypeError('Timestamp of unexpected type')
 
-        self.utilization = self.utilization.append(self.tmp_state.update_and_get(cur_ts, cur_val, averaging_interval))
+        ts, util = self.tmp_state.update_and_get(cur_ts, cur_val, averaging_interval)
+        self.utilization['datetime'].append(ts)
+        self.utilization['value'].append(util)
 
     def get(self,
             interval : pd.Timedelta):
@@ -40,11 +42,12 @@ class ResourceUtilization:
         If interval is 0, returns all the values.
         """
 
-        if interval == pd.Timedelta(0, unit = 'ms'):
-            return self.utilization
-        else:
-            borderline_ts = max(self.utilization.index) - interval
-            return self.utilization[self.utilization.index >= borderline_ts]
+        utilization = pd.DataFrame(self.utilization).set_index('datetime')
+        if interval > pd.Timedelta(0, unit = 'ms'):
+            borderline_ts = max(utilization.index) - interval
+            utilization = utilization[utilization.index >= borderline_ts]
+
+        return utilization
 
 class NodeGroupUtilization:
 

@@ -78,6 +78,7 @@ class Simulator:
                                                platform_model)
 
                 application_model = ApplicationModel(self.starting_time,
+                                                     self.simulation_step,
                                                      platform_model,
                                                      scaling_policy,
                                                      os.path.join(configs_dir, config[Simulator.CONF_APPLICATION_MODEL_KEY]))
