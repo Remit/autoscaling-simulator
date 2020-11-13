@@ -6,7 +6,9 @@
 			"pattern": {
         "type": "single_value",
 				"params": {
-          "value": {{ value }}
+          "value": {{ value }},
+					"interval_of_time": 1,
+					"unit_of_time": "s"
         }
 			},
 			"load_configs": [{

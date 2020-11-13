@@ -41,7 +41,7 @@ class SimulationQualityEvaluationFramework:
                 load_start_val = ErrorChecker.key_check_and_load('start', load_config)
                 load_end_val = ErrorChecker.key_check_and_load('end', load_config)
                 load_step_val = ErrorChecker.key_check_and_load('step', load_config)
-                self.load_scale = range(load_start_val, load_end_val, load_step_val)
+                self.load_scale = range(load_start_val, load_end_val + 1, load_step_val)
 
                 experiment_conf = ErrorChecker.key_check_and_load('experiment', config)
                 self.repeats = ErrorChecker.key_check_and_load('repeats', experiment_conf)
@@ -95,10 +95,11 @@ class SimulationQualityEvaluationFramework:
         self.experiments_response_times = {}
 
         for experiment_id in range(self.repeats):
+            print(f'Evaluation run {(experiment_id + 1)}, please wait for all the simulations to finish...')
             self.simulator.start_simulation()
 
             # Storing the results of the current run
-            for simulation_name, simulation in simulator:
+            for simulation_name, simulation in self.simulator:
 
                 # Load
                 load_regionalized = simulation.load_model.get_generated_load()

@@ -5,7 +5,7 @@
     "step": 100
   },
   "experiment": {
-    "repeats": 5,
+    "repeats": 2,
     "configs_folder": "evalconf/test",
     "load_template_file": "evalconf/load.template",
     "simulation_config": {
@@ -14,7 +14,7 @@
         "value": 10,
         "unit": "ms"
       },
-      "time_to_simulate_days": 0.0001
+      "time_to_simulate_days": 0.00001
     }
   }
 }
