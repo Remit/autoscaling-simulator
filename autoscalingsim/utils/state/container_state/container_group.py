@@ -1,5 +1,6 @@
 import pandas as pd
 from collections import OrderedDict
+from abc import ABC
 
 from .requests_processor import RequestsProcessor
 from ..entity_state.entity_group import EntitiesGroupDelta, EntitiesState
@@ -11,7 +12,48 @@ from ....infrastructure_platform.utilization import NodeGroupUtilization
 from ....load.request import Request
 from ....utils.requirements import ResourceRequirements
 
-class HomogeneousContainerGroup:
+class ContainerGroup(ABC):
+
+    def __init__(self,
+                 container_name : str,
+                 provider : str,
+                 containers_count : int):
+
+        self.container_name = container_name
+        self.provider = provider
+        self.containers_count = containers_count
+
+        self.id = id(self)
+        self.entities_state = None
+
+    def can_be_coerced(self,
+                       container_group : 'ContainerGroup'):
+
+        if not isinstance(container_group, ContainerGroup):
+            raise TypeError(f'The provided container group is not of {self.__class__.__name__} type')
+
+        if ((self.container_name == container_group.container_name) and (self.provider == container_group.provider)) \
+         or ((self.provider == container_group.provider) and (self.container_name is None or container_group.container_name is None)) \
+         or (self.provider is None and self.container_name is None) \
+         or (container_group.provider is None and container_group.container_name is None):
+            return True
+        else:
+            return False
+
+class HomogeneousContainerGroupDummy(ContainerGroup):
+
+    """
+    Used to describe failures in node groups.
+    """
+
+    def __init__(self,
+                 container_name : str = None,
+                 provider : str = None,
+                 containers_count : int = 0):
+
+        super().__init__(container_name, provider, containers_count)
+
+class HomogeneousContainerGroup(ContainerGroup):
 
     """
     A homogeneous group of containers hosting a specific count of different
@@ -40,10 +82,11 @@ class HomogeneousContainerGroup:
                  entities_instances_counts : dict = {},
                  requirements_by_entity : dict = {}):
 
-        self.container_name = container_info.get_name()
-        self.container_info = container_info
+        super().__init__(container_info.get_name(),
+                         container_info.get_provider(),
+                         containers_count)
 
-        self.containers_count = containers_count
+        self.container_info = container_info
         self.utilization = NodeGroupUtilization()
         self.link = NodeGroupLink(self.container_info.latency,
                                   self.containers_count,
@@ -58,7 +101,6 @@ class HomogeneousContainerGroup:
             raise TypeError(f'Incorrect type of the entities_instances_counts when creating {self.__class__.__name__}: {entities_instances_counts.__class__.__name__}')
 
         _, self.system_capacity = self.container_info.entities_require_capacity(self.entities_state)
-        self.id = id(self)
         self.shared_processor = RequestsProcessor()
 
     def update_utilization(self,
@@ -113,24 +155,29 @@ class HomogeneousContainerGroup:
         return self.containers_count == 0
 
     def shrink(self,
-               other_container_group : 'HomogeneousContainerGroup'):
+               other_container_group : ContainerGroup):
 
         """
         This scale down operation results in reducing the containers count
         in the group and may also affect the entities state.
         """
 
-        if not isinstance(other_container_group, HomogeneousContainerGroup):
+        if not isinstance(other_container_group, ContainerGroup):
             raise TypeError(f'An attempt to subtract unrecognized type from the {self.__class__.__name__}: {other_container_group.__class__.__name__}')
 
-        if self.container_name != other_container_group.container_name:
-            raise ValueError(f'An attempt to remove containers of other type {other_container_group.container_name} whereas the current container type is {self.container_name}')
+        if not self.can_be_coerced(other_container_group):
+            raise ValueError(f'An attempt to coerce failed: {other_container_group.container_name} vs {self.container_name} and {other_container_group.provider} vs {self.provider}')
+
+        if not other_container_group.entities_state is None:
+            self.entities_state -= other_container_group.entities_state
+        else:
+            downsizing_coef = other_container_group.containers_count / self.containers_count
+            self.entities_state.downsize_proportionally(downsizing_coef)
+
+        _, self.system_capacity = self.container_info.entities_require_capacity(self.entities_state)
 
         self.containers_count -= other_container_group.containers_count
         self.link.update_bandwidth(self.containers_count)
-
-        self.entities_state -= other_container_group.entities_state
-        _, self.system_capacity = self.container_info.entities_require_capacity(self.entities_state)
 
     def extract_scaling_aspects(self):
 
@@ -338,8 +385,8 @@ class ContainerGroupDelta:
                  in_change : bool = True,
                  virtual : bool = False):
 
-        if not isinstance(container_group, HomogeneousContainerGroup):
-            raise TypeError(f'The provided parameter is not of {HomogeneousContainerGroup.__name__} type: {container_group.__class__.__name__}')
+        if not isinstance(container_group, ContainerGroup):
+            raise TypeError(f'The provided parameter is not of {ContainerGroup.__name__} type: {container_group.__class__.__name__}')
         self.container_group = container_group
 
         if not isinstance(sign, int):

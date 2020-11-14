@@ -11,6 +11,7 @@ from ..utils.error_check import ErrorChecker
 from ..scaling.platform_scaling_model import PlatformScalingModel
 from ..scaling.application_scaling_model import ApplicationScalingModel
 from ..scaling.policiesbuilder.adjustmentplacement.adjustment_policy import AdjustmentPolicy
+from ..fault.fault_model import FaultModel
 
 class ProviderNodes:
 
@@ -104,11 +105,14 @@ class PlatformModel:
     def __init__(self,
                  platform_scaling_model : PlatformScalingModel,
                  application_scaling_model : ApplicationScalingModel,
+                 fault_model : FaultModel,
                  config_file: str):
 
         # Static state
         self.platform_scaling_model = platform_scaling_model
         self.application_scaling_model = application_scaling_model
+        self.fault_model = fault_model
+
         self.adjustment_policy = None
         self.scaling_manager = None
         self.providers_configs = {}
@@ -159,6 +163,10 @@ class PlatformModel:
         Rolls out the planned updates that are to occur before or at the provided time.
         """
 
+        # Introducing faults (if any)
+        fault_state_delta = self.fault_model.get_failure_state_deltas(cur_timestamp)
+        if not fault_state_delta is None:
+            self.state_deltas_timeline.add_state_delta(cur_timestamp, fault_state_delta)
         actual_state, node_groups_ids_mark_for_removal, node_groups_ids_remove = self.state_deltas_timeline.roll_out_updates(cur_timestamp)
 
         if not self.scaling_manager is None:

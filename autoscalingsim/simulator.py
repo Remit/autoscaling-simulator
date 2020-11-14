@@ -6,6 +6,7 @@ from datetime import datetime
 
 from .load.load_model import LoadModel
 from .scaling.scaling_model import ScalingModel
+from .fault.fault_model import FaultModel
 from .infrastructure_platform.platform_model import PlatformModel
 from .application.application_model import ApplicationModel
 from .simulation.simulation import Simulation
@@ -25,6 +26,7 @@ class Simulator:
     CONF_APPLICATION_MODEL_KEY = "application_model"
     CONF_SCALING_MODEL_KEY = "scaling_model"
     CONF_SCALING_POLICY_KEY = "scaling_policy"
+    CONF_FAULT_MODEL_KEY = "fault_model"
 
     def __init__(self,
                  simulation_step : pd.Timedelta = pd.Timedelta(10, unit = 'ms'),
@@ -63,16 +65,22 @@ class Simulator:
                     raise ValueError('The config listing file misses at least one key model.')
 
                 load_model = LoadModel(self.simulation_step,
-                                       os.path.join(configs_dir, config[Simulator.CONF_LOAD_MODEL_KEY]))
+                                       os.path.join(configs_dir, config[self.__class__.CONF_LOAD_MODEL_KEY]))
 
                 scaling_model = ScalingModel(self.simulation_step,
-                                             os.path.join(configs_dir, config[Simulator.CONF_SCALING_MODEL_KEY]))
+                                             os.path.join(configs_dir, config[self.__class__.CONF_SCALING_MODEL_KEY]))
+
+                fault_model = FaultModel(self.starting_time,
+                                         self.time_to_simulate,
+                                         self.simulation_step,
+                                         os.path.join(configs_dir, config[self.__class__.CONF_FAULT_MODEL_KEY]))
 
                 platform_model = PlatformModel(scaling_model.platform_scaling_model,
                                                scaling_model.application_scaling_model,
-                                               os.path.join(configs_dir, config[Simulator.CONF_PLATFORM_MODEL_KEY]))
+                                               fault_model,
+                                               os.path.join(configs_dir, config[self.__class__.CONF_PLATFORM_MODEL_KEY]))
 
-                scaling_policy = ScalingPolicy(os.path.join(configs_dir, config[Simulator.CONF_SCALING_POLICY_KEY]),
+                scaling_policy = ScalingPolicy(os.path.join(configs_dir, config[self.__class__.CONF_SCALING_POLICY_KEY]),
                                                self.starting_time,
                                                scaling_model,
                                                platform_model)
@@ -81,7 +89,7 @@ class Simulator:
                                                      self.simulation_step,
                                                      platform_model,
                                                      scaling_policy,
-                                                     os.path.join(configs_dir, config[Simulator.CONF_APPLICATION_MODEL_KEY]))
+                                                     os.path.join(configs_dir, config[self.__class__.CONF_APPLICATION_MODEL_KEY]))
 
                 self.simulations[simulation_name] = Simulation(load_model,
                                                                application_model,

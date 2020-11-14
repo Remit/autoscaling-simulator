@@ -78,13 +78,37 @@ class HomogeneousContainerGroupSet:
             # entities given in entities_group_delta to/from the corresponding
             # container group
             if entities_group_delta.in_change == in_change:
-                groups_to_change[container_group_delta.container_group.id].add_to_entities_state(entities_group_delta)
+                if container_group_delta.container_group.id in groups_to_change:
+                    groups_to_change[container_group_delta.container_group.id].add_to_entities_state(entities_group_delta)
+                else:
+                    # attempt to find an appropriate candidate for failing its entities
+                    for group in groups_to_change.values():
+                        if group.entities_state.can_be_coerced(entities_group_delta):
+                            group.add_to_entities_state(entities_group_delta)
+
         else:
             # If the container group delta is not virtual, then add/remove it
             if container_group_delta.sign > 0:
                 groups_to_change[container_group_delta.container_group.id] = container_group_delta.container_group
-            elif (container_group_delta.sign < 0) and (container_group_delta.container_group.id in groups_to_change):
-                del groups_to_change[container_group_delta.container_group.id]
+            elif container_group_delta.sign < 0:
+                if container_group_delta.container_group.id in groups_to_change:
+                    del groups_to_change[container_group_delta.container_group.id]
+                else:
+                    # attempt to find an appropriate candidate for failing in groups_to_change
+                    container_group_leftover = container_group_delta.container_group
+                    ids_to_remove = []
+                    for group_id, group in groups_to_change.items():
+                        if container_group_leftover.containers_count <= 0:
+                            break
+
+                        if group.can_be_coerced(container_group_leftover):
+                            container_group_leftover.containers_count -= group.containers_count
+                            group.shrink(container_group_leftover)
+                            if group.containers_count == 0:
+                                ids_to_remove.append(group_id)
+
+                    for group_id in ids_to_remove:
+                        del groups_to_change[group_id]
 
     def extract_container_groups(self,
                                  in_change : bool):

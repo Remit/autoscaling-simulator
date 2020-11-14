@@ -46,6 +46,9 @@ class NodeInfo(ScaledContainer):
     def get_name(self):
         return self.node_type
 
+    def get_provider(self):
+        return self.provider
+
     def get_capacity(self):
 
         capacity_dict = {'vCPU': self.vCPU,

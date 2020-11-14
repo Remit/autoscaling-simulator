@@ -46,7 +46,7 @@ class Count(ScalingAspect):
                 scalar_or_df : numbers.Number):
 
         if isinstance(scalar_or_df, numbers.Number):
-            return Count(self.value * scalar_or_df)
+            return Count(int(self.value * scalar_or_df))
         elif isinstance(scalar_or_df, pd.DataFrame):
             return df_convenience.convert_to_class(scalar_or_df * self.value,
                                                    self.__class__)

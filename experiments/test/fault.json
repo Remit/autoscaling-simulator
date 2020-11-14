@@ -1,0 +1,25 @@
+{
+  "node_groups_failures": [
+    {
+      "type": "termination",
+      "probability": 1.0,
+      "count_of_entities_affected": 1,
+      "region_name": "eu",
+      "failure_type_conf": {
+        "provider": "any",
+        "node_type": "any"
+      }
+    }
+  ],
+  "services_failures": [
+    {
+      "type": "termination",
+      "probability": 1.0,
+      "count_of_entities_affected": 1,
+      "region_name": "eu",
+      "failure_type_conf": {
+        "service_name": "appserver"
+      }
+    }
+  ]
+}

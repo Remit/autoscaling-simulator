@@ -6,6 +6,7 @@ from ..platform_state_delta import StateDelta
 
 from ....scaling.application_scaling_model import ApplicationScalingModel
 from ....scaling.platform_scaling_model import PlatformScalingModel
+from ....fault.fault_model import FaultModel
 
 class DeltaTimeline:
 
@@ -111,7 +112,7 @@ class DeltaTimeline:
                 for state_delta in state_deltas:
                     if state_delta.is_enforced:
                         # Marking node groups ids that should be removed right away (scale-down enforced)
-                        state_delta_regionalized_ids_for_removal = state_delta.get_container_groups_ids_for_removal_flat()
+                        state_delta_regionalized_ids_for_removal = state_delta.get_container_groups_ids_for_removal_flat()# TODO: check correctness? does it require providing ids of partially changed container grooups
                         for region_name, container_ids_list in state_delta_regionalized_ids_for_removal.items():
                             if not region_name in node_groups_ids_remove:
                                 node_groups_ids_remove[region_name] = []

@@ -179,7 +179,7 @@ class ServiceState:
     def force_remove_group(self,
                            container_group_id : int):
 
-        if container_group_id in self.to_be_removed:
+        if container_group_id in self.unschedulable:
             self.unschedulable.remove(container_group_id)
 
         if container_group_id in self.deployments:

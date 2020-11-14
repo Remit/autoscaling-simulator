@@ -1,6 +1,7 @@
 import numbers
 import collections
 import numpy as np
+from abc import ABC
 
 from .scaling_aspects import ScalingAspect, ScalingAspectDelta
 
@@ -43,6 +44,11 @@ class EntityGroup:
         else:
             raise TypeError(f'Unexpected type of scaling aspects dictionary to initialize the {self.__class__.__name__}')
 
+    def downsize_proportionally(self,
+                                downsizing_coef : float):
+
+        self.scaling_aspects['count'] *= (1 - downsizing_coef)
+
     def __add__(self,
                 other_group_or_delta):
 
@@ -60,7 +66,7 @@ class EntityGroup:
         to_add = None
         if isinstance(other_group_or_delta, EntityGroup):
             to_add = other_group_or_delta.scaling_aspects
-        elif isinstance(other_group_or_delta, EntityGroupDelta):
+        elif isinstance(other_group_or_delta, EntityGroupDeltaCommon):
             to_add = other_group_or_delta.aspects_deltas
         else:
             raise TypeError(f'Incorrect type of operand to _add to {self.__class__.__name__}: {other_group_or_delta.__class__.__name__}')
@@ -164,40 +170,13 @@ class EntityGroup:
 
         return self.entity_resource_reqs
 
-class EntityGroupDelta:
-
-    """
-    Wraps the entity group change and the direction of change, i.e. addition
-    or subtraction.
-    """
-
-    @staticmethod
-    def from_group(entity_group : EntityGroup,
-                   sign = 1):
-
-        if not isinstance(sign, int):
-            raise TypeError(f'The provided sign parameters is not of {int.__name__} type: {sign.__class__.__name__}')
-
-        if not isinstance(entity_group, EntityGroup):
-            raise TypeError(f'The provided argument is not of EntityGroup type: {entity_group.__class__.__name__}')
-
-        aspects_vals_raw_numbers = {}
-        for aspect_name, aspect_value in entity_group.scaling_aspects.items():
-            aspects_vals_raw_numbers[aspect_name] = sign * aspect_value.get_value()
-
-        return EntityGroupDelta(entity_group.entity_name,
-                                aspects_vals_raw_numbers,
-                                entity_group.entity_resource_reqs)
+class EntityGroupDeltaCommon(ABC):
 
     def __init__(self,
                  entity_name : str,
-                 aspects_vals : dict,
-                 entity_resource_reqs : ResourceRequirements):
+                 aspects_vals : dict):
 
         self.entity_name = entity_name
-        if not isinstance(entity_resource_reqs, ResourceRequirements):
-            raise TypeError(f'Unexpected type for entity resource requirements when initializing {self.__class__.__name__}: {entity_resource_reqs.__class__.__name__}')
-        self.entity_resource_reqs = entity_resource_reqs
         self.aspects_deltas = {}
         for aspect_name, aspect_value in aspects_vals.items():
             if isinstance(aspect_value, ScalingAspect):
@@ -207,6 +186,14 @@ class EntityGroupDelta:
                                                                       int(np.sign(aspect_value)))
             else:
                 raise TypeError(f'Unexpected type of scaling aspects values to initialize the {self.__class__.__name__}')
+
+    def to_raw_change(self):
+
+        aspects_vals_raw_numbers = {}
+        for aspect_name, aspect_delta in self.aspects_deltas.items():
+            aspects_vals_raw_numbers[aspect_name] = aspect_delta.to_raw_change()
+
+        return aspects_vals_raw_numbers
 
     def __add__(self,
                 other_delta : 'EntityGroupDelta'):
@@ -240,26 +227,6 @@ class EntityGroupDelta:
 
         return new_delta
 
-    def copy(self):
-
-        return EntityGroupDelta(self.entity_name,
-                                self.to_raw_change(),
-                                self.entity_resource_reqs)
-
-    def to_raw_change(self):
-
-        aspects_vals_raw_numbers = {}
-        for aspect_name, aspect_delta in self.aspects_deltas.items():
-            aspects_vals_raw_numbers[aspect_name] = aspect_delta.to_raw_change()
-
-        return aspects_vals_raw_numbers
-
-    def to_entity_group(self):
-
-        return EntityGroup(self.entity_name,
-                           self.entity_resource_reqs,
-                           self.to_raw_change())
-
     def get_aspect_change_sign(self,
                                scaled_aspect_name : str):
 
@@ -267,6 +234,62 @@ class EntityGroupDelta:
             return self.aspects_deltas[scaled_aspect_name].sign
         else:
             raise ValueError(f'Aspect {scaled_aspect_name} not found in {self.__class__.__name__}')
+
+class EntityGroupDeltaDummy(EntityGroupDeltaCommon):
+
+    def __init__(self,
+                 entity_name : str,
+                 aspects_vals : dict):
+
+        super().__init__(entity_name, aspects_vals)
+
+class EntityGroupDelta(EntityGroupDeltaCommon):
+
+    """
+    Wraps the entity group change and the direction of change, i.e. addition
+    or subtraction.
+    """
+
+    @staticmethod
+    def from_group(entity_group : EntityGroup,
+                   sign = 1):
+
+        if not isinstance(sign, int):
+            raise TypeError(f'The provided sign parameters is not of {int.__name__} type: {sign.__class__.__name__}')
+
+        if not isinstance(entity_group, EntityGroup):
+            raise TypeError(f'The provided argument is not of EntityGroup type: {entity_group.__class__.__name__}')
+
+        aspects_vals_raw_numbers = {}
+        for aspect_name, aspect_value in entity_group.scaling_aspects.items():
+            aspects_vals_raw_numbers[aspect_name] = sign * aspect_value.get_value()
+
+        return EntityGroupDelta(entity_group.entity_name,
+                                aspects_vals_raw_numbers,
+                                entity_group.entity_resource_reqs)
+
+    def __init__(self,
+                 entity_name : str,
+                 aspects_vals : dict,
+                 entity_resource_reqs : ResourceRequirements):
+
+        super().__init__(entity_name, aspects_vals)
+
+        if not isinstance(entity_resource_reqs, ResourceRequirements):
+            raise TypeError(f'Unexpected type for entity resource requirements when initializing {self.__class__.__name__}: {entity_resource_reqs.__class__.__name__}')
+        self.entity_resource_reqs = entity_resource_reqs
+
+    def copy(self):
+
+        return EntityGroupDelta(self.entity_name,
+                                self.to_raw_change(),
+                                self.entity_resource_reqs)
+
+    def to_entity_group(self):
+
+        return EntityGroup(self.entity_name,
+                           self.entity_resource_reqs,
+                           self.to_raw_change())
 
 class EntitiesState:
 
@@ -291,6 +314,25 @@ class EntitiesState:
                                                                     group_or_aspects_dict)
                 else:
                     raise TypeError(f'Unknown type of the init parameter: {groups_or_aspects.__class__.__name__}')
+
+    def can_be_coerced(self,
+                       entities_group_delta : 'EntitiesGroupDelta'):
+
+        if not isinstance(entities_group_delta, EntitiesGroupDelta):
+            raise TypeError('Unexpected type of the delta')
+
+        entities_changes = entities_group_delta.to_entities_raw_count_change()
+        for entity_name, change_val in entities_changes.items():
+            if not entity_name in self.entities_groups:
+                return False
+
+        return True
+
+    def downsize_proportionally(self,
+                                downsizing_coef : float):
+
+        for entity_group in self.entities_groups.values():
+            entity_group.downsize_proportionally(downsizing_coef)
 
     def get_entities_counts(self):
 
@@ -488,17 +530,26 @@ class EntitiesGroupDelta:
         self.deltas = {}
         for entity_name, aspects_vals in aspects_vals_per_entity.items():
 
-            if entity_name not in services_reqs:
-                raise ValueError(f'Resource requirements for entity {entity_name} were not provided')
-
-            self.deltas[entity_name] = EntityGroupDelta(entity_name,
-                                                        aspects_vals,
-                                                        services_reqs[entity_name])
+            if not entity_name in services_reqs:
+                self.deltas[entity_name] = EntityGroupDeltaDummy(entity_name,
+                                                                 aspects_vals)
+            else:
+                self.deltas[entity_name] = EntityGroupDelta(entity_name,
+                                                            aspects_vals,
+                                                            services_reqs[entity_name])
 
         # Signifies whether the delta should be considered during the enforcing or not.
         # The aim of 'virtual' property is to keep the connection between the deltas after the enforcement.
         self.virtual = virtual
         self.in_change = in_change
+
+    def to_entities_raw_count_change(self):
+
+        changes = {}
+        for entity_name, delta in self.deltas.items():
+            changes[entity_name] = delta.to_raw_change()['count']
+
+        return changes
 
     def to_entities_state(self):
 
