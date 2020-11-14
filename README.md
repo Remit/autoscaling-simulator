@@ -1,4 +1,4 @@
-# Drozd: Extendable Simulator for Millisecond-scale Autoscaling
+# Multiverse: Extendable Autoscaling Policies Simulation across Resource Abstraction Layers
 
 Ideas for experimentation:
 - adaptable scaling policy computation interval
