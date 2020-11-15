@@ -29,15 +29,20 @@ class ScaledEntity:
             metrics_by_priority = {}
             for metric_description in scaling_setting_for_entity.metrics_descriptions:
 
-                if metric_description.entity_name == scaled_entity_class:
-                    metric_description.entity_name = scaled_entity_name
+                m_entity_name = metric_description.entity_name
+                m_source_name = metric_description.metric_source_name
 
-                if metric_description.metric_source_name == scaled_entity_class:
-                    metric_description.metric_source_name = scaled_entity_name
+                if m_entity_name == scaled_entity_class:
+                    m_entity_name = scaled_entity_name
 
-                metric_description.state_reader = state_reader
+                if m_source_name == scaled_entity_class:
+                    m_source_name = scaled_entity_name
 
-                metrics_by_priority[metric_description.priority] = metric_description.convert_to_metric(regions)
+                if m_entity_name == scaled_entity_name:
+                    metrics_by_priority[metric_description.priority] = metric_description.convert_to_metric(regions,
+                                                                                                            m_entity_name,
+                                                                                                            m_source_name,
+                                                                                                            state_reader)
 
             self.metrics_by_priority = collections.OrderedDict(sorted(metrics_by_priority.items()))
 

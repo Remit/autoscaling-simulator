@@ -8,11 +8,11 @@
 				"buffer_capacity_by_request_type": [
 					{
 						"request_type": "auth",
-						"capacity": 5
+						"capacity": 100
 					},
 					{
 						"request_type": "buy",
-						"capacity": 1
+						"capacity": 50
 					}
 				]
 			},
@@ -44,11 +44,11 @@
 				"buffer_capacity_by_request_type": [
 					{
 						"request_type": "auth",
-						"capacity": 20
+						"capacity": 100
 					},
 					{
 						"request_type": "buy",
-						"capacity": 10
+						"capacity": 50
 					}
 				]
 			},
@@ -80,16 +80,16 @@
 				"buffer_capacity_by_request_type": [
 					{
 						"request_type": "auth",
-						"capacity": 10
+						"capacity": 100
 					},
 					{
 						"request_type": "buy",
-						"capacity": 5
+						"capacity": 50
 					}
 				]
 			},
 			"system_requirements": {
-				"vCPU": 1,
+				"vCPU": 2,
 		    "memory": 4000,
 		    "disk": 1024
 			},
@@ -122,12 +122,12 @@
 				},
 				{
 					"service": "appserver",
-					"upstream": 10,
-					"downstream": 0
+					"upstream": 50,
+					"downstream": 10
 				},
 				{
 					"service": "db",
-					"upstream": 10,
+					"upstream": 70,
 					"downstream": 0
 				}
 			],
@@ -166,8 +166,8 @@
 			"response_size_b": 1024,
 			"operation_type": "rw",
 			"processing_requirements": {
-				"vCPU": 1,
-				"memory": 100,
+				"vCPU": 2,
+				"memory": 200,
 				"disk": 0
 			}
 		}

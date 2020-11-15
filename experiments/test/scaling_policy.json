@@ -35,7 +35,7 @@
                 "resolution_window_ms": 10
               }
             },
-            "target_value": 0.2,
+            "target_value": 0.1,
             "stabilizer_conf": {
               "name": "maxStabilizer",
               "config": {

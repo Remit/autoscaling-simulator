@@ -179,10 +179,8 @@ class ApplicationModel:
                                       sampling_interval)
 
                     # Adding services as sources to the state managers
-                    self.state_reader.add_source(service_name,
-                                                 service)
-                    self.scaling_manager.add_source(service_name,
-                                                    service)
+                    self.state_reader.add_source(service_name, service)
+                    self.scaling_manager.add_source(service_name, service)
 
                     self.services[service_name] = service
 

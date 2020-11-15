@@ -203,9 +203,9 @@ class Placer:
                 # For each scaled entity compute how much of container does it consume
                 container_capacity_taken_by_entity = {}
                 for scaled_entity, instance_requirements in self.scaled_entity_instance_requirements_by_entity.items():
-                    current_provider = self.reader.get_placement_parameter(scaled_entity,
-                                                                           region_name,
-                                                                           'provider')# TODO: think of usage?
+                    #current_provider = self.reader.get_placement_parameter(scaled_entity,
+                    #                                                       region_name,
+                    #                                                       'provider')# TODO: think of usage?
 
                     entity_state = EntitiesState(groups_or_aspects = {scaled_entity: {'count': 1}},
                                                  entities_resource_reqs = {scaled_entity: instance_requirements})
@@ -301,9 +301,9 @@ class Placer:
                 placement_options_per_container = []
 
                 for scaled_entity, instance_requirements in self.scaled_entity_instance_requirements_by_entity.items():
-                    current_provider = self.reader.get_placement_parameter(scaled_entity,
-                                                                           region_name,
-                                                                           'provider')# TODO: think of usage?
+                    #current_provider = self.reader.get_placement_parameter(scaled_entity,
+                    #                                                       region_name,
+                    #                                                       'provider')# TODO: think of usage?
 
                     entity_state = EntitiesState(groups_or_aspects = {scaled_entity: {'count': 1}},
                                                  entities_resource_reqs = {scaled_entity: instance_requirements})
@@ -350,9 +350,9 @@ class Placer:
                 placement_options_per_container = []
 
                 for scaled_entity, instance_requirements in self.scaled_entity_instance_requirements_by_entity.items():
-                    current_provider = self.reader.get_placement_parameter(scaled_entity,
-                                                                           region_name,
-                                                                           'provider')# TODO: think of usage?
+                    #current_provider = self.reader.get_placement_parameter(scaled_entity,
+                    #                                                       region_name,
+                    #                                                       'provider')# TODO: think of usage?
 
                     entity_state = EntitiesState(groups_or_aspects = {scaled_entity: {'count': 1}},
                                                  entities_resource_reqs = {scaled_entity: instance_requirements})

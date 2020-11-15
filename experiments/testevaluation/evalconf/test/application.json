@@ -166,8 +166,8 @@
 			"response_size_b": 1024,
 			"operation_type": "rw",
 			"processing_requirements": {
-				"vCPU": 1,
-				"memory": 100,
+				"vCPU": 2,
+				"memory": 200,
 				"disk": 0
 			}
 		}

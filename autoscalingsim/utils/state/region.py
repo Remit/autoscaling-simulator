@@ -106,7 +106,7 @@ class Region:
         """
 
         entities_deltas_in_scaling_aspects_sorted = OrderedDict(sorted(entities_deltas_in_scaling_aspects.items(),
-                                                                       key = lambda elem: elem[1]))
+                                                                       key = lambda elem: elem[1]['count']))
 
         unmet_cumulative_reduction_on_ts = {}
         unmet_cumulative_increase_on_ts = {}

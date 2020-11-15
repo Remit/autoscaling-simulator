@@ -152,8 +152,7 @@ class ScalingManager(StateManager):
         if not entity_name in self.entities:
             raise ValueError(f'An attempt to set the scaling aspect of {entity_name} that is unknown to {self.__class__.__name__}')
 
-        self.entities[entity_name].state.update_aspect(region_name,
-                                                       aspect)
+        self.entities[entity_name].state.update_aspect(region_name, aspect)
 
     def compute_desired_state(self):
 

@@ -58,12 +58,24 @@ class MetricDescription:
         self.state_reader = None
 
     def convert_to_metric(self,
-                          regions : list):
+                          regions : list,
+                          entity_name : str = None,
+                          metric_source_name : str = None,
+                          state_reader : StateReader = None):
+
+        if entity_name is None:
+            entity_name = self.entity_name
+
+        if metric_source_name is None:
+            metric_source_name = self.metric_source_name
+
+        if state_reader is None:
+            state_reader = self.state_reader
 
         return ScalingMetricRegionalized(regions,
-                                         self.entity_name,
+                                         entity_name,
                                          self.aspect_name,
-                                         self.metric_source_name,
+                                         metric_source_name,
                                          self.metric_name,
                                          self.values_filter_conf,
                                          self.values_aggregator_conf,
@@ -76,7 +88,7 @@ class MetricDescription:
                                          self.initial_max_limit,
                                          self.initial_min_limit,
                                          self.initial_entity_representation_in_metric,
-                                         self.state_reader)
+                                         state_reader)
 
 class ScalingMetricRegionalized:
 
@@ -324,6 +336,10 @@ class ScalingMetric:
             metric_ratio = aggregated_metric_vals / self.target_value
             desired_scaled_aspect = cur_aspect_val * metric_ratio * self.entity_representation_in_metric
             desired_scaled_aspect_stabilized = self.stabilizer(desired_scaled_aspect)
+
+            #print(f'metric_ratio: {metric_ratio}')
+            #print(f'desired_scaled_aspect: {desired_scaled_aspect}')
+            #print(f'desired_scaled_aspect_stabilized: {desired_scaled_aspect_stabilized}')
 
             # Limiting the produced values of the desired scaled aspect
             # such that it stays inside the given band. The limiting

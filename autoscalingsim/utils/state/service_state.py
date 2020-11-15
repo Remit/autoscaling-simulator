@@ -213,7 +213,11 @@ class ServiceState:
             for deployment in self.deployments.values():
                 cur_deployment_util = deployment.get_utilization(metric_name, interval)
                 # Aligning the time series
-                common_index = cur_deployment_util.index.union(service_metric_value.index)
+                print('get_metric_value')
+                common_index = cur_deployment_util.index.union(service_metric_value.index).astype(cur_deployment_util.index.dtype)
+                print(common_index.dtype)
+                print(cur_deployment_util.index.dtype)
+                print(cur_deployment_util[cur_deployment_util.index.duplicated()])
                 cur_deployment_util = cur_deployment_util.reindex(common_index, fill_value = 0)
                 service_metric_value = service_metric_value.reindex(common_index, fill_value = 0)
                 service_metric_value += cur_deployment_util
