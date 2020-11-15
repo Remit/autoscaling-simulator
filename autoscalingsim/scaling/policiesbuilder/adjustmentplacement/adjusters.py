@@ -98,8 +98,8 @@ class Adjuster(ABC):
         ts_of_unmet_change, unmet_change = timeline_of_unmet_changes.next()
         in_work_state = current_state
 
-        print('Adjuster')
-        print(unmet_change)
+        #print('Adjuster')
+        #print(unmet_change)
 
         if not unmet_change is None: # was while
             # TODO: unmet_change now per aspect!!!

@@ -56,19 +56,22 @@ class Deployment:
         return self.node_group.get_processed_for_service(service_name)
 
     def update_utilization(self,
+                           service_name : str,
                            capacity_taken : SystemCapacity,
                            timestamp : pd.Timestamp,
                            averaging_interval : pd.Timedelta):
 
-        self.node_group.update_utilization(capacity_taken,
+        self.node_group.update_utilization(service_name,
+                                           capacity_taken,
                                            timestamp,
                                            averaging_interval)
 
     def get_utilization(self,
+                        service_name : str,
                         resource_name : str,
                         interval : pd.Timedelta = pd.Timedelta(0, unit = 'ms')):
 
-        return self.node_group.get_utilization(resource_name, interval)
+        return self.node_group.get_utilization(service_name, resource_name, interval)
 
 class ServiceState:
 
@@ -169,7 +172,7 @@ class ServiceState:
         for system_resource_name in SystemCapacity.layout:
             if not system_resource_name in self.service_utilizations:
                 self.service_utilizations[system_resource_name] = pd.DataFrame(columns = ['datetime', 'value']).set_index('datetime')
-            deployment_util = deployment.get_utilization(system_resource_name) # take all the available data for the given resource
+            deployment_util = deployment.get_utilization(self.service_name, system_resource_name) # take all the available data for the given resource
             # Aligning the time series
             common_index = deployment_util.index.union(self.service_utilizations[system_resource_name].index)
             deployment_util = deployment_util.reindex(common_index, fill_value = 0)
@@ -211,13 +214,9 @@ class ServiceState:
         # Case of resource utilization metric
         if metric_name in SystemCapacity.layout:
             for deployment in self.deployments.values():
-                cur_deployment_util = deployment.get_utilization(metric_name, interval)
+                cur_deployment_util = deployment.get_utilization(self.service_name, metric_name, interval)
                 # Aligning the time series
-                print('get_metric_value')
                 common_index = cur_deployment_util.index.union(service_metric_value.index).astype(cur_deployment_util.index.dtype)
-                print(common_index.dtype)
-                print(cur_deployment_util.index.dtype)
-                print(cur_deployment_util[cur_deployment_util.index.duplicated()])
                 cur_deployment_util = cur_deployment_util.reindex(common_index, fill_value = 0)
                 service_metric_value = service_metric_value.reindex(common_index, fill_value = 0)
                 service_metric_value += cur_deployment_util
@@ -301,7 +300,8 @@ class ServiceState:
                 for deployment in self.deployments.values():
                     deployment_capacity_taken = deployment.system_capacity_reserved + deployment.compute_capacity_taken_by_requests(self.service_name,
                                                                                                                                     self.request_processing_infos)
-                    deployment.update_utilization(deployment_capacity_taken,
+                    deployment.update_utilization(self.service_name,
+                                                  deployment_capacity_taken,
                                                   cur_timestamp,
                                                   self.averaging_interval)
 

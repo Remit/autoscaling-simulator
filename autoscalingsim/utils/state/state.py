@@ -35,7 +35,7 @@ class ScaledEntityState(ABC):
             self.tmp_buffer_values.append(obs_value)
 
             # Averaging the given value type and returning it
-            return (obs_timestamp, sum(self.tmp_buffer_values) / len(self.tmp_buffer_values))
+            return sum(self.tmp_buffer_values) / len(self.tmp_buffer_values)
 
     @abstractmethod
     def update_metric(self,

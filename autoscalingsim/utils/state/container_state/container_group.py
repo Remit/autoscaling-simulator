@@ -105,19 +105,22 @@ class HomogeneousContainerGroup(ContainerGroup):
         self.shared_processor = RequestsProcessor()
 
     def update_utilization(self,
+                           service_name : str,
                            capacity_taken : SystemCapacity,
                            timestamp : pd.Timestamp,
                            averaging_interval : pd.Timedelta):
 
-        self.utilization.update_with_capacity(timestamp,
+        self.utilization.update_with_capacity(service_name,
+                                              timestamp,
                                               capacity_taken,
                                               averaging_interval)
 
     def get_utilization(self,
+                        service_name : str,
                         resource_name : str,
                         interval : pd.Timedelta):
 
-        return self.utilization.get(resource_name, interval)
+        return self.utilization.get(service_name, resource_name, interval)
 
     def get_processed_for_service(self,
                                   service_name : str):

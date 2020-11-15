@@ -30,8 +30,8 @@ class ResourceUtilization:
         if not isinstance(cur_ts, pd.Timestamp):
             raise TypeError('Timestamp of unexpected type')
 
-        ts, util = self.tmp_state.update_and_get(cur_ts, cur_val, averaging_interval)
-        self.utilization['datetime'].append(ts)
+        util = self.tmp_state.update_and_get(cur_ts, cur_val, averaging_interval)
+        self.utilization['datetime'].append(cur_ts)
         self.utilization['value'].append(util)
 
     def get(self,
@@ -49,12 +49,7 @@ class ResourceUtilization:
 
         return utilization
 
-class NodeGroupUtilization:
-
-    """
-    Wraps utilization information for different types of resources on the node group level.
-    For instance, such system resources are represented as CPU and memory.
-    """
+class ServiceUtilization:
 
     def __init__(self):
 
@@ -72,19 +67,6 @@ class NodeGroupUtilization:
                                                              capacity_taken.normalized_capacity_consumption(resource_name),
                                                              averaging_interval)
 
-    def update(self,
-               resource_name : str,
-               timestamp : pd.Timestamp,
-               value : float,
-               averaging_interval : pd.Timedelta):
-
-        if not resource_name in self.resource_utilizations:
-            raise ValueError(f'Unexpected resource name {resource_name} when updating {self.__class__.__name__}')
-
-        self.resource_utilizations[resource_name].update(timestamp,
-                                                         value,
-                                                         averaging_interval)
-
     def get(self,
             resource_name : str,
             interval : pd.Timedelta):
@@ -93,3 +75,38 @@ class NodeGroupUtilization:
             raise ValueError(f'Unexpected resource name {resource_name} when reading {self.__class__.__name__}')
 
         return self.resource_utilizations[resource_name].get(interval)
+
+
+class NodeGroupUtilization:
+
+    """
+    Wraps utilization information for different types of resources on the node group level.
+    For instance, such system resources are represented as CPU and memory.
+    """
+
+    def __init__(self):
+
+        self.service_utilizations = {}
+
+    def update_with_capacity(self,
+                             service_name : str,
+                             timestamp : pd.Timestamp,
+                             capacity_taken : SystemCapacity,
+                             averaging_interval : pd.Timedelta):
+
+        if not service_name in self.service_utilizations:
+            self.service_utilizations[service_name] = ServiceUtilization()
+
+        self.service_utilizations[service_name].update_with_capacity(timestamp,
+                                                                     capacity_taken,
+                                                                     averaging_interval)
+
+    def get(self,
+            service_name : str,
+            resource_name : str,
+            interval : pd.Timedelta):
+
+        if not service_name in self.service_utilizations:
+            raise ValueError(f'Unexpected service name {service_name} when reading {self.__class__.__name__}')
+
+        return self.service_utilizations[service_name].get(resource_name, interval)
