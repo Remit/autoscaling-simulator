@@ -57,11 +57,11 @@ class Simulator:
             try:
                 config = json.load(f)
 
-                if (not Simulator.CONF_LOAD_MODEL_KEY in config) or \
-                 (not Simulator.CONF_SCALING_MODEL_KEY in config) or \
-                 (not Simulator.CONF_PLATFORM_MODEL_KEY in config) or \
-                 (not Simulator.CONF_SCALING_POLICY_KEY in config) or \
-                 (not Simulator.CONF_APPLICATION_MODEL_KEY in config):
+                if (not self.__class__.CONF_LOAD_MODEL_KEY in config) or \
+                 (not self.__class__.CONF_SCALING_MODEL_KEY in config) or \
+                 (not self.__class__.CONF_PLATFORM_MODEL_KEY in config) or \
+                 (not self.__class__.CONF_SCALING_POLICY_KEY in config) or \
+                 (not self.__class__.CONF_APPLICATION_MODEL_KEY in config):
                     raise ValueError('The config listing file misses at least one key model.')
 
                 load_model = LoadModel(self.simulation_step,
@@ -70,10 +70,12 @@ class Simulator:
                 scaling_model = ScalingModel(self.simulation_step,
                                              os.path.join(configs_dir, config[self.__class__.CONF_SCALING_MODEL_KEY]))
 
-                fault_model = FaultModel(self.starting_time,
-                                         self.time_to_simulate,
-                                         self.simulation_step,
-                                         os.path.join(configs_dir, config[self.__class__.CONF_FAULT_MODEL_KEY]))
+                fault_model = None
+                if self.__class__.CONF_FAULT_MODEL_KEY in config:
+                    fault_model = FaultModel(self.starting_time,
+                                             self.time_to_simulate,
+                                             self.simulation_step,
+                                             os.path.join(configs_dir, config[self.__class__.CONF_FAULT_MODEL_KEY]))
 
                 platform_model = PlatformModel(scaling_model.platform_scaling_model,
                                                scaling_model.application_scaling_model,

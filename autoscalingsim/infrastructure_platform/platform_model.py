@@ -164,9 +164,11 @@ class PlatformModel:
         """
 
         # Introducing faults (if any)
-        fault_state_delta = self.fault_model.get_failure_state_deltas(cur_timestamp)
-        if not fault_state_delta is None:
-            self.state_deltas_timeline.add_state_delta(cur_timestamp, fault_state_delta)
+        if not self.fault_model is None:
+            fault_state_delta = self.fault_model.get_failure_state_deltas(cur_timestamp)
+            if not fault_state_delta is None:
+                self.state_deltas_timeline.add_state_delta(cur_timestamp, fault_state_delta)
+                
         actual_state, node_groups_ids_mark_for_removal, node_groups_ids_remove = self.state_deltas_timeline.roll_out_updates(cur_timestamp)
 
         if not self.scaling_manager is None:
