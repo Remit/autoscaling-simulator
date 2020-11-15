@@ -187,6 +187,12 @@ class EntityGroupDeltaCommon(ABC):
             else:
                 raise TypeError(f'Unexpected type of scaling aspects values to initialize the {self.__class__.__name__}')
 
+    def set_count_sign(self,
+                       sign : int):
+
+        if 'count' in self.aspects_deltas:
+            self.aspects_deltas['count'].sign = sign
+
     def to_raw_change(self):
 
         aspects_vals_raw_numbers = {}
@@ -542,6 +548,12 @@ class EntitiesGroupDelta:
         # The aim of 'virtual' property is to keep the connection between the deltas after the enforcement.
         self.virtual = virtual
         self.in_change = in_change
+
+    def set_count_sign(self,
+                       sign : int):
+
+        for delta in self.deltas.values():
+            delta.set_count_sign(sign)
 
     def to_entities_raw_count_change(self):
 

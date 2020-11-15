@@ -33,10 +33,11 @@ class ContainerGroup(ABC):
             raise TypeError(f'The provided container group is not of {self.__class__.__name__} type')
 
         if ((self.container_name == container_group.container_name) and (self.provider == container_group.provider)) \
-         or ((self.provider == container_group.provider) and (self.container_name is None or container_group.container_name is None)) \
-         or (self.provider is None and self.container_name is None) \
-         or (container_group.provider is None and container_group.container_name is None):
-            return True
+         or ((self.provider == container_group.provider) and (self.container_name == "any" or container_group.container_name == "any")) \
+         or (self.provider == "any" and self.container_name == "any") \
+         or (container_group.provider == "any" and container_group.container_name == "any"):
+            if self.containers_count >= container_group.containers_count:
+                return True
         else:
             return False
 

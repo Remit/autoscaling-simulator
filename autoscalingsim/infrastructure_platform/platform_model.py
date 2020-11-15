@@ -278,9 +278,8 @@ class PlatformModel:
         cur_state = PlatformState()
         interval_begins = list(timeline_of_deltas_raw.keys())
         interval_ends = list(timeline_of_deltas_raw.keys())[1:]
-        interval_ends.append(pd.Timestamp.max)
+        interval_ends.append(simulation_end)
         for timestamp_beg, timestamp_end in zip(interval_begins, interval_ends):
-
             timestamp = timestamp_beg
             deltas_lst = timeline_of_deltas_raw[timestamp]
             for delta in deltas_lst:

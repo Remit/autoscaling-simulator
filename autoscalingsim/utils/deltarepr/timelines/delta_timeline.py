@@ -87,23 +87,7 @@ class DeltaTimeline:
             for timestamp, state_deltas in timeline_to_consider.items():
                 for state_delta in state_deltas:
                     if not state_delta.is_enforced:
-                        new_timestamped_state_deltas = state_delta.enforce(self.platform_scaling_model,
-                                                                           self.application_scaling_model,
-                                                                           timestamp)
-
-                        # Marking node groups ids that should prepare for the removal, i.e. no requests should be sent there
-                        state_delta_regionalized_ids_for_removal = state_delta.get_container_groups_ids_for_removal()
-                        for entity_name, state_delta_ids_for_removal_per_entity in state_delta_regionalized_ids_for_removal.items():
-                            if not entity_name in node_groups_ids_mark_for_removal:
-                                node_groups_ids_mark_for_removal[entity_name] = {}
-
-                            for region_name, state_delta_ids_for_removal_per_entity_region in state_delta_ids_for_removal_per_entity.items():
-                                if not region_name in node_groups_ids_mark_for_removal[entity_name]:
-                                    node_groups_ids_mark_for_removal[entity_name][region_name] = []
-                                node_groups_ids_mark_for_removal[entity_name][region_name].extend(state_delta_ids_for_removal_per_entity_region)
-
-                        for new_timestamp, new_state_delta in new_timestamped_state_deltas.items():
-                            self.add_state_delta(new_timestamp, new_state_delta)
+                        node_groups_ids_mark_for_removal = self._enforce_state_delta(timestamp, state_delta)
 
             # Updating the actual state using the enforced deltas
             timeline_to_consider = { timestamp: state_deltas for timestamp, state_deltas in self.timeline.items() if (timestamp > self.time_of_last_state_update) and (timestamp <= borderline_ts_for_updates) }
@@ -111,15 +95,16 @@ class DeltaTimeline:
             for timestamp, state_deltas in timeline_to_consider.items():
                 for state_delta in state_deltas:
                     if state_delta.is_enforced:
-                        # Marking node groups ids that should be removed right away (scale-down enforced)
-                        state_delta_regionalized_ids_for_removal = state_delta.get_container_groups_ids_for_removal_flat()# TODO: check correctness? does it require providing ids of partially changed container grooups
-                        for region_name, container_ids_list in state_delta_regionalized_ids_for_removal.items():
-                            if not region_name in node_groups_ids_remove:
-                                node_groups_ids_remove[region_name] = []
-                            node_groups_ids_remove[region_name].extend(container_ids_list)
-
                         self.actual_state += state_delta
+
+                        compensating_delta = self.actual_state.extract_compensating_deltas()
+                        if not compensating_delta is None:
+                            _ = self._enforce_state_delta(timestamp, compensating_delta)
+
                         updates_applied = True
+
+            # Marking node groups ids that should be removed right away (scale-down enforced)
+            node_groups_ids_remove = self.actual_state.extract_ids_removed_since_last_time()
 
             self.time_of_last_state_update = borderline_ts_for_updates
 
@@ -127,3 +112,29 @@ class DeltaTimeline:
             cur_platform_state = self.actual_state
 
         return cur_platform_state, node_groups_ids_mark_for_removal, node_groups_ids_remove
+
+    def _enforce_state_delta(self,
+                             timestamp : pd.Timestamp,
+                             state_delta : StateDelta):
+
+        node_groups_ids_mark_for_removal = {}
+
+        new_timestamped_state_deltas = state_delta.enforce(self.platform_scaling_model,
+                                                           self.application_scaling_model,
+                                                           timestamp)
+
+        # Marking node groups ids that should prepare for the removal, i.e. no requests should be sent there
+        state_delta_regionalized_ids_for_removal = state_delta.get_container_groups_ids_for_removal()
+        for entity_name, state_delta_ids_for_removal_per_entity in state_delta_regionalized_ids_for_removal.items():
+            if not entity_name in node_groups_ids_mark_for_removal:
+                node_groups_ids_mark_for_removal[entity_name] = {}
+
+            for region_name, state_delta_ids_for_removal_per_entity_region in state_delta_ids_for_removal_per_entity.items():
+                if not region_name in node_groups_ids_mark_for_removal[entity_name]:
+                    node_groups_ids_mark_for_removal[entity_name][region_name] = []
+                node_groups_ids_mark_for_removal[entity_name][region_name].extend(state_delta_ids_for_removal_per_entity_region)
+
+        for new_timestamp, new_state_delta in new_timestamped_state_deltas.items():
+            self.add_state_delta(new_timestamp, new_state_delta)
+
+        return node_groups_ids_mark_for_removal

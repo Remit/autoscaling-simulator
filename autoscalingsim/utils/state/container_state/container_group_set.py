@@ -1,5 +1,5 @@
 from ..placement import Placement, EntitiesPlacement
-from .container_group import HomogeneousContainerGroup, GeneralizedDelta
+from .container_group import HomogeneousContainerGroup, GeneralizedDelta, ContainerGroupDelta
 from ...deltarepr.regional_delta import RegionalDelta
 
 class HomogeneousContainerGroupSet:
@@ -35,6 +35,8 @@ class HomogeneousContainerGroupSet:
                 self._homogeneous_groups[group.id] = group
 
         self._in_change_homogeneous_groups = homogeneous_groups_in_change
+        self.removed_container_group_ids = []
+        self.failures_compensating_deltas = []
 
     def to_placement(self):
 
@@ -86,29 +88,53 @@ class HomogeneousContainerGroupSet:
                         if group.entities_state.can_be_coerced(entities_group_delta):
                             group.add_to_entities_state(entities_group_delta)
 
+                            compensating_entities_group_delta = entities_group_delta.copy()
+                            compensating_entities_group_delta.set_count_sign(1)
+                            compensating_entities_group_delta.in_change = True
+                            compensating_container_group_delta = ContainerGroupDelta(group, in_change = False, virtual = True)
+                            self.failures_compensating_deltas.append(GeneralizedDelta(compensating_container_group_delta,
+                                                                                      compensating_entities_group_delta))
+
         else:
             # If the container group delta is not virtual, then add/remove it
             if container_group_delta.sign > 0:
                 groups_to_change[container_group_delta.container_group.id] = container_group_delta.container_group
             elif container_group_delta.sign < 0:
                 if container_group_delta.container_group.id in groups_to_change:
+                    self.removed_container_group_ids.append(container_group_delta.container_group.id)
                     del groups_to_change[container_group_delta.container_group.id]
-                else:
+                elif container_group_delta.in_change == in_change:
                     # attempt to find an appropriate candidate for failing in groups_to_change
-                    container_group_leftover = container_group_delta.container_group
-                    ids_to_remove = []
+                    self.removed_container_group_ids = []
                     for group_id, group in groups_to_change.items():
-                        if container_group_leftover.containers_count <= 0:
+                        if group.can_be_coerced(container_group_delta.container_group):
+                            group.shrink(container_group_delta.container_group)
+                            if group.containers_count == 0:
+                                self.removed_container_group_ids.append(group_id)
+                                group.containers_count = container_group_delta.container_group.containers_count
+                                container_group_delta.container_group = group
+
+                                compensating_container_group_delta = container_group_delta.copy()
+                                compensating_container_group_delta.sign = 1
+                                compensating_container_group_delta.in_change = True
+                                self.failures_compensating_deltas.append(GeneralizedDelta(compensating_container_group_delta,
+                                                                                          group.entities_state.to_delta(direction = 1)))
                             break
 
-                        if group.can_be_coerced(container_group_leftover):
-                            container_group_leftover.containers_count -= group.containers_count
-                            group.shrink(container_group_leftover)
-                            if group.containers_count == 0:
-                                ids_to_remove.append(group_id)
-
-                    for group_id in ids_to_remove:
+                    for group_id in self.removed_container_group_ids:
                         del groups_to_change[group_id]
+
+    def extract_compensating_deltas(self):
+
+        compensating_deltas = self.failures_compensating_deltas
+        self.failures_compensating_deltas = []
+        return compensating_deltas
+
+    def extract_ids_removed_since_last_time(self):
+
+        ids_ret = self.removed_container_group_ids
+        self.removed_container_group_ids = []
+        return ids_ret
 
     def extract_container_groups(self,
                                  in_change : bool):

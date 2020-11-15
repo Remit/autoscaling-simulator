@@ -40,6 +40,29 @@ class PlatformState:
         else:
             raise TypeError(f'Unknown type of regions on init: {regions.__class__.__name__}')
 
+    def extract_compensating_deltas(self):
+
+        compensating_deltas_in_regions = {}
+        for region_name, region in self.regions.items():
+            compensating_deltas = region.extract_compensating_deltas()
+            if not compensating_deltas is None:
+                compensating_deltas_in_regions[region_name] = compensating_deltas
+
+        if len(compensating_deltas_in_regions) > 0:
+            return StateDelta(compensating_deltas_in_regions)
+        else:
+            return None
+
+    def extract_ids_removed_since_last_time(self):
+
+        ids_in_regions = {}
+        for region_name, region in self.regions.items():
+            removed_ids = region.extract_ids_removed_since_last_time()
+            if len(removed_ids) > 0:
+                ids_in_regions[region_name] = removed_ids
+
+        return ids_in_regions
+
     def to_placements(self):
 
         placements_per_region = {}

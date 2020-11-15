@@ -54,6 +54,18 @@ class Region:
 
                     self.homogeneous_groups += regional_delta
 
+    def extract_compensating_deltas(self):
+
+        compensating_deltas = self.homogeneous_groups.extract_compensating_deltas()
+        if len(compensating_deltas) > 0:
+            return RegionalDelta(self.region_name, compensating_deltas)
+        else:
+            return None
+
+    def extract_ids_removed_since_last_time(self):
+
+        return self.homogeneous_groups.extract_ids_removed_since_last_time()
+
     def to_placement(self):
 
         return self.homogeneous_groups.to_placement()

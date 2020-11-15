@@ -22,13 +22,13 @@ class StateDelta:
         if isinstance(regional_deltas, list):
             for regional_delta in regional_deltas:
                 if not isinstance(regional_delta, RegionalDelta):
-                    raise TypeError(f'Expected RegionalDelta on initializing {self.__class__.__name__}, got {delta.__class__.__name__}')
+                    raise TypeError(f'Expected RegionalDelta on initializing {self.__class__.__name__}, got {regional_delta.__class__.__name__}')
 
             self.deltas_per_region[regional_delta.region_name] = regional_delta
         elif isinstance(regional_deltas, dict):
             for regional_delta in regional_deltas.values():
                 if not isinstance(regional_delta, RegionalDelta):
-                    raise TypeError(f'Expected RegionalDelta on initializing {self.__class__.__name__}, got {delta.__class__.__name__}')
+                    raise TypeError(f'Expected RegionalDelta on initializing {self.__class__.__name__}, got {regional_delta.__class__.__name__}')
 
             self.deltas_per_region = regional_deltas
         else:
