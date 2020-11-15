@@ -613,6 +613,14 @@ class EntitiesGroupDelta:
             else:
                 new_delta.deltas[entity_name] = other_delta.deltas[entity_name]
 
+        deltas_to_remove = []
+        for entity_name, delta in new_delta.deltas.items():
+            if delta.to_raw_change()['count'] == 0:
+                deltas_to_remove.append(entity_name)
+
+        for entity_name in deltas_to_remove:
+            del new_delta.deltas[entity_name]
+
         return new_delta
 
     def copy(self):

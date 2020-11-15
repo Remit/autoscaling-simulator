@@ -82,27 +82,14 @@ class WindowedCombiner(Combiner):
         self.aggregation_operation = sum # todo: consider parameterizing, should return single int
 
     def combine(self,
-                scaled_entities_adjustments : dict, # dict of dataframes
-                cur_timestamp : pd.Timestamp):
+                scaled_entities_adjustments : dict):
 
         unified_timeline_of_adjustments = {}
-        cur_begin = cur_timestamp
-        cur_end = cur_begin + self.window
-        cur_scaled_entities_adjustments = scaled_entities_adjustments.copy()
-        while len(cur_scaled_entities_adjustments) > 0:
-
-            if not cur_begin in unified_timeline_of_adjustments:
-                unified_timeline_of_adjustments[cur_begin] = {}
-
-            for scaled_entity, timeline_df in cur_scaled_entities_adjustments.items():
-                entity_adjustments_in_window = timeline_df[(timeline_df.index >= cur_begin) & (timeline_df.index < cur_end)]
-                unified_timeline_of_adjustments[cur_begin][scaled_entity] = entity_adjustments_in_window.apply(self.aggregation_operation).to_dict()
-                cur_scaled_entities_adjustments[scaled_entity] = timeline_df[timeline_df.index >= cur_end]
-
-            cur_scaled_entities_adjustments = {scaled_entity: scaled_entity_adjustment_timeline for scaled_entity, scaled_entity_adjustment_timeline in cur_scaled_entities_adjustments.items() if len(scaled_entity_adjustment_timeline) > 0 }
-
-            cur_begin = cur_end
-            cur_end += self.window
+        for scaled_entity, timeline_df in scaled_entities_adjustments.items():
+            aggregated_timeline = timeline_df.resample(self.window).apply(self.aggregation_operation).to_dict()
+            for aspect_name, timed_change in aggregated_timeline.items():
+                for ts, change_val in timed_change.items():
+                    unified_timeline_of_adjustments[ts] = {scaled_entity : {aspect_name : change_val}}
 
         unified_timeline_of_adjustments = OrderedDict(sorted(unified_timeline_of_adjustments.items(),
                                                              key = lambda elem: elem[0]))

@@ -53,13 +53,9 @@ class AdjustmentPolicy:
         prev_entities_state = platform_state.extract_collective_entities_states()
         for timestamp, desired_state_regionalized in desired_state_regionalized_per_timestamp.items():
 
-            #raw_scaling_aspects_changes = desired_state_regionalized.to_delta().extract_raw_scaling_aspects_changes()
-            #print(f'Before {raw_scaling_aspects_changes}')
-
             # Rolling subtraction
             entities_state_delta_on_ts = desired_state_regionalized.to_delta() - prev_entities_state.to_delta()
             raw_scaling_aspects_changes = entities_state_delta_on_ts.extract_raw_scaling_aspects_changes()
-            #print(f'After: {raw_scaling_aspects_changes}')
 
             for region_name, entities_changes in raw_scaling_aspects_changes.items():
                 if not region_name in entities_scaling_events:
@@ -73,14 +69,7 @@ class AdjustmentPolicy:
                         if not aspect_name in entities_scaling_events[region_name][entity_name]:
                             entities_scaling_events[region_name][entity_name][aspect_name] = {}
 
-                        if aspect_val_change != 0:
-                            entities_scaling_events[region_name][entity_name][aspect_name][timestamp] = aspect_val_change
-
-                        #print(f'region_name: {region_name}')
-                        #print(f'entity_name: {entity_name}')
-                        #print(f'aspect_name: {aspect_name}')
-                        #print(f'timestamp: {timestamp}')
-                        #print(f'change: {aspect_val_change}')
+                        entities_scaling_events[region_name][entity_name][aspect_name][timestamp] = aspect_val_change
 
             prev_entities_state = desired_state_regionalized
 

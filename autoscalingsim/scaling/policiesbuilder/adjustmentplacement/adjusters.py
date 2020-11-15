@@ -92,9 +92,6 @@ class Adjuster(ABC):
                                                                      entities_scaling_events,
                                                                      cur_timestamp)
 
-        timeline_of_deltas = DeltaTimeline(self.platform_scaling_model,
-                                           self.application_scaling_model,
-                                           current_state)
         ts_of_unmet_change, unmet_change = timeline_of_unmet_changes.next()
         in_work_state = current_state
 
@@ -102,6 +99,9 @@ class Adjuster(ABC):
         #print(unmet_change)
 
         if not unmet_change is None: # was while
+            timeline_of_deltas = DeltaTimeline(self.platform_scaling_model,
+                                               self.application_scaling_model,
+                                               current_state)
             # TODO: unmet_change now per aspect!!!
             # 1. We try to accommodate the unmet_change on the existing containers.
             # This may result in the scale down. The scale down is performed in such
@@ -161,7 +161,10 @@ class Adjuster(ABC):
             # resources or budget.
             timeline_of_unmet_changes.overwrite(ts_of_unmet_change, unmet_change)
 
-        return timeline_of_deltas
+            return timeline_of_deltas
+
+        else:
+            return None
 
 class CostMinimizer(Adjuster):
 

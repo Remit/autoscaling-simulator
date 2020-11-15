@@ -23,12 +23,12 @@ class TimelineOfDesiredEntitiesChanges:
         self.current_index = {}
 
         for region_name, scaling_events_timelines_per_entity in scaling_events_timelines_per_region_per_entity.items():
-            self.timeline_of_entities_changes[region_name] = self.combiner.combine(scaling_events_timelines_per_entity,
-                                                                                   cur_timestamp)
+            if len(scaling_events_timelines_per_entity) > 0:
+                self.timeline_of_entities_changes[region_name] = self.combiner.combine(scaling_events_timelines_per_entity)
 
-            self.current_index[region_name] = 0
-            if len(self.timeline_of_entities_changes[region_name]) > 0:
-                self.current_timestamp[region_name] = list(self.timeline_of_entities_changes[region_name].keys())[self.current_index[region_name]]
+                self.current_index[region_name] = 0
+                if len(self.timeline_of_entities_changes[region_name]) > 0:
+                    self.current_timestamp[region_name] = list(self.timeline_of_entities_changes[region_name].keys())[self.current_index[region_name]]
 
     def peek(self,
              reper_ts : pd.Timestamp):
