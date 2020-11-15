@@ -95,8 +95,8 @@ class Adjuster(ABC):
         ts_of_unmet_change, unmet_change = timeline_of_unmet_changes.next()
         in_work_state = current_state
 
-        #print('Adjuster')
-        #print(unmet_change)
+        print('Adjuster')
+        print(unmet_change)
 
         if not unmet_change is None: # was while
             timeline_of_deltas = DeltaTimeline(self.platform_scaling_model,
@@ -116,6 +116,7 @@ class Adjuster(ABC):
             # alternatives: either to add new containers to accommodate the change
             # or to start a new cluster and migrate services there.
             #unmet_change = {'eu': {'frontend': {'count': 2}}}
+            print(unmet_change)
             if len(unmet_change) > 0: # unmet_change can only be positive below
 
                 ts_next = timeline_of_unmet_changes.peek(ts_of_unmet_change)
@@ -146,20 +147,28 @@ class Adjuster(ABC):
                                                                             till_state_substitution_h)
 
                 # Comparing and selecting an alternative
-                chosen_state_deltas = None
+                chosen_state_delta = None
                 if state_score_simple_addition.collapse() > state_score_substitution.collapse():
-                    chosen_state_deltas = state_simple_addition_deltas
+                    chosen_state_delta = state_simple_addition_deltas
                 else:
-                    chosen_state_deltas = state_substitution_deltas
+                    chosen_state_delta = state_substitution_deltas
 
-                timeline_of_deltas.add_state_delta(ts_of_unmet_change, chosen_state_deltas)
+                #for region_name, delta_per_region in chosen_state_delta:
+                #    print(delta_per_region)
+                #    print(region_name)
+                #    for gd in delta_per_region:
+                #        print(f'id: {gd.container_group_delta.container_group.id}')
+                #        print(f'count: {gd.container_group_delta.container_group.containers_count}')
+
+
+                timeline_of_deltas.add_state_delta(ts_of_unmet_change, chosen_state_delta)
 
                 # Rolling out the enforced updates
-                in_work_state = timeline_of_deltas.roll_out_updates(ts_of_unmet_change)
+                #in_work_state = timeline_of_deltas.roll_out_updates(ts_of_unmet_change)
 
             # If by this time len(unmet_change) > 0, then there were not enough
             # resources or budget.
-            timeline_of_unmet_changes.overwrite(ts_of_unmet_change, unmet_change)
+            #timeline_of_unmet_changes.overwrite(ts_of_unmet_change, unmet_change)
 
             return timeline_of_deltas
 

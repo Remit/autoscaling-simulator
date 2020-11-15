@@ -55,6 +55,19 @@ class DeltaTimeline:
             if timestamp > borderline_ts:
                 self.timeline[timestamp] = list_of_updates
 
+        print(f'borderline_ts: {borderline_ts}')
+        print(f'min_timestamp_of_other_timeline: {min_timestamp_of_other_timeline}')
+        if len(self.timeline) > 0:
+            print('merge')
+            for ts, state_deltas in self.timeline.items():
+                for state_delta in state_deltas:
+                    for region_name, delta_per_region in state_delta:
+                        print(delta_per_region)
+                        print(region_name)
+                        for gd in delta_per_region:
+                            print(f'id: {gd.container_group_delta.container_group.id}')
+                            print(f'count: {gd.container_group_delta.container_group.containers_count}')
+
     def add_state_delta(self,
                         timestamp : pd.Timestamp,
                         state_delta : StateDelta):
