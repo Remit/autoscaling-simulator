@@ -3,6 +3,7 @@ import math
 import pandas as pd
 
 from matplotlib import pyplot as plt
+from collections.abc import Iterable
 
 from .. import plotting_constants
 
@@ -33,15 +34,21 @@ class NodesUsageLineGraph:
                 rows_cnt = math.ceil(plots_count / plotting_constants.MAX_PLOTS_CNT_ROW)
 
             fig, axs = plt.subplots(rows_cnt, cols_cnt,
-                                    sharey = True, tight_layout = True)
+                                    sharey = True, tight_layout = True,
+                                    figsize = (cols_cnt * 4, rows_cnt * 4))
 
             # Ref: https://stackoverflow.com/questions/6963035/pyplot-axes-labels-for-subplots/36542971#36542971
-            fig.add_subplot(111, frameon = False)
-            plt.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
+            #fig.add_subplot(111, frameon = False)
+            #plt.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
 
             max_desired_count = 1
-            for node_type in node_types:
+            i = 0
+            if not isinstance(axs, Iterable):
+                axs = [axs]
+                
+            for ax in axs:
 
+                node_type = node_types[i]
                 desired_ts = desired_node_count[node_type]['timestamps']
                 desired_count = desired_node_count[node_type]['count']
                 max_desired_count = max(max_desired_count, max(desired_count))
@@ -52,28 +59,30 @@ class NodesUsageLineGraph:
                     actual_ts = actual_node_count[node_type]['timestamps']
                     actual_count = actual_node_count[node_type]['count']
 
-                df_desired = pd.DataFrame(data = {'time': desired_ts,
-                                                  'nodes': desired_count})
-                df_actual = pd.DataFrame(data = {'time': actual_ts,
-                                                 'nodes': actual_count})
-                df_desired = df_desired.set_index('time')
-                df_actual = df_actual.set_index('time')
+                df_desired = pd.DataFrame(data = {'datetime': desired_ts, 'nodes': desired_count}).set_index('datetime')
+                df_actual = pd.DataFrame(data = {'datetime': actual_ts, 'nodes': actual_count}).set_index('datetime')
+                #common_index = df_desired.index.union(df_actual.index)
+                #ticklabels = df.index.strftime('%Y-%m-%d')
 
-                axs.title.set_text(f'Node type {node_type}')
-                _ = axs.plot(df_desired, label = "Desired count")
-                _ = axs.plot(df_actual, label = "Actual count")
+                ax.set_title(f'Node type {node_type}')
+                ax.plot(df_desired, label = "Desired count")
+                ax.plot(df_actual, label = "Actual count")
 
                 #fig.canvas.draw()
                 #axs.set_xticklabels([txt.get_text() for txt in axs.get_xticklabels()], rotation = 70)
 
-            axs.set_ylabel('Node count')
-            axs.set_ylim(top = math.ceil(1.2 * max_desired_count))
+                ax.set_ylabel('Node count')
+                ax.set_ylim(top = math.ceil(1.2 * max_desired_count))
 
-            handles, labels = axs.get_legend_handles_labels()
-            legend = axs.legend(handles, labels, loc = 'upper center', ncol = 2)
+                #handles, labels = axs.get_legend_handles_labels()
+                ax.legend(loc = 'upper center', ncol = 2) # legend =
+                #ax.set_xticklabels(common_index, rotation = 70)
+                ax.tick_params('x', labelrotation = 70)
 
-            fig.canvas.draw()
-            axs.set_xticklabels([txt.get_text() for txt in axs.get_xticklabels()], rotation = 70)
+                i += 1
+
+                #fig.canvas.draw()
+                #axs.set_xticklabels([txt.get_text() for txt in axs.get_xticklabels()], rotation = 70)
 
             if not figures_dir is None:
                 figure_path = os.path.join(figures_dir, plotting_constants.filename_format.format(region_name, cls.FILENAME))

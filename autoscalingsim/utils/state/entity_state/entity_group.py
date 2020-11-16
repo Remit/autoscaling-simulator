@@ -170,6 +170,11 @@ class EntityGroup:
 
         return self.entity_resource_reqs
 
+    def is_empty(self):
+
+        aspect_name = 'count'
+        return (self.scaling_aspects[aspect_name] == ScalingAspect.get(aspect_name)(0))
+
 class EntityGroupDeltaCommon(ABC):
 
     def __init__(self,
@@ -405,6 +410,13 @@ class EntitiesState:
                     new_groups[entity_name] = entity_group_to_add
         else:
             raise TypeError(f'An attempt to add the operand of type {entities_to_add.__class__.__name__} to the {self.__class__.__name__} when expecting type EntitiesGroupDelta or EntitiesState')
+
+        # Prune new groups from 0-sized groups
+        #new_groups_adj = {}
+        #for entity_name, group in new_groups.items():
+        #    if not group.is_empty():
+        #        new_groups_adj[entity_name] = group
+
         return EntitiesState(new_groups)
 
     def __truediv__(self,
@@ -500,7 +512,7 @@ class EntitiesState:
     def get_entity_count(self,
                          entity_name : str):
 
-        return self.get_aspect_value(entity_name, 'count').get_value()
+        return self.get_aspect_value(entity_name, 'count')
 
     def get_entity_resource_requirements(self,
                                          entity_name : str):

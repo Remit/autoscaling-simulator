@@ -36,8 +36,7 @@ class ContainerGroup(ABC):
          or ((self.provider == container_group.provider) and (self.container_name == "any" or container_group.container_name == "any")) \
          or (self.provider == "any" and self.container_name == "any") \
          or (container_group.provider == "any" and container_group.container_name == "any"):
-            if self.containers_count >= container_group.containers_count:
-                return True
+            return True
         else:
             return False
 
@@ -101,7 +100,11 @@ class HomogeneousContainerGroup(ContainerGroup):
         else:
             raise TypeError(f'Incorrect type of the entities_instances_counts when creating {self.__class__.__name__}: {entities_instances_counts.__class__.__name__}')
 
-        _, self.system_capacity = self.container_info.entities_require_capacity(self.entities_state)
+        fits, self.system_capacity = self.container_info.entities_require_capacity(self.entities_state, self.containers_count)
+        if not fits:
+            print(self.containers_count)
+            print(entities_instances_counts.get_entities_counts())
+            raise ValueError('An attempt to place entities on the node group of insufficient capacity')
         self.shared_processor = RequestsProcessor()
 
     def update_utilization(self,
@@ -169,19 +172,18 @@ class HomogeneousContainerGroup(ContainerGroup):
         if not isinstance(other_container_group, ContainerGroup):
             raise TypeError(f'An attempt to subtract unrecognized type from the {self.__class__.__name__}: {other_container_group.__class__.__name__}')
 
-        if not self.can_be_coerced(other_container_group):
-            raise ValueError(f'An attempt to coerce failed: {other_container_group.container_name} vs {self.container_name} and {other_container_group.provider} vs {self.provider}')
+        if self.can_be_coerced(other_container_group):
 
-        if not other_container_group.entities_state is None:
-            self.entities_state -= other_container_group.entities_state
-        else:
-            downsizing_coef = other_container_group.containers_count / self.containers_count
-            self.entities_state.downsize_proportionally(downsizing_coef)
+            if not other_container_group.entities_state is None:
+                self.entities_state -= other_container_group.entities_state
+            else:
+                downsizing_coef = other_container_group.containers_count / self.containers_count
+                self.entities_state.downsize_proportionally(downsizing_coef)
 
-        _, self.system_capacity = self.container_info.entities_require_capacity(self.entities_state)
+            _, self.system_capacity = self.container_info.entities_require_capacity(self.entities_state)
 
-        self.containers_count -= other_container_group.containers_count
-        self.link.update_bandwidth(self.containers_count)
+            self.containers_count -= other_container_group.containers_count
+            self.link.update_bandwidth(self.containers_count)
 
     def extract_scaling_aspects(self):
 
@@ -261,6 +263,10 @@ class HomogeneousContainerGroup(ContainerGroup):
                         dynamic_entities_instances_count[entity_name] -= 1
                         temp_change[entity_name] -= 1
 
+            print('soft_adjustment_internal')
+            print(f'temp_change: {temp_change}')
+            print(f'containers_count_to_consider: {containers_count_to_consider}')
+
             # Trying the same solution temp_accommodation to reduce the amount of iterations by
             # considering whether it can be repeated multiple times
             temp_change = {entity_name: change_val for entity_name, change_val in temp_change.items() if change_val != 0}
@@ -271,7 +277,7 @@ class HomogeneousContainerGroup(ContainerGroup):
 
             min_containers_needed = containers_count_to_consider
             if len(containers_needed) > 0:
-                min_containers_needed = min(containers_needed)
+                min_containers_needed = max(containers_count_to_consider, min(containers_needed))
 
             containers_count_to_consider -= min_containers_needed
 

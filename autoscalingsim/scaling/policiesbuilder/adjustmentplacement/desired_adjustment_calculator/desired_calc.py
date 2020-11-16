@@ -56,6 +56,11 @@ class DesiredChangeCalculator:
             # Optimize
             selected_placement = self.optimizer(scored_placements_lst)
 
+            for ep in selected_placement.entities_placements:
+                print('ep11')
+                print(ep.containers_count)
+                print(ep.entities_state.get_entities_counts())
+
             regions[region_name] = Region.from_conf(region_name,
                                                     selected_placement)
 

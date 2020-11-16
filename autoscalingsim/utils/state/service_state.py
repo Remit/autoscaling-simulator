@@ -22,11 +22,17 @@ class Deployment:
                  node_group : HomogeneousContainerGroup):
 
         self.node_group = node_group
+        #print(f'service_name: {service_name}')
+        #print(self.node_group.entities_state.get_entity_count(service_name))
 
-        deployed_service_count = self.node_group.entities_state.get_entity_count(service_name)
-        deployed_service_instance_resource_reqs = self.node_group.entities_state.get_entity_resource_requirements(service_name)
-        cap_taken = self.node_group.container_info.resource_requirements_to_capacity(deployed_service_instance_resource_reqs)
-        self.system_capacity_reserved = cap_taken * deployed_service_count
+        #deployed_service_count = self.node_group.entities_state.get_entity_count(service_name)
+        #deployed_service_instance_resource_reqs = self.node_group.entities_state.get_entity_resource_requirements(service_name)
+        #cap_taken = self.node_group.container_info.resource_requirements_to_capacity(deployed_service_instance_resource_reqs)
+        #self.system_capacity_reserved = cap_taken * deployed_service_count
+
+    def get_system_capacity_reserved(self):
+
+        return self.node_group.system_capacity
 
     def step(self,
              time_budget : pd.Timedelta):
@@ -254,8 +260,12 @@ class ServiceState:
             for deployment in self.deployments.values():
                 if not deployment.node_group.id in self.unschedulable:
                     time_budget = min(time_budget, deployment.step(time_budget))
-                    deployment_capacity_taken = deployment.system_capacity_reserved + deployment.compute_capacity_taken_by_requests(self.service_name,
-                                                                                                                                    self.request_processing_infos)
+                    deployment_capacity_taken = deployment.get_system_capacity_reserved() + deployment.compute_capacity_taken_by_requests(self.service_name,
+                                                                                                                                          self.request_processing_infos)
+
+                    #print('sys cap')
+                    #print(deployment.get_system_capacity_reserved().system_capacity_taken['vCPU'])
+                    #print(deployment.get_system_capacity_reserved().instance_count)
 
                     if not deployment_capacity_taken.is_exhausted():
                         while(time_budget > pd.Timedelta(0, unit = 'ms')):
@@ -298,8 +308,8 @@ class ServiceState:
             # Update resource utilization at the end of the step once per sampling interval
             if (cur_timestamp - pd.Timestamp(0)) % self.sampling_interval == pd.Timedelta(0):
                 for deployment in self.deployments.values():
-                    deployment_capacity_taken = deployment.system_capacity_reserved + deployment.compute_capacity_taken_by_requests(self.service_name,
-                                                                                                                                    self.request_processing_infos)
+                    deployment_capacity_taken = deployment.get_system_capacity_reserved() + deployment.compute_capacity_taken_by_requests(self.service_name,
+                                                                                                                                          self.request_processing_infos)
                     deployment.update_utilization(self.service_name,
                                                   deployment_capacity_taken,
                                                   cur_timestamp,

@@ -78,7 +78,8 @@ class NodeInfo(ScaledContainer):
         return SystemCapacity(self, 1, res_requirements.to_dict())
 
     def entities_require_capacity(self,
-                                  entities_state : EntitiesState) -> tuple:
+                                  entities_state : EntitiesState,
+                                  instances_count : int = 1) -> tuple:
 
         """
         Calculates how much capacity would be taken by the entities if they
@@ -106,7 +107,7 @@ class NodeInfo(ScaledContainer):
             if not label in self.labels:
                 return (False, 0.0)
 
-        capacity_taken = SystemCapacity(self, 1,
+        capacity_taken = SystemCapacity(self, instances_count,
                                         joint_resource_requirements.to_dict())
 
         allocated = not capacity_taken.is_exhausted()

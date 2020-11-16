@@ -145,6 +145,8 @@ class Region:
 
                 for gd in generalized_deltas_lst:
                     if gd.container_group_delta.in_change:
+                        #print('soft chnge')
+                        #print(gd.container_group_delta.container_group.containers_count)
                         # Non-enforced scale down:
                         # - adding the generalized delta to the list of non-enforced
                         # deltas s.t. it can be considered further down for

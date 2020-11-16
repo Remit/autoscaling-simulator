@@ -83,15 +83,21 @@ class Placer:
         # containers might be filled equally
         placements = []
         for container_name, placement_option in containers_required.items():
-            leftover_entities_state = entities_state % placement_option.entities_state
-            remainder_placement = EntitiesPlacement(placement_option.container_info,
-                                                    1,
-                                                    leftover_entities_state)
-            placement = Placement([remainder_placement])
-            if placement_option.containers_count > 1:
-                placement_option.containers_count -= 1
-                placement.add_entities_placement(placement_option)
+            #leftover_entities_state = entities_state % placement_option.entities_state
+            #remainder_placement = EntitiesPlacement(placement_option.container_info,
+            #                                        1,
+            #                                        leftover_entities_state)
+            #placement = Placement([remainder_placement])
+            #print(f'placement_option.containers_count: {placement_option.containers_count}')
+            #if placement_option.containers_count > 1:
+            #    placement_option.containers_count -= 1
+            #    placement.add_entities_placement(placement_option)
 
+            placement = Placement()
+            placement.add_entities_placement(placement_option)
+            for ep in placement.entities_placements:
+                print('ep')
+                print(ep.containers_count)
             placements.append(placement)
 
         return placements
@@ -200,7 +206,7 @@ class Placer:
 
         for provider_name, provider_nodes in self.container_for_scaled_entities_types.items():
             for container_name, container_info in provider_nodes:
-                # For each scaled entity compute how much of container does it consume
+                # For each scaled entity compute how much of container it consumes
                 container_capacity_taken_by_entity = {}
                 for scaled_entity, instance_requirements in self.scaled_entity_instance_requirements_by_entity.items():
                     #current_provider = self.reader.get_placement_parameter(scaled_entity,

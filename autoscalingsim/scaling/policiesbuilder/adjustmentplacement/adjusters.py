@@ -88,6 +88,10 @@ class Adjuster(ABC):
         on the next iteration of the loop.
         """
 
+        timeline_of_deltas = DeltaTimeline(self.platform_scaling_model,
+                                           self.application_scaling_model,
+                                           current_state)
+
         timeline_of_unmet_changes = TimelineOfDesiredEntitiesChanges(self.combiner,
                                                                      entities_scaling_events,
                                                                      cur_timestamp)
@@ -95,14 +99,11 @@ class Adjuster(ABC):
         ts_of_unmet_change, unmet_change = timeline_of_unmet_changes.next()
         in_work_state = current_state
 
-        print('Adjuster')
-        print(unmet_change)
+        #print('Adjuster')
+        #unmet_change = {'eu': {'db': {'count': 35}}}
+        #print(unmet_change)
+        while not unmet_change is None:
 
-        if not unmet_change is None: # was while
-            timeline_of_deltas = DeltaTimeline(self.platform_scaling_model,
-                                               self.application_scaling_model,
-                                               current_state)
-            # TODO: unmet_change now per aspect!!!
             # 1. We try to accommodate the unmet_change on the existing containers.
             # This may result in the scale down. The scale down is performed in such
             # a way that the largest possible group of unused containers is removed.
@@ -115,9 +116,13 @@ class Adjuster(ABC):
             # the changes on the considered timestamp, we need to consider the
             # alternatives: either to add new containers to accommodate the change
             # or to start a new cluster and migrate services there.
-            #unmet_change = {'eu': {'frontend': {'count': 2}}}
-            print(unmet_change)
+            #unmet_change = {'eu': {'db': {'count': 35}}}
+            #unmet_change = {}
             if len(unmet_change) > 0: # unmet_change can only be positive below
+                # Rolling out the enforced updates
+                new_in_work_state, _, _ = timeline_of_deltas.roll_out_updates(ts_of_unmet_change) # TODO: check if none!
+                if not new_in_work_state is None:
+                    in_work_state = new_in_work_state
 
                 ts_next = timeline_of_unmet_changes.peek(ts_of_unmet_change)
                 state_duration_h = (ts_next - ts_of_unmet_change) / pd.Timedelta(1, unit = 'h')
@@ -163,15 +168,16 @@ class Adjuster(ABC):
 
                 timeline_of_deltas.add_state_delta(ts_of_unmet_change, chosen_state_delta)
 
-                # Rolling out the enforced updates
-                #in_work_state = timeline_of_deltas.roll_out_updates(ts_of_unmet_change)
+
+
+            ts_of_unmet_change, unmet_change = timeline_of_unmet_changes.next()
 
             # If by this time len(unmet_change) > 0, then there were not enough
             # resources or budget.
             #timeline_of_unmet_changes.overwrite(ts_of_unmet_change, unmet_change)
 
+        if timeline_of_deltas.updated_at_least_once():
             return timeline_of_deltas
-
         else:
             return None
 

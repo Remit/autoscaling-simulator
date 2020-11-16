@@ -38,6 +38,7 @@ class ServiceDeployment:
             gen_delta = GeneralizedDelta(ContainerGroupDelta(container_group),
                                          EntitiesGroupDelta({self.service_name: self.init_service_aspects_regionalized[region_name]},
                                                             services_reqs = {self.service_name: self.system_requirements}))
+
             regional_deltas_lst.append(RegionalDelta(region_name,
                                                      [gen_delta]))
 
