@@ -50,6 +50,13 @@ class ContainerGroup(ABC):
         else:
             return self.entities_state.get_aspect_value(entity_name, aspect_name)
 
+    def get_running_entities(self):
+
+        if self.entities_state is None:
+            return []
+        else:
+            return self.entities_state.get_entities()
+
 class HomogeneousContainerGroupDummy(ContainerGroup):
 
     """

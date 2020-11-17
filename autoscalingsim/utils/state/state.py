@@ -16,7 +16,7 @@ class ScaledEntityState(ABC):
 
         def __init__(self):
 
-            self.tmp_buffer_datetimes = []#pd.DataFrame(columns = ['datetime', 'value']).set_index('datetime')
+            self.tmp_buffer_datetimes = []
             self.tmp_buffer_values = []
 
         def update_and_get(self,
@@ -42,14 +42,6 @@ class ScaledEntityState(ABC):
                       region_name : str,
                       metric_name : str,
                       timestamp : pd.Timestamp,
-                      value : float):
-
-        pass
-
-    @abstractmethod
-    def update_aspect(self,
-                      region_name : str,
-                      aspect_name : str,
                       value : float):
 
         pass

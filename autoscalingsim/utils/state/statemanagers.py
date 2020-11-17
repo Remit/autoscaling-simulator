@@ -90,7 +90,7 @@ class ScalingManager(StateManager):
 
         """
         Sets multiple scaling aspects associated with the state provided as
-        an argument to the  call.
+        an argument to the call.
         """
 
         # Enforces scaling aspects values on scaled entities
@@ -98,12 +98,8 @@ class ScalingManager(StateManager):
         for region_name, regional_container_groups in scaling_infos.items():
             for container_group in regional_container_groups:
 
-                scaling_aspects = container_group.extract_scaling_aspects()
-                for entity_name, aspects in scaling_aspects.items():
+                for entity_name in container_group.get_running_entities():
                     self.update_placement(entity_name, region_name, container_group)
-
-                    for aspect in aspects.values(): # unify with the above call to placement
-                        self.set_aspect_value(entity_name, region_name, aspect)
 
     def mark_groups_for_removal(self,
                                 entity_name : str,
@@ -137,22 +133,6 @@ class ScalingManager(StateManager):
             raise ValueError(f'An attempt to set the placement of {entity_name} that is unknown to {self.__class__.__name__}')
 
         self.entities[entity_name].state.update_placement(region_name, container_group)
-
-    def set_aspect_value(self,
-                         entity_name : str,
-                         region_name : str,
-                         aspect : ScalingAspect):
-
-        """
-        This method of the Scaling Manager is used by the Enforce step in the
-        scaling policy -- it is used to set the decided upon value of the scaling
-        aspect, e.g. the current number of service instances or the CPU shares.
-        """
-
-        if not entity_name in self.entities:
-            raise ValueError(f'An attempt to set the scaling aspect of {entity_name} that is unknown to {self.__class__.__name__}')
-
-        self.entities[entity_name].state.update_aspect(region_name, aspect)
 
     def compute_desired_state(self):
 

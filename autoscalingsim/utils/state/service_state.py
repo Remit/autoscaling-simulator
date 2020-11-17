@@ -1,9 +1,7 @@
 import operator
 import pandas as pd
 
-from .state import ScaledEntityState
 from .deployment import Deployment
-from .entity_state.entity_group import EntityGroup
 from .entity_state.scaling_aspects import ScalingAspect
 from .container_state.container_group import HomogeneousContainerGroup
 
@@ -27,6 +25,10 @@ class ServiceState:
 
         region_name (str): stores the name of the region, which the service
             owning this service state was deployed in.
+
+        service_instance_resource_requirements (ResourceRequirements): keeps
+            the resource requirements by the service instance without any
+            additional requests executed by it.
 
         request_processing_infos (dict): stores the information relevant for
             processing the requests such as their resource usage, used when
@@ -76,7 +78,6 @@ class ServiceState:
         self.service_name = service_name
         self.region_name = region_name
         self.service_instance_resource_requirements = service_instance_resource_requirements
-        #self.entity_group = EntityGroup(service_name, resource_requirements)# TODO: remove? in node group
         self.request_processing_infos = request_processing_infos
         self.averaging_interval = averaging_interval
         self.sampling_interval = sampling_interval
@@ -84,10 +85,10 @@ class ServiceState:
         self.upstream_buf = None
         self.downstream_buf = None
 
-        self.deployments = {} # Container groups that this service is currently deployed on
-        self.unschedulable = [] # Container gtoup IDs for groups that no new request should be scheduled on
+        self.deployments = {}
+        self.unschedulable = []
 
-        self.service_utilizations = {} # Utilization by different type of resource
+        self.service_utilizations = {}
 
         buffer_capacity_by_request_type = {}
         buffer_capacity_by_request_type_raw = ErrorChecker.key_check_and_load('buffer_capacity_by_request_type', buffers_config, 'service', service_name)
@@ -98,6 +99,7 @@ class ServiceState:
             ErrorChecker.value_check('capacity', capacity, operator.gt, 0, [f'request_type {request_type}', f'service {service_name}'])
 
             buffer_capacity_by_request_type[request_type] = capacity
+
         queuing_discipline = ErrorChecker.key_check_and_load('discipline', buffers_config, 'service', service_name)
 
         self.upstream_buf = RequestsBuffer(buffer_capacity_by_request_type, queuing_discipline)
@@ -107,18 +109,7 @@ class ServiceState:
 
         return self.service_instance_resource_requirements
 
-    def update_aspect(self,
-                      aspect : ScalingAspect):
-
-        """
-        Updates the scaling aspect value. This value is stored in the entity
-        group, e.g. the count of instances or the resource limit.
-        """
-        i = 0
-        #self.entity_group.update_aspect(aspect)
-
-    def update_placement(self,
-                         node_group : HomogeneousContainerGroup):
+    def update_placement(self, node_group : HomogeneousContainerGroup):
 
         self.deployments[node_group.id] = Deployment(self.service_name, node_group, self.request_processing_infos)
 
@@ -126,8 +117,7 @@ class ServiceState:
         self.upstream_buf.set_link(node_group.link)
         self.downstream_buf.set_link(node_group.link)
 
-    def prepare_group_for_removal(self,
-                                  container_group_id : int):
+    def prepare_group_for_removal(self, container_group_id : int):
 
         """
         Adds the provided ID of the container group to the list of groups
@@ -144,8 +134,7 @@ class ServiceState:
 
         return self.service_utilizations
 
-    def _check_out_utilization_for_deployment(self,
-                                              deployment : Deployment):
+    def _check_out_utilization_for_deployment(self, deployment : Deployment):
 
         """
         In contrast to getting the metric values on spot for scaling purposes,
@@ -165,8 +154,7 @@ class ServiceState:
             self.service_utilizations[system_resource_name] = self.service_utilizations[system_resource_name].reindex(common_index, fill_value = 0)
             self.service_utilizations[system_resource_name] += deployment_util
 
-    def force_remove_group(self,
-                           container_group_id : int):
+    def force_remove_group(self, container_group_id : int):
 
         if container_group_id in self.unschedulable:
             self.unschedulable.remove(container_group_id)
@@ -175,8 +163,7 @@ class ServiceState:
             self._check_out_utilization_for_deployment(self.deployments[container_group_id])
             del self.deployments[container_group_id]
 
-    def get_placement_parameter(self,
-                                parameter : str):
+    def get_placement_parameter(self, parameter : str):
 
         if self.placed_on_node is None:
             return None
@@ -222,8 +209,7 @@ class ServiceState:
 
         return processed_requests
 
-    def add_request(self,
-                    req : Request):
+    def add_request(self, req : Request):
 
         if req.upstream:
             self.upstream_buf.put(req)
@@ -294,161 +280,3 @@ class ServiceState:
                     deployment.update_utilization(deployment_capacity_taken,
                                                   cur_timestamp,
                                                   self.averaging_interval)
-
-class ServiceStateRegionalized(ScaledEntityState):
-
-    """
-    Contains information relevant to conduct the scaling. The state should be
-    updated at each simulation step and provided to the ServiceScalingPolicyHierarchy
-    s.t. the scaling decision could be taken. The information stored in the
-    ServiceState is diverse and satisfies any type of scaling policy that
-    could be used, be it utilization-based or workload-based policy, reactive
-    or predictive, etc.
-
-    TODO:
-        add properties for workload-based scaling + predictive
-    """
-
-    def __init__(self,
-                 service_name : str,
-                 init_timestamp : pd.Timestamp,
-                 service_regions : list,
-                 averaging_interval_ms,
-                 service_instance_resource_requirements : ResourceRequirements,
-                 request_processing_infos : dict,
-                 buffers_config : dict,
-                 sampling_interval : pd.Timestamp):
-
-        self.region_states = {}
-        self.service_name = service_name
-        for region_name in service_regions:
-            self.region_states[region_name] = ServiceState(service_name,
-                                                           init_timestamp,
-                                                           region_name,
-                                                           averaging_interval_ms,
-                                                           service_instance_resource_requirements,
-                                                           request_processing_infos,
-                                                           buffers_config,
-                                                           sampling_interval)
-
-    def add_request(self,
-                    req : Request):
-
-        if not req.region_name in self.region_states:
-            raise ValueError(f'Received request with an unknown region name: {req.region_name}')
-
-        self.region_states[req.region_name].add_request(req)
-
-    def step(self,
-             cur_timestamp : pd.Timestamp,
-             simulation_step : pd.Timedelta):
-
-        for service_state in self.region_states.values():
-            service_state.step(cur_timestamp, simulation_step)
-
-    def check_out_utilization(self):
-
-        """
-        Collects the utilization for the current state across all the regions that
-        it is deployed into.
-        """
-
-        utilization_per_region = {}
-        for region_name, region_state in self.region_states.items():
-            utilization_per_region[region_name] = region_state.check_out_utilization()
-
-        return utilization_per_region
-
-    def get_resource_requirements(self,
-                                  region_name : str):
-
-        if not region_name in self.region_states:
-            raise ValueError(f'A state for the given region name {region_name} was not found')
-
-        return self.region_states[region_name].get_resource_requirements()
-
-    def get_placement_parameter(self,
-                                region_name : str,
-                                parameter : str):
-
-        if not region_name in self.region_states:
-            raise ValueError(f'A state for the given region name {region_name} was not found')
-
-        return self.region_states[region_name].get_placement_parameter(parameter)
-
-    def update_metric(self,
-                      region_name : str,
-                      metric_name : str,
-                      timestamp : pd.Timestamp,
-                      value : float):
-
-        if not region_name in self.region_states:
-            raise ValueError(f'A state for the given region name {region_name} was not found')
-
-        self.region_states[region_name].update_metric(metric_name,
-                                                      timestamp,
-                                                      value)
-
-    def update_aspect(self,
-                      region_name : str,
-                      aspect : ScalingAspect):
-
-        if not region_name in self.region_states:
-            raise ValueError(f'A state for the given region name {region_name} was not found')
-
-        self.region_states[region_name].update_aspect(aspect)
-
-    def update_placement(self,
-                         region_name : str,
-                         node_group : HomogeneousContainerGroup):
-
-        if not region_name in self.region_states:
-            raise ValueError(f'A state for the given region name {region_name} was not found')
-
-        self.region_states[region_name].update_placement(node_group)
-
-    def get_aspect_value(self,
-                         region_name : str,
-                         aspect_name : str):
-
-        if not region_name in self.region_states:
-            raise ValueError(f'A state for the given region name {region_name} was not found')
-
-        return self.region_states[region_name].get_aspect_value(aspect_name)
-
-    def get_metric_value(self,
-                         region_name : str,
-                         metric_name : str):
-
-        if not region_name in self.region_states:
-            raise ValueError(f'A state for the given region name {region_name} was not found')
-
-        return self.region_states[region_name].get_metric_value(metric_name)
-
-    def get_processed(self):
-
-        """
-        Binds together all the processed requests and returns them.
-        """
-
-        processed_requests = []
-        for service_state in self.region_states.values():
-            processed_requests.extend(service_state.get_processed())
-
-        return processed_requests
-
-    def prepare_groups_for_removal(self,
-                                   region_name : str,
-                                   node_group_ids : list):
-
-        if region_name in self.region_states:
-            for node_group_id in node_group_ids:
-                self.region_states[region_name].prepare_group_for_removal(node_group_id)
-
-    def force_remove_groups(self,
-                            region_name : str,
-                            node_group_ids : list):
-
-        if region_name in self.region_states:
-            for node_group_id in node_group_ids:
-                self.region_states[region_name].force_remove_group(node_group_id)

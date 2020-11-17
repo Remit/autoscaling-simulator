@@ -13,8 +13,7 @@ class ScalingAspect(ABC):
     _Registry = {}
 
     @classmethod
-    def register(cls,
-                 name : str):
+    def register(cls, name : str):
 
         def decorator(scaling_aspect_class):
             cls._Registry[name] = scaling_aspect_class
@@ -23,13 +22,36 @@ class ScalingAspect(ABC):
         return decorator
 
     @classmethod
-    def get(cls,
-            name : str):
+    def get(cls, name : str):
 
         if not name in cls._Registry:
             raise ValueError(f'An attempt to use a non-existent scaling aspect {name}')
 
         return cls._Registry[name]
+
+    @abstractmethod
+    def __add__(self, other_aspect_val):
+        pass
+
+    @abstractmethod
+    def __radd__(self, other_aspect_val):
+        pass
+
+    @abstractmethod
+    def __sub__(self, other_aspect_val):
+        pass
+
+    @abstractmethod
+    def __mul__(self, scalar_or_df):
+        pass
+
+    @abstractmethod
+    def __mod__(self, other_aspect_val):
+        pass
+
+    @abstractmethod
+    def __floordiv__(self, other_aspect_val):
+        pass
 
     def __init__(self,
                  name : str,
@@ -47,9 +69,7 @@ class ScalingAspect(ABC):
 
         return self.value
 
-    def _comparison(self,
-                    other : 'ScalingAspect',
-                    comp_op):
+    def _comparison(self, other : 'ScalingAspect', comp_op):
 
         if isinstance(other, ScalingAspect):
             if self.name == other.name:
@@ -86,31 +106,6 @@ class ScalingAspect(ABC):
 
         return self._comparison(other, operator.ne)
 
-    @abstractmethod
-    def __add__(self,
-                other_aspect_val):
-        pass
-
-    @abstractmethod
-    def __sub__(self,
-                other_aspect_val):
-        pass
-
-    @abstractmethod
-    def __mul__(self,
-                scalar_or_df):
-        pass
-
-    @abstractmethod
-    def __mod__(self,
-                other_aspect_val):
-        pass
-
-    @abstractmethod
-    def __floordiv__(self,
-                     other_aspect_val):
-        pass
-
 class ScalingAspectDelta:
 
     """
@@ -118,9 +113,7 @@ class ScalingAspectDelta:
     Arithmetical operations on objects of this class yield the objects of the same class.
     """
 
-    def __init__(self,
-                 scaling_aspect : ScalingAspect,
-                 sign : int = 1):
+    def __init__(self, scaling_aspect : ScalingAspect, sign : int = 1):
 
         if not isinstance(scaling_aspect, ScalingAspect):
             raise TypeError(f'The provided scaling_aspect argument is not of ScalingAspect type: {scaling_aspect.__class__.__name__}')
@@ -130,8 +123,7 @@ class ScalingAspectDelta:
             raise TypeError(f'The provided sign argument is not of int type: {sign.__class__.__name__}')
         self.sign = sign
 
-    def __add__(self,
-                other_delta : 'ScalingAspectDelta'):
+    def __add__(self, other_delta : 'ScalingAspectDelta'):
 
         if not isinstance(other_delta, ScalingAspectDelta):
             raise TypeError(f'An attempt to add an object of unknown class to {self.__class__.__name__}: {other_delta.__class__.__name__}')
@@ -146,8 +138,7 @@ class ScalingAspectDelta:
         else:
             return ScalingAspectDelta(type(self.scaling_aspect)(abs(res_val)))
 
-    def __sub__(self,
-                other_delta : 'ScalingAspectDelta'):
+    def __sub__(self, other_delta : 'ScalingAspectDelta'):
 
         if not isinstance(other_delta, ScalingAspectDelta):
             raise TypeError(f'An attempt to subtract an object of unknown class from {self.__class__.__name__}: {other_delta.__class__.__name__}')
@@ -155,8 +146,7 @@ class ScalingAspectDelta:
         return self.__add__(ScalingAspectDelta(other_delta.scaling_aspect,
                                                -other_delta.sign))
 
-    def __mul__(self,
-                scalar : float):
+    def __mul__(self, scalar : float):
 
         if not isinstance(scalar, numbers.Number):
             raise TypeError(f'An attempt to multiply {self.__class__.__name__} by a non-scalar type {scalar.__class__.__name__}')

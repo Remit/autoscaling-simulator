@@ -68,12 +68,7 @@ class Count(ScalingAspect):
             raise TypeError(f'An attempt to perform floor division operation on {self.__class__.__name__} with an object of unknown type {other_aspect_val.__class__.__name__}')
 
         return Count(self.value // other_aspect_val.value)
-
-    #def __radd__(self,
-    #             other_aspect_val : numbers.Number):
-
-    #    return other_aspect_val + self.value
-
+        
     def __radd__(self,
                  other):
 

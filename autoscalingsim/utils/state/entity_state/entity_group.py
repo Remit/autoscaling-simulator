@@ -353,6 +353,10 @@ class EntitiesState:
 
         return entities_counts
 
+    def get_entities(self):
+
+        return list(self.entities_groups.keys())
+
     def get_entities_requirements(self):
 
         reqs_by_entity = {}

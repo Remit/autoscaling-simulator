@@ -5,7 +5,7 @@ from ..scaling.policiesbuilder.scaled.scaled_entity import ScaledEntity
 from ..scaling.policiesbuilder.scaling_policy_conf import ScalingPolicyConfiguration
 from ..load.request import Request
 from ..utils.requirements import ResourceRequirements
-from ..utils.state.service_state import ServiceStateRegionalized
+from ..utils.state.service_state_reg import ServiceStateRegionalized
 from ..utils.state.statemanagers import StateReader
 
 class Service(ScaledEntity):
