@@ -56,36 +56,33 @@ class ScalingAspect(ABC):
                 return comp_op(self.value, other.value)
             else:
                 raise ValueError(f'An attempt to compare different scaling aspects: {self.name} and {other.name}')
+        elif isinstance(other, numbers.Number):
+            other = self.__class__.get(self.name)(other)
+            return self._comparison(other, comp_op)
         else:
             raise TypeError(f'An attempt to compare scaling aspect {self.name} to the unsuppported type {other.__class__.__name__}')
 
-    def __gt__(self,
-               other : 'ScalingAspect'):
+    def __gt__(self, other):
 
         return self._comparison(other, operator.gt)
 
-    def __lt__(self,
-               other : 'ScalingAspect'):
+    def __lt__(self, other):
 
         return self._comparison(other, operator.lt)
 
-    def __ge__(self,
-               other : 'ScalingAspect'):
+    def __ge__(self, other):
 
         return self._comparison(other, operator.ge)
 
-    def __le__(self,
-               other : 'ScalingAspect'):
+    def __le__(self, other):
 
         return self._comparison(other, operator.le)
 
-    def __eq__(self,
-               other : 'ScalingAspect'):
+    def __eq__(self, other):
 
         return self._comparison(other, operator.eq)
 
-    def __ne__(self,
-               other : 'ScalingAspect'):
+    def __ne__(self, other):
 
         return self._comparison(other, operator.ne)
 

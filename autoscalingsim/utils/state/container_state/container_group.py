@@ -4,6 +4,7 @@ from abc import ABC
 
 from .requests_processor import RequestsProcessor
 from ..entity_state.entity_group import EntitiesGroupDelta, EntitiesState
+from ..entity_state.scaling_aspects import ScalingAspect
 
 from ....infrastructure_platform.system_capacity import SystemCapacity
 from ....infrastructure_platform.node import NodeInfo
@@ -39,6 +40,15 @@ class ContainerGroup(ABC):
             return True
         else:
             return False
+
+    def get_aspect_value_of_entities_state(self,
+                                           entity_name : str,
+                                           aspect_name : str):
+
+        if self.entities_state is None:
+            return ScalingAspect.get(aspect_name)(0)
+        else:
+            return self.entities_state.get_aspect_value(entity_name, aspect_name)
 
 class HomogeneousContainerGroupDummy(ContainerGroup):
 
@@ -159,10 +169,32 @@ class HomogeneousContainerGroup(ContainerGroup):
 
         return self.shared_processor.step(time_budget)
 
-    def start_processing(self,
-                         req : Request):
+    def start_processing(self, req : Request):
 
         self.shared_processor.start_processing(req)
+
+    def can_schedule_request(self,
+                             req : Request,
+                             request_processing_infos : dict):
+
+        """
+        Checks whether a new request can be scheduled. A new request can be
+        scheduled if 1) there are enough free system resources available in the
+        node group, and 2) there is at least one service instances available to
+        take on the new request.
+        """
+
+        system_resources_for_req = self.container_info.system_resources_to_take_from_requirements(request_processing_infos[req.request_type].resource_requirements)
+        system_resources_to_be_taken = self.system_resources_taken_by_all_requests(request_processing_infos) \
+                                        + self.system_capacity \
+                                        + system_resources_for_req
+
+        if (not system_resources_to_be_taken.is_exhausted()) \
+         and (self.entities_state.get_entity_count(req.processing_service) \
+               > sum( self.shared_processor.get_in_processing_stat(req.processing_service).values() ) ):
+            return True
+        else:
+            return False
 
     def is_empty(self):
 
@@ -270,9 +302,9 @@ class HomogeneousContainerGroup(ContainerGroup):
                         dynamic_entities_instances_count[entity_name] -= 1
                         temp_change[entity_name] -= 1
 
-            print('soft_adjustment_internal')
-            print(f'temp_change: {temp_change}')
-            print(f'containers_count_to_consider: {containers_count_to_consider}')
+            #print('soft_adjustment_internal')
+            #print(f'temp_change: {temp_change}')
+            #print(f'containers_count_to_consider: {containers_count_to_consider}')
 
             # Trying the same solution temp_accommodation to reduce the amount of iterations by
             # considering whether it can be repeated multiple times

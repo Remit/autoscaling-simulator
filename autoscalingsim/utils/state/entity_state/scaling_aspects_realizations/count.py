@@ -69,7 +69,15 @@ class Count(ScalingAspect):
 
         return Count(self.value // other_aspect_val.value)
 
-    def __radd__(self,
-                 other_aspect_val : numbers.Number):
+    #def __radd__(self,
+    #             other_aspect_val : numbers.Number):
 
-        return other_aspect_val + self.value
+    #    return other_aspect_val + self.value
+
+    def __radd__(self,
+                 other):
+
+        if isinstance(other, numbers.Number):
+            other = self.__class__(other)
+
+        return self + other

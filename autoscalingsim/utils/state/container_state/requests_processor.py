@@ -10,59 +10,60 @@ class RequestsProcessor:
 
     def __init__(self):
 
-        self.in_processing_simultaneous = []
+        self.in_processing_simultaneous = {}
         self.out = {}
         self.stat = {}
 
-    def step(self,
-             time_budget : pd.Timedelta):
+    def step(self, time_budget : pd.Timedelta):
 
         advancing = True
-        while advancing and len(self.in_processing_simultaneous) > 0 and time_budget > pd.Timedelta(0, unit ='ms'):
+        while advancing and any([len(processing_list) for processing_list in self.in_processing_simultaneous.values()]) and time_budget > pd.Timedelta(0, unit ='ms'):
             advancing = False
 
-            # Find minimal leftover duration, subtract it, and propagate the request
-            min_leftover_time = min([req.processing_time_left for req in self.in_processing_simultaneous])
+            # Find a minimal leftover duration, subtract it, and propagate the request
+            min_leftover_time = min([req.processing_time_left for processing_list in self.in_processing_simultaneous.values() for req in processing_list])
             min_time_to_subtract = min(min_leftover_time, time_budget)
             if min_time_to_subtract > pd.Timedelta(0, unit ='ms'):
                 advancing = True # advancing on requests processing being performed on this step
 
-            new_in_processing_simultaneous = []
-            for req in self.in_processing_simultaneous:
-                new_time_left = req.processing_time_left - min_time_to_subtract
+            for service_name, processing_list in self.in_processing_simultaneous.items():
+                new_in_processing_simultaneous = []
+                for req in processing_list:
+                    new_time_left = req.processing_time_left - min_time_to_subtract
 
-                req.cumulative_time += min_time_to_subtract
-                if new_time_left > pd.Timedelta(0, unit = 'ms'):
-                    req.processing_time_left = new_time_left
-                    new_in_processing_simultaneous.append(req)
+                    req.cumulative_time += min_time_to_subtract
+                    if new_time_left > pd.Timedelta(0, unit = 'ms'):
+                        req.processing_time_left = new_time_left
+                        new_in_processing_simultaneous.append(req)
 
-                else:
-                    advancing = True # advancing on the processing of a request being done
-                    req.processing_time_left = pd.Timedelta(0, unit = 'ms')
-                    self.stat[req.processing_service][req.request_type] -= 1
-                    if not req.processing_service in self.out:
-                        self.out[req.processing_service] = []
-                    self.out[req.processing_service].append(req)
+                    else:
+                        advancing = True # advancing on the processing of a request being done
+                        req.processing_time_left = pd.Timedelta(0, unit = 'ms')
+                        self.stat[service_name][req.request_type] -= 1
+                        if not req.processing_service in self.out:
+                            self.out[service_name] = []
+                        self.out[service_name].append(req)
 
-            self.in_processing_simultaneous = new_in_processing_simultaneous
+                self.in_processing_simultaneous[service_name] = new_in_processing_simultaneous
+
             time_budget -= min_time_to_subtract
 
         return time_budget
 
-    def start_processing(self,
-                         req : Request):
+    def start_processing(self, req : Request):
 
         if not req.processing_service in self.stat:
             self.stat[req.processing_service] = {}
+            self.in_processing_simultaneous[req.processing_service] = []
+
         self.stat[req.processing_service][req.request_type] = self.stat[req.processing_service].get(req.request_type, 0) + 1
-        self.in_processing_simultaneous.append(req)
+        self.in_processing_simultaneous[req.processing_service].append(req)
 
-    def requests_in_processing(self):
+    #def requests_in_processing(self):
+    #
+    #    return len(self.in_processing_simultaneous)
 
-        return len(self.in_processing_simultaneous)
-
-    def get_processed_for_service(self,
-                                  service_name : str):
+    def get_processed_for_service(self, service_name : str):
 
         processed_for_service = []
         if service_name in self.out:
@@ -71,8 +72,7 @@ class RequestsProcessor:
 
         return processed_for_service
 
-    def get_in_processing_stat(self,
-                               service_name : str):
+    def get_in_processing_stat(self, service_name : str):
 
         return self.stat.get(service_name, {})
 

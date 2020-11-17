@@ -93,3 +93,11 @@ class Deployment:
                         interval : pd.Timedelta = pd.Timedelta(0, unit = 'ms')):
 
         return self.node_group.get_utilization(self.service_name, resource_name, interval)
+
+    def can_schedule_request(self, req : Request):
+
+        return self.node_group.can_schedule_request(req, self.request_processing_infos)
+
+    def get_aspect_value(self, aspect_name : str):
+
+        return self.node_group.get_aspect_value_of_entities_state(self.service_name, aspect_name)

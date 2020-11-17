@@ -17,8 +17,50 @@ from ...infrastructure_platform.system_capacity import SystemCapacity
 class ServiceState:
 
     """
-    Wraps service state for a particular region. The information present in the state
-    is relevant for the scaling.
+    Represents service state in a particular region. The service state in a region
+    is organized in multiple deployments, each of which binds a certain count of
+    service instances to a particular node group.
+
+    Attributes:
+        service_name (str): stores the name of a service, used when initializing
+            the new deployments.
+
+        region_name (str): stores the name of the region, which the service
+            owning this service state was deployed in.
+
+        request_processing_infos (dict): stores the information relevant for
+            processing the requests such as their resource usage, used when
+            initializing the new deployments.
+
+        averaging_interval (pd.Timedelta): an interval of time used for
+            averaging the resource utilization data.
+
+        sampling_interval (pd.Timedelta): a sampling interval used to
+            manage the frequency of the resource utilization updates, i.e.
+            the resource utilization is updated only once per this interval.
+
+        upstream_buf (RequestsBuffer): a buffer for keeping the upstream
+            requests before they can be processed by the service. Direction:
+            from the user.
+
+        downstream_buf (RequestsBuffer): a buffer for keeping the downstream
+            requests (responses) before they can be processed by the service.
+            Direction: to the user.
+
+        deployments (dict): stores all the deployments access objects
+            to the node groups that the instances of the current service
+            are deployed on. A node group's unique id is used as a key.
+
+        unschedulable (list): stores unique ids of the node groups that
+            cannot be used in processing the incoming requests anymore, e.g.
+            because they are scheduled for termination.
+
+        service_utilizations (dict): stores the system resource utilization metrics
+            (e.g. vCPU, memory) to be provided to the application. Since the
+            node groups that originally accumulate these metrics can exist
+            only for a limited time, this utilization information is updated
+            upon removal of a deployment from the service state.
+
     """
 
     def __init__(self,
@@ -26,18 +68,26 @@ class ServiceState:
                  init_timestamp : pd.Timestamp,
                  region_name : str,
                  averaging_interval : pd.Timedelta,
-                 resource_requirements : ResourceRequirements,
+                 service_instance_resource_requirements : ResourceRequirements,
                  request_processing_infos : dict,
                  buffers_config : dict,
                  sampling_interval : pd.Timedelta):
 
         self.service_name = service_name
         self.region_name = region_name
-        self.entity_group = EntityGroup(service_name,
-                                        resource_requirements)
+        self.service_instance_resource_requirements = service_instance_resource_requirements
+        #self.entity_group = EntityGroup(service_name, resource_requirements)# TODO: remove? in node group
         self.request_processing_infos = request_processing_infos
         self.averaging_interval = averaging_interval
         self.sampling_interval = sampling_interval
+
+        self.upstream_buf = None
+        self.downstream_buf = None
+
+        self.deployments = {} # Container groups that this service is currently deployed on
+        self.unschedulable = [] # Container gtoup IDs for groups that no new request should be scheduled on
+
+        self.service_utilizations = {} # Utilization by different type of resource
 
         buffer_capacity_by_request_type = {}
         buffer_capacity_by_request_type_raw = ErrorChecker.key_check_and_load('buffer_capacity_by_request_type', buffers_config, 'service', service_name)
@@ -53,14 +103,9 @@ class ServiceState:
         self.upstream_buf = RequestsBuffer(buffer_capacity_by_request_type, queuing_discipline)
         self.downstream_buf = RequestsBuffer(buffer_capacity_by_request_type, queuing_discipline)
 
-        self.deployments = {} # Container groups that this service is currently deployed on
-        self.unschedulable = [] # Container gtoup IDs for groups that no new request should be scheduled on
-
-        self.service_utilizations = {} # Utilization by different type of resource
-
     def get_resource_requirements(self):
 
-        return self.entity_group.get_resource_requirements()
+        return self.service_instance_resource_requirements
 
     def update_aspect(self,
                       aspect : ScalingAspect):
@@ -69,8 +114,8 @@ class ServiceState:
         Updates the scaling aspect value. This value is stored in the entity
         group, e.g. the count of instances or the resource limit.
         """
-
-        self.entity_group.update_aspect(aspect)
+        i = 0
+        #self.entity_group.update_aspect(aspect)
 
     def update_placement(self,
                          node_group : HomogeneousContainerGroup):
@@ -141,10 +186,13 @@ class ServiceState:
             except AttributeError:
                 raise ValueError(f'Unknown parameter type {parameter}')
 
-    def get_aspect_value(self,
-                         aspect_name : str):
+    def get_aspect_value(self, aspect_name : str):
 
-        return self.entity_group.get_aspect_value(aspect_name)
+        aspect_values_collected = []
+        for deployment in self.deployments.values():
+            aspect_values_collected.append(deployment.get_aspect_value(aspect_name))
+
+        return sum(aspect_values_collected)
 
     # TODO: think of other kinds of metrics e.g. req count
     def get_metric_value(self,
@@ -195,39 +243,38 @@ class ServiceState:
             for deployment in self.deployments.values():
                 if not deployment.node_group.id in self.unschedulable:
                     time_budget = min(time_budget, deployment.step(time_budget))
-                    deployment_capacity_taken = deployment.system_resources_reserved() + deployment.system_resources_taken_by_all_requests()
-
-                    #print('sys cap')
-                    #print(deployment.system_resources_reserved().system_capacity_taken['vCPU'])
-                    #print(deployment.system_resources_reserved().instance_count)
+                    deployment_capacity_taken = deployment.system_resources_reserved() \
+                                                 + deployment.system_resources_taken_by_all_requests()
 
                     if not deployment_capacity_taken.is_exhausted():
-                        while(time_budget > pd.Timedelta(0, unit = 'ms')):
+
+                        while time_budget > pd.Timedelta(0, unit = 'ms'):
+                            advancing = True
 
                             # Assumption: first we try to process the downstream reqs to
                             # provide the response faster, but overall it is application-dependent
-                            while ((self.downstream_buf.size() > 0) or (self.upstream_buf.size() > 0)) and not deployment_capacity_taken.is_exhausted():
+                            while advancing and (self.downstream_buf.size() > 0 or self.upstream_buf.size() > 0):
+                                advancing = False
+
                                 req = self.downstream_buf.attempt_fan_in()
                                 if not req is None:
-                                    cap_taken = deployment.system_resources_to_take_from_requirements(self.request_processing_infos[req.request_type].resource_requirements)
-                                    if not (deployment_capacity_taken + cap_taken).is_exhausted():
+
+                                    if deployment.can_schedule_request(req):
                                         req = self.downstream_buf.fan_in()
                                         deployment.start_processing(req)
+                                        advancing = True
                                     else:
                                         self.downstream_buf.shuffle()
 
-                                    deployment_capacity_taken += cap_taken
-
                                 req = self.upstream_buf.attempt_take()
                                 if not req is None:
-                                    cap_taken = deployment.system_resources_to_take_from_requirements(self.request_processing_infos[req.request_type].resource_requirements)
-                                    if not (deployment_capacity_taken + cap_taken).is_exhausted():
+
+                                    if deployment.can_schedule_request(req):
                                         req = self.upstream_buf.take()
                                         deployment.start_processing(req)
+                                        advancing = True
                                     else:
                                         self.upstream_buf.shuffle()
-
-                                    deployment_capacity_taken += cap_taken
 
                                 time_budget -= simulation_step
 
@@ -242,7 +289,8 @@ class ServiceState:
             # Update resource utilization at the end of the step once per sampling interval
             if (cur_timestamp - pd.Timestamp(0)) % self.sampling_interval == pd.Timedelta(0):
                 for deployment in self.deployments.values():
-                    deployment_capacity_taken = deployment.system_resources_reserved() + deployment.system_resources_taken_by_requests()
+                    deployment_capacity_taken = deployment.system_resources_reserved() \
+                                                 + deployment.system_resources_taken_by_requests()
                     deployment.update_utilization(deployment_capacity_taken,
                                                   cur_timestamp,
                                                   self.averaging_interval)
@@ -266,7 +314,7 @@ class ServiceStateRegionalized(ScaledEntityState):
                  init_timestamp : pd.Timestamp,
                  service_regions : list,
                  averaging_interval_ms,
-                 resource_requirements : ResourceRequirements,
+                 service_instance_resource_requirements : ResourceRequirements,
                  request_processing_infos : dict,
                  buffers_config : dict,
                  sampling_interval : pd.Timestamp):
@@ -278,7 +326,7 @@ class ServiceStateRegionalized(ScaledEntityState):
                                                            init_timestamp,
                                                            region_name,
                                                            averaging_interval_ms,
-                                                           resource_requirements,
+                                                           service_instance_resource_requirements,
                                                            request_processing_infos,
                                                            buffers_config,
                                                            sampling_interval)

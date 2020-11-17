@@ -122,12 +122,12 @@
 				},
 				{
 					"service": "appserver",
-					"upstream": 50,
+					"upstream": 20,
 					"downstream": 10
 				},
 				{
 					"service": "db",
-					"upstream": 70,
+					"upstream": 30,
 					"downstream": 0
 				}
 			],
@@ -152,12 +152,12 @@
 				},
 				{
 					"service": "appserver",
-					"upstream": 10,
+					"upstream": 70,
 					"downstream": 0
 				},
 				{
 					"service": "db",
-					"upstream": 10,
+					"upstream": 100,
 					"downstream": 0
 				}
 			],

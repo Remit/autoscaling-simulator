@@ -507,12 +507,12 @@ class EntitiesState:
         if entity_name in self.entities_groups:
             return self.entities_groups[entity_name].get_aspect_value(aspect_name)
         else:
-            return 0
+            return ScalingAspect.get(aspect_name)(0)
 
     def get_entity_count(self,
                          entity_name : str):
 
-        return self.get_aspect_value(entity_name, 'count')
+        return self.get_aspect_value(entity_name, 'count').get_value()
 
     def get_entity_resource_requirements(self,
                                          entity_name : str):

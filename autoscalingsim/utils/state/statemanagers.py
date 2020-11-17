@@ -102,7 +102,7 @@ class ScalingManager(StateManager):
                 for entity_name, aspects in scaling_aspects.items():
                     self.update_placement(entity_name, region_name, container_group)
 
-                    for aspect in aspects.values():
+                    for aspect in aspects.values(): # unify with the above call to placement
                         self.set_aspect_value(entity_name, region_name, aspect)
 
     def mark_groups_for_removal(self,
