@@ -12,6 +12,32 @@ from ...load.request import Request
 from ...application.requests_buffer import RequestsBuffer
 from ...infrastructure_platform.system_capacity import SystemCapacity
 
+class ServiceMetric:
+
+    """
+    Interface to the service-level metrics.
+    """
+
+    def __init__(self,
+                 metric_name : str,
+                 source_refs : list,
+                 aggregation_func_on_iterable = None):
+
+        self.metric_name = metric_name
+        self.source_refs = source_refs
+        self.aggregation_func = aggregation_func_on_iterable
+
+    def get_metric_value(self):
+
+        results_lst = []
+        for source_ref in self.source_refs:
+            results_lst.append(source_ref.get_metric_value(self.metric_name))
+
+        if self.aggregation_func is None:
+            return results_lst[0]
+        else:
+            return self.aggregation_func(results_lst)
+
 class ServiceState:
 
     """
@@ -105,103 +131,33 @@ class ServiceState:
         self.upstream_buf = RequestsBuffer(buffer_capacity_by_request_type, queuing_discipline)
         self.downstream_buf = RequestsBuffer(buffer_capacity_by_request_type, queuing_discipline)
 
-    def get_resource_requirements(self):
+        self.service_metrics_and_sources = {
+            'upstream_waiting_time': ServiceMetric(RequestsBuffer.waiting_time_metric_name, [self.upstream_buf]),
+            'downstream_waiting_time': ServiceMetric(RequestsBuffer.waiting_time_metric_name, [self.downstream_buf]),
+            'waiting_time': ServiceMetric(RequestsBuffer.waiting_time_metric_name, [self.upstream_buf, self.downstream_buf], sum),
+            'upstream_waiting_requests_count': ServiceMetric(RequestsBuffer.waiting_requests_count_metric_name, [self.upstream_buf]),
+            'downstream_waiting_requests_count': ServiceMetric(RequestsBuffer.waiting_requests_count_metric_name, [self.downstream_buf]),
+            'waiting_requests_count': ServiceMetric(RequestsBuffer.waiting_requests_count_metric_name, [self.upstream_buf, self.downstream_buf], sum)
+        }
 
-        return self.service_instance_resource_requirements
-
-    def update_placement(self, node_group : HomogeneousContainerGroup):
-
-        self.deployments[node_group.id] = Deployment(self.service_name, node_group, self.request_processing_infos)
-
-        node_group.link.set_request_processing_infos(self.request_processing_infos)
-        self.upstream_buf.set_link(node_group.link)
-        self.downstream_buf.set_link(node_group.link)
-
-    def prepare_group_for_removal(self, container_group_id : int):
+    def add_request(self, req : Request):
 
         """
-        Adds the provided ID of the container group to the list of groups
-        that are soon to be removed. This should force the simulator
-        not to schedule any requests on such groups.
+        Puts a request in one of the requests buffers depending on
+        whether it moves upstream (request) or downstrem (response).
         """
 
-        self.unschedulable.append(container_group_id)
-
-    def check_out_utilization(self):
-
-        for deployment in self.deployments.values():
-            self._check_out_utilization_for_deployment(deployment)
-
-        return self.service_utilizations
-
-    def _check_out_utilization_for_deployment(self, deployment : Deployment):
-
-        """
-        In contrast to getting the metric values on spot for scaling purposes,
-        here we a) take all the available utilization data, and b) do not normalize
-        by the deployments count to show the full utilization reached over the
-        lifetime of the application. It is especially useful along with the
-        information on the actual number of deployed instances.
-        """
-
-        for system_resource_name in SystemCapacity.layout:
-            if not system_resource_name in self.service_utilizations:
-                self.service_utilizations[system_resource_name] = pd.DataFrame(columns = ['datetime', 'value']).set_index('datetime')
-            deployment_util = deployment.get_utilization(system_resource_name) # take all the available data for the given resource
-            # Aligning the time series
-            common_index = deployment_util.index.union(self.service_utilizations[system_resource_name].index)
-            deployment_util = deployment_util.reindex(common_index, fill_value = 0)
-            self.service_utilizations[system_resource_name] = self.service_utilizations[system_resource_name].reindex(common_index, fill_value = 0)
-            self.service_utilizations[system_resource_name] += deployment_util
-
-    def force_remove_group(self, container_group_id : int):
-
-        if container_group_id in self.unschedulable:
-            self.unschedulable.remove(container_group_id)
-
-        if container_group_id in self.deployments:
-            self._check_out_utilization_for_deployment(self.deployments[container_group_id])
-            del self.deployments[container_group_id]
-
-    def get_placement_parameter(self, parameter : str):
-
-        if self.placed_on_node is None:
-            return None
+        if req.upstream:
+            self.upstream_buf.put(req)
         else:
-            try:
-                return self.placed_on_node.__getattribute__(parameter)
-            except AttributeError:
-                raise ValueError(f'Unknown parameter type {parameter}')
-
-    def get_aspect_value(self, aspect_name : str):
-
-        aspect_values_collected = []
-        for deployment in self.deployments.values():
-            aspect_values_collected.append(deployment.get_aspect_value(aspect_name))
-
-        return sum(aspect_values_collected)
-
-    # TODO: think of other kinds of metrics e.g. req count
-    def get_metric_value(self,
-                         metric_name : str,
-                         interval : pd.Timedelta = pd.Timedelta(0, unit = 'ms')):
-
-        service_metric_value = pd.DataFrame(columns = ['datetime', 'value']).set_index('datetime')
-        # Case of resource utilization metric
-        if metric_name in SystemCapacity.layout:
-            for deployment in self.deployments.values():
-                cur_deployment_util = deployment.get_utilization(metric_name, interval)
-                # Aligning the time series
-                common_index = cur_deployment_util.index.union(service_metric_value.index).astype(cur_deployment_util.index.dtype)
-                cur_deployment_util = cur_deployment_util.reindex(common_index, fill_value = 0)
-                service_metric_value = service_metric_value.reindex(common_index, fill_value = 0)
-                service_metric_value += cur_deployment_util
-
-            service_metric_value /= len(self.deployments) # normalization
-
-        return service_metric_value
+            self.downstream_buf.put(req)
 
     def get_processed(self):
+
+        """
+        Returns the requests that were processed by any instance of the
+        current service. The requests are collected across all the deployments.
+        """
 
         processed_requests = []
         for deployment in self.deployments.values():
@@ -209,16 +165,17 @@ class ServiceState:
 
         return processed_requests
 
-    def add_request(self, req : Request):
-
-        if req.upstream:
-            self.upstream_buf.put(req)
-        else:
-            self.downstream_buf.put(req)
-
     def step(self,
              cur_timestamp : pd.Timestamp,
              simulation_step : pd.Timedelta):
+
+        """
+        Makes a simulation step on this service state. Making a simulation step
+        includes advancing the requests waiting in the buffers and putting
+        them in the node group that has enough free system resources and
+        enough spare service instances running. At the end of the step,
+        service utilization of the system resources is updated.
+        """
 
         time_budget = simulation_step
 
@@ -277,6 +234,117 @@ class ServiceState:
                 for deployment in self.deployments.values():
                     deployment_capacity_taken = deployment.system_resources_reserved() \
                                                  + deployment.system_resources_taken_by_requests()
-                    deployment.update_utilization(deployment_capacity_taken,
-                                                  cur_timestamp,
-                                                  self.averaging_interval)
+                    deployment.update_utilization(deployment_capacity_taken, cur_timestamp, self.averaging_interval)
+
+    def prepare_group_for_removal(self, node_group_id : int):
+
+        """
+        Adds the provided node group ID to the list of groups
+        that should not be used in scheduling the requests.
+        """
+
+        self.unschedulable.append(node_group_id)
+
+    def force_remove_group(self, node_group_id : int):
+
+        """
+        Removes the deployment that the provided node group is used in.
+        The record about this node group not being available for requests
+        scheduling is also removed.
+        """
+
+        if node_group_id in self.unschedulable:
+            self.unschedulable.remove(node_group_id)
+
+        if node_group_id in self.deployments:
+            self._check_out_utilization_for_deployment(self.deployments[node_group_id])
+            del self.deployments[node_group_id]
+
+    def update_placement(self, node_group : HomogeneousContainerGroup):
+
+        """
+        Creates a new deployment for the service instances with the new
+        node group. The node group might be shared among multiple services.
+        """
+
+        self.deployments[node_group.id] = Deployment(self.service_name, node_group, self.request_processing_infos)
+
+        node_group.link.set_request_processing_infos(self.request_processing_infos)
+        self.upstream_buf.set_link(node_group.link)
+        self.downstream_buf.set_link(node_group.link)
+
+    def get_aspect_value(self, aspect_name : str):
+
+        """
+        Collects values for the given aspect, e.g. count, from all the node
+        groups that the service instances of the current service are deployed in.
+        The collected values are summed up and returned.
+        """
+
+        aspect_values_collected = []
+        for deployment in self.deployments.values():
+            aspect_values_collected.append(deployment.get_aspect_value(aspect_name))
+
+        return sum(aspect_values_collected)
+
+    def get_metric_value(self,
+                         metric_name : str,
+                         #cur_timestamp : pd.Timestamp,
+                         interval : pd.Timedelta = pd.Timedelta(0, unit = 'ms')):
+
+        """
+        Collects and aggregates the service-related metrics, e.g. system resources
+        utilization, requests arrival and processing stats.
+        """
+
+        service_metric_value = pd.DataFrame(columns = ['datetime', 'value']).set_index('datetime')
+        # Case of resource utilization metric
+        if metric_name in SystemCapacity.layout:
+            for deployment in self.deployments.values():
+                cur_deployment_util = deployment.get_utilization(metric_name, interval)
+
+                # Aligning the time series
+                common_index = cur_deployment_util.index.union(service_metric_value.index).astype(cur_deployment_util.index.dtype)
+                cur_deployment_util = cur_deployment_util.reindex(common_index, fill_value = 0)
+                service_metric_value = service_metric_value.reindex(common_index, fill_value = 0)
+                service_metric_value += cur_deployment_util
+
+            service_metric_value /= len(self.deployments) # normalization
+        elif metric_name in self.service_metrics_and_sources:
+            self.service_metrics_and_sources[metric_name].get_metric_value()
+            # TODO: think of using cur_timestamp? propagate it
+
+        return service_metric_value
+
+    def check_out_utilization(self):
+
+        """
+        Fills up the service_utilizations field with up-to-date system
+        resources utilization data from all the deployments, and returns it.
+        """
+
+        for deployment in self.deployments.values():
+            self._check_out_utilization_for_deployment(deployment)
+
+        return self.service_utilizations
+
+    def _check_out_utilization_for_deployment(self, deployment : Deployment):
+
+        """
+        In contrast to getting the metric values on spot for scaling purposes,
+        this method a) takes all the available utilization data, and b) does not
+        normalize by the deployments count to show the full utilization reached
+        over the lifetime of an application. The utilization data is useful
+        along with the actual count of deployed node instances.
+        """
+
+        for system_resource_name in SystemCapacity.layout:
+            if not system_resource_name in self.service_utilizations:
+                self.service_utilizations[system_resource_name] = pd.DataFrame(columns = ['datetime', 'value']).set_index('datetime')
+            deployment_util = deployment.get_utilization(system_resource_name) # take all the available data for the given resource
+
+            # Aligning the time series
+            common_index = deployment_util.index.union(self.service_utilizations[system_resource_name].index)
+            deployment_util = deployment_util.reindex(common_index, fill_value = 0)
+            self.service_utilizations[system_resource_name] = self.service_utilizations[system_resource_name].reindex(common_index, fill_value = 0)
+            self.service_utilizations[system_resource_name] += deployment_util

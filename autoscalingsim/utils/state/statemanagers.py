@@ -85,8 +85,8 @@ class ScalingManager(StateManager):
     state calculation.
     """
 
-    def set_aspects_values(self,
-                           platform_state : PlatformState):
+    def set_aspects_values(self, platform_state : PlatformState):
+        # TODO: rename to set_deployments?
 
         """
         Sets multiple scaling aspects associated with the state provided as
@@ -97,7 +97,6 @@ class ScalingManager(StateManager):
         scaling_infos = platform_state.extract_container_groups(False)
         for region_name, regional_container_groups in scaling_infos.items():
             for container_group in regional_container_groups:
-
                 for entity_name in container_group.get_running_entities():
                     self.update_placement(entity_name, region_name, container_group)
 

@@ -77,7 +77,7 @@ class ServiceStateRegionalized(ScaledEntityState):
         if not region_name in self.region_states:
             raise ValueError(f'A state for the given region name {region_name} was not found')
 
-        return self.region_states[region_name].get_resource_requirements()
+        return self.region_states[region_name].service_instance_resource_requirements
 
     def get_placement_parameter(self,
                                 region_name : str,

@@ -10,6 +10,9 @@ class RequestsBuffer:
     Represents buffers where the requests wait to be served.
     """
 
+    waiting_time_metric_name = 'waiting_time'
+    waiting_requests_count_metric_name = 'waiting_requests_count'
+
     def __init__(self,
                  capacity_by_request_type : dict,
                  queuing_discipline : str = 'FIFO'):
@@ -23,6 +26,15 @@ class RequestsBuffer:
         self.reqs_cnt = {}
         for request_type in capacity_by_request_type.keys():
             self.reqs_cnt[request_type] = 0
+
+    def get_metric_value(self, metric_name : str):
+
+        if metric_name == self.__class__.waiting_time_metric_name:
+            return self.discipline.get_average_waiting_time()
+        elif metric_name == self.__class__.waiting_requests_count_metric_name:
+            return sum(self.reqs_cnt.values())
+        else:
+            raise ValueError(f'Unknown metric {metric_name} to get from {self.__class__.__name__}')
 
     def step(self,
              simulation_step : pd.Timedelta):

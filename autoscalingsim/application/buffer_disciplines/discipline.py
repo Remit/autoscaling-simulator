@@ -122,4 +122,8 @@ class QueuingDiscipline(ABC):
 
         return len(self.requests)
 
+    def get_average_waiting_time(self):
+
+        return sum([req.buffer_time[req.processing_service] for req in self.requests]) / len(self.requests)
+
 from .realizations import *
