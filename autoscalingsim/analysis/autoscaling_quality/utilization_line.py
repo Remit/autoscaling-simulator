@@ -2,6 +2,7 @@ import os
 import pandas as pd
 
 from matplotlib import pyplot as plt
+from collections.abc import Iterable
 
 from .. import plotting_constants
 
@@ -29,12 +30,15 @@ class UtilizationLineGraph:
 
         for region_name, utilization_per_service in utilization_regionalized.items():
             if len(utilization_per_service) > 0:
-                fig, axes = plt.subplots(nrows = plotting_constants.SYSTEM_RESOURCES_CNT,
-                                         ncols = len(utilization_per_service),
-                                         figsize = (plotting_constants.SYSTEM_RESOURCES_CNT * 4, len(utilization_per_service) * 4))
-                font = {'color':  'black',
-                        'weight': 'bold',
-                        'size': 12}
+                fig, axs = plt.subplots(nrows = plotting_constants.SYSTEM_RESOURCES_CNT,
+                                        ncols = len(utilization_per_service),
+                                        figsize = (plotting_constants.SYSTEM_RESOURCES_CNT * 4, len(utilization_per_service) * 4))
+                font = {'color':  'black', 'weight': 'bold', 'size': 12}
+                if not isinstance(axs, Iterable):
+                    axs = [axs]
+                if len(utilization_per_service) == 1:
+                    axs = [axs]
+
                 i = 0
                 for service_name, utilization_per_resource in utilization_per_service.items():
 
@@ -45,15 +49,13 @@ class UtilizationLineGraph:
                         utilization_ts.value = pd.to_numeric(utilization_ts.value)
                         resampled_utilization = utilization_ts.resample(resolution).mean()
 
-                        axes[j][i].plot(resampled_utilization, label = resource_name)
+                        axs[j][i].plot(resampled_utilization, label = resource_name)
 
                         unit = resolution // pd.Timedelta(1000, unit = 'ms')
-                        axes[j][i].set_ylabel(f'{resource_name} utilization, % per {unit} s')
-                        axes[j][i].legend(loc = "lower right")
-                        axes[j][i].set_title(f'Service {service_name}',
-                                             y = 1.2,
-                                             fontdict = font)
-                        plt.setp(axes[j][i].get_xticklabels(), rotation = 70, ha = "right", rotation_mode = "anchor")
+                        axs[j][i].set_ylabel(f'{resource_name} utilization, % per {unit} s')
+                        axs[j][i].legend(loc = "lower right")
+                        axs[j][i].set_title(f'Service {service_name}', y = 1.2, fontdict = font)
+                        plt.setp(axs[j][i].get_xticklabels(), rotation = 70, ha = "right", rotation_mode = "anchor")
 
                         j += 1
 

@@ -42,9 +42,7 @@ class ResponseTimesCDF:
                 _ = plt.plot(x_axis, cdf_vals, label = req_type)
 
             percentiles = [0.99, 0.95, 0.90, 0.80, 0.50]
-            font = {'color':  'black',
-                    'weight': 'normal',
-                    'size': 8}
+            font = {'color':  'black', 'weight': 'normal', 'size': 8}
             for percentile in percentiles:
                 plt.hlines(percentile, min(x_axis), max(x_axis),
                            colors='k', linestyles='dashed', lw = 0.5)

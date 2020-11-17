@@ -27,15 +27,16 @@ class WaitingServiceBuffersHistogram:
                 fig = plt.figure()
                 fig.add_subplot(111, frameon = False)
                 plt.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
-                outer = gridspec.GridSpec(outer_rows_cnt, outer_cols_cnt,
-                                          wspace=0.2, hspace=1.3)
+                outer = gridspec.GridSpec(outer_rows_cnt, outer_cols_cnt, wspace=0.2, hspace=1.3)
                 font = {'color':  'black', 'weight': 'bold', 'size': 12}
 
                 services_order = {}
+                plot_id = 0
                 for buffers_waiting_times in buffer_times_by_request.values():
-                    for index, service_name in enumerate(buffers_waiting_times):
+                    for service_name in buffers_waiting_times:
                         if not service_name in services_order:
-                            services_order[service_name] = index
+                            services_order[service_name] = plot_id
+                            plot_id += 1
 
                 max_cnt_of_services = max([len(buffers_waiting_times) for buffers_waiting_times in buffer_times_by_request.values()])
 

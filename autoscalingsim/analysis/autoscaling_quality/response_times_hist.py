@@ -2,6 +2,7 @@ import os
 import math
 
 from matplotlib import pyplot as plt
+from collections.abc import Iterable
 
 from .. import plotting_constants
 
@@ -29,6 +30,7 @@ class ResponseTimesHistogram:
             cols_cnt = plots_count
             if plots_count > plotting_constants.MAX_PLOTS_CNT_ROW:
                 rows_cnt = math.ceil(plots_count / plotting_constants.MAX_PLOTS_CNT_ROW)
+                cols_cnt = plotting_constants.MAX_PLOTS_CNT_ROW
 
             fig, axs = plt.subplots(rows_cnt, cols_cnt,
                                     sharey = True, tight_layout = True)
@@ -37,18 +39,14 @@ class ResponseTimesHistogram:
             fig.add_subplot(111, frameon = False)
             plt.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
 
+            if not isinstance(axs, Iterable):
+                axs = [axs]
+
             i = 0
             for req_type, response_times in response_times_per_request_type.items():
-                axs_adapted = axs
-
-                if cols_cnt * rows_cnt > 1:
-                    axs_adapted = axs[i]
-                    i += 1
-
-                axs_adapted.hist(response_times,
-                                 bins = bins_cnt)
-                axs_adapted.title.set_text(req_type)
-
+                axs[i].hist(response_times, bins = bins_cnt)
+                axs[i].title.set_text(req_type)
+                i += 1
 
             plt.xlabel('Response time, ms')
             plt.ylabel('Completed requests')
