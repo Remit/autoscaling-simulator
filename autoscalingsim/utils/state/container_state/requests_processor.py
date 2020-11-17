@@ -75,3 +75,7 @@ class RequestsProcessor:
                                service_name : str):
 
         return self.stat.get(service_name, {})
+
+    def get_services_ever_scheduled(self):
+
+        return self.stat.keys()

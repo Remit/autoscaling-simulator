@@ -66,8 +66,8 @@ class NodeInfo(ScaledContainer):
 
         return 0
 
-    def resource_requirements_to_capacity(self,
-                                          res_requirements : ResourceRequirements):
+    def system_resources_to_take_from_requirements(self,
+                                                   res_requirements : ResourceRequirements):
 
         """
         Computes system capacity that will be taken on this type of node

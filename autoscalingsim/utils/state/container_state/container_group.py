@@ -128,22 +128,31 @@ class HomogeneousContainerGroup(ContainerGroup):
 
         return self.shared_processor.get_processed_for_service(service_name)
 
-    def resource_requirements_to_capacity(self,
+    def system_resources_to_take_from_requirements(self,
                                           res_reqs : ResourceRequirements):
 
-        return self.container_info.resource_requirements_to_capacity(res_reqs)
+        return self.container_info.system_resources_to_take_from_requirements(res_reqs)
 
-    def compute_capacity_taken_by_requests(self,
+    def system_resources_taken_by_requests(self,
                                            service_name : str,
                                            request_processing_infos : dict):
 
         reqs_count_by_type = self.shared_processor.get_in_processing_stat(service_name)
         capacity_taken_by_reqs = SystemCapacity(self.container_info, self.containers_count)
         for request_type, request_count in reqs_count_by_type.items():
-            cap_taken = self.container_info.resource_requirements_to_capacity(request_processing_infos[request_type].resource_requirements) * request_count
+            cap_taken = self.container_info.system_resources_to_take_from_requirements(request_processing_infos[request_type].resource_requirements) * request_count
             capacity_taken_by_reqs += cap_taken
 
         return capacity_taken_by_reqs
+
+    def system_resources_taken_by_all_requests(self,
+                                               request_processing_infos : dict):
+
+        joint_capacity_taken_by_reqs = SystemCapacity(self.container_info, self.containers_count)
+        for service_name in self.shared_processor.get_services_ever_scheduled():
+            joint_capacity_taken_by_reqs += self.system_resources_taken_by_requests(service_name, request_processing_infos)
+
+        return joint_capacity_taken_by_reqs
 
     def step(self,
              time_budget : pd.Timedelta):
@@ -345,7 +354,7 @@ class HomogeneousContainerGroup(ContainerGroup):
 
         container_capacity_taken_by_entity = {}
         for scaled_entity, instance_requirements in scaled_entity_instance_requirements_by_entity.items():
-            container_capacity_taken_by_entity[scaled_entity] = self.container_info.resource_requirements_to_capacity(instance_requirements)
+            container_capacity_taken_by_entity[scaled_entity] = self.container_info.system_resources_to_take_from_requirements(instance_requirements)
 
         # Sort in decreasing order of consumed container capacity:
         # both allocation and deallocation profit more from first trying to
