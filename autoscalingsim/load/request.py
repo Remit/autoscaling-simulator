@@ -33,7 +33,7 @@ class Request:
         self.buffer_time = {}
 
         self.processing_service = None
-        self.upstream = False
+        self.upstream = True
         self.replies_expected = 1 # to implement the fan-in on the level of service
 
     def set_downstream(self):

@@ -17,19 +17,27 @@ class RequestsProcessor:
     def step(self,
              time_budget : pd.Timedelta):
 
-        if len(self.in_processing_simultaneous) > 0:
+        advancing = True
+        while advancing and len(self.in_processing_simultaneous) > 0 and time_budget > pd.Timedelta(0, unit ='ms'):
+            advancing = False
+
             # Find minimal leftover duration, subtract it, and propagate the request
             min_leftover_time = min([req.processing_time_left for req in self.in_processing_simultaneous])
             min_time_to_subtract = min(min_leftover_time, time_budget)
-            new_in_processing_simultaneous = []
+            if min_time_to_subtract > pd.Timedelta(0, unit ='ms'):
+                advancing = True # advancing on requests processing being performed on this step
 
+            new_in_processing_simultaneous = []
             for req in self.in_processing_simultaneous:
                 new_time_left = req.processing_time_left - min_time_to_subtract
+
                 req.cumulative_time += min_time_to_subtract
                 if new_time_left > pd.Timedelta(0, unit = 'ms'):
                     req.processing_time_left = new_time_left
                     new_in_processing_simultaneous.append(req)
+
                 else:
+                    advancing = True # advancing on the processing of a request being done
                     req.processing_time_left = pd.Timedelta(0, unit = 'ms')
                     self.stat[req.processing_service][req.request_type] -= 1
                     if not req.processing_service in self.out:

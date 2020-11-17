@@ -60,8 +60,7 @@ class Service(ScaledEntity):
              cur_timestamp : pd.Timestamp,
              simulation_step : pd.Timedelta):
 
-        self.state.step(cur_timestamp,
-                        simulation_step)
+        self.state.step(cur_timestamp, simulation_step)
 
     def get_processed(self):
 

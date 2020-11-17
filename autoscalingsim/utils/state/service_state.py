@@ -254,8 +254,8 @@ class ServiceState:
         time_budget = simulation_step
 
         if len(self.deployments) > 0:
-            self.downstream_buf.step(simulation_step)
             self.upstream_buf.step(simulation_step)
+            self.downstream_buf.step(simulation_step)
 
             for deployment in self.deployments.values():
                 if not deployment.node_group.id in self.unschedulable:

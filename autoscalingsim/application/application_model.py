@@ -208,7 +208,7 @@ class ApplicationModel:
         if len(self.new_requests) > 0:
             for req in self.new_requests:
                 entry_service = self.reqs_processing_infos[req.request_type].entry_service
-                req.processing_time_left = self.reqs_processing_infos[req.request_type].processing_times[entry_service][1]
+                req.processing_time_left = self.reqs_processing_infos[req.request_type].processing_times[entry_service][0]
                 req.processing_service = entry_service
                 self.services[entry_service].add_request(req)
 
@@ -227,7 +227,7 @@ class ApplicationModel:
                 req = processed_requests.pop()
                 req_info = self.reqs_processing_infos[req.request_type]
 
-                if not req.upstream:
+                if req.upstream:
                     next_services_names = self.structure[service_name]['next']
 
                     if not next_services_names is None:
@@ -238,9 +238,9 @@ class ApplicationModel:
                                 self.services[next_service_name].add_request(req)
                     else:
                         # Sending response
-                        req.upstream = True
+                        req.set_downstream()
 
-                if req.upstream:
+                if not req.upstream:
                     prev_services_names = self.structure[service_name]['prev']
 
                     if not prev_services_names is None:

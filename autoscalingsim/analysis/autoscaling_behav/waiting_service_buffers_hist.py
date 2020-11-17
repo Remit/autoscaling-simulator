@@ -28,19 +28,14 @@ class WaitingServiceBuffersHistogram:
                 fig.add_subplot(111, frameon = False)
                 plt.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
                 outer = gridspec.GridSpec(outer_rows_cnt, outer_cols_cnt,
-                                          wspace=0.2, hspace=1.0)
-
-                font = {'color':  'black',
-                        'weight': 'bold',
-                        'size': 12}
+                                          wspace=0.2, hspace=1.3)
+                font = {'color':  'black', 'weight': 'bold', 'size': 12}
 
                 i = 0
                 for req_type, buffers_waiting_times in buffer_times_by_request.items():
 
                     ax_out = plt.Subplot(fig, outer[i])
-                    ax_out.set_title(f'Request type {req_type}',
-                                     y = 1.2,
-                                     fontdict = font)
+                    ax_out.set_title(f'Request type {req_type}', y = 1.4, fontdict = font)
 
                     ax_out.set_xlabel('Time spent waiting in the buffer, ms')
                     ax_out.set_ylabel('Waiting requests')
@@ -49,17 +44,6 @@ class WaitingServiceBuffersHistogram:
                     ax_out.set_xticks([])
 
                     fig.add_subplot(ax_out)
-
-                    #buffers_waiting_times = {}
-                    #for service_name, buffer_waiting_times_for_service_lst in buffers_waiting_times_raw.items():
-                        #service_name = list(buffer_waiting_time_raw.keys())[0]
-                        #buffer_waiting_time_for_service = list(buffer_waiting_time_raw.values())[0]
-
-                    #    if service_name in buffers_waiting_times:
-                    #        buffers_waiting_times[service_name].append(buffer_waiting_time_for_service)
-                    #    else:
-                    #        buffers_waiting_times[service_name] = [buffer_waiting_time_for_service]
-
                     max_waiting_time = max([max(sublist) for sublist in list(buffers_waiting_times.values())])
                     bins_cnt = math.ceil(max_waiting_time / bins_size_ms)
 
@@ -79,19 +63,12 @@ class WaitingServiceBuffersHistogram:
                     j = 0
                     for service_name, service_buffer_waiting_times in buffers_waiting_times.items():
                         ax = plt.Subplot(fig, inner[j], sharey = ax_out)
-
-                        ax.hist(service_buffer_waiting_times,
-                                bins = bins_cnt)
-                        ax.title.set_text(f'Buffers of the {service_name} service')
-
-
+                        ax.hist(service_buffer_waiting_times, bins = bins_cnt)
+                        ax.title.set_text(f'{service_name}\nbuffers')
                         if not ax.is_last_row():
                             plt.setp(ax.get_xticklabels(), visible=False)
-
                         plt.setp(ax.get_yticklabels(), visible=False)
-
                         fig.add_subplot(ax)
-
                         j += 1
 
                     i += 1
