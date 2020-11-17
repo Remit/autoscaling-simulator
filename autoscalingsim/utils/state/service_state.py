@@ -1,5 +1,5 @@
-import pandas as pd
 import operator
+import pandas as pd
 
 from .state import ScaledEntityState
 from .entity_state.entity_group import EntityGroup

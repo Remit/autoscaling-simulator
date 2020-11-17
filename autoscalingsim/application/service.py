@@ -1,22 +1,27 @@
 import numpy as np
 import pandas as pd
 
+from ..scaling.policiesbuilder.scaled.scaled_entity import ScaledEntity
+from ..scaling.policiesbuilder.scaling_policy_conf import ScalingPolicyConfiguration
+from ..load.request import Request
 from ..utils.requirements import ResourceRequirements
 from ..utils.state.service_state import ServiceStateRegionalized
 from ..utils.state.statemanagers import StateReader
-from ..scaling.policiesbuilder.scaled.scaled_entity import *
-from ..scaling.policiesbuilder.scaling_policy_conf import ScalingPolicyConfiguration
-from ..load.request import Request
-from ..deployment.deployment_model import DeploymentModel
 
 class Service(ScaledEntity):
 
     """
+    Represents a service in an application. Provides high-level API for the
+    associated application model.
+    The service logic is hidden in its member *state*. Scaling-related functionality
+    is initialized through the base class ScaledEntity.
 
+    Attributes:
+        state (ServiceStateRegionalized): maintains the state of the distributed
+            service. The state is distributed across regions and node groups.
+            The simulation logic of the service is enclosed in its state.
 
-    TODO:
-        implement simulation of the different OS scheduling disciplines like CFS, currently assuming
-        that the request takes the thread and does not let it go until its processing is finished
+        service_name (str): stores the name of the service.
     """
 
     def __init__(self,
@@ -51,8 +56,7 @@ class Service(ScaledEntity):
                                               buffers_config,
                                               sampling_interval)
 
-    def add_request(self,
-                    req : Request):
+    def add_request(self, req : Request):
 
         self.state.add_request(req)
 
@@ -67,4 +71,5 @@ class Service(ScaledEntity):
         return self.state.get_processed()
 
     def check_out_utilization(self):
+
         return self.state.check_out_utilization()
