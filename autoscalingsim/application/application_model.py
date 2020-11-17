@@ -1,7 +1,7 @@
+import os
 import json
 import operator
 import pandas as pd
-import os
 
 from .service import Service
 from .load_stats import LoadStats
@@ -10,9 +10,9 @@ from ..load.request import RequestProcessingInfo
 from ..deployment.deployment_model import DeploymentModel
 from ..infrastructure_platform.platform_model import PlatformModel
 from ..scaling.policiesbuilder.scaling_policy import ScalingPolicy
-from ..utils.error_check import ErrorChecker
 from ..utils.state.statemanagers import StateReader, ScalingManager
 from ..utils.requirements import ResourceRequirements
+from ..utils.error_check import ErrorChecker
 
 class ApplicationModel:
 
@@ -39,26 +39,24 @@ class ApplicationModel:
                  config_file : str,
                  averaging_interval : pd.Timedelta = pd.Timedelta(100, unit = 'ms')):
 
-        # Dynamic state
+        self.name = None # assigned later
+        self.services = {} # assigned later
+        self.structure = {} # assigned later
+        self.reqs_processing_infos = {} # assigned later
+        self.platform_model = platform_model
+        self.scaling_policy = scaling_policy
+
         self.new_requests = []
         self.load_stats = LoadStats()
         self.state_reader = StateReader()
-        self.platform_model = platform_model
-        self.scaling_policy = scaling_policy
         self.scaling_manager = ScalingManager()
+        self.deployment_model = DeploymentModel()
         self.platform_model.set_scaling_manager(self.scaling_manager)
         self.scaling_policy.set_scaling_manager(self.scaling_manager)
         self.scaling_policy.set_state_reader(self.state_reader)
-        self.deployment_model = DeploymentModel()
         self.utilization = {}
 
-        # Static state
-        self.name = None
-        self.services = {}
-        self.structure = {}
-        self.reqs_processing_infos = {}
-        regions = []
-        entity_instance_requirements = {}
+
 
         if not isinstance(config_file, str):
             raise ValueError(f'Incorrect format of the path to the configuration file for the {self.__class__.__name__}, should be string')
@@ -68,6 +66,9 @@ class ApplicationModel:
 
             with open(config_file) as f:
                 config = json.load(f)
+
+                regions = []
+                entity_instance_requirements = {}
 
                 self.name = ErrorChecker.key_check_and_load('app_name', config)
 
@@ -195,11 +196,11 @@ class ApplicationModel:
                         prev_services = None
                     self.structure[service_name] = {'next': next_services, 'prev': prev_services}
 
-        self.platform_model.init_platform_state_deltas(list(set(regions)),
-                                                       starting_time,
-                                                       self.deployment_model.to_init_platform_state_delta())
-        self.scaling_policy.init_adjustment_policy(entity_instance_requirements,
-                                                   self.state_reader)
+                self.platform_model.init_platform_state_deltas(list(set(regions)),
+                                                               starting_time,
+                                                               self.deployment_model.to_init_platform_state_delta())
+                self.scaling_policy.init_adjustment_policy(entity_instance_requirements,
+                                                           self.state_reader)
 
     def step(self,
              cur_timestamp : pd.Timestamp,

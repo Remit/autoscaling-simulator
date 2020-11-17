@@ -102,8 +102,6 @@ class HomogeneousContainerGroup(ContainerGroup):
 
         fits, self.system_capacity = self.container_info.entities_require_capacity(self.entities_state, self.containers_count)
         if not fits:
-            print(self.containers_count)
-            print(entities_instances_counts.get_entities_counts())
             raise ValueError('An attempt to place entities on the node group of insufficient capacity')
         self.shared_processor = RequestsProcessor()
 
