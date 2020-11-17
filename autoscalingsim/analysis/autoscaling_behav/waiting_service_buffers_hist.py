@@ -31,12 +31,25 @@ class WaitingServiceBuffersHistogram:
                                           wspace=0.2, hspace=1.3)
                 font = {'color':  'black', 'weight': 'bold', 'size': 12}
 
+                services_order = {}
+                for buffers_waiting_times in buffer_times_by_request.values():
+                    for index, service_name in enumerate(buffers_waiting_times):
+                        if not service_name in services_order:
+                            services_order[service_name] = index
+
+                max_cnt_of_services = max([len(buffers_waiting_times) for buffers_waiting_times in buffer_times_by_request.values()])
+
+                inner_rows_cnt = 1
+                inner_cols_cnt = max_cnt_of_services
+                if max_cnt_of_services > plotting_constants.MAX_PLOTS_CNT_ROW:
+                    inner_rows_cnt = math.ceil(max_cnt_of_services / plotting_constants.MAX_PLOTS_CNT_ROW)
+                    inner_cols_cnt = plotting_constants.MAX_PLOTS_CNT_ROW
+
                 i = 0
                 for req_type, buffers_waiting_times in buffer_times_by_request.items():
 
                     ax_out = plt.Subplot(fig, outer[i])
                     ax_out.set_title(f'Request type {req_type}', y = 1.4, fontdict = font)
-
                     ax_out.set_xlabel('Time spent waiting in the buffer, ms')
                     ax_out.set_ylabel('Waiting requests')
                     ax_out.xaxis.labelpad = 25
@@ -47,29 +60,21 @@ class WaitingServiceBuffersHistogram:
                     max_waiting_time = max([max(sublist) for sublist in list(buffers_waiting_times.values())])
                     bins_cnt = math.ceil(max_waiting_time / bins_size_ms)
 
-                    plots_count = len(buffers_waiting_times)
-                    rows_cnt = 1
-                    cols_cnt = plots_count
-                    if plots_count > plotting_constants.MAX_PLOTS_CNT_ROW:
-                        rows_cnt = math.ceil(plots_count / plotting_constants.MAX_PLOTS_CNT_ROW)
-
                     # Plotting for req type
-                    inner = gridspec.GridSpecFromSubplotSpec(rows_cnt,
-                                                             cols_cnt,
+                    inner = gridspec.GridSpecFromSubplotSpec(inner_rows_cnt,
+                                                             inner_cols_cnt,
                                                              subplot_spec = outer[i],
                                                              wspace = 0.5,
                                                              hspace = 0.1)
 
-                    j = 0
                     for service_name, service_buffer_waiting_times in buffers_waiting_times.items():
-                        ax = plt.Subplot(fig, inner[j], sharey = ax_out)
+                        ax = plt.Subplot(fig, inner[services_order[service_name]], sharey = ax_out)
                         ax.hist(service_buffer_waiting_times, bins = bins_cnt)
                         ax.title.set_text(f'{service_name}\nbuffers')
                         if not ax.is_last_row():
                             plt.setp(ax.get_xticklabels(), visible=False)
                         plt.setp(ax.get_yticklabels(), visible=False)
                         fig.add_subplot(ax)
-                        j += 1
 
                     i += 1
 
