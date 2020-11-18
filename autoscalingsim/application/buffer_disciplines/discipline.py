@@ -8,18 +8,17 @@ from ...load.request import Request
 class QueuingDiscipline(ABC):
 
     """
-    An interface for queuing disciplines in buffers.
+    An interface for queuing disciplines set for buffers.
     An implementation should subclass from this class, implement its abstract
     methods, and register with this class. All the implementations are to be placed
-    into the realizations folder. Upon adding a new discipline, __init__.py in the
+    into the *realizations* folder. Upon adding a new discipline, __init__.py in the
     realizations folder has to be accordingly adjusted.
     """
 
     _Registry = {}
 
     @classmethod
-    def register(cls,
-                 name : str):
+    def register(cls, name : str):
 
         def decorator(queuing_discipline_class):
             cls._Registry[name] = queuing_discipline_class
@@ -28,8 +27,7 @@ class QueuingDiscipline(ABC):
         return decorator
 
     @classmethod
-    def get(cls,
-            name : str):
+    def get(cls, name : str):
 
         if not name in cls._Registry:
             raise ValueError(f'An attempt to use a non-existent queuing discipline {name}')
@@ -37,8 +35,7 @@ class QueuingDiscipline(ABC):
         return cls._Registry[name]
 
     @abstractmethod
-    def insert(self,
-               req : Request):
+    def insert(self, req : Request):
 
         """
         Inserts the provided request into the queue
@@ -77,9 +74,7 @@ class QueuingDiscipline(ABC):
         pass
 
     @abstractmethod
-    def add_cumulative_time(self,
-                            delta : pd.Timedelta,
-                            service_name : str):
+    def add_cumulative_time(self, delta : pd.Timedelta, service_name : str):
 
         pass
 
@@ -112,8 +107,12 @@ class QueuingDiscipline(ABC):
 
         return req
 
-    def remove_by_id(self,
-                     request_id : int):
+    def remove_by_id(self, request_id : int):
+
+        """
+        Removes all the requests forming the multi-part request with the given
+        request_id.
+        """
 
         for req in reversed(self.requests):
             if req.request_id == request_id:
@@ -124,6 +123,10 @@ class QueuingDiscipline(ABC):
         return len(self.requests)
 
     def get_average_waiting_time(self):
+
+        """
+        Returns an average waiting time of all the requests currently queued.
+        """
 
         if len(self.requests) == 0:
             return 0

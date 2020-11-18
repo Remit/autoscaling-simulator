@@ -7,14 +7,17 @@ from ....load.request import Request
 @QueuingDiscipline.register('LIFO')
 class LIFOQueue(QueuingDiscipline):
 
-    def insert(self,
-               req : Request):
+    """
+    Implements Last In-First Out (LIFO) queuing discipline.
+    """
+
+    def insert(self, req : Request):
 
         self.requests.append(req)
 
     def attempt_take(self):
 
-        """ Provides a copy of the last request in the queue """
+        """ Provides a copy of the last request added """
 
         if len(self.requests) > 0:
             return self.requests[-1]
@@ -34,9 +37,7 @@ class LIFOQueue(QueuingDiscipline):
         req = self.take()
         self.requests.appendleft(req)
 
-    def add_cumulative_time(self,
-                            delta : pd.Timedelta,
-                            service_name : str):
+    def add_cumulative_time(self, delta : pd.Timedelta, service_name : str):
 
         for req in self.requests:
             req.cumulative_time += delta

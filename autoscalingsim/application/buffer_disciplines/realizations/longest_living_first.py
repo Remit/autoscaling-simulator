@@ -5,16 +5,22 @@ from ..discipline import QueuingDiscipline
 
 from ....load.request import Request
 
-@QueuingDiscipline.register('LLF')
-class LongestLivingFirstQueue(QueuingDiscipline):
+@QueuingDiscipline.register('OF')
+class OldestFirstQueue(QueuingDiscipline):
+
+    """
+    Implements a queuing discipline that organizes the requests by their
+    cumulative time existing in the application. Priority to leave the queue
+    according to this discipline is given to the request that has the highest
+    cumulative time spent in the application.
+    """
 
     def __init__(self):
 
         super().__init__()
         self.sorted_times_ascending = []
 
-    def insert(self,
-               req : Request):
+    def insert(self, req : Request):
 
         bisect.insort(self.sorted_times_ascending, req.cumulative_time)
         self.requests.insert(self.sorted_times_ascending.index(req.cumulative_time), req)
@@ -23,7 +29,7 @@ class LongestLivingFirstQueue(QueuingDiscipline):
 
         """
         Provides a copy of the request that spent the most time in
-        the application, buffers and on the network.
+        the application overall, inc. in the service buffers and on the network.
         """
 
         if len(self.requests) > 0:
@@ -42,11 +48,11 @@ class LongestLivingFirstQueue(QueuingDiscipline):
 
     def shuffle(self):
 
+        """ Not implemented """
+
         pass
 
-    def add_cumulative_time(self,
-                            delta : pd.Timedelta,
-                            service_name : str):
+    def add_cumulative_time(self, delta : pd.Timedelta, service_name : str):
 
         for req in self.requests:
             req.cumulative_time += delta

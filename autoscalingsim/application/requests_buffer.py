@@ -16,15 +16,12 @@ class RequestsBuffer:
                  capacity_by_request_type : dict,
                  queuing_discipline : str = 'FIFO'):
 
-        # Static state
         self.capacity_by_request_type = capacity_by_request_type
-
-        # Dynamic state
-        self.link = None
         self.discipline = QueuingDiscipline.get(queuing_discipline)()
         self.reqs_cnt = {}
         for request_type in capacity_by_request_type.keys():
             self.reqs_cnt[request_type] = 0
+        self.link = None
 
         self.utilization = BufferUtilization()
 
@@ -77,7 +74,8 @@ class RequestsBuffer:
 
         req = self.discipline.take()
         if not req is None:
-            self.reqs_cnt[req.request_type] -= 1
+            if req.request_type in self.reqs_cnt:
+                self.reqs_cnt[req.request_type] -= 1
 
         return req
 
@@ -98,7 +96,8 @@ class RequestsBuffer:
     def shuffle(self):
 
         """
-        Shifts requests queue to give other requests a chance to get processed.
+        Shuffles requests to give more opportunities to every awaiting request
+        to be processed.
         """
 
         self.discipline.shuffle()
@@ -107,8 +106,6 @@ class RequestsBuffer:
 
         return self.discipline.size()
 
-    def add_cumulative_time(self,
-                            delta : pd.Timedelta,
-                            service_name : str):
+    def add_cumulative_time(self, delta : pd.Timedelta, service_name : str):
 
         self.discipline.add_cumulative_time(delta, service_name)
