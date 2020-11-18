@@ -1,6 +1,6 @@
 from ..load.request import Request
 
-class LoadStatsRegional:
+class ResponseStatsRegional:
 
     """
     Load statistics collected for a particular region.
@@ -12,8 +12,7 @@ class LoadStatsRegional:
         self.network_times_by_request = {}
         self.buffer_times_by_request = {}
 
-    def add_request(self,
-                    req : Request):
+    def add_request(self, req : Request):
 
         # Response received by the user
         if not req.request_type in self.response_times_by_request:
@@ -35,7 +34,7 @@ class LoadStatsRegional:
                     self.buffer_times_by_request[req.request_type][service_name] = []
                 self.buffer_times_by_request[req.request_type][service_name].append(buffer_time_val.microseconds / 1000)
 
-class LoadStats:
+class ResponseStats:
 
     """
     Container for the stats of the processed requests.
@@ -48,7 +47,7 @@ class LoadStats:
                     req : Request):
 
         if not req.region_name in self.regional_stats:
-            self.regional_stats[req.region_name] = LoadStatsRegional()
+            self.regional_stats[req.region_name] = ResponseStatsRegional()
 
         self.regional_stats[req.region_name].add_request(req)
 

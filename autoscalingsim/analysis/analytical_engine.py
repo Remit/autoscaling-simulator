@@ -14,14 +14,17 @@ from .autoscaling_behav.distribution_requests_times_bars import DistributionRequ
 from ..simulation.simulation import Simulation
 
 class AnalysisFramework:
+
     """
     Combines the functionality to build the figures based on the simulation
     results. The following figures are supported:
+
         - Autoscaling quality evaluation category:
             + CDF of the response times, all the request types on the same plot
             + Histogram of the response times, separately for each request type
             + Barchart of fulfilled requests vs dropped, a bar for each request type
-            > utilization?
+            + System resources utilization
+
         - Autoscaling behaviour characterization category:
             + Line graph (x axis - time) of the generated requests count,
               all the request types on the same plot
@@ -34,6 +37,7 @@ class AnalysisFramework:
               a bar for each request type
             > Autoscaling time budget evaluation graphs
     """
+    
     def __init__(self,
                  simulation_step : pd.Timedelta,
                  figures_dir = None):
@@ -64,9 +68,9 @@ class AnalysisFramework:
         utilization_per_service = {}
         if not simulation is None:
             load_regionalized = simulation.load_model.get_generated_load()
-            response_times_regionalized = simulation.application_model.load_stats.get_response_times_by_request()
-            buffer_times_regionalized = simulation.application_model.load_stats.get_buffer_times_by_request()
-            network_times_regionalized = simulation.application_model.load_stats.get_network_times_by_request()
+            response_times_regionalized = simulation.application_model.response_stats.get_response_times_by_request()
+            buffer_times_regionalized = simulation.application_model.response_stats.get_buffer_times_by_request()
+            network_times_regionalized = simulation.application_model.response_stats.get_network_times_by_request()
             desired_node_count_regionalized = simulation.application_model.platform_model.compute_desired_node_count(simulation.simulation_start,
                                                                                                                      self.simulation_step,
                                                                                                                      simulation.simulation_end)
