@@ -27,7 +27,7 @@ class DistributionRequestsTimesBarchart:
             raise ValueError('The aggregation function object is not callable.')
 
         for region_name, response_times_per_request_type in response_times_regionalized.items():
-            plt.figure()
+            plt.figure(figsize = (2 * len(response_times_per_request_type), 3))
             buffer_times_by_request = buffer_times_regionalized[region_name]
             network_times_by_request = network_times_regionalized[region_name]
 
@@ -69,7 +69,7 @@ class DistributionRequestsTimesBarchart:
                     label='Waiting')
 
             plt.ylabel('Duration, ms')
-            plt.legend(loc = 'upper right', bbox_to_anchor=(0.9, -0.1), ncol = 3)
+            plt.legend(loc = 'lower center', bbox_to_anchor=(0.5, -0.3), ncol = 3)
 
             if not figures_dir is None:
                 figure_path = os.path.join(figures_dir, plotting_constants.filename_format.format(region_name, cls.FILENAME))

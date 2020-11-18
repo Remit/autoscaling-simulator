@@ -2,6 +2,7 @@ import os
 import pandas as pd
 
 from matplotlib import pyplot as plt
+import matplotlib.ticker as ticker
 from collections.abc import Iterable
 
 from .. import plotting_constants
@@ -32,7 +33,7 @@ class UtilizationLineGraph:
             if len(utilization_per_service) > 0:
                 fig, axs = plt.subplots(nrows = plotting_constants.SYSTEM_RESOURCES_CNT,
                                         ncols = len(utilization_per_service),
-                                        figsize = (plotting_constants.SYSTEM_RESOURCES_CNT * 4, len(utilization_per_service) * 4))
+                                        figsize = (len(utilization_per_service) * 4, plotting_constants.SYSTEM_RESOURCES_CNT * 4))
                 font = {'color':  'black', 'weight': 'bold', 'size': 12}
                 if not isinstance(axs, Iterable):
                     axs = [axs]
@@ -46,15 +47,19 @@ class UtilizationLineGraph:
                     for resource_name, utilization_ts in utilization_per_resource.items():
 
                         utilization_ts.index = pd.to_datetime(utilization_ts.index)
-                        utilization_ts.value = pd.to_numeric(utilization_ts.value)
+                        utilization_ts.value = pd.to_numeric(utilization_ts.value) * 100
                         resampled_utilization = utilization_ts.resample(resolution).mean()
 
                         axs[j][i].plot(resampled_utilization, label = resource_name)
 
                         unit = resolution // pd.Timedelta(1000, unit = 'ms')
-                        axs[j][i].set_ylabel(f'{resource_name} utilization, % per {unit} s')
+                        axs[j][i].set_ylabel(f'{resource_name} util.,\n% per {unit} s')
                         axs[j][i].legend(loc = "lower right")
                         axs[j][i].set_title(f'Service {service_name}', y = 1.2, fontdict = font)
+                        #axs[j][i].yaxis.set_major_locator(ticker.MaxNLocator(integer=True))
+                        axs[j][i].yaxis.set_major_locator(ticker.MultipleLocator(50))
+                        axs[j][i].yaxis.set_minor_locator(ticker.MultipleLocator(10))
+                        axs[j][i].set_ylim(0)
                         plt.setp(axs[j][i].get_xticklabels(), rotation = 70, ha = "right", rotation_mode = "anchor")
 
                         j += 1

@@ -106,7 +106,7 @@ class AnalysisFramework:
                                  figures_dir = figures_dir_in_use)
 
         WaitingServiceBuffersHistogram.plot(buffer_times_regionalized,
-                                            bins_size_ms = 3 * int(self.simulation_step.microseconds / 1000),
+                                            bins_size_ms = (self.simulation_step.microseconds // 1000),
                                             figures_dir = figures_dir_in_use)
 
         DistributionRequestsTimesBarchart.plot(response_times_regionalized,
