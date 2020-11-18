@@ -311,8 +311,7 @@ class ServiceState:
 
             service_metric_value /= len(self.deployments) # normalization
         elif metric_name in self.service_metrics_and_sources:
-            self.service_metrics_and_sources[metric_name].get_metric_value()
-            # TODO: think of using cur_timestamp? propagate it
+            service_metric_value = self.service_metrics_and_sources[metric_name].get_metric_value()
 
         return service_metric_value
 

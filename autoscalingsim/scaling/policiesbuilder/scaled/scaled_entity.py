@@ -1,4 +1,5 @@
 import collections
+import pandas as pd
 
 from .scaling_aggregation import ScalingEffectAggregationRule
 
@@ -59,11 +60,12 @@ class ScaledEntity:
         else:
             self.scaling_effect_aggregation_rule = None
 
-    def reconcile_desired_state(self):
+    def reconcile_desired_state(self,
+                                cur_timestamp : pd.Timestamp):
 
         desired_states_timeline = None
         if not self.scaling_effect_aggregation_rule is None:
-            desired_states_timeline = self.scaling_effect_aggregation_rule()
+            desired_states_timeline = self.scaling_effect_aggregation_rule(cur_timestamp)
 
         return desired_states_timeline
 
