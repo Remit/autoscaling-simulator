@@ -1,6 +1,8 @@
 import pandas as pd
 
 from .buffer_disciplines.discipline import QueuingDiscipline
+from .buffer_utilization import BufferUtilization
+
 from ..load.request import Request
 from ..infrastructure_platform.link import NodeGroupLink
 
@@ -9,9 +11,6 @@ class RequestsBuffer:
     """
     Represents buffers where the requests wait to be served.
     """
-
-    waiting_time_metric_name = 'waiting_time'
-    waiting_requests_count_metric_name = 'waiting_requests_count'
 
     def __init__(self,
                  capacity_by_request_type : dict,
@@ -27,17 +26,13 @@ class RequestsBuffer:
         for request_type in capacity_by_request_type.keys():
             self.reqs_cnt[request_type] = 0
 
-    def get_metric_value(self, metric_name : str):
+        self.utilization = BufferUtilization()
 
-        if metric_name == self.__class__.waiting_time_metric_name:
-            return self.discipline.get_average_waiting_time()
-        elif metric_name == self.__class__.waiting_requests_count_metric_name:
-            return sum(self.reqs_cnt.values())
-        else:
-            raise ValueError(f'Unknown metric {metric_name} to get from {self.__class__.__name__}')
+    def get_metric_value(self, metric_name : str, interval : pd.Timedelta):
 
-    def step(self,
-             simulation_step : pd.Timedelta):
+        return self.utilization.get(metric_name, interval)
+
+    def step(self, simulation_step : pd.Timedelta):
 
         if not self.link is None:
             ready_reqs = self.link.step(simulation_step)
@@ -48,15 +43,26 @@ class RequestsBuffer:
                     self.reqs_cnt[req.request_type] += 1
                     self.discipline.insert(req)
 
-    def put(self,
-            req : Request):
+    def update_utilization(self,
+                           cur_timestamp : pd.Timestamp,
+                           averaging_interval : pd.Timedelta):
+
+        self.utilization.update_waiting_time(cur_timestamp,
+                                             self.discipline.get_average_waiting_time(),
+                                             averaging_interval)
+
+        self.utilization.update_waiting_requests_count(cur_timestamp,
+                                                       sum(self.reqs_cnt.values()),
+                                                       averaging_interval)
+
+    def put(self, req : Request):
 
         # Request is lost if link was not yet established
         if not self.link is None:
             self.link.put(req)
 
-    def set_link(self,
-                 link : NodeGroupLink):
+    def set_link(self, link : NodeGroupLink):
+
         self.link = link
 
     def attempt_take(self):

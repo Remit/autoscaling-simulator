@@ -135,8 +135,7 @@ class ScalingManager(StateManager):
 
         self.entities[entity_name].state.update_placement(region_name, container_group)
 
-    def compute_desired_state(self,
-                              cur_timestamp : pd.Timestamp):
+    def compute_desired_state(self):
 
         """
         Computes the desired regionalized entities state for every scaled entity managed by the Scaling
@@ -146,7 +145,7 @@ class ScalingManager(StateManager):
 
         joint_timeline_desired_regionalized_entities_states = {}
         for entity_name, entity_ref in self.entities.items():
-            entity_timeline = entity_ref.reconcile_desired_state(cur_timestamp)
+            entity_timeline = entity_ref.reconcile_desired_state()
             for timestamp, state_regionalized in entity_timeline.items():
                 if not timestamp in joint_timeline_desired_regionalized_entities_states:
                     joint_timeline_desired_regionalized_entities_states[timestamp] = state_regionalized

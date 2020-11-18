@@ -1,6 +1,7 @@
+import pandas as pd
+
 from abc import ABC, abstractmethod
 from collections import deque
-import pandas as pd
 
 from ...load.request import Request
 
@@ -124,6 +125,9 @@ class QueuingDiscipline(ABC):
 
     def get_average_waiting_time(self):
 
-        return sum([req.buffer_time[req.processing_service] for req in self.requests]) / len(self.requests)
+        if len(self.requests) == 0:
+            return 0
+        else:
+            return sum([req.buffer_time[req.processing_service] for req in self.requests], pd.Timedelta(0, unit = 'ms')) / len(self.requests)
 
 from .realizations import *

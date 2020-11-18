@@ -98,7 +98,7 @@ class ScalingPolicy:
             # Scale -> scaling services to accomodate the workload
             desired_states_to_process = {}
             if not self.scaling_manager is None:
-                desired_states_to_process = self.scaling_manager.compute_desired_state(cur_timestamp)
+                desired_states_to_process = self.scaling_manager.compute_desired_state()
 
             if len(desired_states_to_process) > 0:
                 # TODO: Combine -> scaling app as a whole to remove bottlenecks

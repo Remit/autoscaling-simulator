@@ -9,7 +9,7 @@ from ..entity_state.scaling_aspects import ScalingAspect
 from ....infrastructure_platform.system_capacity import SystemCapacity
 from ....infrastructure_platform.node import NodeInfo
 from ....infrastructure_platform.link import NodeGroupLink
-from ....infrastructure_platform.utilization import NodeGroupUtilization
+from ....infrastructure_platform.node_group_utilization import NodeGroupUtilization
 from ....load.request import Request
 from ....utils.requirements import ResourceRequirements
 

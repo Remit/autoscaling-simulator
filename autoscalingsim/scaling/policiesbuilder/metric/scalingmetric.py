@@ -1,5 +1,4 @@
 import pandas as pd
-import numbers
 
 from .valuesfilter import ValuesFilter
 from .valuesaggregator import ValuesAggregator
@@ -151,7 +150,7 @@ class ScalingMetricRegionalized:
                                                                  min_limit_aspect,
                                                                  entity_representation_in_metric)
 
-    def __call__(self, cur_timestamp : pd.Timestamp):
+    def __call__(self):
 
         """
         Computes desired aspect value according to the metric for each region.
@@ -167,9 +166,6 @@ class ScalingMetricRegionalized:
             metric_vals = self.state_reader.get_metric_value(self.entity_name,
                                                              region_name,
                                                              self.metric_name)
-
-            if isinstance(metric_vals, numbers.Number):
-                metric_vals = pd.DataFrame({'datetime': [cur_timestamp], 'value': [metric_vals]}).set_index('datetime')
 
             cur_aspect_val = self.state_reader.get_aspect_value(self.entity_name,
                                                                 region_name,

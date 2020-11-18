@@ -77,12 +77,12 @@ class SequentialScalingEffectAggregationRule(ScalingEffectAggregationRule):
             raise ValueError('expected_deviation_ratio cannot be negative')
         self.expected_deviation_ratio = expected_deviation_ratio
 
-    def __call__(self, cur_timestamp : pd.Timestamp):
+    def __call__(self):
 
         ordered_metrics = list(self.metrics_by_priority.values())
         if len(ordered_metrics) > 1:
             for regionalized_metric, regionalized_metric_next in zip(ordered_metrics[:-1], ordered_metrics[1:]):
-                timeline_by_metric = regionalized_metric(cur_timestamp)
+                timeline_by_metric = regionalized_metric()
                 timeline_df = pd.DataFrame(columns = ['datetime', 'value'])
                 timeline_df = timeline_df.set_index('datetime')
                 for timestamp, state in timeline_by_metric.items():
@@ -113,7 +113,7 @@ class ParallelScalingEffectAggregationRule(ScalingEffectAggregationRule):
         super().__init__(metrics_by_priority, scaled_aspect_name)
         self.aggregation_op = aggregators.Registry.get(aggregation_op_name)
 
-    def __call__(self, cur_timestamp : pd.Timestamp):
+    def __call__(self):
 
         # 1. Compute all the desired timelines and determine
         # the finest resolution among them.
@@ -122,7 +122,7 @@ class ParallelScalingEffectAggregationRule(ScalingEffectAggregationRule):
         ordered_metrics = list(self.metrics_by_priority.values())
         timelines_by_metric = {}
         for regionalized_metric in ordered_metrics:
-            timelines_by_metric[regionalized_metric.metric_name] = regionalized_metric(cur_timestamp)
+            timelines_by_metric[regionalized_metric.metric_name] = regionalized_metric()
             ts_list = list(timelines_by_metric[regionalized_metric.metric_name].keys())
 
             if len(ts_list) > 0:

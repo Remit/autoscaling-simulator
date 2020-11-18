@@ -10,6 +10,7 @@ from ..error_check import ErrorChecker
 
 from ...load.request import Request
 from ...application.requests_buffer import RequestsBuffer
+from ...application import buffer_utilization
 from ...infrastructure_platform.system_capacity import SystemCapacity
 
 class ServiceMetric:
@@ -27,11 +28,12 @@ class ServiceMetric:
         self.source_refs = source_refs
         self.aggregation_func = aggregation_func_on_iterable
 
-    def get_metric_value(self):
+    def get_metric_value(self,
+                         interval : pd.Timedelta):
 
         results_lst = []
         for source_ref in self.source_refs:
-            results_lst.append(source_ref.get_metric_value(self.metric_name))
+            results_lst.append(source_ref.get_metric_value(self.metric_name, interval))
 
         if self.aggregation_func is None:
             return results_lst[0]
@@ -132,12 +134,12 @@ class ServiceState:
         self.downstream_buf = RequestsBuffer(buffer_capacity_by_request_type, queuing_discipline)
 
         self.service_metrics_and_sources = {
-            'upstream_waiting_time': ServiceMetric(RequestsBuffer.waiting_time_metric_name, [self.upstream_buf]),
-            'downstream_waiting_time': ServiceMetric(RequestsBuffer.waiting_time_metric_name, [self.downstream_buf]),
-            'waiting_time': ServiceMetric(RequestsBuffer.waiting_time_metric_name, [self.upstream_buf, self.downstream_buf], sum),
-            'upstream_waiting_requests_count': ServiceMetric(RequestsBuffer.waiting_requests_count_metric_name, [self.upstream_buf]),
-            'downstream_waiting_requests_count': ServiceMetric(RequestsBuffer.waiting_requests_count_metric_name, [self.downstream_buf]),
-            'waiting_requests_count': ServiceMetric(RequestsBuffer.waiting_requests_count_metric_name, [self.upstream_buf, self.downstream_buf], sum)
+            'upstream_waiting_time': ServiceMetric(buffer_utilization.waiting_time_metric_name, [self.upstream_buf]),
+            'downstream_waiting_time': ServiceMetric(buffer_utilization.waiting_time_metric_name, [self.downstream_buf]),
+            'waiting_time': ServiceMetric(buffer_utilization.waiting_time_metric_name, [self.upstream_buf, self.downstream_buf], sum),
+            'upstream_waiting_requests_count': ServiceMetric(buffer_utilization.waiting_requests_count_metric_name, [self.upstream_buf]),
+            'downstream_waiting_requests_count': ServiceMetric(buffer_utilization.waiting_requests_count_metric_name, [self.downstream_buf]),
+            'waiting_requests_count': ServiceMetric(buffer_utilization.waiting_requests_count_metric_name, [self.upstream_buf, self.downstream_buf], sum)
         }
 
     def add_request(self, req : Request):
@@ -229,8 +231,13 @@ class ServiceState:
             self.upstream_buf.add_cumulative_time(simulation_step, self.service_name)
             self.downstream_buf.add_cumulative_time(simulation_step, self.service_name)
 
-            # Update resource utilization at the end of the step once per sampling interval
+            # Update utilization metrics at the end of the step once per sampling interval
             if (cur_timestamp - pd.Timestamp(0)) % self.sampling_interval == pd.Timedelta(0):
+                # Buffers
+                self.upstream_buf.update_utilization(cur_timestamp, self.averaging_interval)
+                self.downstream_buf.update_utilization(cur_timestamp, self.averaging_interval)
+
+                # Service instances deployments
                 for deployment in self.deployments.values():
                     deployment_capacity_taken = deployment.system_resources_reserved() \
                                                  + deployment.system_resources_taken_by_requests()
@@ -289,7 +296,6 @@ class ServiceState:
 
     def get_metric_value(self,
                          metric_name : str,
-                         #cur_timestamp : pd.Timestamp,
                          interval : pd.Timedelta = pd.Timedelta(0, unit = 'ms')):
 
         """
@@ -310,8 +316,10 @@ class ServiceState:
                 service_metric_value += cur_deployment_util
 
             service_metric_value /= len(self.deployments) # normalization
+
         elif metric_name in self.service_metrics_and_sources:
-            service_metric_value = self.service_metrics_and_sources[metric_name].get_metric_value()
+
+            service_metric_value = self.service_metrics_and_sources[metric_name].get_metric_value(interval)
 
         return service_metric_value
 
