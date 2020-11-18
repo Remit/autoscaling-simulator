@@ -94,6 +94,10 @@ class Deployment:
 
         return self.node_group.get_utilization(self.service_name, resource_name, interval)
 
+    def get_nodes_count(self):
+
+        return self.node_group.containers_count
+
     def can_schedule_request(self, req : Request):
 
         return self.node_group.can_schedule_request(req, self.request_processing_infos)

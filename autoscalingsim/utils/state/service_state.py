@@ -91,6 +91,10 @@ class ServiceState:
             only for a limited time, this utilization information is updated
             upon removal of a deployment from the service state.
 
+        service_metrics_and_sources (dict): stores and provides access to
+            the service-level utilization metrics such as count of
+            requests in one or both buffers.
+
     """
 
     def __init__(self,
@@ -315,7 +319,7 @@ class ServiceState:
                 service_metric_value = service_metric_value.reindex(common_index, fill_value = 0)
                 service_metric_value += cur_deployment_util
 
-            service_metric_value /= len(self.deployments) # normalization
+            service_metric_value /= sum([deployment.get_nodes_count() for deployment in self.deployments.values()]) # normalization
 
         elif metric_name in self.service_metrics_and_sources:
 
