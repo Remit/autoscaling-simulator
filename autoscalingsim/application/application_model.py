@@ -278,4 +278,4 @@ class ApplicationModel:
 
         # Collect the utilization information from all the services
         for service_name, service in self.services.items():
-            self.utilization[service_name] = service.check_out_utilization()
+            self.utilization[service_name] = service.check_out_system_resources_utilization()

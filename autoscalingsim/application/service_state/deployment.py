@@ -1,9 +1,7 @@
 import pandas as pd
 
-from .container_state.container_group import HomogeneousContainerGroup
-
-from ..requirements import ResourceRequirements
-
+from ...utils.state.container_state.container_group import HomogeneousContainerGroup
+from ...utils.requirements import ResourceRequirements
 from ...load.request import Request
 from ...infrastructure_platform.system_capacity import SystemCapacity
 

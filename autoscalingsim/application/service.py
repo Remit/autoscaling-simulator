@@ -1,11 +1,12 @@
 import numpy as np
 import pandas as pd
 
+from .service_state.service_state_reg import ServiceStateRegionalized
+
 from ..scaling.policiesbuilder.scaled.scaled_entity import ScaledEntity
 from ..scaling.policiesbuilder.scaling_policy_conf import ScalingPolicyConfiguration
 from ..load.request import Request
 from ..utils.requirements import ResourceRequirements
-from ..utils.state.service_state_reg import ServiceStateRegionalized
 from ..utils.state.statemanagers import StateReader
 
 class Service(ScaledEntity):
@@ -17,6 +18,7 @@ class Service(ScaledEntity):
     is initialized through the base class ScaledEntity.
 
     Attributes:
+    
         state (ServiceStateRegionalized): maintains the state of the distributed
             service. The state is distributed across regions and node groups.
             The simulation logic of the service is enclosed in its state.
@@ -43,10 +45,8 @@ class Service(ScaledEntity):
                          state_reader,
                          service_regions)
 
-        # Static state
         self.service_name = service_name
 
-        # Dynamic state
         self.state = ServiceStateRegionalized(service_name,
                                               init_timestamp,
                                               service_regions,
@@ -60,9 +60,7 @@ class Service(ScaledEntity):
 
         self.state.add_request(req)
 
-    def step(self,
-             cur_timestamp : pd.Timestamp,
-             simulation_step : pd.Timedelta):
+    def step(self, cur_timestamp : pd.Timestamp, simulation_step : pd.Timedelta):
 
         self.state.step(cur_timestamp, simulation_step)
 
@@ -70,6 +68,6 @@ class Service(ScaledEntity):
 
         return self.state.get_processed()
 
-    def check_out_utilization(self):
+    def check_out_system_resources_utilization(self):
 
-        return self.state.check_out_utilization()
+        return self.state.check_out_system_resources_utilization()

@@ -2,43 +2,16 @@ import operator
 import pandas as pd
 
 from .deployment import Deployment
-from .entity_state.scaling_aspects import ScalingAspect
-from .container_state.container_group import HomogeneousContainerGroup
-
-from ..requirements import ResourceRequirements
-from ..error_check import ErrorChecker
+from .service_metric import ServiceMetric
 
 from ...load.request import Request
 from ...application.requests_buffer import RequestsBuffer
 from ...application import buffer_utilization
 from ...infrastructure_platform.system_capacity import SystemCapacity
-
-class ServiceMetric:
-
-    """
-    Interface to the service-level metrics.
-    """
-
-    def __init__(self,
-                 metric_name : str,
-                 source_refs : list,
-                 aggregation_func_on_iterable = None):
-
-        self.metric_name = metric_name
-        self.source_refs = source_refs
-        self.aggregation_func = aggregation_func_on_iterable
-
-    def get_metric_value(self,
-                         interval : pd.Timedelta):
-
-        results_lst = []
-        for source_ref in self.source_refs:
-            results_lst.append(source_ref.get_metric_value(self.metric_name, interval))
-
-        if self.aggregation_func is None:
-            return results_lst[0]
-        else:
-            return self.aggregation_func(results_lst)
+from ...utils.state.entity_state.scaling_aspects import ScalingAspect
+from ...utils.state.container_state.container_group import HomogeneousContainerGroup
+from ...utils.requirements import ResourceRequirements
+from ...utils.error_check import ErrorChecker
 
 class ServiceState:
 
@@ -268,7 +241,7 @@ class ServiceState:
             self.unschedulable.remove(node_group_id)
 
         if node_group_id in self.deployments:
-            self._check_out_utilization_for_deployment(self.deployments[node_group_id])
+            self._check_out_system_resources_utilization_for_deployment(self.deployments[node_group_id])
             del self.deployments[node_group_id]
 
     def update_placement(self, node_group : HomogeneousContainerGroup):
@@ -327,7 +300,7 @@ class ServiceState:
 
         return service_metric_value
 
-    def check_out_utilization(self):
+    def check_out_system_resources_utilization(self):
 
         """
         Fills up the service_utilizations field with up-to-date system
@@ -335,11 +308,11 @@ class ServiceState:
         """
 
         for deployment in self.deployments.values():
-            self._check_out_utilization_for_deployment(deployment)
+            self._check_out_system_resources_utilization_for_deployment(deployment)
 
         return self.service_utilizations
 
-    def _check_out_utilization_for_deployment(self, deployment : Deployment):
+    def _check_out_system_resources_utilization_for_deployment(self, deployment : Deployment):
 
         """
         In contrast to getting the metric values on spot for scaling purposes,

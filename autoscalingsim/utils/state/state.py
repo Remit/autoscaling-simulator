@@ -38,15 +38,6 @@ class ScaledEntityState(ABC):
             return sum(self.tmp_buffer_values) / len(self.tmp_buffer_values)
 
     @abstractmethod
-    def update_metric(self,
-                      region_name : str,
-                      metric_name : str,
-                      timestamp : pd.Timestamp,
-                      value : float):
-
-        pass
-
-    @abstractmethod
     def update_placement(self,
                          region_name : str,
                          node_info : NodeInfo):

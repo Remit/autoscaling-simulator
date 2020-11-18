@@ -1,6 +1,6 @@
 import os
 import numpy as np
-
+import matplotlib.ticker as ticker
 from matplotlib import pyplot as plt
 
 from .. import plotting_constants
@@ -27,7 +27,7 @@ class DistributionRequestsTimesBarchart:
             raise ValueError('The aggregation function object is not callable.')
 
         for region_name, response_times_per_request_type in response_times_regionalized.items():
-            plt.figure(figsize = (1.5 * len(response_times_per_request_type), 3))
+            fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (2 * len(response_times_per_request_type), 3))
             buffer_times_by_request = buffer_times_regionalized[region_name]
             network_times_by_request = network_times_regionalized[region_name]
 
@@ -36,6 +36,7 @@ class DistributionRequestsTimesBarchart:
             aggregated_network_time_per_req_type = []
 
             req_types = list(response_times_per_request_type.keys())
+            max_response_time = 0
             for req_type in req_types:
 
                 req_type_response_times = response_times_per_request_type[req_type]
@@ -57,19 +58,27 @@ class DistributionRequestsTimesBarchart:
                 agg_proc_time = aggregation_fn(req_type_response_times) - (aggregated_buf_waiting_time_per_req_type[-1] + aggregated_network_time_per_req_type[-1])
                 aggregated_processing_time_per_req_type.append(agg_proc_time)
 
-            plt.bar(req_types, aggregated_processing_time_per_req_type,
-                    bar_width, label='Processing')
-            plt.bar(req_types, aggregated_network_time_per_req_type,
-                    bar_width, bottom = aggregated_processing_time_per_req_type,
-                    label='Transferring')
+                max_response_time = max(max_response_time, max(req_type_response_times))
 
-            plt.bar(req_types, aggregated_buf_waiting_time_per_req_type,
-                    bar_width, bottom = np.array(aggregated_processing_time_per_req_type) \
+            ax.bar(req_types, aggregated_processing_time_per_req_type,
+                   bar_width, label='Processing')
+            ax.bar(req_types, aggregated_network_time_per_req_type,
+                   bar_width, bottom = aggregated_processing_time_per_req_type,
+                   label='Transferring')
+
+            ax.bar(req_types, aggregated_buf_waiting_time_per_req_type,
+                   bar_width, bottom = np.array(aggregated_processing_time_per_req_type) \
                                         + np.array(aggregated_network_time_per_req_type),
-                    label='Waiting')
+                   label='Waiting')
 
-            plt.ylabel('Duration, ms')
-            plt.legend(loc = 'lower center', bbox_to_anchor=(0.5, -0.3), ncol = 3)
+            ax.set_ylabel('Duration, ms')
+            ax.set_ylim(0, (max_response_time + 10))
+            ax.legend(loc = 'lower center', bbox_to_anchor=(0.5, -0.3), ncol = 3)
+
+            ax.yaxis.set_major_locator(ticker.MultipleLocator(50))
+            ax.yaxis.set_minor_locator(ticker.MultipleLocator(10))
+
+            fig.tight_layout()
 
             if not figures_dir is None:
                 figure_path = os.path.join(figures_dir, plotting_constants.filename_format.format(region_name, cls.FILENAME))
