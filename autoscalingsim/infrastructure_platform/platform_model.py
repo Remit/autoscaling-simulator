@@ -5,7 +5,7 @@ from .node import NodeInfo
 
 from ..utils.state.platform_state import PlatformState
 from ..utils.state.statemanagers import StateReader, ScalingManager
-from ..utils.deltarepr.platform_state_delta import StateDelta
+from ..utils.deltarepr.platform_state_delta import PlatformStateDelta
 from ..utils.deltarepr.timelines.delta_timeline import DeltaTimeline
 from ..utils.error_check import ErrorChecker
 from ..scaling.platform_scaling_model import PlatformScalingModel
@@ -197,7 +197,7 @@ class PlatformModel:
     def init_platform_state_deltas(self,
                                    regions : list,
                                    init_timestamp : pd.Timestamp,
-                                   init_platform_state_delta : StateDelta):
+                                   init_platform_state_delta : PlatformStateDelta):
 
         """
         Builds an initial timeline of the Platform State deltas with the values

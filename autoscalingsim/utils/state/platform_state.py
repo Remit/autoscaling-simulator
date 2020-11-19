@@ -1,7 +1,7 @@
 from .region import Region
 from .entity_state.entities_states_reg import EntitiesStatesRegionalized
 
-from ..deltarepr.platform_state_delta import StateDelta
+from ..deltarepr.platform_state_delta import PlatformStateDelta
 
 class PlatformState:
 
@@ -49,7 +49,7 @@ class PlatformState:
                 compensating_deltas_in_regions[region_name] = compensating_deltas
 
         if len(compensating_deltas_in_regions) > 0:
-            return StateDelta(compensating_deltas_in_regions)
+            return PlatformStateDelta(compensating_deltas_in_regions)
         else:
             return None
 
@@ -72,10 +72,10 @@ class PlatformState:
         return placements_per_region
 
     def __add__(self,
-                state_delta : StateDelta):
+                state_delta : PlatformStateDelta):
 
         modified_state = self.copy()
-        if not isinstance(state_delta, StateDelta):
+        if not isinstance(state_delta, PlatformStateDelta):
             raise TypeError(f'An attempt to add an entity of type {state_delta.__class__.__name__} to the {self.__class__.__name__}')
 
         for region_name, regional_delta in state_delta:
@@ -115,7 +115,7 @@ class PlatformState:
     def to_deltas(self):
 
         """
-        Converts the Platform State to the StateDelta by converting corresponding
+        Converts the Platform State to the PlatformStateDelta by converting corresponding
         regions to their RegionalDelta representation.
         """
 
@@ -123,7 +123,7 @@ class PlatformState:
         for region_name, region in self.regions.items():
             per_region_deltas.append(region.to_deltas())
 
-        return StateDelta(per_region_deltas)
+        return PlatformStateDelta(per_region_deltas)
 
     def copy(self):
 
@@ -159,7 +159,7 @@ class PlatformState:
 
                 unmet_scaled_entity_adjustment[region_name] = unmet_change_positive
 
-        state_delta = StateDelta(groups_deltas_raw)
+        state_delta = PlatformStateDelta(groups_deltas_raw)
 
         return (state_delta, unmet_scaled_entity_adjustment)
 

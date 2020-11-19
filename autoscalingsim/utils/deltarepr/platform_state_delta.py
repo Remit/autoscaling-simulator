@@ -7,7 +7,7 @@ from ..state.state_duration import StateDuration
 from ...scaling.platform_scaling_model import PlatformScalingModel
 from ...scaling.application_scaling_model import ApplicationScalingModel
 
-class StateDelta:
+class PlatformStateDelta:
 
     """
     Wraps multiple regional deltas.
@@ -35,12 +35,12 @@ class StateDelta:
             raise TypeError(f'Unknown type of init argument for {self.__class__.__name__}: {regional_deltas.__class__.__name__}')
 
     def __iter__(self):
-        return StateDeltaIterator(self)
+        return PlatformStateDeltaIterator(self)
 
     def __add__(self,
-                other_state_delta : 'StateDelta'):
+                other_state_delta : 'PlatformStateDelta'):
 
-        if not isinstance(other_state_delta, StateDelta):
+        if not isinstance(other_state_delta, PlatformStateDelta):
             raise TypeError(f'An attempt to add an object of type {other_state_delta.__class__.__name__} to an object of type {self.__class__.__name__}')
 
         new_regional_deltas = self.deltas_per_region.copy()
@@ -50,7 +50,7 @@ class StateDelta:
             else:
                 new_regional_deltas[region_name] += regional_delta
 
-        return StateDelta(new_regional_deltas)
+        return PlatformStateDelta(new_regional_deltas)
 
     def get_container_groups_ids_for_removal(self):
 
@@ -103,14 +103,14 @@ class StateDelta:
         new_timestamped_sd = {}
         for timestamp, reg_deltas_per_ts in new_timestamped_rd_ts.items():
 
-            new_timestamped_sd[timestamp] = StateDelta(reg_deltas_per_ts, True)
+            new_timestamped_sd[timestamp] = PlatformStateDelta(reg_deltas_per_ts, True)
 
         return new_timestamped_sd
 
-class StateDeltaIterator:
+class PlatformStateDeltaIterator:
 
     def __init__(self,
-                 state_delta : StateDelta):
+                 state_delta : PlatformStateDelta):
 
         self._state_delta = state_delta
         self._index = 0

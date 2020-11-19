@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 
 from .failure.failure import ServiceFailure, NodeGroupFailure
-from ..utils.deltarepr.platform_state_delta import StateDelta
+from ..utils.deltarepr.platform_state_delta import PlatformStateDelta
 from ..utils.error_check import ErrorChecker
 
 class FaultModel:
@@ -73,8 +73,7 @@ class FaultModel:
 
             self.failures = {ts: failures_per_ts for ts, failures_per_ts in self.failures.items() if ts > cur_timestamp}
 
-            return StateDelta(regional_deltas,
-                              is_enforced = True)
+            return PlatformStateDelta(regional_deltas, is_enforced = True)
         else:
             return None
 

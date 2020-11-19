@@ -2,12 +2,12 @@ from ..utils.deltarepr.regional_delta import RegionalDelta
 from ..utils.state.entity_state.entity_group import EntitiesGroupDelta
 from ..utils.state.container_state.container_group import HomogeneousContainerGroup, ContainerGroupDelta, GeneralizedDelta
 from ..utils.requirements import ResourceRequirements
-from ..utils.deltarepr.platform_state_delta import StateDelta
+from ..utils.deltarepr.platform_state_delta import PlatformStateDelta
 
 class ServiceDeploymentConfiguration:
 
     """
-    Summarizes the information about the initial deployment of a particular service.
+    Summarizes information about the initial deployment of a service.
     """
 
     def __init__(self,
@@ -39,7 +39,6 @@ class ServiceDeploymentConfiguration:
                                          EntitiesGroupDelta({self.service_name: self.init_service_aspects_regionalized[region_name]},
                                                             services_reqs = {self.service_name: self.system_requirements}))
 
-            regional_deltas_lst.append(RegionalDelta(region_name,
-                                                     [gen_delta]))
+            regional_deltas_lst.append(RegionalDelta(region_name, [gen_delta]))
 
-        return StateDelta(regional_deltas_lst)
+        return PlatformStateDelta(regional_deltas_lst)

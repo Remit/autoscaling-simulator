@@ -2,7 +2,7 @@ from collections import OrderedDict
 import pandas as pd
 
 from ...state.platform_state import PlatformState
-from ..platform_state_delta import StateDelta
+from ..platform_state_delta import PlatformStateDelta
 
 from ....scaling.application_scaling_model import ApplicationScalingModel
 from ....scaling.platform_scaling_model import PlatformScalingModel
@@ -75,9 +75,9 @@ class DeltaTimeline:
 
     def add_state_delta(self,
                         timestamp : pd.Timestamp,
-                        state_delta : StateDelta):
+                        state_delta : PlatformStateDelta):
 
-        if not isinstance(state_delta, StateDelta):
+        if not isinstance(state_delta, PlatformStateDelta):
             raise TypeError(f'An attempt to add an unknown object to {self.__class__.__name__}')
 
         if not timestamp in self.timeline:
@@ -142,7 +142,7 @@ class DeltaTimeline:
 
     def _enforce_state_delta(self,
                              timestamp : pd.Timestamp,
-                             state_delta : StateDelta):
+                             state_delta : PlatformStateDelta):
 
         node_groups_ids_mark_for_removal = {}
 
