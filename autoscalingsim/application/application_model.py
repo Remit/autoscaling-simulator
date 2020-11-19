@@ -105,10 +105,13 @@ class ApplicationModel:
 
     def step(self, cur_timestamp : pd.Timestamp, simulation_step : pd.Timedelta):
 
+        """
+        """
+
         if len(self.new_requests) > 0:
             for req in self.new_requests:
                 entry_service = self.application_model_conf.reqs_processing_infos[req.request_type].entry_service
-                req.processing_time_left = self.application_model_conf.reqs_processing_infos[req.request_type].processing_times[entry_service][0]
+                req.processing_time_left = self.application_model_conf.reqs_processing_infos[req.request_type].get_upstream_processing_time(entry_service)
                 req.processing_service = entry_service
                 self.services[entry_service].add_request(req)
 
@@ -133,7 +136,7 @@ class ApplicationModel:
                     if not next_services_names is None:
                         for next_service_name in next_services_names:
                             if next_service_name in req_info.processing_times:
-                                req.processing_time_left = req_info.processing_times[next_service_name][0]
+                                req.processing_time_left = req_info.get_upstream_processing_time(next_service_name)
                                 req.processing_service = next_service_name
                                 self.services[next_service_name].add_request(req)
                     else:
@@ -151,7 +154,7 @@ class ApplicationModel:
 
                         for prev_service_name in prev_services_names:
                             if prev_service_name in req_info.processing_times:
-                                req.processing_time_left = req_info.processing_times[prev_service_name][1]
+                                req.processing_time_left = req_info.get_downstream_processing_time(prev_service_name)
                                 req.processing_service = prev_service_name
                                 req.replies_expected = replies_expected
                                 self.services[prev_service_name].add_request(req)
@@ -164,13 +167,18 @@ class ApplicationModel:
 
     def enter_requests(self, new_requests : list):
 
+        """
+        Enters new requests into the application model to be processed
+        on the next call to the step method.
+        """
+
         self.new_requests = new_requests
 
     def post_process(self):
 
         """
-        Wraps the actions that should be performed at the end of the simulation.
-        Since only the simulator knows, when the simulation ends, this method is
+        Performs some actions at the end of the simulation. Since only
+        the simulator knows, when the simulation ends, this method is
         to be called by the simulator.
         """
 

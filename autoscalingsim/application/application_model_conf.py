@@ -156,8 +156,8 @@ class ApplicationModelConfiguration:
                         downstream_time = ErrorChecker.key_check_and_load('downstream', processing_time_service_entry, 'request_type', request_type)
                         ErrorChecker.value_check('downstream_time', downstream_time, operator.ge, 0, [f'request_type {request_type}', f'service {service_name}'])
 
-                        processing_times[service_name] = [ pd.Timedelta(upstream_time, unit = processing_times_unit), \
-                                                           pd.Timedelta(downstream_time, unit = processing_times_unit)]
+                        processing_times[service_name] = { 'upstream' : pd.Timedelta(upstream_time, unit = processing_times_unit), \
+                                                           'downstream' : pd.Timedelta(downstream_time, unit = processing_times_unit) }
 
                     timeout_raw = ErrorChecker.key_check_and_load('timeout', request_info, 'request_type', request_type)
                     timeout_val = ErrorChecker.key_check_and_load('value', timeout_raw, 'request_type', request_type)

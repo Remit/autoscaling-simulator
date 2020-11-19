@@ -61,10 +61,22 @@ class RequestProcessingInfo:
         self.request_type = request_type
         self.entry_service = entry_service
         self.processing_times = {}
-        for req_type, processing_times_lst in processing_times.items():
-            self.processing_times[req_type] = [pd.Timedelta(processing_time_raw_val, unit = 'ms') for processing_time_raw_val in processing_times_lst]
+        self.processing_times = processing_times
         self.timeout = timeout
         self.request_size_b = request_size_b
         self.response_size_b = response_size_b
         self.request_operation_type = request_operation_type
         self.resource_requirements = ResourceRequirements(request_processing_requirements)
+
+    def get_upstream_processing_time(self, service_name : str) -> pd.Timedelta:
+        return self._get_processing_time(service_name, 'upstream')
+
+    def get_downstream_processing_time(self, service_name : str) -> pd.Timedelta:
+        return self._get_processing_time(service_name, 'downstream')
+
+    def _get_processing_time(self, service_name : str, direction : str) -> pd.Timedelta:
+
+        if not service_name in self.processing_times:
+            raise ValueError(f'No info about the processing times for the request of type {self.request_type} in service {service_name} found for {direction} direction')
+
+        return self.processing_times[service_name][direction]
