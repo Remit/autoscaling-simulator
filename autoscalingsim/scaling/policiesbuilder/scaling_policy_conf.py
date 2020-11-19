@@ -102,3 +102,12 @@ class ScalingPolicyConfiguration:
 
             except json.JSONDecodeError:
                 raise ValueError(f'The config file {config_file} is an invalid JSON.')
+
+    def get_service_scaling_settings(self, service_name : str):
+
+        if service_name in self.services_scaling_config:
+            return self.services_scaling_config[service_name]
+        elif 'default' in self.services_scaling_config:
+            return self.services_scaling_config['default']
+        else:
+            raise ValueError(f'Scaling settings neither for "{service_name}" nor for "default" were found')

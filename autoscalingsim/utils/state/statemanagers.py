@@ -13,19 +13,16 @@ class StateManager:
     Base class for specialized managers that deal with the state.
     """
 
-    def __init__(self,
-                 entities_dict = None):
+    def __init__(self, entities_dict = None):
 
         self.entities = {}
         if not entities_dict is None:
             self.entities = entities_dict
 
-    def add_source(self,
-                   entity_name,
-                   entity_ref):
+    def add_source(self, entity_ref):
 
-        if not entity_name in self.entities:
-            self.entities[entity_name] = entity_ref
+        if not entity_ref.name in self.entities:
+            self.entities[entity_ref.name] = entity_ref
 
 class StateReader(StateManager):
 

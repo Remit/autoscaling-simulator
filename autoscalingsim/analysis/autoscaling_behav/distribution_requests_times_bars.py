@@ -27,7 +27,7 @@ class DistributionRequestsTimesBarchart:
             raise ValueError('The aggregation function object is not callable.')
 
         for region_name, response_times_per_request_type in response_times_regionalized.items():
-            fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (2 * len(response_times_per_request_type), 3))
+            fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (2.5 * len(response_times_per_request_type), 3))
             buffer_times_by_request = buffer_times_regionalized[region_name]
             network_times_by_request = network_times_regionalized[region_name]
 

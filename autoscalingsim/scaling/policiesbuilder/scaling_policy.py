@@ -123,9 +123,10 @@ class ScalingPolicy:
         #    self.scaling_manager.set_aspects_values(actual_state)
 
 
-    def get_services_scaling_settings(self):
+    def get_service_scaling_settings(self,
+                                     service_name : str):
 
-        return self.scaling_settings.services_scaling_config
+        return self.scaling_settings.get_service_scaling_settings(service_name)
 
     def set_scaling_manager(self,
                             scaling_manager : ScalingManager):

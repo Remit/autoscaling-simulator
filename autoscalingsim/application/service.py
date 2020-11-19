@@ -18,7 +18,7 @@ class Service(ScaledEntity):
     is initialized through the base class ScaledEntity.
 
     Attributes:
-    
+
         state (ServiceStateRegionalized): maintains the state of the distributed
             service. The state is distributed across regions and node groups.
             The simulation logic of the service is enclosed in its state.
@@ -27,7 +27,7 @@ class Service(ScaledEntity):
     """
 
     def __init__(self,
-                 service_name : str,
+                 name : str,
                  init_timestamp : pd.Timestamp,
                  service_regions : list,
                  resource_requirements : ResourceRequirements,
@@ -40,14 +40,14 @@ class Service(ScaledEntity):
 
         # Initializing scaling-related functionality in the superclass
         super().__init__(self.__class__.__name__,
-                         service_name,
+                         name,
                          scaling_setting_for_service,
                          state_reader,
                          service_regions)
 
-        self.service_name = service_name
+        self.name = name
 
-        self.state = ServiceStateRegionalized(service_name,
+        self.state = ServiceStateRegionalized(name,
                                               init_timestamp,
                                               service_regions,
                                               averaging_interval,
