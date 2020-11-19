@@ -244,3 +244,30 @@ class ApplicationModelConfiguration:
                         prev_services = None
 
                     self.structure[service_name] = {'next': next_services, 'prev': prev_services}
+
+    def get_entry_service(self, req_type : str):
+
+        """ Returns a name of the entry service for the given request type """
+
+        if not req_type in self.reqs_processing_infos:
+            raise ValueError(f'No request processing information found for {req_type} request type')
+
+        return self.reqs_processing_infos[req_type].entry_service
+
+    def get_upstream_processing_time(self, req_type : str, service_name : str):
+
+        """ Provides an upstream processing time for the given type of request in the given service """
+
+        if not req_type in self.reqs_processing_infos:
+            raise ValueError(f'No request processing information found for {req_type} request type')
+
+        return self.reqs_processing_infos[req_type].get_upstream_processing_time(service_name)
+
+    def get_downstream_processing_time(self, req_type : str, service_name : str):
+
+        """ Provides a downstream processing time for the given type of request in the given service """
+
+        if not req_type in self.reqs_processing_infos:
+            raise ValueError(f'No request processing information found for {req_type} request type')
+
+        return self.reqs_processing_infos[req_type].get_downstream_processing_time(service_name)

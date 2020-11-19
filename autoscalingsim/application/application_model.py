@@ -109,9 +109,10 @@ class ApplicationModel:
         """
 
         if len(self.new_requests) > 0:
+
             for req in self.new_requests:
-                entry_service = self.application_model_conf.reqs_processing_infos[req.request_type].entry_service
-                req.processing_time_left = self.application_model_conf.reqs_processing_infos[req.request_type].get_upstream_processing_time(entry_service)
+                entry_service = self.application_model_conf.get_entry_service(req.request_type)
+                req.processing_time_left = self.application_model_conf.get_upstream_processing_time(req.request_type, entry_service)
                 req.processing_service = entry_service
                 self.services[entry_service].add_request(req)
 
@@ -128,20 +129,17 @@ class ApplicationModel:
 
             while len(processed_requests) > 0:
                 req = processed_requests.pop()
-                req_info = self.application_model_conf.reqs_processing_infos[req.request_type]
 
                 if req.upstream:
                     next_services_names = self.application_model_conf.structure[service_name]['next']
 
                     if not next_services_names is None:
                         for next_service_name in next_services_names:
-                            if next_service_name in req_info.processing_times:
-                                req.processing_time_left = req_info.get_upstream_processing_time(next_service_name)
-                                req.processing_service = next_service_name
-                                self.services[next_service_name].add_request(req)
+                            req.processing_time_left = self.application_model_conf.get_upstream_processing_time(req.request_type, next_service_name)
+                            req.processing_service = next_service_name
+                            self.services[next_service_name].add_request(req)
                     else:
-                        # Sending response
-                        req.set_downstream()
+                        req.set_downstream() # Converting the request req into the response
 
                 if not req.upstream:
                     prev_services_names = self.application_model_conf.structure[service_name]['prev']
@@ -149,18 +147,15 @@ class ApplicationModel:
                     if not prev_services_names is None:
                         replies_expected = 0
                         for prev_service_name in prev_services_names:
-                            if prev_service_name in req_info.processing_times:
-                                replies_expected += 1
+                            replies_expected += 1
 
                         for prev_service_name in prev_services_names:
-                            if prev_service_name in req_info.processing_times:
-                                req.processing_time_left = req_info.get_downstream_processing_time(prev_service_name)
-                                req.processing_service = prev_service_name
-                                req.replies_expected = replies_expected
-                                self.services[prev_service_name].add_request(req)
+                            req.processing_time_left = self.application_model_conf.get_downstream_processing_time(req.request_type, prev_service_name)
+                            req.processing_service = prev_service_name
+                            req.replies_expected = replies_expected
+                            self.services[prev_service_name].add_request(req)
                     else:
-                        # updating the stats
-                        self.response_stats.add_request(req)
+                        self.response_stats.add_request(req) # Updating the stats of responses
 
         # Calling scaling policy that determines the need to scale
         self.scaling_policy.reconcile_state(cur_timestamp)
