@@ -7,9 +7,9 @@ from .service_metric import ServiceMetric
 from ...load.request import Request
 from ...application.requests_buffer import RequestsBuffer
 from ...application import buffer_utilization
-from ...infrastructure_platform.system_capacity import SystemCapacity
+from ...infrastructure_platform.system_resource_usage import SystemResourceUsage
 from ...utils.state.entity_state.scaling_aspects import ScalingAspect
-from ...utils.state.container_state.container_group import HomogeneousContainerGroup
+from ...utils.state.node_group_state.node_group import HomogeneousNodeGroup
 from ...utils.requirements import ResourceRequirements
 from ...utils.error_check import ErrorChecker
 
@@ -168,7 +168,7 @@ class ServiceState:
                     deployment_capacity_taken = deployment.system_resources_reserved() \
                                                  + deployment.system_resources_taken_by_all_requests()
 
-                    if not deployment_capacity_taken.is_exhausted():
+                    if not deployment_capacity_taken.is_full():
 
                         while time_budget > pd.Timedelta(0, unit = 'ms'):
                             advancing = True
@@ -251,7 +251,7 @@ class ServiceState:
         self.upstream_buf.update_capacity(service_instances_count)
         self.downstream_buf.update_capacity(service_instances_count)
 
-    def update_placement(self, node_group : HomogeneousContainerGroup):
+    def update_placement(self, node_group : HomogeneousNodeGroup):
 
         """
         Creates a new deployment for the service instances with the new
@@ -295,7 +295,7 @@ class ServiceState:
 
         service_metric_value = pd.DataFrame(columns = ['datetime', 'value']).set_index('datetime')
         # Case of resource utilization metric
-        if metric_name in SystemCapacity.layout:
+        if metric_name in SystemResourceUsage.system_resources:
             for deployment in self.deployments.values():
                 cur_deployment_util = deployment.get_utilization(metric_name, interval)
 
@@ -335,7 +335,7 @@ class ServiceState:
         along with the actual count of deployed node instances.
         """
 
-        for system_resource_name in SystemCapacity.layout:
+        for system_resource_name in SystemResourceUsage.system_resources:
             if not system_resource_name in self.service_utilizations:
                 self.service_utilizations[system_resource_name] = pd.DataFrame(columns = ['datetime', 'value']).set_index('datetime')
             deployment_util = deployment.get_utilization(system_resource_name) # take all the available data for the given resource

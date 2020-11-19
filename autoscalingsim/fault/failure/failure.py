@@ -4,22 +4,21 @@ from ...utils.error_check import ErrorChecker
 
 class Failure(ABC):
 
-    """
-    States the behavior that a concrete failure should exhibit.
-    """
+    """ Defines a structure to express the behavior of a concrete failure. """
 
     @abstractmethod
     def to_regional_state_delta(self):
         pass
 
-    def __init__(self,
-                 region_name : str,
+    def __init__(self, region_name : str,
                  count_of_entities_affected : int):
 
         self.region_name = region_name
         self.count_of_entities_affected = count_of_entities_affected
 
 class ServiceFailure(Failure):
+
+    """ A kind of failure attributed to a service """
 
     _Registry = {}
 
@@ -51,6 +50,8 @@ class ServiceFailure(Failure):
         self.service_name = ErrorChecker.key_check_and_load('service_name', failure_type_conf)
 
 class NodeGroupFailure(Failure):
+
+    """ A kind of failure attributed to a node group """
 
     _Registry = {}
 

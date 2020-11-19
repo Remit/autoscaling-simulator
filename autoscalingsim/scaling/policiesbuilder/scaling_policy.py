@@ -90,8 +90,7 @@ class ScalingPolicy:
         self.platform_model.init_adjustment_policy(entity_instance_requirements,
                                                    state_reader)
 
-    def reconcile_state(self,
-                        cur_timestamp : pd.Timestamp):
+    def reconcile_state(self, cur_timestamp : pd.Timestamp):
 
         if (cur_timestamp - self.state.get_val('last_sync_timestamp')) > self.scaling_settings.sync_period_timedelta:
 
@@ -118,23 +117,16 @@ class ScalingPolicy:
         # implementing the scaling decision which is e.g. in desired state, not taking it
 
         self.platform_model.step(cur_timestamp)
-        #actual_state = self.platform_model.step(cur_timestamp)
-        #if (not self.scaling_manager is None) and (not actual_state is None):
-        #    self.scaling_manager.set_aspects_values(actual_state)
 
 
-    def get_service_scaling_settings(self,
-                                     service_name : str):
+    def get_service_scaling_settings(self, service_name : str):
 
         return self.scaling_settings.get_service_scaling_settings(service_name)
 
-    def set_scaling_manager(self,
-                            scaling_manager : ScalingManager):
+    def set_scaling_manager(self, scaling_manager : ScalingManager):
 
         self.scaling_manager = scaling_manager
 
-    def set_state_reader(self,
-                         state_reader : StateReader):
+    def set_state_reader(self, state_reader : StateReader):
 
         self.state_reader = state_reader
-        #self.adjustment_policy.set_state_reader(state_reader)

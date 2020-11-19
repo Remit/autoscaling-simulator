@@ -91,11 +91,10 @@ class EntitiesStatesRegionalized:
 
         return entities_counts_per_region
 
-    def extract_countable_representation(self,
-                                         conf : dict):
+    def extract_countable_representation(self, conf : dict):
 
         """
-        Used to unify the aggregation scheme both for containers and entities.
+        Used to unify the aggregation scheme both for node groups and entities.
         """
 
         return self.extract_aspect_representation(conf['scaled_aspect_name'])

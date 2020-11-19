@@ -15,19 +15,19 @@ class DesiredChangeCalculator:
 
     """
     Implements PSO (Place-Score-Optimize) process. Provides the desired state
-    of container groups that can further be used to compute deltas.
+    of node groups that can further be used to compute deltas.
     """
 
     def __init__(self,
                  placement_hint : str,
                  scorer : Scorer,
                  optimizer_type : str,
-                 container_for_scaled_entities_types : dict,
+                 node_for_scaled_entities_types : dict,
                  scaled_entity_instance_requirements_by_entity : dict,
                  reader : StateReader):
 
         self.placer = Placer(placement_hint,
-                             container_for_scaled_entities_types,
+                             node_for_scaled_entities_types,
                              scaled_entity_instance_requirements_by_entity,
                              reader)
 
@@ -35,7 +35,7 @@ class DesiredChangeCalculator:
         optimizer_class = Optimizer.get(optimizer_type)
         self.optimizer = optimizer_class()
 
-        self.container_for_scaled_entities_types = container_for_scaled_entities_types
+        self.node_for_scaled_entities_types = node_for_scaled_entities_types
         self.scaled_entity_instance_requirements_by_entity = scaled_entity_instance_requirements_by_entity
 
     def __call__(self,
@@ -48,7 +48,7 @@ class DesiredChangeCalculator:
 
         for region_name, entities_state in entities_states:
             # Place
-            placements_lst = self.placer.compute_containers_requirements(entities_state,
+            placements_lst = self.placer.compute_nodes_requirements(entities_state,
                                                                          region_name)
             # Score
             scored_placements_lst = self.scorer(placements_lst, state_duration_h)
@@ -58,7 +58,7 @@ class DesiredChangeCalculator:
 
             for ep in selected_placement.entities_placements:
                 print('ep11')
-                print(ep.containers_count)
+                print(ep.nodes_count)
                 print(ep.entities_state.get_entities_counts())
 
             regions[region_name] = Region.from_conf(region_name,
@@ -66,7 +66,7 @@ class DesiredChangeCalculator:
 
             scores_per_region[region_name] = selected_placement.score
 
-        # Building the new state based on the selected container type
+        # Building the new state based on the selected node type
         desired_state = PlatformState(regions)
         desired_deltas = desired_state.to_deltas()
 

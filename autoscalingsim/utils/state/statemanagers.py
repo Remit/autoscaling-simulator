@@ -3,7 +3,7 @@ import pandas as pd
 from .platform_state import PlatformState
 from .entity_state.entities_states_reg import EntitiesStatesRegionalized
 from .entity_state.scaling_aspects import ScalingAspect
-from .container_state.container_group import HomogeneousContainerGroup
+from .node_group_state.node_group import HomogeneousNodeGroup
 
 from ...infrastructure_platform.node import NodeInfo
 
@@ -15,66 +15,47 @@ class StateManager:
 
     def __init__(self, entities_dict = None):
 
-        self.entities = {}
-        if not entities_dict is None:
-            self.entities = entities_dict
+        self.entities = entities_dict if not entities_dict is None else {}
 
     def add_source(self, entity_ref):
 
-        if not entity_ref.name in self.entities:
-            self.entities[entity_ref.name] = entity_ref
+        if not entity_ref.name in self.entities: self.entities[entity_ref.name] = entity_ref
 
 class StateReader(StateManager):
 
     """
-    Acts as an access point to the scattered metrics associated with
+    Acts as a read-only access point to the scattered metrics associated with
     different entities such as services and other information sources,
     maybe external ones.
-
-    Acts only as a reader for the metrics.
     """
 
-    def get_aspect_value(self,
-                         source_name : str,
-                         region_name : str,
-                         aspect_name : str):
+    def get_aspect_value(self, source_name : str, region_name : str, aspect_name : str):
 
         if not source_name in self.entities:
             raise ValueError(f'An attempt to call the source {source_name} that is not in the list of {self.__class__.__name__}')
 
-        return self.entities[source_name].state.get_aspect_value(region_name,
-                                                                 aspect_name)
+        return self.entities[source_name].state.get_aspect_value(region_name, aspect_name)
 
-    def get_metric_value(self,
-                         source_name : str,
-                         region_name : str,
-                         metric_name : str):
+    def get_metric_value(self, source_name : str, region_name : str, metric_name : str):
 
         if not source_name in self.entities:
             raise ValueError(f'An attempt to call the source {source_name} that is not in the list of {self.__class__.__name__}')
 
-        return self.entities[source_name].state.get_metric_value(region_name,
-                                                                 metric_name)
+        return self.entities[source_name].state.get_metric_value(region_name, metric_name)
 
-    def get_resource_requirements(self,
-                                  source_name : str,
-                                  region_name : str):
+    def get_resource_requirements(self, source_name : str, region_name : str):
 
         if not source_name in self.entities:
             raise ValueError(f'An attempt to call the source {source_name} that is not in the list of {self.__class__.__name__}')
 
         return self.entities[source_name].state.get_resource_requirements(region_name)
 
-    def get_placement_parameter(self,
-                                source_name : str,
-                                region_name : str,
-                                parameter : str):
+    def get_placement_parameter(self, source_name : str, region_name : str, parameter : str):
 
         if not source_name in self.entities:
             raise ValueError(f'An attempt to call the source {source_name} that is not in the list of {self.__class__.__name__}')
 
-        return self.entities[source_name].state.get_placement_parameter(region_name,
-                                                                        parameter)
+        return self.entities[source_name].state.get_placement_parameter(region_name, parameter)
 
 class ScalingManager(StateManager):
 
@@ -84,42 +65,36 @@ class ScalingManager(StateManager):
     state calculation.
     """
 
-    def set_aspects_values(self, platform_state : PlatformState):
-        # TODO: rename to set_deployments?
+    def set_deployments(self, platform_state : PlatformState):
 
         """
-        Sets multiple scaling aspects associated with the state provided as
+        Sets multiple deployments acquired from the platform state provided as
         an argument to the call.
         """
 
         # Enforces scaling aspects values on scaled entities
-        scaling_infos = platform_state.extract_container_groups(False)
-        for region_name, regional_container_groups in scaling_infos.items():
-            for container_group in regional_container_groups:
-                for entity_name in container_group.get_running_entities():
-                    self.update_placement(entity_name, region_name, container_group)
+        scaling_infos = platform_state.extract_node_groups(False)
+        for region_name, regional_node_groups in scaling_infos.items():
+            for node_group in regional_node_groups:
+                for entity_name in node_group.get_running_entities():
+                    self.update_placement(entity_name, region_name, node_group)
 
-    def mark_groups_for_removal(self,
-                                entity_name : str,
+    def mark_groups_for_removal(self, entity_name : str,
                                 node_groups_ids_mark_for_removal_regionalized : dict):
 
         if not entity_name in self.entities:
             raise ValueError(f'An attempt to mark groups for removal for {entity_name} that is unknown to {self.__class__.__name__}')
 
-        for region_name, container_group_ids in node_groups_ids_mark_for_removal_regionalized.items():
-            self.entities[entity_name].state.prepare_groups_for_removal(region_name, container_group_ids)
+        for region_name, node_group_ids in node_groups_ids_mark_for_removal_regionalized.items():
+            self.entities[entity_name].state.prepare_groups_for_removal(region_name, node_group_ids)
 
-    def remove_groups_for_region(self,
-                                 region_name : str,
-                                 container_groups_ids : list):
+    def remove_groups_for_region(self, region_name : str, node_groups_ids : list):
 
         for entity in self.entities.values():
-            entity.state.force_remove_groups(region_name, container_groups_ids)
+            entity.state.force_remove_groups(region_name, node_groups_ids)
 
-    def update_placement(self,
-                         entity_name : str,
-                         region_name : str,
-                         container_group : HomogeneousContainerGroup):
+    def update_placement(self, entity_name : str, region_name : str,
+                         node_group : HomogeneousNodeGroup):
 
         """
         This method of the Scaling Manager is used by the Enforce step in the
@@ -130,7 +105,7 @@ class ScalingManager(StateManager):
         if not entity_name in self.entities:
             raise ValueError(f'An attempt to set the placement of {entity_name} that is unknown to {self.__class__.__name__}')
 
-        self.entities[entity_name].state.update_placement(region_name, container_group)
+        self.entities[entity_name].state.update_placement(region_name, node_group)
 
     def compute_desired_state(self):
 

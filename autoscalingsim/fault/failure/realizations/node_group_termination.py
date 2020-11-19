@@ -1,21 +1,23 @@
 from ..failure import NodeGroupFailure
-from ....utils.state.container_state.container_group import HomogeneousContainerGroupDummy, ContainerGroupDelta, GeneralizedDelta
+from ....utils.state.node_group_state.node_group import HomogeneousNodeGroupDummy, NodeGroupDelta, GeneralizedDelta
 from ....utils.deltarepr.regional_delta import RegionalDelta
 
 @NodeGroupFailure.register('termination')
 class NodeGroupTerminationFailure(NodeGroupFailure):
 
+    """
+    A kind of termination failure that describes an abrupt termination
+    of a node group. Implements conversion to an appropriate regional delta.
+    """
+
     def to_regional_state_delta(self):
 
-        container_group = HomogeneousContainerGroupDummy(self.node_type,
-                                                         self.provider,
-                                                         self.count_of_entities_affected)
+        node_group = HomogeneousNodeGroupDummy(self.node_type, self.provider,
+                                               self.count_of_entities_affected)
 
-        container_group_delta = ContainerGroupDelta(container_group,
-                                                    sign = -1,
-                                                    in_change = False,
-                                                    virtual = False)
+        node_group_delta = NodeGroupDelta(node_group, sign = -1,
+                                          in_change = False, virtual = False)
 
-        gd = GeneralizedDelta(container_group_delta, None)
+        gd = GeneralizedDelta(node_group_delta, None)
 
         return RegionalDelta(self.region_name, [gd])

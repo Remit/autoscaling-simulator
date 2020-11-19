@@ -15,9 +15,7 @@ class ScalingModel:
     Services in the Application Model.
     """
 
-    def __init__(self,
-                 simulation_step : pd.Timedelta,
-                 config_filename : str):
+    def __init__(self, simulation_step : pd.Timedelta, config_filename : str):
 
         # Static state
         with open(config_filename) as f:
@@ -31,8 +29,7 @@ class ScalingModel:
                 provider = ErrorChecker.key_check_and_load('provider', platform_i)
                 nodes_scaling_infos_raw = ErrorChecker.key_check_and_load('nodes', platform_i, 'provider', provider)
 
-                self.platform_scaling_model.add_provider(provider,
-                                                         nodes_scaling_infos_raw)
+                self.platform_scaling_model.add_provider(provider, nodes_scaling_infos_raw)
 
             # 2. Filling into the application scaling information
             app_config = ErrorChecker.key_check_and_load('application', config)

@@ -1,9 +1,9 @@
 import pandas as pd
 
-from ...utils.state.container_state.container_group import HomogeneousContainerGroup
+from ...utils.state.node_group_state.node_group import HomogeneousNodeGroup
 from ...utils.requirements import ResourceRequirements
 from ...load.request import Request
-from ...infrastructure_platform.system_capacity import SystemCapacity
+from ...infrastructure_platform.system_resource_usage import SystemResourceUsage
 
 class Deployment:
 
@@ -19,7 +19,7 @@ class Deployment:
             to improve the convenience and performance of the frequently called
             methods.
 
-        node_group (HomogeneousContainerGroup): references the node group that
+        node_group (HomogeneousNodeGroup): references the node group that
             the instances of the service *service_name* are deployed on. The
             node group might be shared between multiple services, hence some
             calls to it include the name of the service.
@@ -33,7 +33,7 @@ class Deployment:
 
     def __init__(self,
                  service_name : str,
-                 node_group : HomogeneousContainerGroup,
+                 node_group : HomogeneousNodeGroup,
                  request_processing_infos : dict):
 
         self.service_name = service_name
@@ -60,7 +60,7 @@ class Deployment:
         are used to evaluate whether additional requests can be scheduled.
         """
 
-        return self.node_group.system_capacity
+        return self.node_group.system_resources_usage
 
     def system_resources_taken_by_requests(self):
 
@@ -77,7 +77,7 @@ class Deployment:
         return self.node_group.system_resources_to_take_from_requirements(res_reqs)
 
     def update_utilization(self,
-                           system_resources_taken : SystemCapacity,
+                           system_resources_taken : SystemResourceUsage,
                            timestamp : pd.Timestamp,
                            averaging_interval : pd.Timedelta):
 
@@ -94,7 +94,7 @@ class Deployment:
 
     def get_nodes_count(self):
 
-        return self.node_group.containers_count
+        return self.node_group.nodes_count
 
     def can_schedule_request(self, req : Request):
 

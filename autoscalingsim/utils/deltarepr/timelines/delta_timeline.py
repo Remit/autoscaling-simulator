@@ -70,8 +70,8 @@ class DeltaTimeline:
         #                print(delta_per_region)
         #                print(region_name)
         #                for gd in delta_per_region:
-        #                    print(f'id: {gd.container_group_delta.container_group.id}')
-        #                    print(f'count: {gd.container_group_delta.container_group.containers_count}')
+        #                    print(f'id: {gd.node_group_delta.node_group.id}')
+        #                    print(f'count: {gd.node_group_delta.node_group.nodes_count}')
 
     def add_state_delta(self,
                         timestamp : pd.Timestamp,
@@ -120,8 +120,8 @@ class DeltaTimeline:
                         #    print(delta_per_region)
                         #    print(region_name)
                         #    for gd in delta_per_region:
-                        #        print(f'id: {gd.container_group_delta.container_group.id}')
-                        #        print(f'count: {gd.container_group_delta.container_group.containers_count}')
+                        #        print(f'id: {gd.node_group_delta.node_group.id}')
+                        #        print(f'count: {gd.node_group_delta.node_group.nodes_count}')
                         #        if not gd.entities_group_delta is None:
                         #            print(f'egd: {gd.entities_group_delta.to_entities_raw_count_change()}')
                         self.actual_state += state_delta
@@ -151,7 +151,7 @@ class DeltaTimeline:
                                                            timestamp)
 
         # Marking node groups ids that should prepare for the removal, i.e. no requests should be sent there
-        state_delta_regionalized_ids_for_removal = state_delta.get_container_groups_ids_for_removal()
+        state_delta_regionalized_ids_for_removal = state_delta.get_node_groups_ids_for_removal()
         for entity_name, state_delta_ids_for_removal_per_entity in state_delta_regionalized_ids_for_removal.items():
             if not entity_name in node_groups_ids_mark_for_removal:
                 node_groups_ids_mark_for_removal[entity_name] = {}

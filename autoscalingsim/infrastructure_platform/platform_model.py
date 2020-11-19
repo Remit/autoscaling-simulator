@@ -8,9 +8,11 @@ from ..utils.state.statemanagers import StateReader, ScalingManager
 from ..utils.deltarepr.platform_state_delta import PlatformStateDelta
 from ..utils.deltarepr.timelines.delta_timeline import DeltaTimeline
 from ..utils.error_check import ErrorChecker
+
 from ..scaling.platform_scaling_model import PlatformScalingModel
 from ..scaling.application_scaling_model import ApplicationScalingModel
 from ..scaling.policiesbuilder.adjustmentplacement.adjustment_policy import AdjustmentPolicy
+
 from ..fault.fault_model import FaultModel
 
 class ProviderNodes:
@@ -174,7 +176,7 @@ class PlatformModel:
         if not self.scaling_manager is None:
 
             if not actual_state is None:
-                self.scaling_manager.set_aspects_values(actual_state)
+                self.scaling_manager.set_deployments(actual_state)
 
             if len(node_groups_ids_mark_for_removal) > 0:
                 for service_name, node_groups_ids_mark_for_removal_regionalized in node_groups_ids_mark_for_removal.items():

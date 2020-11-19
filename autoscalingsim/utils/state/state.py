@@ -19,9 +19,7 @@ class ScaledEntityState(ABC):
             self.tmp_buffer_datetimes = []
             self.tmp_buffer_values = []
 
-        def update_and_get(self,
-                           obs_timestamp : pd.Timestamp,
-                           obs_value : float,
+        def update_and_get(self, obs_timestamp : pd.Timestamp, obs_value : float,
                            averaging_interval : pd.Timedelta):
 
 
@@ -38,22 +36,16 @@ class ScaledEntityState(ABC):
             return sum(self.tmp_buffer_values) / len(self.tmp_buffer_values)
 
     @abstractmethod
-    def update_placement(self,
-                         region_name : str,
-                         node_info : NodeInfo):
+    def update_placement(self, region_name : str, node_info : NodeInfo):
 
         pass
 
     @abstractmethod
-    def get_aspect_value(self,
-                         region_name : str,
-                         aspect_name : str):
+    def get_aspect_value(self, region_name : str, aspect_name : str):
 
         pass
 
     @abstractmethod
-    def get_metric_value(self,
-                         region_name : str,
-                         metric_name : str):
+    def get_metric_value(self, region_name : str, metric_name : str):
 
         pass

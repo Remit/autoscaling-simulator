@@ -1,25 +1,25 @@
 from .entity_state.entity_group import EntitiesState
 from ...scaling.policiesbuilder.scaled.scaled_container import ScaledContainer
-from ...infrastructure_platform.system_capacity import SystemCapacity
+from ...infrastructure_platform.system_resource_usage import SystemResourceUsage
 
-class InContainerPlacement:
+class InNodePlacement:
 
     """
-    Wraps the working information about the in-container placement. In case of nodes,
+    Wraps the working information about the in-node placement. In case of nodes,
     it will be an in-node placement of services.
 
     Specifies:
-        container type
+        node type
         capacity taken
         scaled entities and their instance counts that can fit into this placement
     """
 
     def __init__(self,
-                 container_info : ScaledContainer,
-                 capacity_taken : SystemCapacity,
+                 node_info : ScaledContainer,
+                 capacity_taken : SystemResourceUsage,
                  placed_entities : EntitiesState):
 
-        self.container_info = container_info
+        self.node_info = node_info
         self.capacity_taken = capacity_taken
         self.placed_entities = placed_entities
 
@@ -31,12 +31,12 @@ class EntitiesPlacement:
     """
 
     def __init__(self,
-                 container_info : ScaledContainer,
-                 containers_count : int,
+                 node_info : ScaledContainer,
+                 nodes_count : int,
                  entities_state : EntitiesState):
 
-        self.container_info = container_info
-        self.containers_count = containers_count
+        self.node_info = node_info
+        self.nodes_count = nodes_count
         self.entities_state = entities_state
 
 class Placement:

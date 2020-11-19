@@ -12,11 +12,15 @@ class ScaledContainer(ABC):
     """
 
     @abstractmethod
+    def get_unique_id(self):
+        pass
+
+    @abstractmethod
     def get_name(self):
         pass
 
     @abstractmethod
-    def get_capacity(self):
+    def get_max_usage(self):
         pass
 
     @abstractmethod
@@ -28,7 +32,5 @@ class ScaledContainer(ABC):
         pass
 
     @abstractmethod
-    def entities_require_capacity(self,
-                                  requirements_by_entity,
-                                  entities_state):
+    def entities_require_system_resources(self, entities_state, instances_count):
         pass

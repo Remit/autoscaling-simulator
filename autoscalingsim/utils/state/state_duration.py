@@ -9,26 +9,22 @@ class StateDuration:
     """
 
     @classmethod
-    def from_single_value(cls,
-                          duration_per_h : float):
+    def from_single_value(cls, duration_per_h : float):
 
         return cls(collections.defaultdict(lambda: duration_per_h))
 
-    def __init__(self,
-                 durations_per_region_h : collections.Mapping):
+    def __init__(self, durations_per_region_h : collections.Mapping):
 
         self.durations_per_region_h = durations_per_region_h
 
-    def __getitem__(self,
-                    region_name : str):
+    def __getitem__(self, region_name : str):
 
         if not isinstance(region_name, str):
             raise TypeError(f'Unrecognized type of key to extract the duration: {region_name.__class__.__name__}')
 
         return self.durations_per_region_h.get(region_name, 0)
 
-    def __mul__(self,
-                state_score : StateScore):
+    def __mul__(self, state_score : StateScore):
 
         if not isinstance(state_score, StateScore):
             raise TypeError(f'An attempt to multiply {self.__class__.__name__} by an unknown object: {state_score.__class__.__name__}')

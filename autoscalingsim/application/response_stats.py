@@ -36,15 +36,12 @@ class ResponseStatsRegional:
 
 class ResponseStats:
 
-    """
-    Container for the stats of the processed requests.
-    """
+    """ Contains stats for the processed requests """
 
     def __init__(self):
         self.regional_stats = {}
 
-    def add_request(self,
-                    req : Request):
+    def add_request(self, req : Request):
 
         if not req.region_name in self.regional_stats:
             self.regional_stats[req.region_name] = ResponseStatsRegional()

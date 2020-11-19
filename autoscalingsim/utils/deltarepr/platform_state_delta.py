@@ -52,11 +52,11 @@ class PlatformStateDelta:
 
         return PlatformStateDelta(new_regional_deltas)
 
-    def get_container_groups_ids_for_removal(self):
+    def get_node_groups_ids_for_removal(self):
 
         regionalized_ids = {}
         for region_name, regional_delta in self.deltas_per_region.items():
-            ids_for_removal_per_entity = regional_delta.get_container_groups_ids_for_removal()
+            ids_for_removal_per_entity = regional_delta.get_node_groups_ids_for_removal()
             for entity_name, ids_for_removal in ids_for_removal_per_entity.items():
                 if not entity_name in regionalized_ids:
                     regionalized_ids[entity_name] = {}
@@ -64,11 +64,11 @@ class PlatformStateDelta:
 
         return regionalized_ids
 
-    def get_container_groups_ids_for_removal_flat(self):
+    def get_node_groups_ids_for_removal_flat(self):
 
         regionalized_ids = {}
         for region_name, regional_delta in self.deltas_per_region.items():
-            regionalized_ids[region_name] = regional_delta.get_container_groups_ids_for_removal_flat()
+            regionalized_ids[region_name] = regional_delta.get_node_groups_ids_for_removal_flat()
 
         return regionalized_ids
 

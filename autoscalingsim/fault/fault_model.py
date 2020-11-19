@@ -10,7 +10,7 @@ from ..utils.error_check import ErrorChecker
 class FaultModel:
 
     """
-    Models virtual cluster and services faults. The model is
+    Models virtual cluster and services failures. The model is
     used in the joint DeltaTimeline in the PlatformModel since it is
     where the PlatformState is rolled out with the method roll_out_updates.
     """
@@ -20,6 +20,20 @@ class FaultModel:
                  time_to_simulate : pd.Timedelta,
                  simulation_step : pd.Timedelta,
                  config_file : str):
+
+        """
+        Initializes failures in the Fault Model from the configuration file.
+        Since all the failures are predetermined by this configuration file,
+        the allocation of the failures on the timeline happens on initialization
+        of the fault model. This process includes two steps:
+            1) based on the probability of a failure in the config file, it is
+               determined whether the failure will occur at all during the
+               simulation (binomial distribution);
+            2) if the failure occurs during the simulation, a timestamp is
+               randomly selected for it to occur based on the uniform distribution
+               across all the simulation steps.
+               
+        """
 
         self.failures = {}
 
@@ -32,29 +46,24 @@ class FaultModel:
                 raise ValueError(f'No configuration file found under the path {config_file} for {self.__class__.__name__}')
 
             with open(config_file) as f:
-                try:
-                    config = json.load(f)
+                config = json.load(f)
 
-                    node_failures = ErrorChecker.key_check_and_load('node_groups_failures', config)
-                    for node_failure_conf in node_failures:
-                        failure_class = NodeGroupFailure.get(ErrorChecker.key_check_and_load('type', node_failure_conf))
-                        prob = ErrorChecker.key_check_and_load('probability', node_failure_conf)
-                        if np.random.binomial(1, prob) == 1: # failure will happen
-                            self._add_failure(simulation_start, simulation_step, steps_count, failure_class, node_failure_conf)
+                node_failures = ErrorChecker.key_check_and_load('node_groups_failures', config)
+                for node_failure_conf in node_failures:
+                    failure_class = NodeGroupFailure.get(ErrorChecker.key_check_and_load('type', node_failure_conf))
+                    prob = ErrorChecker.key_check_and_load('probability', node_failure_conf)
+                    if np.random.binomial(1, prob) == 1: # failure will happen
+                        self._add_failure(simulation_start, simulation_step, steps_count, failure_class, node_failure_conf)
 
 
-                    service_failures = ErrorChecker.key_check_and_load('services_failures', config)
-                    for service_failure_conf in service_failures:
-                        failure_class = ServiceFailure.get(ErrorChecker.key_check_and_load('type', service_failure_conf))
-                        prob = ErrorChecker.key_check_and_load('probability', service_failure_conf)
-                        if np.random.binomial(1, prob) == 1: # failure will happen
-                            self._add_failure(simulation_start, simulation_step, steps_count, failure_class, service_failure_conf)
+                service_failures = ErrorChecker.key_check_and_load('services_failures', config)
+                for service_failure_conf in service_failures:
+                    failure_class = ServiceFailure.get(ErrorChecker.key_check_and_load('type', service_failure_conf))
+                    prob = ErrorChecker.key_check_and_load('probability', service_failure_conf)
+                    if np.random.binomial(1, prob) == 1: # failure will happen
+                        self._add_failure(simulation_start, simulation_step, steps_count, failure_class, service_failure_conf)
 
-                except json.JSONDecodeError:
-                    raise ValueError(f'The config file {config_file} is an invalid JSON.')
-
-    def get_failure_state_deltas(self,
-                                 cur_timestamp : pd.Timestamp):
+    def get_failure_state_deltas(self, cur_timestamp : pd.Timestamp):
 
         regional_deltas = {}
 

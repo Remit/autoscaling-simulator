@@ -32,7 +32,7 @@ class WaitingServiceBuffersHistogram:
                 for req_type, buffers_waiting_times in buffer_times_by_request.items():
                     for service_name, service_buffer_waiting_times in buffers_waiting_times.items():
                         global_max_waiting_time = max(global_max_waiting_time, max(service_buffer_waiting_times))
-                        if not service_name in services_order:
+                        if not service_name in services_order and len(service_buffer_waiting_times) > 0:
                             services_order[service_name] = plot_id
                             plot_id += 1
 

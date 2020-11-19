@@ -305,7 +305,7 @@ class EntityGroupDelta(EntityGroupDeltaCommon):
 class EntitiesState:
 
     """
-    Wraps the state of entities on a particular container group.
+    Wraps the state of entities on a particular node group.
     """
 
     def __init__(self,

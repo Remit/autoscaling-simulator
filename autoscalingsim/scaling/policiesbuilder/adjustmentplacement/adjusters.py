@@ -29,7 +29,7 @@ class Adjuster(ABC):
     def __init__(self,
                  application_scaling_model : ApplicationScalingModel,
                  platform_scaling_model : PlatformScalingModel,
-                 container_for_scaled_entities_types : dict,
+                 node_for_scaled_entities_types : dict,
                  scaled_entity_instance_requirements_by_entity : dict,
                  optimizer_type : str,
                  placement_hint : str,
@@ -49,7 +49,7 @@ class Adjuster(ABC):
         self.desired_change_calculator = DesiredChangeCalculator(placement_hint,
                                                                  self.scorer,
                                                                  optimizer_type,
-                                                                 container_for_scaled_entities_types,
+                                                                 node_for_scaled_entities_types,
                                                                  scaled_entity_instance_requirements_by_entity,
                                                                  state_reader)
 
@@ -162,8 +162,8 @@ class Adjuster(ABC):
                 #    print(delta_per_region)
                 #    print(region_name)
                 #    for gd in delta_per_region:
-                #        print(f'id: {gd.container_group_delta.container_group.id}')
-                #        print(f'count: {gd.container_group_delta.container_group.containers_count}')
+                #        print(f'id: {gd.node_group_delta.node_group.id}')
+                #        print(f'count: {gd.node_group_delta.node_group.nodes_count}')
 
 
                 timeline_of_deltas.add_state_delta(ts_of_unmet_change, chosen_state_delta)
@@ -191,7 +191,7 @@ class CostMinimizer(Adjuster):
     def __init__(self,
                  application_scaling_model : ApplicationScalingModel,
                  platform_scaling_model : PlatformScalingModel,
-                 container_for_scaled_entities_types : dict,
+                 node_for_scaled_entities_types : dict,
                  scaled_entity_instance_requirements_by_entity : dict,
                  state_reader : StateReader,
                  optimizer_type = 'OptimizerScoreMaximizer',
@@ -201,7 +201,7 @@ class CostMinimizer(Adjuster):
         score_calculator_class = ScoreCalculator.get(self.__class__.__name__)
         super().__init__(application_scaling_model,
                          platform_scaling_model,
-                         container_for_scaled_entities_types,
+                         node_for_scaled_entities_types,
                          scaled_entity_instance_requirements_by_entity,
                          optimizer_type,
                          placement_hint,

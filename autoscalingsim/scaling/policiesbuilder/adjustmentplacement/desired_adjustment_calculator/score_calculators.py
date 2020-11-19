@@ -25,9 +25,9 @@ class ScoreCalculator(ABC):
 
     @abstractmethod
     def __call__(self,
-                 container_info : ScaledContainer,
+                 node_info : ScaledContainer,
                  duration : pd.Timedelta,
-                 containers_count : int) -> tuple:
+                 nodes_count : int) -> tuple:
         pass
 
     @classmethod
@@ -61,12 +61,12 @@ class PriceScoreCalculator(ScoreCalculator):
         super().__init__(Score.get(self.__class__.__name__))
 
     def __call__(self,
-                 container_info : ScaledContainer,
+                 node_info : ScaledContainer,
                  duration_h : float,
-                 containers_count : int) -> tuple:
+                 nodes_count : int) -> tuple:
 
         # TODO: consider taking cpu_credits_h into account
-        price = duration_h * containers_count * container_info.price_p_h
+        price = duration_h * nodes_count * node_info.price_p_h
         score = self.score_class(price)
 
         return (score, price)

@@ -29,9 +29,9 @@ class Scorer:
             cumulative_score = self.score_calculator.score_class(0)
             for entities_placement in placement:
 
-                score, _ = self.score_calculator(entities_placement.container_info,
+                score, _ = self.score_calculator(entities_placement.node_info,
                                                  state_duration_h,
-                                                 entities_placement.containers_count)
+                                                 entities_placement.nodes_count)
                 cumulative_score += score
 
             # In some cases, the score might not get modified by the above loop.

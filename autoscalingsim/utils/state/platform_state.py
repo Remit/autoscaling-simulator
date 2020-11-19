@@ -8,21 +8,10 @@ class PlatformState:
     """
     Wraps the current state of the platform. Structured according to the hierarchy:
 
-    Platform state (1) ->
-        {*) Region (1) ->
-        (*) Node type (1) ->
-        (*) Homogeneous group (1) ->
-        (*) Entity placement
-
-    The introduction of the homogeneous group allows to optimize the platform state.
-    This means that we do not need to store all the containers (nodes) with all the
-    entities (services) -- instead, the containers that have the same content in
-    terms of entities form a Homogeneous group that stores the count of such
-    container replicas in the group.
+    Platform state (1) -> (*) Region (1) -> (1) Node group set (1) -> (*) Homogeneous group (1) -> (*) Entity placement
     """
 
-    def __init__(self,
-                 regions = []):
+    def __init__(self, regions = []):
 
         self.regions = {}
         if isinstance(regions, dict):
@@ -48,31 +37,22 @@ class PlatformState:
             if not compensating_deltas is None:
                 compensating_deltas_in_regions[region_name] = compensating_deltas
 
-        if len(compensating_deltas_in_regions) > 0:
-            return PlatformStateDelta(compensating_deltas_in_regions)
-        else:
-            return None
+        return PlatformStateDelta(compensating_deltas_in_regions) if len(compensating_deltas_in_regions) > 0 else None
 
     def extract_ids_removed_since_last_time(self):
 
         ids_in_regions = {}
         for region_name, region in self.regions.items():
             removed_ids = region.extract_ids_removed_since_last_time()
-            if len(removed_ids) > 0:
-                ids_in_regions[region_name] = removed_ids
+            if len(removed_ids) > 0: ids_in_regions[region_name] = removed_ids
 
         return ids_in_regions
 
     def to_placements(self):
 
-        placements_per_region = {}
-        for region_name, region in self.regions.items():
-            placements_per_region[region_name] = region.to_placement()
+        return { region_name : region.to_placement() for region_name, region in self.regions.items()}
 
-        return placements_per_region
-
-    def __add__(self,
-                state_delta : PlatformStateDelta):
+    def __add__(self, state_delta : PlatformStateDelta):
 
         modified_state = self.copy()
         if not isinstance(state_delta, PlatformStateDelta):
@@ -85,56 +65,39 @@ class PlatformState:
 
         return modified_state
 
-    def extract_countable_representation(self,
-                                         conf : dict = {'in-change': True}):
+    def extract_countable_representation(self, conf : dict = {'in-change': True}):
 
-        """
-        Used to unify the aggregation scheme both for containers and entities.
-        """
+        """ Used to unify the aggregation scheme both for nodes and entities """
 
         return self.extract_node_counts(conf['in-change'])
 
-    def extract_node_counts(self,
-                            in_change : bool):
+    def extract_node_counts(self, in_change : bool):
 
-        node_counts_per_region = {}
-        for region_name, region in self.regions.items():
-            node_counts_per_region[region_name] = region.extract_node_counts(in_change)
+        return { region_name : region.extract_node_counts(in_change) for region_name, region in self.regions.items() }
 
-        return node_counts_per_region
+    def extract_node_groups(self, in_change : bool):
 
-    def extract_container_groups(self,
-                                 in_change : bool):
-
-        container_groups_regionalized = {}
-        for region_name, region in self.regions.items():
-            container_groups_regionalized[region_name] = region.extract_container_groups(in_change)
-
-        return container_groups_regionalized
+        return { region_name : region.extract_node_groups(in_change) for region_name, region in self.regions.items() }
 
     def to_deltas(self):
 
         """
-        Converts the Platform State to the PlatformStateDelta by converting corresponding
+        Converts Platform State into PlatformStateDelta by converting corresponding
         regions to their RegionalDelta representation.
         """
 
-        per_region_deltas = []
-        for region_name, region in self.regions.items():
-            per_region_deltas.append(region.to_deltas())
-
-        return PlatformStateDelta(per_region_deltas)
+        return PlatformStateDelta([region.to_deltas() for region in self.regions.values()])
 
     def copy(self):
 
-        return PlatformState(self.regions.copy())
+        return self.__class__(self.regions.copy())
 
 
     def compute_soft_adjustment(self,
-                                scaling_aspects_adjustment_in_existing_containers : dict,
+                                scaling_aspects_adjustment_in_existing_nodes : dict,
                                 scaled_entity_instance_requirements_by_entity : dict) -> tuple:
         """
-        Attempts to place the entities in the existing containers (nodes).
+        Attempts to place the entities in the existing nodes.
         Returns the deltas of homogeneous groups in regions (or none) and
         the scaled entities remaining unaccommodated to attempt other options.
 
@@ -145,7 +108,7 @@ class PlatformState:
         unmet_scaled_entity_adjustment = {}
 
         for region_name, region in self.regions.items():
-            region_groups_delta, region_unmet_scaled_entity_adjustment = region.compute_soft_adjustment(scaling_aspects_adjustment_in_existing_containers[region_name],
+            region_groups_delta, region_unmet_scaled_entity_adjustment = region.compute_soft_adjustment(scaling_aspects_adjustment_in_existing_nodes[region_name],
                                                                                                         scaled_entity_instance_requirements_by_entity)
             if not region_groups_delta is None:
                 groups_deltas_raw[region_name] = region_groups_delta
@@ -165,8 +128,4 @@ class PlatformState:
 
     def extract_collective_entities_states(self):
 
-        collective_entities_states = {}
-        for region_name, region in self.regions.items():
-            collective_entities_states[region_name] = region.extract_collective_entities_state()
-
-        return EntitiesStatesRegionalized(collective_entities_states)
+        return EntitiesStatesRegionalized({ region_name : region.extract_collective_entities_state() for region_name, region in self.regions.items() })

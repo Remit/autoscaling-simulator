@@ -3,7 +3,7 @@ import pandas as pd
 from .service_state import ServiceState
 
 from ...utils.state.state import ScaledEntityState
-from ...utils.state.container_state.container_group import HomogeneousContainerGroup
+from ...utils.state.node_group_state.node_group import HomogeneousNodeGroup
 from ...utils.requirements import ResourceRequirements
 from ...load.request import Request
 
@@ -84,7 +84,7 @@ class ServiceStateRegionalized(ScaledEntityState):
             for node_group_id in node_group_ids:
                 self.region_states[region_name].force_remove_group(node_group_id)
 
-    def update_placement(self, region_name : str, node_group : HomogeneousContainerGroup):
+    def update_placement(self, region_name : str, node_group : HomogeneousNodeGroup):
 
         """ Updates the service placement in the given region """
 

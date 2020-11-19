@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 from ..utils.error_check import ErrorChecker
-from ..utils.state.container_state.container_group import ContainerGroupDelta
+from ..utils.state.node_group_state.node_group import NodeGroupDelta
 
 class NodeScalingInfo:
 
@@ -10,8 +10,7 @@ class NodeScalingInfo:
     Wraps scalling-related information for a particular node type.
     """
 
-    def __init__(self,
-                 node_type : str,
+    def __init__(self, node_type : str,
                  booting_duration : pd.Timedelta,
                  termination_duration : pd.Timedelta):
 
@@ -26,9 +25,7 @@ class PlatformScalingInfo:
     of a particular provider.
     """
 
-    def __init__(self,
-                 provider : str,
-                 node_scaling_infos_raw : list):
+    def __init__(self, provider : str, node_scaling_infos_raw : list):
 
         self.provider = provider
         self.node_scaling_infos = {}
@@ -74,7 +71,7 @@ class PlatformScalingModel:
                                                                     node_scaling_infos_raw)
 
     def delay(self,
-              container_group_delta : ContainerGroupDelta):
+              node_group_delta : NodeGroupDelta):
 
         """
         Implements the delay operation on the platform level. Returns the timestamped
@@ -83,16 +80,16 @@ class PlatformScalingModel:
         """
 
         delay = pd.Timedelta(0, unit = 'ms')
-        enforced_container_group_delta = None
-        if container_group_delta.in_change:
-            provider = container_group_delta.get_provider()
-            container_type = container_group_delta.get_container_type()
+        enforced_node_group_delta = None
+        if node_group_delta.in_change:
+            provider = node_group_delta.get_provider()
+            node_type = node_group_delta.get_node_type()
 
-            if container_group_delta.sign < 0:
-                delay = self.platform_scaling_infos[provider].node_scaling_infos[container_type].termination_duration
-            elif container_group_delta.sign > 0:
-                delay = self.platform_scaling_infos[provider].node_scaling_infos[container_type].booting_duration
+            if node_group_delta.sign < 0:
+                delay = self.platform_scaling_infos[provider].node_scaling_infos[node_type].termination_duration
+            elif node_group_delta.sign > 0:
+                delay = self.platform_scaling_infos[provider].node_scaling_infos[node_type].booting_duration
 
-            enforced_container_group_delta = container_group_delta.enforce()
+            enforced_node_group_delta = node_group_delta.enforce()
 
-        return (delay, enforced_container_group_delta)
+        return (delay, enforced_node_group_delta)
