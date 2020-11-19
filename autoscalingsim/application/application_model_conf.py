@@ -58,6 +58,34 @@ class ApplicationModelConfiguration:
     """
     Encapsulates the settings of an application model which it parsed from the
     configuration file.
+
+    Attributes:
+
+        name (str): an application name.
+
+        regions (list of str): a list of regions that the application services
+            are deployed in.
+
+        entity_instance_requirements (dict of str -> ResourceRequirements):
+            system resource requirements for an instance of every service.
+
+        reqs_processing_infos (dict of *request type* -> RequestProcessingInfo):
+            a bundle of requests processing-related control information for
+            every request type available in the modeled application.
+
+        service_deployments_confs (list of ServiceDeploymentConfiguration):
+            keeps deployment configurations for all the services of an app.
+
+        service_confs (list of ServiceConfiguration): keeps configurations to
+            create services in the application model. These configurations
+            lack several pieces of information required to instantiate a
+            service object. The information is provided in the application model
+            when calling the service object creating method of the service config.
+
+        structure (dict of *service name* -> dict of next and prev service names):
+            determines the connections between service in both directions. Used
+            to identify the next service that will receive the processed request.
+
     """
 
     def __init__(self,
@@ -65,6 +93,7 @@ class ApplicationModelConfiguration:
                  platform_model : PlatformModel,
                  simulation_step : pd.Timedelta):
 
+        self.name = None
         self.regions = []
         self.entity_instance_requirements = {}
         self.reqs_processing_infos = {}

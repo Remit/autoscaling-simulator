@@ -23,18 +23,8 @@ class ApplicationModel:
 
     Attributes:
 
-        name (str): an application name.
-
         services (dict of *service name* -> Service): stores the mapping from the
             service name to the corresponding service management object.
-
-        structure (dict of *service name* -> dict of next and prev service names):
-            determines the connections between service in both directions. Used
-            to identify the next service that will receive the processed request.
-
-        reqs_processing_infos (dict of *request type* -> RequestProcessingInfo):
-            a bundle of requests processing-related control information for
-            every request type available in the modeled application.
 
         platform_model (PlatformModel): provides access to the underlying
             platform model to conduct the initial deployment and
