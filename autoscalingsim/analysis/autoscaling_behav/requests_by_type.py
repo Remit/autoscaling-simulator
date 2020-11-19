@@ -1,5 +1,4 @@
 import os
-
 from matplotlib import pyplot as plt
 
 from .. import plotting_constants
@@ -26,7 +25,6 @@ class GeneratedRequestsByType:
                 max_req_cnt = max([max_req_cnt, reqs_cnts[req_type]])
 
             plt.bar(list(reqs_cnts.keys()), list(reqs_cnts.values()), bar_width)
-
             plt.ylabel('Requests count')
             plt.ylim(top = int(max_req_cnt * 1.05))
 

@@ -1,5 +1,6 @@
 import os
 import math
+import matplotlib.ticker as ticker
 
 from matplotlib import pyplot as plt
 from collections.abc import Iterable
@@ -32,8 +33,7 @@ class ResponseTimesHistogram:
                 rows_cnt = math.ceil(plots_count / plotting_constants.MAX_PLOTS_CNT_ROW)
                 cols_cnt = plotting_constants.MAX_PLOTS_CNT_ROW
 
-            fig, axs = plt.subplots(rows_cnt, cols_cnt,
-                                    sharey = True, tight_layout = True)
+            fig, axs = plt.subplots(rows_cnt, cols_cnt, sharey = True, tight_layout = True)
 
             # Ref: https://stackoverflow.com/questions/6963035/pyplot-axes-labels-for-subplots/36542971#36542971
             fig.add_subplot(111, frameon = False)
@@ -46,6 +46,7 @@ class ResponseTimesHistogram:
             for req_type, response_times in response_times_per_request_type.items():
                 axs[i].hist(response_times, bins = bins_cnt)
                 axs[i].title.set_text(req_type)
+                axs[i].xaxis.set_major_formatter(ticker.StrMethodFormatter("{x:.0f}"))
                 i += 1
 
             plt.xlabel('Response time, ms')

@@ -28,12 +28,10 @@ class WaitingServiceBuffersHistogram:
 
                 services_order = {}
                 plot_id = 0
-                max_waiting_times = {}
+                global_max_waiting_time = 0
                 for req_type, buffers_waiting_times in buffer_times_by_request.items():
                     for service_name, service_buffer_waiting_times in buffers_waiting_times.items():
-                        if not req_type in max_waiting_times:
-                            max_waiting_times[req_type] = 0
-                        max_waiting_times[req_type] = max(max_waiting_times[req_type], max(service_buffer_waiting_times))
+                        global_max_waiting_time = max(global_max_waiting_time, max(service_buffer_waiting_times))
                         if not service_name in services_order:
                             services_order[service_name] = plot_id
                             plot_id += 1
@@ -79,8 +77,9 @@ class WaitingServiceBuffersHistogram:
                         ax = plt.Subplot(fig, inner[services_order[service_name]], sharey = ax_out)
                         ax.hist(service_buffer_waiting_times, bins = bins_cnt, width = bins_size_ms)
                         ax.title.set_text(f'{service_name}\nbuffers')
-                        ax.set_xlim(0, int(max_waiting_times[req_type] + bins_size_ms))
-                        ax.xaxis.set_major_locator(ticker.MultipleLocator(bins_size_ms // 2 if bins_size_ms > 40 else 20))
+                        ax.set_xlim(0, int(global_max_waiting_time + bins_size_ms))
+                        ax.xaxis.set_major_locator(ticker.MultipleLocator(int(bins_size_ms // 2 if bins_size_ms > 40 else 20)))
+                        ax.xaxis.set_major_formatter(ticker.StrMethodFormatter("{x:.0f}"))
                         ax.xaxis.set_minor_locator(ticker.MultipleLocator(10))
                         if not ax.is_last_row():
                             plt.setp(ax.get_xticklabels(), visible=False)
