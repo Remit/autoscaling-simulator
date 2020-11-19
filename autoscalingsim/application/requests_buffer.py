@@ -13,16 +13,19 @@ class RequestsBuffer:
     """
 
     def __init__(self,
-                 capacity_by_request_type : dict,
+                 capacity_by_request_type_base : dict,
                  queuing_discipline : str = 'FIFO'):
 
-        self.capacity_by_request_type = capacity_by_request_type
+        self.capacity_by_request_type_base = capacity_by_request_type_base
+        self.capacity_by_request_type = self.capacity_by_request_type_base.copy() # updatable
         self.discipline = QueuingDiscipline.get(queuing_discipline)()
         self.reqs_cnt = {}
-        for request_type in capacity_by_request_type.keys():
+        for request_type in capacity_by_request_type_base.keys():
             self.reqs_cnt[request_type] = 0
-        self.link = None
+        self.links = []
 
+        self.links_index = {}
+        self.last_used_link_id = 0
         self.utilization = BufferUtilization()
 
     def get_metric_value(self, metric_name : str, interval : pd.Timedelta):
@@ -31,12 +34,18 @@ class RequestsBuffer:
 
     def step(self, simulation_step : pd.Timedelta):
 
-        if not self.link is None:
-            ready_reqs = self.link.step(simulation_step)
+        for link in self.links:
+            ready_reqs = link.step(simulation_step)
 
             for req in ready_reqs:
-                # If there is not spare capacity, then the request is lost
-                if self.capacity_by_request_type[req.request_type] > self.reqs_cnt[req.request_type]:
+                if req.request_type in self.capacity_by_request_type:
+                    # If there is not spare capacity, then the request is lost.
+                    # An unbounded addition of requests to the buffer is allowed
+                    # either if the capacity is set to zero or if it is absent.
+                    if self.capacity_by_request_type[req.request_type] == 0 or self.capacity_by_request_type[req.request_type] > self.reqs_cnt[req.request_type]:
+                        self.reqs_cnt[req.request_type] += 1
+                        self.discipline.insert(req)
+                else:
                     self.reqs_cnt[req.request_type] += 1
                     self.discipline.insert(req)
 
@@ -52,15 +61,33 @@ class RequestsBuffer:
                                                        sum(self.reqs_cnt.values()),
                                                        averaging_interval)
 
+    def update_capacity(self, service_instances_count : int):
+
+        if not isinstance(service_instances_count, int):
+            raise ValueError(f'Cannot change buffer capacity using non-int: {service_instances_count}')
+
+        for req_type, init_capacity in self.capacity_by_request_type_base.items():
+            self.capacity_by_request_type[req_type] = init_capacity * service_instances_count
+
     def put(self, req : Request):
 
         # Request is lost if link was not yet established
-        if not self.link is None:
-            self.link.put(req)
+        if len(self.links) > 0:
+            self.links[self.last_used_link_id].put(req)
+            self.last_used_link_id = self.last_used_link_id + 1 if self.last_used_link_id < len(self.links) - 1 else 0
 
-    def set_link(self, link : NodeGroupLink):
+    def add_link(self, node_group_id : int, link : NodeGroupLink):
 
-        self.link = link
+        self.links.append(link)
+        self.links_index[node_group_id] = len(self.links) - 1
+
+    def detach_link(self, node_group_id : int):
+
+        if node_group_id in self.links:
+            ordinal_index = self.links_index[node_group_id]
+            self.links.remove(self.links[ordinal_index])
+            del self.links_index[node_group_id]
+            self.last_used_link_id = 0
 
     def attempt_take(self):
 

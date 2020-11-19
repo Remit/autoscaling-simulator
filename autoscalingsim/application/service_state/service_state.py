@@ -244,6 +244,13 @@ class ServiceState:
             self._check_out_system_resources_utilization_for_deployment(self.deployments[node_group_id])
             del self.deployments[node_group_id]
 
+        self.upstream_buf.detach_link(node_group_id)
+        self.downstream_buf.detach_link(node_group_id)
+
+        service_instances_count = self._count_service_instances()
+        self.upstream_buf.update_capacity(service_instances_count)
+        self.downstream_buf.update_capacity(service_instances_count)
+
     def update_placement(self, node_group : HomogeneousContainerGroup):
 
         """
@@ -253,9 +260,15 @@ class ServiceState:
 
         self.deployments[node_group.id] = Deployment(self.service_name, node_group, self.request_processing_infos)
 
-        node_group.link.set_request_processing_infos(self.request_processing_infos)
-        self.upstream_buf.set_link(node_group.link)
-        self.downstream_buf.set_link(node_group.link)
+        node_group.uplink.set_request_processing_infos(self.request_processing_infos)
+        node_group.downlink.set_request_processing_infos(self.request_processing_infos)
+
+        self.upstream_buf.add_link(node_group.id, node_group.uplink)
+        self.downstream_buf.add_link(node_group.id, node_group.downlink)
+
+        service_instances_count = self._count_service_instances()
+        self.upstream_buf.update_capacity(service_instances_count)
+        self.downstream_buf.update_capacity(service_instances_count)
 
     def get_aspect_value(self, aspect_name : str):
 
@@ -332,3 +345,11 @@ class ServiceState:
             deployment_util = deployment_util.reindex(common_index, fill_value = 0)
             self.service_utilizations[system_resource_name] = self.service_utilizations[system_resource_name].reindex(common_index, fill_value = 0)
             self.service_utilizations[system_resource_name] += deployment_util
+
+    def _count_service_instances(self):
+
+        service_instances_count = 0
+        for deployment in self.deployments.values():
+            service_instances_count += deployment.get_aspect_value('count').get_value()
+
+        return service_instances_count

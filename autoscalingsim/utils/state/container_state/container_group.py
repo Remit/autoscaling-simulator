@@ -105,9 +105,12 @@ class HomogeneousContainerGroup(ContainerGroup):
 
         self.container_info = container_info
         self.utilization = NodeGroupUtilization()
-        self.link = NodeGroupLink(self.container_info.latency,
-                                  self.containers_count,
-                                  self.container_info.network_bandwidth_MBps)
+        self.uplink = NodeGroupLink(self.container_info.latency,
+                                    self.containers_count,
+                                    self.container_info.network_bandwidth_MBps)
+        self.downlink = NodeGroupLink(self.container_info.latency,
+                                      self.containers_count,
+                                      self.container_info.network_bandwidth_MBps)
 
         if isinstance(entities_instances_counts, dict):
             self.entities_state = EntitiesState(entities_instances_counts,
@@ -207,8 +210,7 @@ class HomogeneousContainerGroup(ContainerGroup):
 
         return self.containers_count == 0
 
-    def shrink(self,
-               other_container_group : ContainerGroup):
+    def shrink(self, other_container_group : ContainerGroup):
 
         """
         This scale down operation results in reducing the containers count
@@ -229,7 +231,8 @@ class HomogeneousContainerGroup(ContainerGroup):
             _, self.system_capacity = self.container_info.entities_require_capacity(self.entities_state)
 
             self.containers_count -= other_container_group.containers_count
-            self.link.update_bandwidth(self.containers_count)
+            self.uplink.update_bandwidth(self.containers_count)
+            self.downlink.update_bandwidth(self.containers_count)
 
     def extract_scaling_aspects(self):
 

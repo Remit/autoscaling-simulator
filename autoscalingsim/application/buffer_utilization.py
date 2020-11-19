@@ -32,7 +32,7 @@ class BufferUtilization(EntityUtilization):
     def get(self, metric_name : str, interval : pd.Timedelta):
 
         """
-        Overrides get method of the parent class to handle the case of providing
+        Overrides the parent class method to handle the case of providing
         the waiting time in an appropriate format.
         """
 

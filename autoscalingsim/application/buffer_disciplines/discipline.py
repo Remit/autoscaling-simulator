@@ -131,6 +131,6 @@ class QueuingDiscipline(ABC):
         if len(self.requests) == 0:
             return 0
         else:
-            return sum([req.buffer_time[req.processing_service] for req in self.requests], pd.Timedelta(0, unit = 'ms')) / len(self.requests)
+            return sum([req.buffer_time.get(req.processing_service, pd.Timedelta(0, unit = 'ms')) for req in self.requests], pd.Timedelta(0, unit = 'ms')) / len(self.requests)
 
 from .realizations import *
