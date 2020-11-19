@@ -131,9 +131,9 @@ class ApplicationModel:
                 req = processed_requests.pop()
 
                 if req.upstream:
-                    next_services_names = self.application_model_conf.structure[service_name]['next']
+                    next_services_names = self.application_model_conf.get_next_services(service_name)
 
-                    if not next_services_names is None:
+                    if len(next_services_names) > 0:
                         for next_service_name in next_services_names:
                             req.processing_time_left = self.application_model_conf.get_upstream_processing_time(req.request_type, next_service_name)
                             req.processing_service = next_service_name
@@ -142,20 +142,17 @@ class ApplicationModel:
                         req.set_downstream() # Converting the request req into the response
 
                 if not req.upstream:
-                    prev_services_names = self.application_model_conf.structure[service_name]['prev']
+                    prev_services_names = self.application_model_conf.get_prev_services(service_name)
 
-                    if not prev_services_names is None:
-                        replies_expected = 0
-                        for prev_service_name in prev_services_names:
-                            replies_expected += 1
-
+                    replies_expected = len(prev_services_names)
+                    if replies_expected > 0:
                         for prev_service_name in prev_services_names:
                             req.processing_time_left = self.application_model_conf.get_downstream_processing_time(req.request_type, prev_service_name)
                             req.processing_service = prev_service_name
                             req.replies_expected = replies_expected
                             self.services[prev_service_name].add_request(req)
                     else:
-                        self.response_stats.add_request(req) # Updating the stats of responses
+                        self.response_stats.add_request(req) # Reached the user, updating responses stats
 
         # Calling scaling policy that determines the need to scale
         self.scaling_policy.reconcile_state(cur_timestamp)

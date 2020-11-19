@@ -4,6 +4,7 @@ import operator
 import pandas as pd
 
 from .service import Service
+from .application_structure import ApplicationStructure
 
 from ..load.request import RequestProcessingInfo
 from ..deployment.service_deployment_conf import ServiceDeploymentConfiguration
@@ -99,7 +100,7 @@ class ApplicationModelConfiguration:
         self.reqs_processing_infos = {}
         self.service_deployments_confs = []
         self.service_confs = []
-        self.structure = {}
+        self.structure = ApplicationStructure()
 
         if not isinstance(config_file, str):
             raise ValueError(f'Incorrect type of the configuration file path, should be string')
@@ -234,18 +235,12 @@ class ApplicationModelConfiguration:
                                                                    sampling_interval))
 
                     # Adding the links of the given service to the structure.
-                    # TODO: think of whether the broken symmetry of the links
-                    # is appropriate.
                     next_services = ErrorChecker.key_check_and_load('next', service_config, 'service', service_name)
+                    self.structure.add_next_services(service_name, next_services)
                     prev_services = ErrorChecker.key_check_and_load('prev', service_config, 'service', service_name)
-                    if len(next_services) == 0:
-                        next_services = None
-                    if len(prev_services) == 0:
-                        prev_services = None
+                    self.structure.add_prev_services(service_name, prev_services)
 
-                    self.structure[service_name] = {'next': next_services, 'prev': prev_services}
-
-    def get_entry_service(self, req_type : str):
+    def get_entry_service(self, req_type : str) -> str:
 
         """ Returns a name of the entry service for the given request type """
 
@@ -253,6 +248,18 @@ class ApplicationModelConfiguration:
             raise ValueError(f'No request processing information found for {req_type} request type')
 
         return self.reqs_processing_infos[req_type].entry_service
+
+    def get_next_services(self, service_name : str) -> list:
+
+        """ Returns a list of all the *upstream* services for the provided service """
+
+        return self.structure.get_next_services(service_name)
+
+    def get_prev_services(self, service_name : str) -> list:
+
+        """ Returns a list of all the *downstream* services for the provided service """
+
+        return self.structure.get_prev_services(service_name)
 
     def get_upstream_processing_time(self, req_type : str, service_name : str):
 

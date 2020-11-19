@@ -11,7 +11,8 @@ setup(
                         'tqdm',
                         'pandas',
                         'uuid',
-                        'matplotlib'
+                        'matplotlib',
+                        'networkx'
                       ],
    scripts = [
                'autoscalingsim-cl.py',
