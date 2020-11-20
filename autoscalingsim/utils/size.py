@@ -17,7 +17,7 @@ class Size:
         if not unit in self.__class__.sizes:
             raise ValueError(f'Unknown unit {unit}')
 
-        if float < 0:
+        if value < 0:
             raise ValueError('Negative sizes are not allowed')
 
         self._size_in_bytes = value * self.__class__.sizes[unit]
