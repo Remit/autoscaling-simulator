@@ -5,8 +5,6 @@ from .entity_state.entities_states_reg import EntitiesStatesRegionalized
 from .entity_state.scaling_aspects import ScalingAspect
 from .node_group_state.node_group import HomogeneousNodeGroup
 
-from ...infrastructure_platform.node import NodeInfo
-
 class StateManager:
 
     """

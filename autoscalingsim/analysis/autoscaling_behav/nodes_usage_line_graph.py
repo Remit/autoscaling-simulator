@@ -8,6 +8,8 @@ from collections.abc import Iterable
 
 from .. import plotting_constants
 
+from ...infrastructure_platform.platform_model import PlatformModel
+
 class NodesUsageLineGraph:
 
     FILENAME = 'ts_line_nodes.png'
@@ -46,15 +48,15 @@ class NodesUsageLineGraph:
             for ax in axs:
 
                 node_type = node_types[i]
-                desired_ts = desired_node_count[node_type]['timestamps']
-                desired_count = desired_node_count[node_type]['count']
+                desired_ts = desired_node_count[node_type][PlatformModel.timestamps_key]
+                desired_count = desired_node_count[node_type][PlatformModel.node_count_key]
                 max_desired_count = max(max_desired_count, max(desired_count))
 
                 actual_ts = []
                 actual_count = []
                 if node_type in actual_node_count:
-                    actual_ts = actual_node_count[node_type]['timestamps']
-                    actual_count = actual_node_count[node_type]['count']
+                    actual_ts = actual_node_count[node_type][PlatformModel.timestamps_key]
+                    actual_count = actual_node_count[node_type][PlatformModel.node_count_key]
 
                 df_desired = pd.DataFrame(data = {'datetime': desired_ts, 'nodes': desired_count}).set_index('datetime')
                 df_actual = pd.DataFrame(data = {'datetime': actual_ts, 'nodes': actual_count}).set_index('datetime')

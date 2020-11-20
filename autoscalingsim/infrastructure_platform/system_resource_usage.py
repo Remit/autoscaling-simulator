@@ -66,6 +66,41 @@ class SystemResourceUsage(Usage):
 
         return self.__class__(self.node_info, self.instance_count, system_resource_usage)
 
+    def is_full(self):
+
+        """ Checks whether the system resources are exhausted """
+
+        for res_name, res_usage in self.system_resources_usage.items():
+            if res_usage > self.instance_count * self.instance_max_usage[res_name]:
+                return True
+
+        return False
+
+    def is_zero(self):
+
+        """ Checks whether at least something takes system resources """
+
+        for res_name, res_usage in self.system_resources_usage.items():
+            if res_usage > 0:
+                return False
+
+        return True
+
+    def to_dict(self):
+
+        return self.system_resources_usage.copy()
+
+    def normalized_usage(self, res_name : str):
+
+        if res_name in self.system_resources_usage:
+            return 0 if self.instance_count == 0 else self.system_resources_usage[res_name] / (self.instance_count * self.instance_max_usage[res_name])
+        else:
+            return 0
+
+    def collapse(self):
+
+        return sum([res_usage / (self.instance_count * self.instance_max_usage[res_name]) for res_name, res_usage in self.system_resources_usage.items()]) / len(self.system_resources_usage)
+
     def _comp(self, other_usage : 'SystemResourceUsage', comparison_op) -> bool:
 
         """ Implements common comparison logic """
@@ -109,38 +144,3 @@ class SystemResourceUsage(Usage):
         return f'{self.__class__.__name__}({repr(self.node_info)}, \
                  {self.instance_count}, \
                  {repr(self.system_resources_usage)})'
-
-    def is_full(self):
-
-        """ Checks whether the system resources are exhausted """
-
-        for res_name, res_usage in self.system_resources_usage.items():
-            if res_usage > self.instance_count * self.instance_max_usage[res_name]:
-                return True
-
-        return False
-
-    def is_zero(self):
-
-        """ Checks whether at least something takes system resources """
-
-        for res_name, res_usage in self.system_resources_usage.items():
-            if res_usage > 0:
-                return False
-
-        return True
-
-    def to_dict(self):
-
-        return self.system_resources_usage.copy()
-
-    def normalized_usage(self, res_name : str):
-
-        if res_name in self.system_resources_usage:
-            return 0 if self.instance_count == 0 else self.system_resources_usage[res_name] / (self.instance_count * self.instance_max_usage[res_name])
-        else:
-            return 0
-
-    def collapse(self):
-
-        return sum([res_usage / (self.instance_count * self.instance_max_usage[res_name]) for res_name, res_usage in self.system_resources_usage.items()]) / len(self.system_resources_usage)

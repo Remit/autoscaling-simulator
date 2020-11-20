@@ -7,7 +7,7 @@ from ..entity_state.entity_group import EntitiesGroupDelta, EntitiesState
 from ..entity_state.scaling_aspects import ScalingAspect
 
 from ....infrastructure_platform.system_resource_usage import SystemResourceUsage
-from ....infrastructure_platform.node import NodeInfo
+from ....infrastructure_platform.node_information.node import NodeInfo
 from ....infrastructure_platform.link import NodeGroupLink
 from ....infrastructure_platform.node_group_utilization import NodeGroupUtilization
 from ....load.request import Request
