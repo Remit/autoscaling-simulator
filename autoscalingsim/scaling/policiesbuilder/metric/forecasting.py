@@ -44,16 +44,15 @@ class MetricForecaster:
 
         forecast = metric_vals
         if not self.model is None:
+            self._update(metric_vals)
+            
             forecast = self.model.predict(metric_vals,
                                           self.fhorizon_in_steps,
                                           self.resolution)
 
-            self._update(metric_vals)
-
         return forecast
 
-    def _update(self,
-                metric_vals : pd.DataFrame):
+    def _update(self, metric_vals : pd.DataFrame):
 
         """
         Adds the available metric values until the internal buffer of size
@@ -75,13 +74,13 @@ class ForecastingModel(ABC):
     _Registry = {}
 
     @abstractmethod
-    def __init__(self,
-                 forecasting_model_params : dict):
+    def __init__(self, forecasting_model_params : dict):
+
         pass
 
     @abstractmethod
-    def fit(self,
-            data : pd.DataFrame):
+    def fit(self, data : pd.DataFrame):
+
         pass
 
     @abstractmethod
@@ -89,11 +88,11 @@ class ForecastingModel(ABC):
                 metric_vals : pd.DataFrame,
                 fhorizon_in_steps : int,
                 resolution : pd.Timedelta):
+
         pass
 
     @classmethod
-    def register(cls,
-                 name : str):
+    def register(cls, name : str):
 
         def decorator(forecasting_model_cls):
             cls._Registry[name] = forecasting_model_cls
@@ -102,8 +101,7 @@ class ForecastingModel(ABC):
         return decorator
 
     @classmethod
-    def get(cls,
-            name : str):
+    def get(cls, name : str):
 
         if not name in cls._Registry:
             raise ValueError(f'An attempt to use the non-existent forecasting model {name}')
@@ -119,14 +117,12 @@ class SimpleAverage(ForecastingModel):
     horizon.
     """
 
-    def __init__(self,
-                 forecasting_model_params : dict):
+    def __init__(self, forecasting_model_params : dict):
 
         self.averaging_interval = int(ErrorChecker.key_check_and_load('averaging_interval', forecasting_model_params))
         self.averaged_value = 0
 
-    def fit(self,
-            data : pd.DataFrame):
+    def fit(self, data : pd.DataFrame):
 
         self.averaged_value = float(data[-self.averaging_interval:].mean())
 

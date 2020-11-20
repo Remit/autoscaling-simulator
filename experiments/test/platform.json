@@ -6,9 +6,18 @@
 					"type": "t3.nano",
 					"vCPU": 2,
 					"cpu_credits_h": 6,
-					"memory": 512,
-					"disk": 1024,
-					"network_bandwidth_MBps": 625,
+					"memory": {
+						"value": 512,
+						"unit": "MB"
+					},
+					"disk": {
+						"value": 1,
+						"unit": "TB"
+					},
+					"network_bandwidth": {
+						"value": 625,
+						"unit": "Mb"
+					},
 					"price_p_h": 0.0052,
 					"latency_ms": 20,
 					"requests_acceleration_factor": 1.0
@@ -17,9 +26,18 @@
 					"type": "t3.micro",
 					"vCPU": 2,
 					"cpu_credits_h": 12,
-					"memory": 1024,
-					"disk": 1024,
-					"network_bandwidth_MBps": 625,
+					"memory": {
+						"value": 1,
+						"unit": "GB"
+					},
+					"disk": {
+						"value": 1,
+						"unit": "TB"
+					},
+					"network_bandwidth": {
+						"value": 625,
+						"unit": "Mb"
+					},
 					"price_p_h": 0.0104,
 					"latency_ms": 20,
 					"requests_acceleration_factor": 1.1
@@ -28,9 +46,18 @@
 					"type": "t3.small",
 					"vCPU": 2,
 					"cpu_credits_h": 24,
-					"memory": 2048,
-					"disk": 1024,
-					"network_bandwidth_MBps": 625,
+					"memory": {
+						"value": 2,
+						"unit": "GB"
+					},
+					"disk": {
+						"value": 1,
+						"unit": "TB"
+					},
+					"network_bandwidth": {
+						"value": 625,
+						"unit": "Mb"
+					},
 					"price_p_h": 0.0209,
 					"latency_ms": 20,
 					"requests_acceleration_factor": 1.1
@@ -39,9 +66,18 @@
 					"type": "t3.medium",
 					"vCPU": 2,
 					"cpu_credits_h": 24,
-					"memory": 4096,
-					"disk": 1024,
-					"network_bandwidth_MBps": 625,
+					"memory": {
+						"value": 4,
+						"unit": "GB"
+					},
+					"disk": {
+						"value": 1,
+						"unit": "TB"
+					},
+					"network_bandwidth": {
+						"value": 625,
+						"unit": "Mb"
+					},
 					"price_p_h": 0.0418,
 					"latency_ms": 20,
 					"requests_acceleration_factor": 1.1
@@ -50,9 +86,18 @@
 					"type": "t3.large",
 					"vCPU": 2,
 					"cpu_credits_h": 36,
-					"memory": 8192,
-					"disk": 1024,
-					"network_bandwidth_MBps": 625,
+					"memory": {
+						"value": 8,
+						"unit": "GB"
+					},
+					"disk": {
+						"value": 1,
+						"unit": "TB"
+					},
+					"network_bandwidth": {
+						"value": 625,
+						"unit": "Mb"
+					},
 					"price_p_h": 0.0835,
 					"latency_ms": 20,
 					"requests_acceleration_factor": 1.1
@@ -61,9 +106,18 @@
 					"type": "t3.xlarge",
 					"vCPU": 4,
 					"cpu_credits_h": 96,
-					"memory": 16384,
-					"disk": 1024,
-					"network_bandwidth_MBps": 625,
+					"memory": {
+						"value": 16,
+						"unit": "GB"
+					},
+					"disk": {
+						"value": 1,
+						"unit": "TB"
+					},
+					"network_bandwidth": {
+						"value": 625,
+						"unit": "Mb"
+					},
 					"price_p_h": 0.1670,
 					"latency_ms": 20,
 					"requests_acceleration_factor": 1.5
@@ -72,9 +126,18 @@
 					"type": "t3.2xlarge",
 					"vCPU": 8,
 					"cpu_credits_h": 192,
-					"memory": 32768,
-					"disk": 1024,
-					"network_bandwidth_MBps": 625,
+					"memory": {
+						"value": 32,
+						"unit": "GB"
+					},
+					"disk": {
+						"value": 1,
+						"unit": "TB"
+					},
+					"network_bandwidth": {
+						"value": 625,
+						"unit": "Mb"
+					},
 					"price_p_h": 0.3341,
 					"latency_ms": 20,
 					"requests_acceleration_factor": 1.7

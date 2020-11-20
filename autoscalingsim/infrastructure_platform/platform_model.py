@@ -12,6 +12,7 @@ from ..utils.state.platform_state import PlatformState
 from ..utils.state.statemanagers import StateReader, ScalingManager
 from ..utils.deltarepr.platform_state_delta import PlatformStateDelta
 from ..utils.deltarepr.timelines.delta_timeline import DeltaTimeline
+from ..utils.size import Size
 from ..utils.error_check import ErrorChecker
 
 from ..fault.fault_model import FaultModel
@@ -101,16 +102,29 @@ class PlatformModel:
                         type = ErrorChecker.key_check_and_load('type', node_type, self.__class__.__name__)
 
                         vCPU = ErrorChecker.key_check_and_load('vCPU', node_type, type)
-                        memory = ErrorChecker.key_check_and_load('memory', node_type, type)
-                        disk = ErrorChecker.key_check_and_load('disk', node_type, type)
-                        network_bandwidth_MBps = ErrorChecker.key_check_and_load('network_bandwidth_MBps', node_type, type)
+
+                        memory_raw = ErrorChecker.key_check_and_load('memory', node_type, type)
+                        memory_value = ErrorChecker.key_check_and_load('value', memory_raw, type)
+                        memory_unit = ErrorChecker.key_check_and_load('unit', memory_raw, type)
+                        memory = Size(memory_value, memory_unit)
+
+                        disk_raw = ErrorChecker.key_check_and_load('disk', node_type, type)
+                        disk_value = ErrorChecker.key_check_and_load('value', disk_raw, type)
+                        disk_unit = ErrorChecker.key_check_and_load('unit', disk_raw, type)
+                        disk = Size(disk_value, disk_unit)
+
+                        network_bandwidth_raw = ErrorChecker.key_check_and_load('network_bandwidth', node_type, type)
+                        network_bandwidth_value = ErrorChecker.key_check_and_load('value', network_bandwidth_raw, type)
+                        network_bandwidth_unit = ErrorChecker.key_check_and_load('unit', network_bandwidth_raw, type)
+                        network_bandwidth = Size(network_bandwidth_value, network_bandwidth_unit)
+
                         price_p_h = ErrorChecker.key_check_and_load('price_p_h', node_type, type)
                         cpu_credits_h = ErrorChecker.key_check_and_load('cpu_credits_h', node_type, type)
                         latency = pd.Timedelta(ErrorChecker.key_check_and_load('latency_ms', node_type, type), unit = 'ms')
                         requests_acceleration_factor = ErrorChecker.key_check_and_load('requests_acceleration_factor', node_type, type)
 
                         self.providers_configs[provider].add_node_info(type, vCPU, memory, disk,
-                                                                       network_bandwidth_MBps,
+                                                                       network_bandwidth,
                                                                        price_p_h, cpu_credits_h,
                                                                        latency, requests_acceleration_factor)
 

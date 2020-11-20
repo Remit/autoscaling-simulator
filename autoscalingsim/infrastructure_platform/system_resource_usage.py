@@ -2,6 +2,7 @@ import operator
 import numbers
 
 from ..utils.state.usage import Usage
+from ..utils.size import Size
 from ..scaling.policiesbuilder.scaled.scaled_container import ScaledContainer
 
 class SystemResourceUsage(Usage):
@@ -13,13 +14,19 @@ class SystemResourceUsage(Usage):
     operands have the matching node types.
     """
 
-    system_resources = ['vCPU', 'memory', 'disk', 'network_bandwidth_MBps']
+    system_resources = {
+        'vCPU'              : int,
+        'memory'            : Size,
+        'disk'              : Size,
+        'network_bandwidth' : Size
+    }
 
     def __init__(self,
                  node_info : ScaledContainer,
                  instance_count : int = 1,
-                 system_resources_usage : dict = {'vCPU' : 0, 'memory' : 0, 'disk': 0,
-                                                  'network_bandwidth_MBps' : 0}):
+                 system_resources_usage : dict = {'vCPU' : 0, 'memory' : Size(0),
+                                                  'disk': Size(0),
+                                                  'network_bandwidth' : Size(0)}):
 
         self.node_info = node_info
 
@@ -28,8 +35,8 @@ class SystemResourceUsage(Usage):
         self.instance_count = instance_count
 
         self.system_resources_usage = {}
-        for res_type in self.__class__.system_resources:
-            self.system_resources_usage[res_type] = system_resources_usage[res_type] if res_type in system_resources_usage else 0
+        for res_name, cls in self.__class__.system_resources.items():
+            self.system_resources_usage[res_name] = system_resources_usage[res_name] if res_name in system_resources_usage else cls(0)
 
     def __add__(self, usage_to_add : 'SystemResourceUsage'):
 
@@ -66,12 +73,21 @@ class SystemResourceUsage(Usage):
 
         return self.__class__(self.node_info, self.instance_count, system_resource_usage)
 
+    def __floordiv__(self, other_usage : 'SystemResourceUsage'):
+
+        """ Determines how many other usage can fit into the current usage """
+
+        return max([math.ceil(res_usage / other_res_usage) \
+                        for other_res_name, other_res_usage in other_usage.system_resources_usage.items() \
+                        for res_name, res_usage in self.system_resources_usage.items() \
+                        if other_res_name == res_name])
+
     def is_full(self):
 
         """ Checks whether the system resources are exhausted """
 
         for res_name, res_usage in self.system_resources_usage.items():
-            if res_usage > self.instance_count * self.instance_max_usage[res_name]:
+            if res_usage >= self.instance_count * self.instance_max_usage[res_name]:
                 return True
 
         return False
@@ -81,7 +97,7 @@ class SystemResourceUsage(Usage):
         """ Checks whether at least something takes system resources """
 
         for res_name, res_usage in self.system_resources_usage.items():
-            if res_usage > 0:
+            if res_usage > self.__class__.system_resources[res_name](0):
                 return False
 
         return True

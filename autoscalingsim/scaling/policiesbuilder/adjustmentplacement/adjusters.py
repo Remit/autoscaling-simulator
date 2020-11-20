@@ -101,7 +101,7 @@ class Adjuster(ABC):
 
         #print('Adjuster')
         #unmet_change = {'eu': {'db': {'count': 35}}}
-        #print(unmet_change)
+        print(unmet_change)
         while not unmet_change is None:
 
             # 1. We try to accommodate the unmet_change on the existing containers.
@@ -152,11 +152,7 @@ class Adjuster(ABC):
                                                                             till_state_substitution_h)
 
                 # Comparing and selecting an alternative
-                chosen_state_delta = None
-                if state_score_simple_addition.collapse() > state_score_substitution.collapse():
-                    chosen_state_delta = state_simple_addition_deltas
-                else:
-                    chosen_state_delta = state_substitution_deltas
+                chosen_state_delta = state_simple_addition_deltas if state_score_simple_addition.collapse() > state_score_substitution.collapse() else state_substitution_deltas
 
                 #for region_name, delta_per_region in chosen_state_delta:
                 #    print(delta_per_region)
@@ -168,18 +164,13 @@ class Adjuster(ABC):
 
                 timeline_of_deltas.add_state_delta(ts_of_unmet_change, chosen_state_delta)
 
-
-
             ts_of_unmet_change, unmet_change = timeline_of_unmet_changes.next()
 
             # If by this time len(unmet_change) > 0, then there were not enough
             # resources or budget.
             #timeline_of_unmet_changes.overwrite(ts_of_unmet_change, unmet_change)
 
-        if timeline_of_deltas.updated_at_least_once():
-            return timeline_of_deltas
-        else:
-            return None
+        return timeline_of_deltas if timeline_of_deltas.updated_at_least_once() else None
 
 class CostMinimizer(Adjuster):
 

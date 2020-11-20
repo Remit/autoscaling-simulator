@@ -6,10 +6,11 @@ import pandas as pd
 from .service import Service
 from .application_structure import ApplicationStructure
 
-from ..load.request import RequestProcessingInfo
 from ..deployment.service_deployment_conf import ServiceDeploymentConfiguration
 from ..infrastructure_platform.platform_model import PlatformModel
 from ..scaling.policiesbuilder.scaled.scaled_entity_settings import ScaledEntityScalingSettings
+from ..utils.request_processing_info import RequestProcessingInfo
+from ..utils.size import Size
 from ..utils.state.statemanagers import StateReader
 from ..utils.requirements import ResourceRequirements
 from ..utils.error_check import ErrorChecker
@@ -166,24 +167,24 @@ class ApplicationModelConfiguration:
                     timeout = pd.Timedelta(timeout_val, unit = timeout_unit)
                     ErrorChecker.value_check('timeout', timeout, operator.ge, pd.Timedelta(0, unit = timeout_unit), [f'request_type {request_type}'])
 
-                    request_size_b = ErrorChecker.key_check_and_load('request_size_b', request_info, 'request_type', request_type)
-                    ErrorChecker.value_check('request_size_b', request_size_b, operator.ge, 0, [f'request_type {request_type}'])
+                    request_size_raw = ErrorChecker.key_check_and_load('request_size', request_info, 'request_type', request_type)
+                    request_size_value = ErrorChecker.key_check_and_load('value', request_size_raw, 'request_type', request_type)
+                    request_size_unit = ErrorChecker.key_check_and_load('unit', request_size_raw, 'request_type', request_type)
+                    request_size = Size(request_size_value, request_size_unit)
 
-                    response_size_b = ErrorChecker.key_check_and_load('response_size_b', request_info, 'request_type', request_type)
-                    ErrorChecker.value_check('response_size_b', response_size_b, operator.ge, 0, [f'request_type {request_type}'])
+                    response_size_raw = ErrorChecker.key_check_and_load('response_size', request_info, 'request_type', request_type)
+                    response_size_value = ErrorChecker.key_check_and_load('value', response_size_raw, 'request_type', request_type)
+                    response_size_unit = ErrorChecker.key_check_and_load('unit', response_size_raw, 'request_type', request_type)
+                    response_size = Size(response_size_value, response_size_unit)
 
                     request_operation_type = ErrorChecker.key_check_and_load('operation_type', request_info, 'request_type', request_type)
 
                     request_processing_requirements = ErrorChecker.key_check_and_load('processing_requirements', request_info, 'request_type', request_type)
 
-                    req_proc_info = RequestProcessingInfo(request_type,
-                                                          entry_service,
-                                                          processing_times,
-                                                          timeout,
-                                                          request_size_b,
-                                                          response_size_b,
-                                                          request_operation_type,
-                                                          request_processing_requirements)
+                    req_proc_info = RequestProcessingInfo(request_type, entry_service,
+                                                          processing_times, timeout,
+                                                          request_size, response_size,
+                                                          request_operation_type, request_processing_requirements)
                     self.reqs_processing_infos[request_type] = req_proc_info
 
                 ##############################################################################
@@ -195,7 +196,7 @@ class ApplicationModelConfiguration:
                     service_name = ErrorChecker.key_check_and_load('name', service_config, 'service')
 
                     buffers_config = ErrorChecker.key_check_and_load('buffers_config', service_config, 'service', service_name)
-                    system_requirements = ResourceRequirements(ErrorChecker.key_check_and_load('system_requirements', service_config, 'service', service_name))
+                    system_requirements = ResourceRequirements.from_dict(ErrorChecker.key_check_and_load('system_requirements', service_config, 'service', service_name))
                     self.entity_instance_requirements[service_name] = system_requirements
 
                     init_service_aspects_regionalized = {}

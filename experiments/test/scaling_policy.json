@@ -32,14 +32,14 @@
             "values_aggregator_conf": {
               "name": "avgAggregator",
               "config": {
-                "resolution_window_ms": 10
+                "resolution_window_ms": 400
               }
             },
-            "target_value": 0.1,
+            "target_value": 0.05,
             "stabilizer_conf": {
               "name": "maxStabilizer",
               "config": {
-                "resolution_window_ms": 100
+                "resolution_window_ms": 400
               }
             },
             "timing_type": "predictive",

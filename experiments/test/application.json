@@ -28,8 +28,14 @@
 			},
 			"system_requirements": {
 				"vCPU": 1,
-		    "memory": 2000,
-		    "disk": 0
+		    "memory": {
+					"value": 1,
+					"unit": "GB"
+				},
+		    "disk": {
+					"value": 800,
+					"unit": "MB"
+				}
 			},
 			"next": ["appserver"],
 			"prev": [],
@@ -63,8 +69,14 @@
 			},
 			"system_requirements": {
 				"vCPU": 1,
-		    "memory": 2000,
-		    "disk": 0
+				"memory": {
+					"value": 1,
+					"unit": "GB"
+				},
+		    "disk": {
+					"value": 5,
+					"unit": "GB"
+				}
 			},
 			"next": ["db"],
 			"prev": ["frontend"],
@@ -98,8 +110,14 @@
 			},
 			"system_requirements": {
 				"vCPU": 2,
-		    "memory": 4000,
-		    "disk": 1024
+				"memory": {
+					"value": 1,
+					"unit": "GB"
+				},
+		    "disk": {
+					"value": 500,
+					"unit": "GB"
+				}
 			},
 			"next": [],
 			"prev": ["appserver"],
@@ -145,13 +163,25 @@
 				"value": 300,
 				"unit": "ms"
 			},
-			"request_size_b": 10240,
-			"response_size_b": 10240,
+			"request_size": {
+				"value": 1,
+				"unit": "KB"
+			},
+			"response_size": {
+				"value": 1,
+				"unit": "KB"
+			},
 			"operation_type": "rw",
 			"processing_requirements": {
 				"vCPU": 1,
-				"memory": 100,
-				"disk": 0
+				"memory": {
+					"value": 50,
+					"unit": "MB"
+				},
+		    "disk": {
+					"value": 0,
+					"unit": "B"
+				}
 			}
 		},
 		{
@@ -181,13 +211,25 @@
 				"value": 400,
 				"unit": "ms"
 			},
-			"request_size_b": 25600,
-			"response_size_b": 10240,
+			"request_size": {
+				"value": 4,
+				"unit": "KB"
+			},
+			"response_size": {
+				"value": 1,
+				"unit": "KB"
+			},
 			"operation_type": "rw",
 			"processing_requirements": {
-				"vCPU": 2,
-				"memory": 200,
-				"disk": 0
+				"vCPU": 1,
+				"memory": {
+					"value": 100,
+					"unit": "MB"
+				},
+		    "disk": {
+					"value": 10,
+					"unit": "KB"
+				}
 			}
 		}
 	],

@@ -1,6 +1,7 @@
 import pandas as pd
 
 from ..load.request import Request
+from ..utils.size import Size
 
 class NodeGroupLink:
 
@@ -13,7 +14,7 @@ class NodeGroupLink:
             spend being transferred over this link.
             TODO: make non-deterministic?
 
-        single_link_network_bandwidth_MBps (int): determines the bandwidth of
+        single_link_network_bandwidth (int): determines the bandwidth of
             a single link, i.e. a link bandwidth provided with a single deployed
             node. Used in scaling the overall bandwidth of the node group link
             by being multiplied by the new count of nodes in the node group.
@@ -24,13 +25,13 @@ class NodeGroupLink:
             Used to determine whether the new request fits in the remaining throughput
             and whether it should be dismissed since the timeout was already hit.
 
-        bandwidth_MBps (int): current link bandwidth as determined for the whole
+        bandwidth (int): current link bandwidth as determined for the whole
             associated node group.
 
         requests_in_transfer (list of Request): requests that are currently being
             transferred over this link.
 
-        used_bandwidth_MBps (int): bandwidth taken by the requests that are
+        used_bandwidth (int): bandwidth taken by the requests that are
             currently in transfer over this link.
 
     """
@@ -38,15 +39,15 @@ class NodeGroupLink:
     def __init__(self,
                  latency : pd.Timedelta,
                  count_of_nodes_in_group : int,
-                 single_link_network_bandwidth_MBps : int):
+                 single_link_network_bandwidth : Size):
 
         self.latency = latency
-        self.single_link_network_bandwidth_MBps = single_link_network_bandwidth_MBps
+        self.single_link_network_bandwidth = single_link_network_bandwidth
         self.request_processing_infos = None
 
-        self.bandwidth_MBps = self.single_link_network_bandwidth_MBps * count_of_nodes_in_group
+        self.bandwidth = self.single_link_network_bandwidth * count_of_nodes_in_group
         self.requests_in_transfer = []
-        self.used_bandwidth_MBps = 0
+        self.used_bandwidth = Size(0)
 
     def step(self, simulation_step : pd.Timedelta):
 
@@ -61,7 +62,7 @@ class NodeGroupLink:
             if req.waiting_on_link_left <= pd.Timedelta(0):
                 if req.cumulative_time < self.request_processing_infos[req.request_type].timeout:
                     requests_for_buffer.append(req)
-                    self.used_bandwidth_MBps -= self._req_occupied_MBps(req, simulation_step)
+                    self.used_bandwidth -= self._req_occupied(req, simulation_step)
 
                 self.requests_in_transfer.remove(req)
 
@@ -69,11 +70,11 @@ class NodeGroupLink:
 
     def put(self, req : Request, simulation_step : pd.Timedelta):
 
-        req_size_b_MBps = self._req_occupied_MBps(req, simulation_step)
+        req_size = self._req_occupied(req, simulation_step)
 
-        if self.bandwidth_MBps - self.used_bandwidth_MBps >= req_size_b_MBps:
+        if self.bandwidth - self.used_bandwidth >= req_size:
 
-            self.used_bandwidth_MBps += req_size_b_MBps
+            self.used_bandwidth += req_size
             req.waiting_on_link_left = self.latency
             self.requests_in_transfer.append(req)
 
@@ -83,12 +84,9 @@ class NodeGroupLink:
 
     def update_bandwidth(self, new_nodes_count : int):
 
-        self.bandwidth_MBps = self.single_link_network_bandwidth_MBps * new_nodes_count
+        self.bandwidth = self.single_link_network_bandwidth * new_nodes_count
 
-    def _req_occupied_MBps(self, req : Request, simulation_step : pd.Timedelta):
+    def _req_occupied(self, req : Request, simulation_step : pd.Timedelta):
 
-        req_size_b = self.request_processing_infos[req.request_type].request_size_b if req.upstream else self.request_processing_infos[req.request_type].response_size_b
-        req_size_b_mb = req_size_b / (1024 * 1024)
-        req_size_b_MBps = req_size_b_mb * (self.latency // simulation_step) # taking channel for that long
-
-        return req_size_b_MBps
+        req_size = self.request_processing_infos[req.request_type].request_size if req.upstream else self.request_processing_infos[req.request_type].response_size
+        return req_size * (self.latency // simulation_step) # taking channel for that many simulation steps * by the taken bandwidth

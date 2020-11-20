@@ -21,7 +21,4 @@ class ServiceMetric:
         for source_ref in self.source_refs:
             results_lst.append(source_ref.get_metric_value(self.metric_name, interval))
 
-        if self.aggregation_func is None:
-            return results_lst[0]
-        else:
-            return self.aggregation_func(results_lst)
+        return results_lst[0] if self.aggregation_func is None else self.aggregation_func(results_lst)

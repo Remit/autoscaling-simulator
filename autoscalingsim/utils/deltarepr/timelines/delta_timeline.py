@@ -36,8 +36,7 @@ class DeltaTimeline:
         return OrderedDict(sorted(self.timeline.items(),
                                   key = lambda elem: elem[0]))
 
-    def merge(self,
-              other_delta_timeline : 'DeltaTimeline'):
+    def merge(self, other_delta_timeline : 'DeltaTimeline'):
 
         """
         Merges deltas from the other delta timeline into the current timeline.
@@ -84,8 +83,7 @@ class DeltaTimeline:
             self.timeline[timestamp] = []
         self.timeline[timestamp].append(state_delta)
 
-    def roll_out_updates(self,
-                         borderline_ts_for_updates : pd.Timestamp):
+    def roll_out_updates(self, borderline_ts_for_updates : pd.Timestamp):
 
         """
         Roll out all the updates before and at the given point in time.

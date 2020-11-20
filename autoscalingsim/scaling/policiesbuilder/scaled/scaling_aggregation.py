@@ -126,9 +126,11 @@ class ParallelScalingEffectAggregationRule(ScalingEffectAggregationRule):
             ts_list = list(timelines_by_metric[regionalized_metric.metric_name].keys())
 
             if len(ts_list) > 0:
-                cur_min_td = min(np.diff(ts_list))
-                if cur_min_td < finest_td:
-                    finest_td = cur_min_td
+                dif_vals = np.diff(ts_list)
+                if len(dif_vals) > 0:
+                    cur_min_td = min(np.diff(ts_list))
+                    if cur_min_td < finest_td:
+                        finest_td = cur_min_td
 
                 cur_max_ts = max(ts_list)
                 if cur_max_ts > max_ts:

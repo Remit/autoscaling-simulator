@@ -1,6 +1,8 @@
 import pandas as pd
 from abc import ABC, abstractmethod
 
+from ....utils.error_check import ErrorChecker
+
 class ValuesAggregator(ABC):
 
     """
@@ -48,34 +50,10 @@ class AvgAggregator(ValuesAggregator):
     time window of desired resolution.
     """
 
-    def __init__(self,
-                 config):
+    def __init__(self, config : dict):
 
-        param_key = 'resolution_window_ms'
-        if param_key in config:
-            self.resolution_window_ms = config[param_key]
-        else:
-            raise ValueError(f'Not found key {param_key} in the parameters of the {self.__class__.__name__} aggregator.')
+        self.window = pd.Timedelta(ErrorChecker.key_check_and_load('resolution_window_ms', config), unit = 'ms')
 
-    def __call__(self,
-                 values):
+    def __call__(self, values : pd.DataFrame):
 
-        resolution_delta = self.resolution_window_ms * pd.Timedelta(1, unit = 'ms')
-        window_start = values.index[0]
-        window_end = window_start + resolution_delta
-
-        aggregated_vals = pd.DataFrame(columns=['datetime', 'value'])
-        aggregated_vals = aggregated_vals.set_index('datetime')
-        while window_start <= values.index[-1]:
-
-            avg_val = values[(values.index >= window_start) & (values.index < window_end)].mean()[0]
-            data_to_add = {'datetime': [window_start],
-                           'value': [avg_val]}
-            df_to_add = pd.DataFrame(data_to_add)
-            df_to_add = df_to_add.set_index('datetime')
-            aggregated_vals = aggregated_vals.append(df_to_add)
-
-            window_start = window_end
-            window_end = window_start + resolution_delta
-
-        return aggregated_vals
+        return values.resample(self.window).mean().bfill()

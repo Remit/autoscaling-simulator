@@ -4,6 +4,7 @@ from ..system_resource_usage import SystemResourceUsage
 
 from ...scaling.policiesbuilder.scaled.scaled_container import ScaledContainer
 
+from ...utils.size import Size
 from ...utils.requirements import ResourceRequirements
 from ...utils.state.entity_state.entity_group import EntitiesState
 
@@ -19,9 +20,9 @@ class NodeInfo(ScaledContainer):
                  provider : str,
                  node_type : str,
                  vCPU : int,
-                 memory : int,
-                 disk : int,
-                 network_bandwidth_MBps : float,
+                 memory : Size,
+                 disk : Size,
+                 network_bandwidth : Size,
                  price_p_h : float = 0.0,
                  cpu_credits_h : int = 0,
                  latency : pd.Timedelta = pd.Timedelta(0, unit = 'ms'),
@@ -33,12 +34,26 @@ class NodeInfo(ScaledContainer):
         self.vCPU = vCPU
         self.memory = memory
         self.disk = disk
-        self.network_bandwidth_MBps = network_bandwidth_MBps
+        self.network_bandwidth = network_bandwidth
         self.price_p_h = price_p_h
         self.cpu_credits_h = cpu_credits_h
         self.latency = latency
         self.requests_acceleration_factor = requests_acceleration_factor
         self.labels = labels
+
+    def __repr__(self):
+
+        return f'{self.__class__.__name__}(provider = {self.provider}, \
+                                           node_type = {self.node_type}, \
+                                           vCPU = {self.vCPU}, \
+                                           memory = {repr(self.memory)}, \
+                                           disk = {repr(self.disk)}, \
+                                           network_bandwidth = {repr(self.network_bandwidth)}, \
+                                           price_p_h = {self.price_p_h}, \
+                                           cpu_credits_h = {self.cpu_credits_h}, \
+                                           latency = {self.latency}, \
+                                           requests_acceleration_factor = {self.requests_acceleration_factor}, \
+                                           labels = {self.labels})'
 
     def system_resources_to_take_from_requirements(self, res_requirements : ResourceRequirements) -> SystemResourceUsage:
 
@@ -96,7 +111,7 @@ class NodeInfo(ScaledContainer):
     def get_max_usage(self) -> dict:
 
         return {'vCPU': self.vCPU, 'memory': self.memory,
-                'disk': self.disk, 'network_bandwidth_MBps': self.network_bandwidth_MBps}
+                'disk': self.disk, 'network_bandwidth': self.network_bandwidth}
 
     def get_cost_per_unit_time(self) -> int:
 

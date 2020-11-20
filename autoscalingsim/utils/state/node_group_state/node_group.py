@@ -1,3 +1,4 @@
+import math
 import pandas as pd
 from collections import OrderedDict
 from abc import ABC
@@ -36,12 +37,12 @@ class NodeGroup(ABC):
         else:
             return False
 
-    def get_aspect_value_of_entities_state(self, entity_name : str, aspect_name : str):
+    def get_aspect_value_of_entities_state(self, service_name : str, aspect_name : str):
 
         if self.entities_state is None:
             return ScalingAspect.get(aspect_name)(0)
         else:
-            return self.entities_state.get_aspect_value(entity_name, aspect_name)
+            return self.entities_state.get_aspect_value(service_name, aspect_name)
 
     def get_running_entities(self):
 
@@ -82,8 +83,8 @@ class HomogeneousNodeGroup(NodeGroup):
 
         self.node_info = node_info
         self.utilization = NodeGroupUtilization()
-        self.uplink = NodeGroupLink(self.node_info.latency, self.nodes_count, self.node_info.network_bandwidth_MBps)
-        self.downlink = NodeGroupLink(self.node_info.latency, self.nodes_count, self.node_info.network_bandwidth_MBps)
+        self.uplink = NodeGroupLink(self.node_info.latency, self.nodes_count, self.node_info.network_bandwidth)
+        self.downlink = NodeGroupLink(self.node_info.latency, self.nodes_count, self.node_info.network_bandwidth)
         self.shared_processor = RequestsProcessor()
 
         if isinstance(entities_instances_counts, dict):
@@ -103,9 +104,9 @@ class HomogeneousNodeGroup(NodeGroup):
                            averaging_interval : pd.Timedelta):
 
         uplink_utilization = SystemResourceUsage(self.node_info, self.nodes_count,
-                                                 system_resources_usage = { 'network_bandwidth_MBps': self.uplink.used_bandwidth_MBps})
+                                                 system_resources_usage = { 'network_bandwidth': self.uplink.used_bandwidth})
         downlink_utilization = SystemResourceUsage(self.node_info, self.nodes_count,
-                                                   system_resources_usage = { 'network_bandwidth_MBps': self.downlink.used_bandwidth_MBps})
+                                                   system_resources_usage = { 'network_bandwidth': self.downlink.used_bandwidth})
 
         self.utilization.update_with_system_resources_usage(service_name,
                                                             timestamp,
@@ -236,87 +237,83 @@ class HomogeneousNodeGroup(NodeGroup):
                                       scaled_entity_instance_requirements_by_entity : dict,
                                       node_sys_resource_usage_by_entity_sorted : dict) -> tuple:
 
-        nodes_count_to_consider = self.nodes_count
+        #nodes_count_to_consider = self.nodes_count
         generalized_deltas = []
 
-        unmet_changes_prev = {}
-        while nodes_count_to_consider > 0 and unmet_changes_prev != unmet_changes:
-            unmet_changes_prev = unmet_changes.copy()
-            node_sys_resource_usage = self.system_resources_usage.copy()
+        #unmet_changes_prev = {}
+        #while nodes_count_to_consider > 0 and unmet_changes_prev != unmet_changes:
+            #unmet_changes_prev = unmet_changes.copy()
+        node_sys_resource_usage = self.system_resources_usage.copy()
 
-            # Starting with the largest entity and proceeding to the smallest one in terms of
-            # resource usage requirements. This is made to reduce the resource usage fragmentation.
-            temp_change = {}
-            dynamic_entities_instances_count = self.entities_state.extract_aspect_value('count')
+        # Starting with the largest entity and proceeding to the smallest one in terms of
+        # resource usage requirements. This is made to reduce the resource usage fragmentation.
+        services_cnt_change = {}
+        dynamic_entities_instances_count = self.entities_state.extract_aspect_value('count')
 
-            for entity_name, instance_cap_to_take in node_sys_resource_usage_by_entity_sorted.items():
-                if entity_name in unmet_changes and entity_name in dynamic_entities_instances_count:
+        for service_name, service_instance_resource_usage in node_sys_resource_usage_by_entity_sorted.items():
+            if service_name in unmet_changes and service_name in dynamic_entities_instances_count:
 
-                    # Case of adding entities to the existing nodes
-                    if not entity_name in temp_change:
-                        temp_change[entity_name] = 0
+                # Case of adding entities to the existing nodes
+                if not service_name in services_cnt_change:
+                    services_cnt_change[service_name] = 0
 
-                    if not node_sys_resource_usage.is_full() and unmet_changes[entity_name] > 0:
-                        while (unmet_changes[entity_name] - temp_change[entity_name] > 0) and not node_sys_resource_usage.is_full():
-                            node_sys_resource_usage += instance_cap_to_take
-                            temp_change[entity_name] += 1
+                if not node_sys_resource_usage.is_full() and unmet_changes[service_name] > 0:
+                    #print("********************")
+                    while (unmet_changes[service_name] - services_cnt_change[service_name] > 0) and not node_sys_resource_usage.is_full():
+                        #print(f'Before: {node_sys_resource_usage}')
+                        node_sys_resource_usage += service_instance_resource_usage
+                        #print(f'After: {node_sys_resource_usage}')
+                        services_cnt_change[service_name] += 1
 
-                        if node_sys_resource_usage.is_full():
-                            node_sys_resource_usage -= instance_cap_to_take
-                            temp_change[entity_name] -= 1
+                    if node_sys_resource_usage.is_full():
+                        node_sys_resource_usage -= service_instance_resource_usage
+                        services_cnt_change[service_name] -= 1
 
-                    # Case of removing entities from the existing nodes
-                    while (unmet_changes[entity_name] - temp_change[entity_name] < 0) and (dynamic_entities_instances_count[entity_name] > 0):
-                        node_sys_resource_usage -= instance_cap_to_take
-                        dynamic_entities_instances_count[entity_name] -= 1
-                        temp_change[entity_name] -= 1
+                # Case of removing entities from the existing nodes
+                while (unmet_changes[service_name] - services_cnt_change[service_name] < 0) and (dynamic_entities_instances_count[service_name] > 0):
+                    node_sys_resource_usage -= service_instance_resource_usage
+                    dynamic_entities_instances_count[service_name] -= 1
+                    services_cnt_change[service_name] -= 1
 
-            # Trying the same solution temp_accommodation to reduce the amount of iterations by
-            # considering whether it can be repeated multiple times
-            temp_change = {entity_name: change_val for entity_name, change_val in temp_change.items() if change_val != 0}
+        # Trying the same solution temp_accommodation to reduce the amount of iterations by
+        # considering whether it can be repeated multiple times
+        services_cnt_change = {service_name: change_val for service_name, change_val in services_cnt_change.items() if change_val != 0}
 
-            nodes_needed = []
-            for entity_name, count_in_solution in temp_change.items():
-                nodes_needed.append(unmet_changes[entity_name] // count_in_solution) # always positive floor
+        nodes_to_accommodate_res_usage = max([math.ceil(res_usage / other_res_usage) \
+                                                for other_res_name, other_res_usage in self.node_info.get_max_usage().items() \
+                                                for res_name, res_usage in node_sys_resource_usage.to_dict().items() \
+                                                if other_res_name == res_name and other_res_usage > other_res_usage.__class__(0)])
 
-            min_nodes_needed = nodes_count_to_consider
-            if len(nodes_needed) > 0:
-                min_nodes_needed = max(nodes_count_to_consider, min(nodes_needed))
+        for service_name, count_in_solution in services_cnt_change.items():
+            unmet_changes[service_name] -= count_in_solution
 
-            nodes_count_to_consider -= min_nodes_needed
+        node_group_delta = None
+        entities_group_delta = None
+        services_cnt_change_count = { service_name : {'count': change_val} for service_name, change_val in services_cnt_change.items() }
 
-            for entity_name, count_in_solution in temp_change.items():
-                unmet_changes[entity_name] -= count_in_solution * max(min_nodes_needed, 1)
+        if len(services_cnt_change_count) > 0:
+            if nodes_to_accommodate_res_usage < self.nodes_count:
+                # scale down for nodes
+                new_entities_instances_counts = self.entities_state.extract_aspect_value('count')
 
-            node_group_delta = None
-            entities_group_delta = None
-            temp_change_count = {}
-            for entity_name, change_val in temp_change.items():
-                temp_change_count[entity_name] = {'count': change_val * max(min_nodes_needed, 1)}
+                node_group = HomogeneousNodeGroup(self.node_info, self.nodes_count - nodes_to_accommodate_res_usage, self.entities_state.copy())# ?self.entities_state.copy()
 
-            if len(temp_change_count) > 0:
-                if node_sys_resource_usage.collapse() == 0:
-                    # scale down for nodes
-                    new_entities_instances_counts = self.entities_state.extract_aspect_value('count')
+                # Planning scale down for min_nodes_needed
+                node_group_delta = NodeGroupDelta(node_group, sign = -1, in_change = True, virtual = False)
 
-                    node_group = HomogeneousNodeGroup(self.node_info, min_nodes_needed, self.entities_state.copy())
+            else:
+                # scale down/up only for entities, nodegroup remains unchanged
+                node_group_delta = NodeGroupDelta(self.copy(), sign = 1, in_change = False, virtual = True)
 
-                    # Planning scale down for min_nodes_needed
-                    node_group_delta = NodeGroupDelta(node_group, sign = -1, in_change = True, virtual = False)
+            # Planning scale down for all the entities count change from the solution
+            entities_group_delta = EntitiesGroupDelta(services_cnt_change_count, in_change = True, virtual = False,
+                                                      services_reqs = scaled_entity_instance_requirements_by_entity)
 
-                else:
-                    # scale down/up only for entities, nodegroup remains unchanged
-                    node_group_delta = NodeGroupDelta(self.copy(), sign = 1, in_change = False, virtual = True)
+            gd = GeneralizedDelta(node_group_delta, entities_group_delta)
+            generalized_deltas.append(gd)
 
-                # Planning scale down for all the entities count change from the solution
-                entities_group_delta = EntitiesGroupDelta(temp_change_count, in_change = True, virtual = False,
-                                                          services_reqs = scaled_entity_instance_requirements_by_entity)
-
-                gd = GeneralizedDelta(node_group_delta, entities_group_delta)
-                generalized_deltas.append(gd)
-
-            # Returning generalized deltas (enforced and not enforced) and the unmet changes in entities counts
-            unmet_changes = {entity_name: count for entity_name, count in unmet_changes.items() if count != 0}
+        # Returning generalized deltas (enforced and not enforced) and the unmet changes in entities counts
+        unmet_changes = {service_name: count for service_name, count in unmet_changes.items() if count != 0}
 
         return (generalized_deltas, unmet_changes)
 
@@ -345,29 +342,29 @@ class HomogeneousNodeGroup(NodeGroup):
                                                                                 key = lambda elem: elem[1])))
 
         unmet_changes_per_aspect = {}
-        for entity_name, aspects_change_dict in scaled_entity_adjustment_in_aspects.items():
+        for service_name, aspects_change_dict in scaled_entity_adjustment_in_aspects.items():
             for aspect_name, aspect_change_val in aspects_change_dict.items():
                 aspect_dict = unmet_changes_per_aspect.get(aspect_name, {})
-                aspect_dict[entity_name] = aspect_change_val
+                aspect_dict[service_name] = aspect_change_val
                 unmet_changes_per_aspect[aspect_name] = aspect_dict
 
         generalized_deltas = []
         unmet_changes = {}
         for aspect_name, entities_changes_dict in unmet_changes_per_aspect.items():
             method_name = f'_{aspect_name}_aspect_soft_adjustment'
-            try:
-                aspect_based_generalized_deltas, aspect_based_unmet_changes_res = self.__getattribute__(method_name)(entities_changes_dict,
+            #try:
+            aspect_based_generalized_deltas, aspect_based_unmet_changes_res = self.__getattribute__(method_name)(entities_changes_dict,
                                                                                                                      scaled_entity_instance_requirements_by_entity,
                                                                                                                      node_sys_resource_usage_by_entity_sorted)
 
-                generalized_deltas.extend(aspect_based_generalized_deltas)
-                for entity_name, change_val in aspect_based_unmet_changes_res.items():
-                    unmet_changes_per_entity = unmet_changes.get(entity_name, {})
-                    unmet_changes_per_entity[aspect_name] = change_val
-                    unmet_changes[entity_name] = unmet_changes_per_entity
+            generalized_deltas.extend(aspect_based_generalized_deltas)
+            for service_name, change_val in aspect_based_unmet_changes_res.items():
+                unmet_changes_per_entity = unmet_changes.get(service_name, {})
+                unmet_changes_per_entity[aspect_name] = change_val
+                unmet_changes[service_name] = unmet_changes_per_entity
 
-            except AttributeError:
-                raise ValueError(f'Support for computing the soft adjustment for the desired aspect type is not implemented: {aspect_name}')
+            #except AttributeError:
+            #    raise ValueError(f'Support for computing the soft adjustment for the desired aspect type is not implemented: {aspect_name}')
 
         return (generalized_deltas, unmet_changes)
 

@@ -1,45 +1,73 @@
 import numbers
 
+from .size import Size
 from .error_check import ErrorChecker
 
 class ResourceRequirements:
 
-    """
-    Container for the resource requirements, e.g. by a service or a request.
-    """
+    """ Container for the resource requirements, e.g. by a service or a request """
 
     @classmethod
     def new_empty_resource_requirements(cls):
 
-        return cls({'vCPU': 0,
-                    'memory': 0,
-                    'disk': 0,
-                    'labels': []})
+        return cls(0, Size(0), Size(0), Size(0), [])
 
-    def __init__(self,
-                 requirements_raw : dict):
+    @classmethod
+    def from_coerced_dict(cls, requirements : dict):
 
-        self.vCPU = ErrorChecker.key_check_and_load('vCPU', requirements_raw)
-        self.memory = ErrorChecker.key_check_and_load('memory', requirements_raw)
-        self.disk = ErrorChecker.key_check_and_load('disk', requirements_raw)
+        return cls(requirements['vCPU'], requirements['memory'], requirements['disk'],
+                   requirements['network_bandwidth'], requirements['labels'])
+
+    @classmethod
+    def from_dict(cls, requirements_raw : dict):
+
+        vCPU = ErrorChecker.key_check_and_load('vCPU', requirements_raw)
+
+        memory_raw = ErrorChecker.key_check_and_load('memory', requirements_raw)
+        memory_value = ErrorChecker.key_check_and_load('value', memory_raw)
+        memory_unit = ErrorChecker.key_check_and_load('unit', memory_raw)
+        memory = Size(memory_value, memory_unit)
+
+        disk_raw = ErrorChecker.key_check_and_load('disk', requirements_raw)
+        disk_value = ErrorChecker.key_check_and_load('value', disk_raw)
+        disk_unit = ErrorChecker.key_check_and_load('unit', disk_raw)
+        disk = Size(disk_value, disk_unit)
+
         try:
-            self.labels = ErrorChecker.key_check_and_load('labels', requirements_raw)
+            network_bandwidth_raw = ErrorChecker.key_check_and_load('network_bandwidth', requirements_raw)
+            network_bandwidth_value = ErrorChecker.key_check_and_load('value', network_bandwidth_raw)
+            network_bandwidth_unit = ErrorChecker.key_check_and_load('unit', network_bandwidth_raw)
+            network_bandwidth = Size(network_bandwidth_value, network_bandwidth_unit)
         except ValueError:
-            self.labels = []
+            network_bandwidth = Size(0)
+
+        try:
+            labels = ErrorChecker.key_check_and_load('labels', requirements_raw)
+        except ValueError:
+            labels = []
+
+        return cls(vCPU, memory, disk, network_bandwidth, labels)
+
+    def __init__(self, vCPU : int, memory : Size, disk : Size,
+                 network_bandwidth : Size, labels : list):
+
+        self.vCPU = vCPU
+        self.memory = memory
+        self.disk = disk
+        self.network_bandwidth = network_bandwidth
+        self.labels = labels
 
     def to_dict(self):
 
-        return {'vCPU': self.vCPU,
-                'memory': self.memory,
-                'disk': self.disk,
+        return {'vCPU': self.vCPU, 'memory': self.memory,
+                'disk': self.disk, 'network_bandwidth': self.network_bandwidth,
                 'labels': self.labels}
 
     def tracked_resources(self):
 
-        return ['vCPU', 'memory', 'disk']
+        return ['vCPU', 'memory', 'disk', 'network_bandwidth']
 
-    def __add__(self,
-                other_res_req : 'ResourceRequirements'):
+    def __add__(self, other_res_req : 'ResourceRequirements'):
 
         if not isinstance(other_res_req, ResourceRequirements):
             raise TypeError(f'Unrecognized type to add to the {self.__class__.__name__}: {other_res_req.__class__.__name__}')
@@ -51,27 +79,24 @@ class ResourceRequirements:
             else:
                 sum_res_req_dict[req_name] += req_val
 
-        return ResourceRequirements(sum_res_req_dict)
+        return self.__class__.from_coerced_dict(sum_res_req_dict)
 
-    def __radd__(self,
-                 other_res_req : 'ResourceRequirements'):
+    def __radd__(self, other_res_req : 'ResourceRequirements'):
 
         return self.__add__(other_res_req)
 
-    def __mul__(self,
-                factor : numbers.Number):
+    def __mul__(self, factor : numbers.Number):
 
         if not isinstance(factor, numbers.Number):
-            raise TypeError(f'An attempt to multiply {self.__class__.__name__} by non-scalar: {factor.__class__.__name__}')
+            raise TypeError(f'An attempt to multiply {self.__class__.__name__} by a non-scalar: {factor.__class__.__name__}')
 
         new_res_req_dict = self.to_dict()
         for req_name, req_val in new_res_req_dict.items():
             if isinstance(req_val, numbers.Number):
                 new_res_req_dict[req_name] *= factor
 
-        return ResourceRequirements(new_res_req_dict)
+        return self.__class__.from_coerced_dict(new_res_req_dict)
 
-    def __rmul__(self,
-                 factor : numbers.Number):
+    def __rmul__(self, factor : numbers.Number):
 
         return self.__mul__(factor)

@@ -174,8 +174,7 @@ class ScalingMetricRegionalized:
             entity_res_reqs = self.state_reader.get_resource_requirements(self.entity_name,
                                                                           region_name)
 
-            desired_scaled_aspect_val_pr = metric(metric_vals,
-                                                  cur_aspect_val)
+            desired_scaled_aspect_val_pr = metric(metric_vals, cur_aspect_val)
 
             for timestamp, row_val in desired_scaled_aspect_val_pr.iterrows():
                 aspects_dict = {}
@@ -285,8 +284,7 @@ class ScalingMetric:
         # current min-max limits on the post-scaling result for the
         # aspect of the scaled entity (count of scaled entities in case of horizontal scaling
         # or resource limits of scaled entities in case of vertical scaling)
-        self.limiter = Limiter(min_limit_aspect,
-                               max_limit_aspect)
+        self.limiter = Limiter(min_limit_aspect, max_limit_aspect)
 
         # current representation of the entity in terms of metric, for instance
         # if the entity is the node and the metric is CPU utilization, and the capacity adaptation type is discrete,

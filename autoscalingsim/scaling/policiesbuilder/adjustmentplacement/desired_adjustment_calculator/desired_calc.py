@@ -61,8 +61,7 @@ class DesiredChangeCalculator:
                 print(ep.nodes_count)
                 print(ep.entities_state.get_entities_counts())
 
-            regions[region_name] = Region.from_conf(region_name,
-                                                    selected_placement)
+            regions[region_name] = Region.from_conf(region_name, selected_placement)
 
             scores_per_region[region_name] = selected_placement.score
 
