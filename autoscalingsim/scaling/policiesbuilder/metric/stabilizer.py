@@ -50,8 +50,11 @@ class MaxStabilizer(Stabilizer):
     """
     def __init__(self, config : dict):
 
-        self.window = pd.Timedelta(ErrorChecker.key_check_and_load('resolution_window_ms', config), unit = 'ms')
+        resolution_raw = ErrorChecker.key_check_and_load('resolution', config, self.__class__.__name__)
+        resolution_value = ErrorChecker.key_check_and_load('value', resolution_raw, self.__class__.__name__)
+        resolution_unit = ErrorChecker.key_check_and_load('unit', resolution_raw, self.__class__.__name__)
+        self.resolution = pd.Timedelta(resolution_value, unit = resolution_unit)
 
     def __call__(self, values : pd.DataFrame):
 
-        return values.resample(self.window).max().bfill()
+        return values.resample(self.resolution).max().bfill()

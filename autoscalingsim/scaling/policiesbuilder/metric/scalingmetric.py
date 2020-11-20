@@ -264,16 +264,7 @@ class ScalingMetric:
         # The use of the "predictive" demands presence of the
         # forecaster.
         self.timing_type = timing_type
-        fhorizon_in_steps = ErrorChecker.key_check_and_load('fhorizon_in_steps', forecaster_conf, 'region', region_name)
-        forecasting_model_name = ErrorChecker.key_check_and_load('name', forecaster_conf, 'region', region_name)
-        forecasting_model_params = ErrorChecker.key_check_and_load('config', forecaster_conf, 'region', region_name)
-        resolution = pd.Timedelta(ErrorChecker.key_check_and_load('resolution_ms', forecaster_conf, 'region', region_name), unit = 'ms')
-        history_data_buffer_size = int(ErrorChecker.key_check_and_load('history_data_buffer_size', forecaster_conf, 'region', region_name))
-        self.forecaster = forecasting.MetricForecaster(fhorizon_in_steps = fhorizon_in_steps,
-                                                       forecasting_model_name = forecasting_model_name,
-                                                       forecasting_model_params = forecasting_model_params,
-                                                       resolution = resolution,
-                                                       history_data_buffer_size = history_data_buffer_size)
+        self.forecaster = forecasting.MetricForecaster(timing_type, forecaster_conf)
 
         # either continuous (for vertical scaling) or discrete (for
         # horizontal scaling)

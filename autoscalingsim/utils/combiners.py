@@ -14,8 +14,7 @@ class Combiner(ABC):
     _Registry = {}
 
     @abstractmethod
-    def __init__(self,
-                 settings : dict):
+    def __init__(self, config : dict):
 
         pass
 
@@ -27,8 +26,7 @@ class Combiner(ABC):
         pass
 
     @classmethod
-    def register(cls,
-                 name : str):
+    def register(cls, name : str):
 
         def decorator(combiner_class):
             cls._Registry[name] = combiner_class
@@ -37,8 +35,7 @@ class Combiner(ABC):
         return decorator
 
     @classmethod
-    def get(cls,
-            name : str):
+    def get(cls, name : str):
 
         if not name in cls._Registry:
             raise ValueError(f'No Combiner of type {name} found')
@@ -55,7 +52,7 @@ class NoopCombiner(Combiner):
     """
 
     def __init__(self,
-                 settings : dict):
+                 config : dict):
 
         pass
 
@@ -75,10 +72,13 @@ class WindowedCombiner(Combiner):
     a combiner to be of use, the windowing parameter should not be set too large.
     """
 
-    def __init__(self,
-                 settings : dict):
+    def __init__(self, config : dict):
 
-        self.window = pd.Timedelta(ErrorChecker.key_check_and_load('window_size_ms', settings, self.__class__.__name__), unit = 'ms')
+        resolution_raw = ErrorChecker.key_check_and_load('resolution', config, self.__class__.__name__)
+        resolution_value = ErrorChecker.key_check_and_load('value', resolution_raw, self.__class__.__name__)
+        resolution_unit = ErrorChecker.key_check_and_load('unit', resolution_raw, self.__class__.__name__)
+        self.resolution = pd.Timedelta(resolution_value, unit = resolution_unit)
+
         self.aggregation_operation = sum # todo: consider parameterizing, should return single int
 
     def combine(self,
@@ -86,7 +86,7 @@ class WindowedCombiner(Combiner):
 
         unified_timeline_of_adjustments = {}
         for scaled_entity, timeline_df in scaled_entities_adjustments.items():
-            aggregated_timeline = timeline_df.resample(self.window).apply(self.aggregation_operation).to_dict()
+            aggregated_timeline = timeline_df.resample(self.resolution).apply(self.aggregation_operation).to_dict()
             for aspect_name, timed_change in aggregated_timeline.items():
                 for ts, change_val in timed_change.items():
                     unified_timeline_of_adjustments[ts] = {scaled_entity : {aspect_name : change_val}}

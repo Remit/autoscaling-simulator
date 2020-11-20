@@ -11,18 +11,17 @@ class ValuesFilter(ABC):
     _Registry = {}
 
     @abstractmethod
-    def __init__(self,
-                 config):
+    def __init__(self, config):
+
         pass
 
     @abstractmethod
-    def __call__(self,
-                 values):
+    def __call__(self, values):
+
         pass
 
     @classmethod
-    def register(cls,
-                 name : str):
+    def register(cls, name : str):
 
         def decorator(values_filter_class):
             cls._Registry[name] = values_filter_class
@@ -31,8 +30,7 @@ class ValuesFilter(ABC):
         return decorator
 
     @classmethod
-    def get(cls,
-            name : str):
+    def get(cls, name : str):
 
         if not name in cls._Registry:
             raise ValueError(f'An attempt to use the non-existent filter {name}')
@@ -46,8 +44,7 @@ class DefaultNA(ValuesFilter):
     Substitutes all the NA values for the default value, e.g. 0.
     """
 
-    def __init__(self,
-                 config):
+    def __init__(self, config : dict):
 
         param_key = 'default_value'
         if param_key in config:
@@ -55,7 +52,6 @@ class DefaultNA(ValuesFilter):
         else:
             raise ValueError(f'Not found key {param_key} in the parameters of the {self.__class__.__name__} filter.')
 
-    def __call__(self,
-                 values):
+    def __call__(self, values : pd.DataFrame):
 
         return values.fillna(self.default_value)

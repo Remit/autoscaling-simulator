@@ -12,28 +12,27 @@ class MetricForecaster:
     to forecast for the long term, hence, the extrapolations provided here
     are deemed to be very short-sighted.
     """
-    def __init__(self,
-                 fhorizon_in_steps : int,
-                 forecasting_model_name : str = None,
-                 forecasting_model_params : dict = None,
-                 resolution : pd.Timedelta = pd.Timedelta(10, unit = 'ms'),
-                 history_data_buffer_size : int = 10):
+    def __init__(self, timing_type : str, config : dict):
 
         # Static State
-        self.fhorizon_in_steps = fhorizon_in_steps
-        self.resolution = resolution
-        self.history_data_buffer_size = history_data_buffer_size
+        self.fhorizon_in_steps = ErrorChecker.key_check_and_load('fhorizon_in_steps', config)
+        self.history_data_buffer_size = int(ErrorChecker.key_check_and_load('history_data_buffer_size', config))
 
-        # Dynamic State
-        if (not forecasting_model_name is None) and (not forecasting_model_params is None):
+        resolution_raw = ErrorChecker.key_check_and_load('resolution', config, self.__class__.__name__)
+        resolution_value = ErrorChecker.key_check_and_load('value', resolution_raw, self.__class__.__name__)
+        resolution_unit = ErrorChecker.key_check_and_load('unit', resolution_raw, self.__class__.__name__)
+        self.resolution = pd.Timedelta(resolution_value, unit = resolution_unit)
+
+        if timing_type == 'predictive':
+            forecasting_model_name = ErrorChecker.key_check_and_load('name', config)
+            forecasting_model_params = ErrorChecker.key_check_and_load('config', config)
             self.model = ForecastingModel.get(forecasting_model_name)(forecasting_model_params)
         else:
             self.model = None
 
         self.history_data_buffer = pd.DataFrame(columns=['datetime', 'value']).set_index('datetime')
 
-    def __call__(self,
-                 metric_vals : pd.DataFrame):
+    def __call__(self, metric_vals : pd.DataFrame):
 
         """
         If the forecasting model is not yet fit, then return the metric values
@@ -45,7 +44,7 @@ class MetricForecaster:
         forecast = metric_vals
         if not self.model is None:
             self._update(metric_vals)
-            
+
             forecast = self.model.predict(metric_vals,
                                           self.fhorizon_in_steps,
                                           self.resolution)
