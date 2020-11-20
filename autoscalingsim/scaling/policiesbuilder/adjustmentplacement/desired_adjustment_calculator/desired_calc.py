@@ -48,8 +48,8 @@ class DesiredChangeCalculator:
 
         for region_name, entities_state in entities_states:
             # Place
-            placements_lst = self.placer.compute_nodes_requirements(entities_state,
-                                                                         region_name)
+            placements_lst = self.placer.compute_nodes_requirements(entities_state, region_name)
+
             # Score
             scored_placements_lst = self.scorer(placements_lst, state_duration_h)
 

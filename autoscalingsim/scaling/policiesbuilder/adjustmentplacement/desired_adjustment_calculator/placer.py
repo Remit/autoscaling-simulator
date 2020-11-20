@@ -53,7 +53,6 @@ class Placer:
                                                            dynamic_current_placement,
                                                            dynamic_performance,
                                                            dynamic_resource_utilization)
-
         nodes_required = {}
         for node_name, placement_options_per_node in placement_options.items():
             node_count_required_per_option = []
@@ -62,8 +61,8 @@ class Placer:
 
                 nodes_required_per_placement = entities_state / placement_option.placed_entities
                 node_count_required_per_option.append(EntitiesPlacement(placement_option.node_info,
-                                                                             nodes_required_per_placement,
-                                                                             placement_option.placed_entities))
+                                                                        nodes_required_per_placement,
+                                                                         placement_option.placed_entities))
 
             if len(node_count_required_per_option) > 0:
                 # Selecting the best option for each node
@@ -222,7 +221,7 @@ class Placer:
 
                 # Sort in decreasing order of consumed node system_resources
                 node_system_resources_taken_by_entity_sorted = OrderedDict(reversed(sorted(node_system_resources_taken_by_entity.items(),
-                                                                                        key = lambda elem: elem[1])))
+                                                                                           key = lambda elem: elem[1])))
 
                 # Take first in list, and try to add the others to it (maybe with multipliers),
                 # then take the next one and try the rest of the sorted list and so on

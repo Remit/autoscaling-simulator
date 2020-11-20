@@ -42,14 +42,12 @@ class ServiceStateRegionalized(ScaledEntityState):
                                                            buffers_config,
                                                            sampling_interval)
 
-    def add_request(self, req : Request):
-
-
+    def add_request(self, req : Request, simulation_step : pd.Timedelta):
 
         if not req.region_name in self.region_states:
             raise ValueError(f'Received request with an unknown region name: {req.region_name}')
 
-        self.region_states[req.region_name].add_request(req)
+        self.region_states[req.region_name].add_request(req, simulation_step)
 
     def get_processed(self):
 

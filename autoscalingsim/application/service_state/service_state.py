@@ -119,17 +119,14 @@ class ServiceState:
             'waiting_requests_count': ServiceMetric(buffer_utilization.waiting_requests_count_metric_name, [self.upstream_buf, self.downstream_buf], sum)
         }
 
-    def add_request(self, req : Request):
+    def add_request(self, req : Request, simulation_step : pd.Timedelta):
 
         """
         Puts a request in one of the requests buffers depending on
         whether it moves upstream (request) or downstrem (response).
         """
 
-        if req.upstream:
-            self.upstream_buf.put(req)
-        else:
-            self.downstream_buf.put(req)
+        self.upstream_buf.put(req, simulation_step) if req.upstream else self.downstream_buf.put(req, simulation_step)
 
     def get_processed(self):
 

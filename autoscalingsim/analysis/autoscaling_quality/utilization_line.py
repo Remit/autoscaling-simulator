@@ -57,8 +57,8 @@ class UtilizationLineGraph:
                         axs[j][i].legend(loc = "lower right")
                         axs[j][i].set_title(f'Service {service_name}', y = 1.2, fontdict = font)
                         #axs[j][i].yaxis.set_major_locator(ticker.MaxNLocator(integer=True))
-                        axs[j][i].yaxis.set_major_locator(ticker.MultipleLocator(50))
-                        axs[j][i].yaxis.set_minor_locator(ticker.MultipleLocator(10))
+                        axs[j][i].yaxis.set_major_locator(ticker.MultipleLocator(25))
+                        axs[j][i].yaxis.set_minor_locator(ticker.MultipleLocator(5))
                         axs[j][i].set_ylim(0)
                         plt.setp(axs[j][i].get_xticklabels(), rotation = 70, ha = "right", rotation_mode = "anchor")
 

@@ -145,8 +145,8 @@
 				"value": 300,
 				"unit": "ms"
 			},
-			"request_size_b": 1024,
-			"response_size_b": 1024,
+			"request_size_b": 10240,
+			"response_size_b": 10240,
 			"operation_type": "rw",
 			"processing_requirements": {
 				"vCPU": 1,
@@ -181,8 +181,8 @@
 				"value": 400,
 				"unit": "ms"
 			},
-			"request_size_b": 2048,
-			"response_size_b": 1024,
+			"request_size_b": 25600,
+			"response_size_b": 10240,
 			"operation_type": "rw",
 			"processing_requirements": {
 				"vCPU": 2,

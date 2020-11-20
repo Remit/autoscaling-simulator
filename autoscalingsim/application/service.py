@@ -56,9 +56,9 @@ class Service(ScaledEntity):
                                               buffers_config,
                                               sampling_interval)
 
-    def add_request(self, req : Request):
+    def add_request(self, req : Request, simulation_step : pd.Timedelta):
 
-        self.state.add_request(req)
+        self.state.add_request(req, simulation_step)
 
     def step(self, cur_timestamp : pd.Timestamp, simulation_step : pd.Timedelta):
 

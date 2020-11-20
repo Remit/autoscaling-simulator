@@ -29,10 +29,7 @@ class SystemResourceUsage(Usage):
 
         self.system_resources_usage = {}
         for res_type in self.__class__.system_resources:
-            if not res_type in system_resources_usage:
-                self.system_resources_usage[res_type] = 0
-            else:
-                self.system_resources_usage[res_type] = system_resources_usage[res_type]
+            self.system_resources_usage[res_type] = system_resources_usage[res_type] if res_type in system_resources_usage else 0
 
     def __add__(self, usage_to_add : 'SystemResourceUsage'):
 
@@ -49,6 +46,9 @@ class SystemResourceUsage(Usage):
 
         if self.uid != other_usage.uid:
             raise ValueError(f'An attempt to combine resource usages belonging to different node types: {self.uid} and {other_usage.uid}')
+
+        if not (other_usage.instance_count == 1 or self.instance_count == 1) and self.instance_count != other_usage.instance_count:
+            raise ValueError(f'Attempt to combine system resource usages for unmatching cluster sizes')
 
         system_resource_usage = self.system_resources_usage.copy()
         for res_name, res_usage in other_usage.system_resources_usage.items():

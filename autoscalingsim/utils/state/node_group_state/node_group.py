@@ -102,9 +102,14 @@ class HomogeneousNodeGroup(NodeGroup):
                            timestamp : pd.Timestamp,
                            averaging_interval : pd.Timedelta):
 
+        uplink_utilization = SystemResourceUsage(self.node_info, self.nodes_count,
+                                                 system_resources_usage = { 'network_bandwidth_MBps': self.uplink.used_bandwidth_MBps})
+        downlink_utilization = SystemResourceUsage(self.node_info, self.nodes_count,
+                                                   system_resources_usage = { 'network_bandwidth_MBps': self.downlink.used_bandwidth_MBps})
+
         self.utilization.update_with_system_resources_usage(service_name,
                                                             timestamp,
-                                                            system_resources_usage,
+                                                            system_resources_usage + uplink_utilization + downlink_utilization,
                                                             averaging_interval)
 
     def get_utilization(self, service_name : str, resource_name : str,
@@ -190,10 +195,8 @@ class HomogeneousNodeGroup(NodeGroup):
                 downsizing_coef = other_node_group.nodes_count / self.nodes_count
                 self.entities_state.downsize_proportionally(downsizing_coef)
 
-            _, self.system_resources_usage = self.node_info.entities_require_system_resources(self.entities_state)
-
             self.nodes_count -= other_node_group.nodes_count
-
+            _, self.system_resources_usage = self.node_info.entities_require_system_resources(self.entities_state, self.nodes_count)
             self.uplink.update_bandwidth(self.nodes_count)
             self.downlink.update_bandwidth(self.nodes_count)
 
@@ -201,11 +204,10 @@ class HomogeneousNodeGroup(NodeGroup):
 
         return self.entities_state.extract_scaling_aspects()
 
-    def add_to_entities_state(self,
-                              entities_group_delta : EntitiesGroupDelta):
+    def add_to_entities_state(self, entities_group_delta : EntitiesGroupDelta):
 
         self.entities_state += entities_group_delta
-        _, self.system_resources_usage = self.node_info.entities_require_system_resources(self.entities_state)
+        _, self.system_resources_usage = self.node_info.entities_require_system_resources(self.entities_state, self.nodes_count)
 
     def nullify_entities_state(self):
 

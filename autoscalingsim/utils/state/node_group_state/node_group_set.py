@@ -142,10 +142,10 @@ class HomogeneousNodeGroupSet:
 
         node_counts_per_type = {}
         for node_group in groups_for_extraction.values():
-            node_name = node_group.node_info.get_name()
-            if not node_name in node_counts_per_type:
-                node_counts_per_type[node_name] = 0
-            node_counts_per_type[node_name] += node_group.nodes_count
+            node_type = node_group.node_info.get_name()
+            if not node_type in node_counts_per_type:
+                node_counts_per_type[node_type] = 0
+            node_counts_per_type[node_type] += node_group.nodes_count
 
         return node_counts_per_type
 

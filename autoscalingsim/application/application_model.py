@@ -114,7 +114,7 @@ class ApplicationModel:
                 entry_service = self.application_model_conf.get_entry_service(req.request_type)
                 req.processing_time_left = self.application_model_conf.get_upstream_processing_time(req.request_type, entry_service)
                 req.processing_service = entry_service
-                self.services[entry_service].add_request(req)
+                self.services[entry_service].add_request(req, simulation_step)
 
             self.new_requests = []
 
@@ -137,7 +137,7 @@ class ApplicationModel:
                         for next_service_name in next_services_names:
                             req.processing_time_left = self.application_model_conf.get_upstream_processing_time(req.request_type, next_service_name)
                             req.processing_service = next_service_name
-                            self.services[next_service_name].add_request(req)
+                            self.services[next_service_name].add_request(req, simulation_step)
                     else:
                         req.set_downstream() # Converting the request req into the response
 
@@ -150,7 +150,7 @@ class ApplicationModel:
                             req.processing_time_left = self.application_model_conf.get_downstream_processing_time(req.request_type, prev_service_name)
                             req.processing_service = prev_service_name
                             req.replies_expected = replies_expected
-                            self.services[prev_service_name].add_request(req)
+                            self.services[prev_service_name].add_request(req, simulation_step)
                     else:
                         self.response_stats.add_request(req) # Reached the user, updating responses stats
 

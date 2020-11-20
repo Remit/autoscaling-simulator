@@ -69,11 +69,11 @@ class RequestsBuffer:
         for req_type, init_capacity in self.capacity_by_request_type_base.items():
             self.capacity_by_request_type[req_type] = init_capacity * service_instances_count
 
-    def put(self, req : Request):
+    def put(self, req : Request, simulation_step : pd.Timedelta):
 
         # Request is lost if link was not yet established
         if len(self.links) > 0:
-            self.links[self.last_used_link_id].put(req)
+            self.links[self.last_used_link_id].put(req, simulation_step)
             self.last_used_link_id = self.last_used_link_id + 1 if self.last_used_link_id < len(self.links) - 1 else 0
 
     def add_link(self, node_group_id : int, link : NodeGroupLink):

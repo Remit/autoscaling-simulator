@@ -10,7 +10,7 @@
 					"disk": 1024,
 					"network_bandwidth_MBps": 625,
 					"price_p_h": 0.0052,
-					"latency_ms": 10,
+					"latency_ms": 20,
 					"requests_acceleration_factor": 1.0
 				},
 				{
@@ -21,7 +21,7 @@
 					"disk": 1024,
 					"network_bandwidth_MBps": 625,
 					"price_p_h": 0.0104,
-					"latency_ms": 10,
+					"latency_ms": 20,
 					"requests_acceleration_factor": 1.1
 				},
 				{
@@ -32,7 +32,7 @@
 					"disk": 1024,
 					"network_bandwidth_MBps": 625,
 					"price_p_h": 0.0209,
-					"latency_ms": 10,
+					"latency_ms": 20,
 					"requests_acceleration_factor": 1.1
 				},
 				{
@@ -43,7 +43,7 @@
 					"disk": 1024,
 					"network_bandwidth_MBps": 625,
 					"price_p_h": 0.0418,
-					"latency_ms": 10,
+					"latency_ms": 20,
 					"requests_acceleration_factor": 1.1
 				},
 				{
@@ -54,7 +54,7 @@
 					"disk": 1024,
 					"network_bandwidth_MBps": 625,
 					"price_p_h": 0.0835,
-					"latency_ms": 10,
+					"latency_ms": 20,
 					"requests_acceleration_factor": 1.1
 				},
 				{
@@ -65,7 +65,7 @@
 					"disk": 1024,
 					"network_bandwidth_MBps": 625,
 					"price_p_h": 0.1670,
-					"latency_ms": 10,
+					"latency_ms": 20,
 					"requests_acceleration_factor": 1.5
 				},
 				{
@@ -76,7 +76,7 @@
 					"disk": 1024,
 					"network_bandwidth_MBps": 625,
 					"price_p_h": 0.3341,
-					"latency_ms": 10,
+					"latency_ms": 20,
 					"requests_acceleration_factor": 1.7
 				}
 			]
