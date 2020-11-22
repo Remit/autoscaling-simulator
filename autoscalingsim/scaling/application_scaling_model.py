@@ -2,7 +2,7 @@ import pandas as pd
 from collections import OrderedDict
 
 from ..utils.error_check import ErrorChecker
-from ..utils.state.entity_state.entity_group import EntitiesGroupDelta
+from ..utils.state.entity_state.service_group import GroupOfServicesDelta
 
 class ServiceScalingInfo:
 
@@ -20,8 +20,7 @@ class ServiceScalingInfo:
         self.termination_duration = termination_duration
         self.scaled_aspect_name = scaled_aspect_name
 
-    def set_scaled_aspect_name(self,
-                               scaled_aspect_name : str):
+    def set_scaled_aspect_name(self, scaled_aspect_name : str):
 
         self.scaled_aspect_name = scaled_aspect_name
 
@@ -52,12 +51,11 @@ class ApplicationScalingModel:
             self.service_scaling_infos[service_name] = ServiceScalingInfo(booting_duration,
                                                                           termination_duration)
 
-    def initialize_with_entities_scaling_conf(self,
-                                              services_scaling_config : dict):
+    def initialize_with_services_scaling_conf(self, services_scaling_config : dict):
 
             """
             Initializes the application scaling model with the scaling configuration of
-            scaled entities (e.g. services). The configuration is stored in the
+            scaled services. The configuration is stored in the
             scaling policy configuration file, hence it is added separately.
             """
 
@@ -68,45 +66,45 @@ class ApplicationScalingModel:
                 scaling_info.set_scaled_aspect_name(scaled_aspect_name)
 
     def delay(self,
-              entities_group_delta : EntitiesGroupDelta):
+              services_group_delta : GroupOfServicesDelta):
 
         """
         Implements the delay operation on the application level. Returns multiple
-        delayed entities deltas indexed by their delays.
+        delayed services deltas indexed by their delays.
         """
 
         delays_of_enforced_deltas = {}
-        if not entities_group_delta is None:
-            entities_names = entities_group_delta.get_entities()
+        if not services_group_delta is None:
+            services_names = services_group_delta.get_services()
 
-            # Group entities by their change enforcement time
-            entities_by_change_enforcement_delay = {}
-            for entity_name in entities_names:
-                if not entity_name in self.service_scaling_infos:
-                    raise ValueError(f'No scaling information for entity {entity_name} found in {self.__class__.__name__}')
+            # Group services by their change enforcement time
+            services_by_change_enforcement_delay = {}
+            for service_name in services_names:
+                if not service_name in self.service_scaling_infos:
+                    raise ValueError(f'No scaling information for service {service_name} found in {self.__class__.__name__}')
                 change_enforcement_delay = pd.Timedelta(0, unit = 'ms')
-                entity_group_delta = entities_group_delta.get_entity_group_delta(entity_name)
+                service_group_delta = services_group_delta.get_delta_for_service(service_name)
 
-                aspect_sign = entity_group_delta.get_aspect_change_sign(self.service_scaling_infos[entity_name].scaled_aspect_name)
+                aspect_sign = service_group_delta.get_aspect_change_sign(self.service_scaling_infos[service_name].scaled_aspect_name)
                 if aspect_sign == -1:
-                    change_enforcement_delay = self.service_scaling_infos[entity_name].booting_duration
+                    change_enforcement_delay = self.service_scaling_infos[service_name].booting_duration
                 elif aspect_sign == 1:
-                    change_enforcement_delay = self.service_scaling_infos[entity_name].termination_duration
+                    change_enforcement_delay = self.service_scaling_infos[service_name].termination_duration
 
 
-                if not change_enforcement_delay in entities_by_change_enforcement_delay:
-                    entities_by_change_enforcement_delay[change_enforcement_delay] = []
+                if not change_enforcement_delay in services_by_change_enforcement_delay:
+                    services_by_change_enforcement_delay[change_enforcement_delay] = []
 
-                entities_by_change_enforcement_delay[change_enforcement_delay].append(entity_name)
+                services_by_change_enforcement_delay[change_enforcement_delay].append(service_name)
 
-            if len(entities_by_change_enforcement_delay) > 0:
-                entities_by_change_enforcement_delay_sorted = OrderedDict(sorted(entities_by_change_enforcement_delay.items(),
+            if len(services_by_change_enforcement_delay) > 0:
+                services_by_change_enforcement_delay_sorted = OrderedDict(sorted(services_by_change_enforcement_delay.items(),
                                                                                  key = lambda elem: elem[0]))
 
-                for change_enforcement_delay, entities_lst in entities_by_change_enforcement_delay_sorted.items():
+                for change_enforcement_delay, services_lst in services_by_change_enforcement_delay_sorted.items():
 
-                    enforced_entities_group_delta, _ = entities_group_delta.enforce(entities_lst) # all should be enforced by design
-                    if not enforced_entities_group_delta is None:
-                        delays_of_enforced_deltas[change_enforcement_delay] = enforced_entities_group_delta
+                    enforced_services_group_delta, _ = services_group_delta.enforce(services_lst) # all should be enforced by design
+                    if not enforced_services_group_delta is None:
+                        delays_of_enforced_deltas[change_enforcement_delay] = enforced_services_group_delta
 
         return delays_of_enforced_deltas

@@ -1,5 +1,4 @@
-from .entity_state.entity_group import EntitiesState
-from ...scaling.policiesbuilder.scaled.scaled_container import ScaledContainer
+from .entity_state.service_group import GroupOfServices
 from ...infrastructure_platform.system_resource_usage import SystemResourceUsage
 
 class InNodePlacement:
@@ -11,33 +10,33 @@ class InNodePlacement:
     Specifies:
         node type
         capacity taken
-        scaled entities and their instance counts that can fit into this placement
+        scaled services and their instance counts that can fit into this placement
     """
 
     def __init__(self,
-                 node_info : ScaledContainer,
+                 node_info : 'NodeInfo',
                  capacity_taken : SystemResourceUsage,
-                 placed_entities : EntitiesState):
+                 placed_services : GroupOfServices):
 
         self.node_info = node_info
         self.capacity_taken = capacity_taken
-        self.placed_entities = placed_entities
+        self.placed_services = placed_services
 
-class EntitiesPlacement:
+class ServicesPlacement:
 
     """
     The smallest placement unit. Wraps a final placement representation for
-    a single group of entities.
+    a single group of services.
     """
 
     def __init__(self,
-                 node_info : ScaledContainer,
+                 node_info : 'NodeInfo',
                  nodes_count : int,
-                 entities_state : EntitiesState):
+                 services_state : GroupOfServices):
 
         self.node_info = node_info
         self.nodes_count = nodes_count
-        self.entities_state = entities_state
+        self.services_state = services_state
 
 class Placement:
 
@@ -46,27 +45,23 @@ class Placement:
     """
 
     def __init__(self,
-                 entities_placements : list = []):
+                 services_placements : list = []):
 
-        self.entities_placements = entities_placements
+        self.services_placements = services_placements
         self.score = None
 
-    def add_entities_placement(self,
-                               other_entities_placement : EntitiesPlacement):
+    def add_services_placement(self,
+                               other_services_placement : ServicesPlacement):
 
-        if not isinstance(other_entities_placement, EntitiesPlacement):
-            raise TypeError(f'Wrong type on adding a new entities placement: {other_entities_placement.__class__.__name__}')
+        if not isinstance(other_services_placement, ServicesPlacement):
+            raise TypeError(f'Wrong type on adding a new services placement: {other_services_placement.__class__.__name__}')
 
-        self.entities_placements.append(other_entities_placement)
+        self.services_placements.append(other_services_placement)
 
     def __iter__(self):
         return PlacementIterator(self)
 
 class PlacementIterator:
-
-    """
-    Iterates over the entities placements.
-    """
 
     def __init__(self,
                  placement : Placement):
@@ -76,8 +71,8 @@ class PlacementIterator:
 
     def __next__(self):
 
-        if self._index < len(self._placement.entities_placements):
-            placement = self._placement.entities_placements[self._index]
+        if self._index < len(self._placement.services_placements):
+            placement = self._placement.services_placements[self._index]
             self._index += 1
             return placement
 

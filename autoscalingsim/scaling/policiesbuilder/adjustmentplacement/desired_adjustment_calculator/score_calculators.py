@@ -3,7 +3,7 @@ import pandas as pd
 
 from .score import Score
 
-from ...scaled.scaled_container import ScaledContainer
+from .....infrastructure_platform.node_information.node import NodeInfo
 
 class ScoreCalculator(ABC):
 
@@ -25,7 +25,7 @@ class ScoreCalculator(ABC):
 
     @abstractmethod
     def __call__(self,
-                 node_info : ScaledContainer,
+                 node_info : NodeInfo,
                  duration : pd.Timedelta,
                  nodes_count : int) -> tuple:
         pass
@@ -61,7 +61,7 @@ class PriceScoreCalculator(ScoreCalculator):
         super().__init__(Score.get(self.__class__.__name__))
 
     def __call__(self,
-                 node_info : ScaledContainer,
+                 node_info : NodeInfo,
                  duration_h : float,
                  nodes_count : int) -> tuple:
 

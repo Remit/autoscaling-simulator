@@ -6,7 +6,7 @@ from ...scaling.application_scaling_model import ApplicationScalingModel
 class RegionalDelta:
 
     """
-    Wraps multiple generalized deltas that bundle changes in entities state with
+    Wraps multiple generalized deltas that bundle changes in services state with
     the corresponding change in node group.
     """
 
@@ -36,23 +36,23 @@ class RegionalDelta:
 
     def get_node_groups_ids_for_removal(self):
 
-        ids_for_removal_per_entity = {}
+        ids_for_removal_per_service = {}
         for gd in self.generalized_deltas:
-            if (not gd.node_group_delta is None) and (not gd.entities_group_delta is None):
+            if (not gd.node_group_delta is None) and (not gd.services_group_delta is None):
                 if (not gd.node_group_delta.virtual) and (gd.node_group_delta.sign == -1):
-                    affected_entities = gd.entities_group_delta.get_entities()
+                    affected_services = gd.services_group_delta.get_services()
                     node_group_id = gd.node_group_delta.get_node_group_id()
-                    for entity_name in affected_entities:
-                        if not entity_name in ids_for_removal_per_entity:
-                            ids_for_removal_per_entity[entity_name] = []
-                        ids_for_removal_per_entity[entity_name].append(node_group_id)
+                    for service_name in affected_services:
+                        if not service_name in ids_for_removal_per_service:
+                            ids_for_removal_per_service[service_name] = []
+                        ids_for_removal_per_service[service_name].append(node_group_id)
 
-        return ids_for_removal_per_entity
+        return ids_for_removal_per_service
 
     def get_node_groups_ids_for_removal_flat(self):
 
         """
-        Provides a list of node groups ids that are clean from entities,
+        Provides a list of node groups ids that are clean from services,
         and are scheduled for the scale down.
         """
 

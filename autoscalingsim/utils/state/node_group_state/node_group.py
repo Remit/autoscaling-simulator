@@ -4,7 +4,7 @@ from collections import OrderedDict
 from abc import ABC
 
 from .requests_processor import RequestsProcessor
-from ..entity_state.entity_group import EntitiesGroupDelta, EntitiesState
+from ..entity_state.service_group import GroupOfServicesDelta, GroupOfServices
 from ..entity_state.scaling_aspects import ScalingAspect
 
 from ....infrastructure_platform.system_resource_usage import SystemResourceUsage
@@ -22,7 +22,7 @@ class NodeGroup(ABC):
         self.provider = provider
         self.nodes_count = nodes_count
         self.id = id(self)
-        self.entities_state = None
+        self.services_state = None
 
     def can_be_coerced(self, node_group : 'NodeGroup'):
 
@@ -37,16 +37,16 @@ class NodeGroup(ABC):
         else:
             return False
 
-    def get_aspect_value_of_entities_state(self, service_name : str, aspect_name : str):
+    def get_aspect_value_of_services_state(self, service_name : str, aspect_name : str):
 
-        if self.entities_state is None:
+        if self.services_state is None:
             return ScalingAspect.get(aspect_name)(0)
         else:
-            return self.entities_state.get_aspect_value(service_name, aspect_name)
+            return self.services_state.get_aspect_value(service_name, aspect_name)
 
-    def get_running_entities(self):
+    def get_running_services(self):
 
-        return [] if self.entities_state is None else self.entities_state.get_entities()
+        return [] if self.services_state is None else self.services_state.get_services()
 
 class HomogeneousNodeGroupDummy(NodeGroup):
 
@@ -68,15 +68,15 @@ class HomogeneousNodeGroup(NodeGroup):
 
         node_info = ErrorChecker.key_check_and_load('node_info', group_conf, self.__class__.__name__)
         nodes_count = ErrorChecker.key_check_and_load('nodes_count', group_conf, self.__class__.__name__)
-        entities_instances_counts = ErrorChecker.key_check_and_load('entities_instances_counts', group_conf, self.__class__.__name__)
+        services_instances_counts = ErrorChecker.key_check_and_load('services_instances_counts', group_conf, self.__class__.__name__)
         system_requirements = ErrorChecker.key_check_and_load('system_requirements', group_conf, self.__class__.__name__)
 
-        return cls(node_info, nodes_count, entities_instances_counts, system_requirements)
+        return cls(node_info, nodes_count, services_instances_counts, system_requirements)
 
     def __init__(self,
                  node_info : NodeInfo,
                  nodes_count : int,
-                 entities_instances_counts : dict = {},
+                 services_instances_counts : dict = {},
                  requirements_by_entity : dict = {}):
 
         super().__init__(node_info.get_name(), node_info.get_provider(), nodes_count)
@@ -87,16 +87,16 @@ class HomogeneousNodeGroup(NodeGroup):
         self.downlink = NodeGroupLink(self.node_info.latency, self.nodes_count, self.node_info.network_bandwidth)
         self.shared_processor = RequestsProcessor()
 
-        if isinstance(entities_instances_counts, dict):
-            self.entities_state = EntitiesState(entities_instances_counts, requirements_by_entity)
-        elif isinstance(entities_instances_counts, EntitiesState):
-            self.entities_state = entities_instances_counts
+        if isinstance(services_instances_counts, dict):
+            self.services_state = GroupOfServices(services_instances_counts, requirements_by_entity)
+        elif isinstance(services_instances_counts, GroupOfServices):
+            self.services_state = services_instances_counts
         else:
-            raise TypeError(f'Incorrect type of the entities_instances_counts when creating {self.__class__.__name__}: {entities_instances_counts.__class__.__name__}')
+            raise TypeError(f'Incorrect type of the services_instances_counts when creating {self.__class__.__name__}: {services_instances_counts.__class__.__name__}')
 
-        fits, self.system_resources_usage = self.node_info.entities_require_system_resources(self.entities_state, self.nodes_count)
+        fits, self.system_resources_usage = self.node_info.services_require_system_resources(self.services_state, self.nodes_count)
         if not fits:
-            raise ValueError('An attempt to place entities on a node group of insufficient capacity')
+            raise ValueError('An attempt to place services on a node group of insufficient capacity')
 
     def update_utilization(self, service_name : str,
                            system_resources_usage : SystemResourceUsage,
@@ -168,7 +168,7 @@ class HomogeneousNodeGroup(NodeGroup):
                                         + system_resources_for_req
 
         if (not system_resources_to_be_taken.is_full()) \
-         and (self.entities_state.get_entity_count(req.processing_service) \
+         and (self.services_state.get_entity_count(req.processing_service) \
                > sum( self.shared_processor.get_in_processing_stat(req.processing_service).values() ) ):
             return True
         else:
@@ -182,7 +182,7 @@ class HomogeneousNodeGroup(NodeGroup):
 
         """
         This scale down operation results in reducing the nodes count
-        in the group and may also affect the entities state.
+        in the group and may also affect the services state.
         """
 
         if not isinstance(other_node_group, NodeGroup):
@@ -190,34 +190,34 @@ class HomogeneousNodeGroup(NodeGroup):
 
         if self.can_be_coerced(other_node_group):
 
-            if not other_node_group.entities_state is None:
-                self.entities_state -= other_node_group.entities_state
+            if not other_node_group.services_state is None:
+                self.services_state -= other_node_group.services_state
             else:
                 downsizing_coef = other_node_group.nodes_count / self.nodes_count
-                self.entities_state.downsize_proportionally(downsizing_coef)
+                self.services_state.downsize_proportionally(downsizing_coef)
 
             self.nodes_count -= other_node_group.nodes_count
-            _, self.system_resources_usage = self.node_info.entities_require_system_resources(self.entities_state, self.nodes_count)
+            _, self.system_resources_usage = self.node_info.services_require_system_resources(self.services_state, self.nodes_count)
             self.uplink.update_bandwidth(self.nodes_count)
             self.downlink.update_bandwidth(self.nodes_count)
 
     def extract_scaling_aspects(self):
 
-        return self.entities_state.extract_scaling_aspects()
+        return self.services_state.extract_scaling_aspects()
 
-    def add_to_entities_state(self, entities_group_delta : EntitiesGroupDelta):
+    def add_to_services_state(self, services_group_delta : GroupOfServicesDelta):
 
-        self.entities_state += entities_group_delta
-        _, self.system_resources_usage = self.node_info.entities_require_system_resources(self.entities_state, self.nodes_count)
+        self.services_state += services_group_delta
+        _, self.system_resources_usage = self.node_info.services_require_system_resources(self.services_state, self.nodes_count)
 
-    def nullify_entities_state(self):
+    def nullify_services_state(self):
 
-        self.entities_state = EntitiesState()
+        self.services_state = GroupOfServices()
         self.system_resources_usage = SystemResourceUsage(self.node_info, self.nodes_count)
 
     def copy(self):
 
-        return self.__class__(self.node_info, self.nodes_count, self.entities_state)
+        return self.__class__(self.node_info, self.nodes_count, self.services_state)
 
     def to_delta(self, direction : int = 1):
 
@@ -227,10 +227,10 @@ class HomogeneousNodeGroup(NodeGroup):
         """
 
         node_group = self.copy()
-        node_group.nullify_entities_state()
+        node_group.nullify_services_state()
         node_group_delta = NodeGroupDelta(node_group, sign = direction)
 
-        return GeneralizedDelta(node_group_delta, self.entities_state.to_delta(direction))
+        return GeneralizedDelta(node_group_delta, self.services_state.to_delta(direction))
 
     def _count_aspect_soft_adjustment(self,
                                       unmet_changes : dict,
@@ -248,12 +248,12 @@ class HomogeneousNodeGroup(NodeGroup):
         # Starting with the largest entity and proceeding to the smallest one in terms of
         # resource usage requirements. This is made to reduce the resource usage fragmentation.
         services_cnt_change = {}
-        dynamic_entities_instances_count = self.entities_state.extract_aspect_value('count')
+        dynamic_services_instances_count = self.services_state.extract_aspect_value('count')
 
         for service_name, service_instance_resource_usage in node_sys_resource_usage_by_entity_sorted.items():
-            if service_name in unmet_changes and service_name in dynamic_entities_instances_count:
+            if service_name in unmet_changes and service_name in dynamic_services_instances_count:
 
-                # Case of adding entities to the existing nodes
+                # Case of adding services to the existing nodes
                 if not service_name in services_cnt_change:
                     services_cnt_change[service_name] = 0
 
@@ -269,10 +269,10 @@ class HomogeneousNodeGroup(NodeGroup):
                         node_sys_resource_usage -= service_instance_resource_usage
                         services_cnt_change[service_name] -= 1
 
-                # Case of removing entities from the existing nodes
-                while (unmet_changes[service_name] - services_cnt_change[service_name] < 0) and (dynamic_entities_instances_count[service_name] > 0):
+                # Case of removing services from the existing nodes
+                while (unmet_changes[service_name] - services_cnt_change[service_name] < 0) and (dynamic_services_instances_count[service_name] > 0):
                     node_sys_resource_usage -= service_instance_resource_usage
-                    dynamic_entities_instances_count[service_name] -= 1
+                    dynamic_services_instances_count[service_name] -= 1
                     services_cnt_change[service_name] -= 1
 
         # Trying the same solution temp_accommodation to reduce the amount of iterations by
@@ -288,31 +288,31 @@ class HomogeneousNodeGroup(NodeGroup):
             unmet_changes[service_name] -= count_in_solution
 
         node_group_delta = None
-        entities_group_delta = None
+        services_group_delta = None
         services_cnt_change_count = { service_name : {'count': change_val} for service_name, change_val in services_cnt_change.items() }
 
         if len(services_cnt_change_count) > 0:
             if nodes_to_accommodate_res_usage < self.nodes_count:
                 # scale down for nodes
-                new_entities_instances_counts = self.entities_state.extract_aspect_value('count')
+                new_services_instances_counts = self.services_state.extract_aspect_value('count')
 
-                node_group = HomogeneousNodeGroup(self.node_info, self.nodes_count - nodes_to_accommodate_res_usage, self.entities_state.copy())# ?self.entities_state.copy()
+                node_group = HomogeneousNodeGroup(self.node_info, self.nodes_count - nodes_to_accommodate_res_usage, self.services_state.copy())# ?self.services_state.copy()
 
                 # Planning scale down for min_nodes_needed
                 node_group_delta = NodeGroupDelta(node_group, sign = -1, in_change = True, virtual = False)
 
             else:
-                # scale down/up only for entities, nodegroup remains unchanged
+                # scale down/up only for services, nodegroup remains unchanged
                 node_group_delta = NodeGroupDelta(self.copy(), sign = 1, in_change = False, virtual = True)
 
-            # Planning scale down for all the entities count change from the solution
-            entities_group_delta = EntitiesGroupDelta(services_cnt_change_count, in_change = True, virtual = False,
-                                                      services_reqs = scaled_entity_instance_requirements_by_entity)
+            # Planning scale down for all the services count change from the solution
+            services_group_delta = GroupOfServicesDelta(services_cnt_change_count, in_change = True, virtual = False,
+                                                        services_reqs = scaled_entity_instance_requirements_by_entity)
 
-            gd = GeneralizedDelta(node_group_delta, entities_group_delta)
+            gd = GeneralizedDelta(node_group_delta, services_group_delta)
             generalized_deltas.append(gd)
 
-        # Returning generalized deltas (enforced and not enforced) and the unmet changes in entities counts
+        # Returning generalized deltas (enforced and not enforced) and the unmet changes in services counts
         unmet_changes = {service_name: count for service_name, count in unmet_changes.items() if count != 0}
 
         return (generalized_deltas, unmet_changes)
@@ -322,7 +322,7 @@ class HomogeneousNodeGroup(NodeGroup):
                                 scaled_entity_instance_requirements_by_entity : dict) -> tuple:
 
         """
-        Derives adjustments to the node group in terms of entities added/removed.
+        Derives adjustments to the node group in terms of services added/removed.
         The computation may result in multiple groups.
 
         Before adding an entity instance, it is first checked, whether its
@@ -337,7 +337,7 @@ class HomogeneousNodeGroup(NodeGroup):
 
         # Sort in decreasing order of consumed system resources:
         # both allocation and deallocation profit more from first trying to
-        # place or remove the largest entitites
+        # place or remove the largest services
         node_sys_resource_usage_by_entity_sorted = OrderedDict(reversed(sorted(node_sys_resource_usage_by_entity.items(),
                                                                                 key = lambda elem: elem[1])))
 
@@ -350,10 +350,10 @@ class HomogeneousNodeGroup(NodeGroup):
 
         generalized_deltas = []
         unmet_changes = {}
-        for aspect_name, entities_changes_dict in unmet_changes_per_aspect.items():
+        for aspect_name, services_changes_dict in unmet_changes_per_aspect.items():
             method_name = f'_{aspect_name}_aspect_soft_adjustment'
             #try:
-            aspect_based_generalized_deltas, aspect_based_unmet_changes_res = self.__getattribute__(method_name)(entities_changes_dict,
+            aspect_based_generalized_deltas, aspect_based_unmet_changes_res = self.__getattribute__(method_name)(services_changes_dict,
                                                                                                                      scaled_entity_instance_requirements_by_entity,
                                                                                                                      node_sys_resource_usage_by_entity_sorted)
 
@@ -424,16 +424,16 @@ class GeneralizedDelta:
 
     def __init__(self,
                  node_group_delta : NodeGroupDelta,
-                 entities_group_delta : EntitiesGroupDelta):
+                 services_group_delta : GroupOfServicesDelta):
 
         if not isinstance(node_group_delta, NodeGroupDelta) and not node_group_delta is None:
             raise TypeError(f'The parameter value provided for the initialization of {self.__class__.__name__} is not of {NodeGroupDelta.__name__} type')
 
-        if (not isinstance(entities_group_delta, EntitiesGroupDelta)) and (not entities_group_delta is None):
-            raise TypeError(f'The parameter value provided for the initialization of {self.__class__.__name__} is not of {EntitiesGroupDelta.__name__} type')
+        if (not isinstance(services_group_delta, GroupOfServicesDelta)) and (not services_group_delta is None):
+            raise TypeError(f'The parameter value provided for the initialization of {self.__class__.__name__} is not of {GroupOfServicesDelta.__name__} type')
 
         self.node_group_delta = node_group_delta
-        self.entities_group_delta = entities_group_delta
+        self.services_group_delta = services_group_delta
         self.cached_enforcement = {}
 
     def till_full_enforcement(self,
@@ -460,7 +460,7 @@ class GeneralizedDelta:
         """
         Forms enforced deltas for both parts of the generalized delta and returns
         these as timelines. The enforcement takes into account a sequence of the
-        scaling actions. On scale down, all the entities should terminate first.
+        scaling actions. On scale down, all the services should terminate first.
         On scale up, a node group should boot first.
 
         In addition, it caches the enforcement on first computation since
@@ -478,12 +478,12 @@ class GeneralizedDelta:
             node_group_delta_virtual = None
 
             node_group_delay, node_group_delta = platform_scaling_model.delay(self.node_group_delta)
-            entities_groups_deltas_by_delays = application_scaling_model.delay(self.entities_group_delta)
+            services_groups_deltas_by_delays = application_scaling_model.delay(self.services_group_delta)
 
             if self.node_group_delta.sign < 0:
                 # Adjusting params for the graceful scale down
-                if len(entities_groups_deltas_by_delays) > 0:
-                    max_entity_delay = max(list(entities_groups_deltas_by_delays.keys()))
+                if len(services_groups_deltas_by_delays) > 0:
+                    max_entity_delay = max(list(services_groups_deltas_by_delays.keys()))
                 node_group_delta_virtual = self.node_group_delta.copy()
             elif self.node_group_delta.sign > 0:
                 # Adjusting params for scale up
@@ -496,14 +496,14 @@ class GeneralizedDelta:
                 new_deltas[new_timestamp] = []
             new_deltas[new_timestamp].append(GeneralizedDelta(node_group_delta, None))
 
-            # Deltas for entities -- connecting them to the corresponding nodes
-            for delay, entities_group_delta in entities_groups_deltas_by_delays.items():
+            # Deltas for services -- connecting them to the corresponding nodes
+            for delay, services_group_delta in services_groups_deltas_by_delays.items():
                 new_timestamp = delta_timestamp + delay + delay_from_nodes
                 if not new_timestamp in new_deltas:
                     new_deltas[new_timestamp] = []
 
                 node_group_delta_virtual.virtual = True
-                new_deltas[new_timestamp].append(GeneralizedDelta(node_group_delta_virtual, entities_group_delta))
+                new_deltas[new_timestamp].append(GeneralizedDelta(node_group_delta_virtual, services_group_delta))
 
         self.cached_enforcement[delta_timestamp] = new_deltas
 

@@ -32,7 +32,7 @@ class FaultModel:
             2) if the failure occurs during the simulation, a timestamp is
                randomly selected for it to occur based on the uniform distribution
                across all the simulation steps.
-               
+
         """
 
         self.failures = {}

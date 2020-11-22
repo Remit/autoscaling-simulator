@@ -3,7 +3,7 @@ from collections import OrderedDict
 from .placement import Placement
 from .node_group_state.node_group import HomogeneousNodeGroup, NodeGroupDelta, GeneralizedDelta
 from .node_group_state.node_group_set import HomogeneousNodeGroupSet
-from .entity_state.entity_group import EntitiesGroupDelta, EntitiesState
+from .entity_state.service_group import GroupOfServicesDelta, GroupOfServices
 
 from ..deltarepr.regional_delta import RegionalDelta
 
@@ -79,37 +79,37 @@ class Region:
         return RegionalDelta(self.region_name, generalized_deltas_lst)
 
     def compute_soft_adjustment(self,
-                                entities_deltas_in_scaling_aspects : dict,
-                                scaled_entity_instance_requirements_by_entity : dict) -> tuple:
+                                services_deltas_in_scaling_aspects : dict,
+                                scaled_service_instance_requirements_by_service : dict) -> tuple:
 
         """
-        Tries to place the entities onto the existing nodes and returns
-        deltas in node groups. The groups to add the entities are
+        Tries to place the services onto the existing nodes and returns
+        deltas in node groups. The groups to add the services are
         considered as follows: we start with the homogeneous groups
         that have the most free room.
 
         Does not result in changing the homogeneous groups in region.
         """
 
-        entities_deltas_in_scaling_aspects_sorted = OrderedDict(sorted(entities_deltas_in_scaling_aspects.items(),
+        services_deltas_in_scaling_aspects_sorted = OrderedDict(sorted(services_deltas_in_scaling_aspects.items(),
                                                                        key = lambda elem: elem[1]['count']))
 
         unmet_cumulative_reduction_on_ts = {}
         unmet_cumulative_increase_on_ts = {}
-        for entity_name, entity_delta_in_scaling_aspects in entities_deltas_in_scaling_aspects_sorted.items():
-            for aspect_name, aspect_change_val in entity_delta_in_scaling_aspects.items():
+        for service_name, service_delta_in_scaling_aspects in services_deltas_in_scaling_aspects_sorted.items():
+            for aspect_name, aspect_change_val in service_delta_in_scaling_aspects.items():
                 if aspect_change_val < 0:
-                    entity_changes = unmet_cumulative_reduction_on_ts.get(entity_name, {})
-                    entity_changes[aspect_name] = aspect_change_val
-                    unmet_cumulative_reduction_on_ts[entity_name] = entity_changes
+                    service_changes = unmet_cumulative_reduction_on_ts.get(service_name, {})
+                    service_changes[aspect_name] = aspect_change_val
+                    unmet_cumulative_reduction_on_ts[service_name] = service_changes
                 elif aspect_change_val > 0:
-                    entity_changes = unmet_cumulative_increase_on_ts.get(entity_name, {})
-                    entity_changes[aspect_name] = aspect_change_val
-                    unmet_cumulative_increase_on_ts[entity_name] = entity_changes
+                    service_changes = unmet_cumulative_increase_on_ts.get(service_name, {})
+                    service_changes[aspect_name] = aspect_change_val
+                    unmet_cumulative_increase_on_ts[service_name] = service_changes
 
         non_enforced_scale_down_deltas = []
 
-        # try to remove the entities from the groups sorted
+        # try to remove the services from the groups sorted
         # in the order increasing by capacity used (decomission-fastest)
         new_deltas_per_ts = []
         cur_groups = self.homogeneous_groups.get()
@@ -118,24 +118,24 @@ class Region:
         for group in homogeneous_groups_sorted_increasing:
             if len(unmet_cumulative_reduction_on_ts) > 0:
                 generalized_deltas_lst, unmet_cumulative_reduction_on_ts = group.compute_soft_adjustment(unmet_cumulative_reduction_on_ts,
-                                                                                                         scaled_entity_instance_requirements_by_entity)
+                                                                                                         scaled_service_instance_requirements_by_service)
 
                 for gd in generalized_deltas_lst:
                     if gd.node_group_delta.in_change:
                         # Non-enforced scale down:
                         # - adding the generalized delta to the list of non-enforced
                         # deltas s.t. it can be considered further down for
-                        # accommodating an unmet increase in entities.
+                        # accommodating an unmet increase in service instances.
                         non_enforced_scale_down_deltas.append(gd)
                         # - reducing the size of the considered homogeneous
                         # node group s.t. the up-to-date state is
                         # considered for accommodating the unmet increase on timestamp.
                         group_shrinkage = gd.node_group_delta.node_group.copy()
-                        group_shrinkage.add_to_entities_state(gd.entities_group_delta.to_entities_state())
+                        group_shrinkage.add_to_services_state(gd.services_group_delta.to_services_state())
                         group.shrink(group_shrinkage)
 
                     else:
-                        # Semi-scale down case when only the entities get deleted
+                        # Semi-scale down case when only the services get deleted
                         # and no nodes scale down is performed.
                         new_deltas_per_ts.append(gd)
 
@@ -144,7 +144,7 @@ class Region:
             if group.is_empty():
                 del group
 
-        # try to accommodate the entities in the groups sorted
+        # try to accommodate the service instances in the groups sorted
         # in the order decreasing by capacity used (fill-fastest)
         homogeneous_groups_sorted_decreasing = reversed(sorted(cur_groups, key = lambda elem: elem.system_resources_usage.collapse()))
 
@@ -152,7 +152,7 @@ class Region:
             if len(unmet_cumulative_increase_on_ts) > 0:
 
                 generalized_deltas_lst, unmet_cumulative_increase_on_ts = group.compute_soft_adjustment(unmet_cumulative_increase_on_ts,
-                                                                                                        scaled_entity_instance_requirements_by_entity)
+                                                                                                        scaled_service_instance_requirements_by_service)
 
                 new_deltas_per_ts.extend(generalized_deltas_lst)
 
@@ -163,7 +163,7 @@ class Region:
             for non_enforced_gd in non_enforced_scale_down_deltas:
                 group = non_enforced_gd.node_group_delta.node_group.copy()
                 generalized_deltas_lst, unmet_cumulative_increase_on_ts = group.compute_soft_adjustment(unmet_cumulative_increase_on_ts,
-                                                                                                        scaled_entity_instance_requirements_by_entity)
+                                                                                                        scaled_service_instance_requirements_by_service)
 
                 if len(generalized_deltas_lst) > 0:
                     # The intended scale down did not happen, hence
@@ -172,7 +172,7 @@ class Region:
                     # for the timestamp.
                     new_deltas_per_ts.extend(generalized_deltas_lst)
                 else:
-                    # No entities instances to accommodate on the
+                    # No service instances to accommodate on the
                     # non-enforced scale down node group, hence
                     # the corresponding generalized delta is added
                     # to the list for enforcement.
@@ -184,34 +184,10 @@ class Region:
 
         return (regional_delta, unmet_changes_on_ts)
 
-    # ToDO: consider deleting
-    #def update_node_groups(self, homogeneous_groups_deltas : list):
-
-    #    """
-    #    If the groups to be added are already present among the self.homogeneous_groups,
-    #    then they are substituted for the parameter passed.
-
-    #    Changes the homogeneous groups in region.
-    #    """
-
-    #    try:
-    #        for group_delta in homogeneous_groups_deltas:
-    #            self.homogeneous_groups += group_delta
-    #    except TypeError:
-    #        raise TypeError(f'An operand is not iterable for {self.__class__.__name__}')
-
-    # ToDO: consider deleting
-    #def update_entities(self,
-    #                    node_group_id : int,
-    #                    entities_group_delta : EntitiesGroupDelta):
-
-    #    self.homogeneous_groups.update_entities(node_group_id,
-    #                                            entities_group_delta)
-
     def __add__(self, regional_delta : RegionalDelta):
 
         if not isinstance(regional_delta, RegionalDelta):
-            raise TypeError(f'An attempt to add an entity of type {regional_delta.__class__.__name__} to the {self.__class__.__name__}')
+            raise TypeError(f'An attempt to add a service of type {regional_delta.__class__.__name__} to the {self.__class__.__name__}')
 
         if regional_delta.region_name != self.region_name:
             raise ValueError(f'An attempt to add the delta for region {regional_delta.region_name} to the Region {self.region_name}')
@@ -221,26 +197,26 @@ class Region:
 
         return Region(self.region_name, homogeneous_groups)
 
-    def finish_change_for_entities(self,
-                                   entities_booting_period_expired,
-                                   entities_termination_period_expired):
+    #def finish_change_forservices_(self,
+    #                               services_booting_period_expired,
+    #                               services_termination_period_expired):
+    #
+    #    """
+    #    Transfers in-change services (booting/terminating) into the ready state by
+    #    modifying in_change_services_instances_counts and services_instances_counts
+    #    of the node_group. Changes the state.
+    #    """
 
-        """
-        Transfers in-change entities (booting/terminating) into the ready state by
-        modifying in_change_entities_instances_counts and entities_instances_counts
-        of the node_group. Changes the state.
-        """
+    #    for group in self.homogeneous_groups:
+    #        new_group = group.finish_change_forservices_(services_booting_period_expired,
+    #                                                     services_termination_period_expired)
+    #        self.homogeneous_groups.remove_group_by_id(group.id)
+    #        self.homogeneous_groups.add_group(new_group)
 
+    def extract_collective_services_state(self):
+
+        region_collective_service_state = GroupOfServices()
         for group in self.homogeneous_groups:
-            new_group = group.finish_change_for_entities(entities_booting_period_expired,
-                                                         entities_termination_period_expired)
-            self.homogeneous_groups.remove_group_by_id(group.id)
-            self.homogeneous_groups.add_group(new_group)
+            region_collective_service_state += group.services_state
 
-    def extract_collective_entities_state(self):
-
-        region_collective_entity_state = EntitiesState()
-        for group in self.homogeneous_groups:
-            region_collective_entity_state += group.entities_state
-
-        return region_collective_entity_state
+        return region_collective_service_state

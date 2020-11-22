@@ -2,17 +2,15 @@ import pandas as pd
 
 from ..system_resource_usage import SystemResourceUsage
 
-from ...scaling.policiesbuilder.scaled.scaled_container import ScaledContainer
-
 from ...utils.size import Size
 from ...utils.requirements import ResourceRequirements
-from ...utils.state.entity_state.entity_group import EntitiesState
+from ...utils.state.entity_state.service_group import GroupOfServices
 
-class NodeInfo(ScaledContainer):
+class NodeInfo:
 
     """
     Holds static information about the node type, e.g. virtual machine.
-    NodeInfo realizes interface of the ScaledEntityContainer class to
+    NodeInfo realizes interface of the ScaledContainer class to
     fulfill the expectations of the adjusting algorithms when scaling.
     """
 
@@ -65,26 +63,26 @@ class NodeInfo(ScaledContainer):
 
         return SystemResourceUsage(self, 1, res_requirements.to_dict())
 
-    def entities_require_system_resources(self, entities_state : EntitiesState,
+    def services_require_system_resources(self, services_state : GroupOfServices,
                                           instances_count : int = 1) -> tuple:
 
         """
-        Calculates system resource usage by the entities if they
+        Calculates system resource usage by the services if they
         are to be accommodated on the node. If no state is provided, each
-        entity is assumed to have a single instance. Otherwise, the instance
+        service is assumed to have a single instance. Otherwise, the instance
         count is taken from the state. In addition, the method returns whether
-        the entities can at all be accommodated by this node type.
+        the services can at all be accommodated by this node type.
         """
 
-        if not isinstance(entities_state, EntitiesState):
-            raise TypeError(f'Unexpected type provided to compute the required capacity: {type(entities_state)}')
+        if not isinstance(services_state, GroupOfServices):
+            raise TypeError(f'Unexpected type provided to compute the required capacity: {type(services_state)}')
 
-        requirements_by_entity = entities_state.get_entities_requirements()
-        counts_by_entity = entities_state.get_entities_counts()
+        requirements_by_service = services_state.get_services_requirements()
+        counts_by_service = services_state.get_services_counts()
 
         joint_resource_requirements = ResourceRequirements.new_empty_resource_requirements()
-        for entity_name, requirements in requirements_by_entity.items():
-            factor = counts_by_entity[entity_name]
+        for service_name, requirements in requirements_by_service.items():
+            factor = counts_by_service[service_name]
             joint_resource_requirements += factor * requirements
 
         for label in joint_resource_requirements.labels:

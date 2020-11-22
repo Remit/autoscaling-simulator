@@ -3,7 +3,6 @@ import numbers
 
 from ..utils.state.usage import Usage
 from ..utils.size import Size
-from ..scaling.policiesbuilder.scaled.scaled_container import ScaledContainer
 
 class SystemResourceUsage(Usage):
 
@@ -22,7 +21,7 @@ class SystemResourceUsage(Usage):
     }
 
     def __init__(self,
-                 node_info : ScaledContainer,
+                 node_info : 'NodeInfo',
                  instance_count : int = 1,
                  system_resources_usage : dict = {'vCPU' : 0, 'memory' : Size(0),
                                                   'disk': Size(0),

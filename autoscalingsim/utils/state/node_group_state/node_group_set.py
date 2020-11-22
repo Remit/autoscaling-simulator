@@ -1,4 +1,4 @@
-from ..placement import Placement, EntitiesPlacement
+from ..placement import Placement, ServicesPlacement
 from .node_group import HomogeneousNodeGroup, GeneralizedDelta, NodeGroupDelta
 from ...deltarepr.regional_delta import RegionalDelta
 
@@ -10,10 +10,10 @@ class HomogeneousNodeGroupSet:
     def from_conf(cls : type, placement : Placement):
 
         homogeneous_groups = []
-        for entity_placement in placement:
-            homogeneous_groups.append(HomogeneousNodeGroup(entity_placement.node_info,
-                                                           entity_placement.nodes_count,
-                                                           entity_placement.entities_state))
+        for service_placement in placement:
+            homogeneous_groups.append(HomogeneousNodeGroup(service_placement.node_info,
+                                                           service_placement.nodes_count,
+                                                           service_placement.services_state))
 
         return cls(homogeneous_groups)
 
@@ -27,7 +27,7 @@ class HomogeneousNodeGroupSet:
             self._homogeneous_groups = {}
             for group in homogeneous_groups:
                 if not isinstance(group, HomogeneousNodeGroup):
-                    raise TypeError(f'An entity of unknown type {group.__class__.__name__} when initializing {self.__class__.__name__}')
+                    raise TypeError(f'An unknown type {group.__class__.__name__} when initializing {self.__class__.__name__}')
                 self._homogeneous_groups[group.id] = group
 
         self._in_change_homogeneous_groups = homogeneous_groups_in_change
@@ -36,13 +36,13 @@ class HomogeneousNodeGroupSet:
 
     def to_placement(self):
 
-        entities_placements = []
+        services_placements = []
         for group in self._homogeneous_groups.values():
-            entities_placements.append(EntitiesPlacement(group.node_info,
+            services_placements.append(ServicesPlacement(group.node_info,
                                                          group.nodes_count,
-                                                         group.entities_state))
+                                                         group.services_state))
 
-        return Placement(entities_placements)
+        return Placement(services_placements)
 
     def __add__(self, regional_delta : RegionalDelta):
 
@@ -68,26 +68,26 @@ class HomogeneousNodeGroupSet:
 
         if node_group_delta.virtual:
 
-            entities_group_delta = generalized_delta.entities_group_delta
+            services_group_delta = generalized_delta.services_group_delta
 
             # If the node group delta is virtual, then add/remove
-            # entities given in entities_group_delta to/from the corresponding
+            # services given in services_group_delta to/from the corresponding
             # node group
-            if entities_group_delta.in_change == in_change:
+            if services_group_delta.in_change == in_change:
                 if node_group_delta.node_group.id in groups_to_change:
-                    groups_to_change[node_group_delta.node_group.id].add_to_entities_state(entities_group_delta)
+                    groups_to_change[node_group_delta.node_group.id].add_to_services_state(services_group_delta)
                 else:
-                    # attempt to find an appropriate candidate for failing its entities
+                    # attempt to find an appropriate candidate for failing its services
                     for group in groups_to_change.values():
-                        if group.entities_state.can_be_coerced(entities_group_delta):
-                            group.add_to_entities_state(entities_group_delta)
+                        if group.services_state.can_be_coerced(services_group_delta):
+                            group.add_to_services_state(services_group_delta)
 
-                            compensating_entities_group_delta = entities_group_delta.copy()
-                            compensating_entities_group_delta.set_count_sign(1)
-                            compensating_entities_group_delta.in_change = True
+                            compensating_services_group_delta = services_group_delta.copy()
+                            compensating_services_group_delta.set_count_sign(1)
+                            compensating_services_group_delta.in_change = True
                             compensating_node_group_delta = NodeGroupDelta(group, in_change = False, virtual = True)
                             self.failures_compensating_deltas.append(GeneralizedDelta(compensating_node_group_delta,
-                                                                                      compensating_entities_group_delta))
+                                                                                      compensating_services_group_delta))
 
         else:
             # If the node group delta is not virtual, then add/remove it
@@ -112,7 +112,7 @@ class HomogeneousNodeGroupSet:
                                 compensating_node_group_delta.sign = 1
                                 compensating_node_group_delta.in_change = True
                                 self.failures_compensating_deltas.append(GeneralizedDelta(compensating_node_group_delta,
-                                                                                          group.entities_state.to_delta(direction = 1)))
+                                                                                          group.services_state.to_delta(direction = 1)))
                             break
 
                     for group_id in self.removed_node_group_ids:

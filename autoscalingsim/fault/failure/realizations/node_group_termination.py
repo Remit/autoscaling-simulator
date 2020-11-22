@@ -13,7 +13,7 @@ class NodeGroupTerminationFailure(NodeGroupFailure):
     def to_regional_state_delta(self):
 
         node_group = HomogeneousNodeGroupDummy(self.node_type, self.provider,
-                                               self.count_of_entities_affected)
+                                               self.count_of_services_affected)
 
         node_group_delta = NodeGroupDelta(node_group, sign = -1,
                                           in_change = False, virtual = False)

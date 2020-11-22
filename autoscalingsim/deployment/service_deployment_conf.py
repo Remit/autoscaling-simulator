@@ -1,5 +1,5 @@
 from ..utils.deltarepr.regional_delta import RegionalDelta
-from ..utils.state.entity_state.entity_group import EntitiesGroupDelta
+from ..utils.state.entity_state.service_group import GroupOfServicesDelta
 from ..utils.state.node_group_state.node_group import HomogeneousNodeGroup, NodeGroupDelta, GeneralizedDelta
 from ..utils.requirements import ResourceRequirements
 from ..utils.deltarepr.platform_state_delta import PlatformStateDelta
@@ -36,8 +36,8 @@ class ServiceDeploymentConfiguration:
             node_group = HomogeneousNodeGroup(self.node_infos_regionalized[region_name],
                                               self.node_counts_regionalized[region_name])
             gen_delta = GeneralizedDelta(NodeGroupDelta(node_group),
-                                         EntitiesGroupDelta({self.service_name: self.init_service_aspects_regionalized[region_name]},
-                                                            services_reqs = {self.service_name: self.system_requirements}))
+                                         GroupOfServicesDelta({self.service_name: self.init_service_aspects_regionalized[region_name]},
+                                                              services_reqs = {self.service_name: self.system_requirements}))
 
             regional_deltas_lst.append(RegionalDelta(region_name, [gen_delta]))
 

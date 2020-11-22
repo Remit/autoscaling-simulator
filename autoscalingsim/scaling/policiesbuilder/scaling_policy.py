@@ -79,15 +79,15 @@ class ScalingPolicy:
             raise ValueError(f'No {self.__class__.__name__} configuration file found under the path {config_file}')
 
         self.scaling_settings = ScalingPolicyConfiguration(config_file)
-        scaling_model.initialize_with_entities_scaling_conf(self.scaling_settings.services_scaling_config)
+        scaling_model.initialize_with_services_scaling_conf(self.scaling_settings.services_scaling_config)
         self.platform_model.set_adjustment_policy(AdjustmentPolicy(scaling_model,
                                                                    self.scaling_settings))
 
     def init_adjustment_policy(self,
-                               entity_instance_requirements : dict,
+                               service_instance_requirements : dict,
                                state_reader : StateReader):
 
-        self.platform_model.init_adjustment_policy(entity_instance_requirements,
+        self.platform_model.init_adjustment_policy(service_instance_requirements,
                                                    state_reader)
 
     def reconcile_state(self, cur_timestamp : pd.Timestamp):

@@ -37,7 +37,6 @@ class ScalingModel:
 
             self.application_scaling_model = ApplicationScalingModel(service_scaling_infos_raw)
 
-    def initialize_with_entities_scaling_conf(self,
-                                              services_scaling_config : dict):
+    def initialize_with_services_scaling_conf(self, services_scaling_config : dict):
 
-        self.application_scaling_model.initialize_with_entities_scaling_conf(services_scaling_config)
+        self.application_scaling_model.initialize_with_services_scaling_conf(services_scaling_config)

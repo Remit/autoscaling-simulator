@@ -7,7 +7,7 @@ class ScalingAspect(ABC):
 
     """
     An abstract interface for various scaling aspects associated with
-    scaled entities. Scaling aspect can only take on non-negative vals.
+    scaled services. Scaling aspect can only take on non-negative vals.
     """
 
     _Registry = {}

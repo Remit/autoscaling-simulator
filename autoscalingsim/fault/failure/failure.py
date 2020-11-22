@@ -11,10 +11,10 @@ class Failure(ABC):
         pass
 
     def __init__(self, region_name : str,
-                 count_of_entities_affected : int):
+                 count_of_services_affected : int):
 
         self.region_name = region_name
-        self.count_of_entities_affected = count_of_entities_affected
+        self.count_of_services_affected = count_of_services_affected
 
 class ServiceFailure(Failure):
 
@@ -43,10 +43,10 @@ class ServiceFailure(Failure):
 
     def __init__(self,
                  region_name : str,
-                 count_of_entities_affected : int,
+                 count_of_services_affected : int,
                  failure_type_conf : dict):
 
-        super().__init__(region_name, count_of_entities_affected)
+        super().__init__(region_name, count_of_services_affected)
         self.service_name = ErrorChecker.key_check_and_load('service_name', failure_type_conf)
 
 class NodeGroupFailure(Failure):
@@ -76,10 +76,10 @@ class NodeGroupFailure(Failure):
 
     def __init__(self,
                  region_name : str,
-                 count_of_entities_affected : int,
+                 count_of_services_affected : int,
                  failure_type_conf : dict):
 
-        super().__init__(region_name, count_of_entities_affected)
+        super().__init__(region_name, count_of_services_affected)
         self.node_type = ErrorChecker.key_check_and_load('node_type', failure_type_conf)
         self.provider = ErrorChecker.key_check_and_load('provider', failure_type_conf)
 

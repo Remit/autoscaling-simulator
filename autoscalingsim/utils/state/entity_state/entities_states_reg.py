@@ -1,4 +1,4 @@
-from .entity_group import EntitiesState
+from .service_group import GroupOfServices
 
 class EntitiesStatesRegionalized:
 
@@ -12,11 +12,10 @@ class EntitiesStatesRegionalized:
 
         self._entities_states_per_region = {}
         for region_name, value in entities_states_per_region.items():
-            if isinstance(value, EntitiesState):
+            if isinstance(value, GroupOfServices):
                 self.add_state(region_name, value)
             elif isinstance(value, dict) and len(value) > 0:
-                self._entities_states_per_region[region_name] = EntitiesState(value,
-                                                                              entities_res_reqs)
+                self._entities_states_per_region[region_name] = GroupOfServices(value, entities_res_reqs)
 
     def __add__(self,
                 other_regionalized_states : 'EntitiesStatesRegionalized'):
@@ -48,10 +47,10 @@ class EntitiesStatesRegionalized:
 
     def add_state(self,
                   region_name : str,
-                  entities_state : EntitiesState,
+                  entities_state : GroupOfServices,
                   sign : int = 1):
 
-        if not isinstance(entities_state, EntitiesState):
+        if not isinstance(entities_state, GroupOfServices):
             raise TypeError(f'An attempt to add to {self.__class__.__name__} an operand of a wrong type {entities_state.__class__.__name__}')
 
         if (not region_name in self._entities_states_per_region) and (sign == 1):
@@ -87,7 +86,7 @@ class EntitiesStatesRegionalized:
 
         entities_counts_per_region = {}
         for region_name, entities_state in self._entities_states_per_region.items():
-            entities_counts_per_region[region_name] = entities_state.extract_aspect_representation(scaled_aspect_name)
+            entities_counts_per_region[region_name] = entities_state.get_scaling_aspect_for_every_service(scaled_aspect_name)
 
         return entities_counts_per_region
 
