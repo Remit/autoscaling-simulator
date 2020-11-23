@@ -3,11 +3,6 @@ import numbers
 import pandas as pd
 
 from .metric.scalingmetric import MetricDescription
-from .metric.valuesfilter import ValuesFilter
-from .metric.valuesaggregator import ValuesAggregator
-from .metric.stabilizer import Stabilizer
-from .metric.forecasting import MetricForecaster
-
 from .scaled.scaled_service_settings import ScaledServiceScalingSettings
 
 from ...utils.error_check import ErrorChecker

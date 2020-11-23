@@ -3,7 +3,7 @@ import pandas as pd
 from .valuesfilter import ValuesFilter
 from .valuesaggregator import ValuesAggregator
 from .stabilizer import Stabilizer
-from . import forecasting
+from .forecasting.forecaster import MetricForecaster
 from .limiter import Limiter
 
 from ....utils.state.statemanagers import StateReader
@@ -264,7 +264,7 @@ class ScalingMetric:
         # The use of the "predictive" demands presence of the
         # forecaster.
         self.timing_type = timing_type
-        self.forecaster = forecasting.MetricForecaster(timing_type, forecaster_conf)
+        self.forecaster = MetricForecaster(timing_type, forecaster_conf)
 
         # either continuous (for vertical scaling) or discrete (for
         # horizontal scaling)
