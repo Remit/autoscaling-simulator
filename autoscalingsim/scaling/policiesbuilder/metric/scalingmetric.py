@@ -1,7 +1,7 @@
 import pandas as pd
 
 from .valuesfilter import ValuesFilter
-from .valuesaggregator import ValuesAggregator
+from .aggregation.valuesaggregator import ValuesAggregator
 from .stabilization.stabilizer import Stabilizer
 from .forecasting.forecaster import MetricForecaster
 from .limiter import Limiter
