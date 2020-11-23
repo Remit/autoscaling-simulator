@@ -1,4 +1,3 @@
-import numpy as np
 import numbers
 from abc import ABC, abstractmethod
 
