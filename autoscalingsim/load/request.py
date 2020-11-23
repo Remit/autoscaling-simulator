@@ -6,10 +6,11 @@ from ..utils.requirements import ResourceRequirements
 class Request:
 
     """
-    Wraps both static and dynamic information of an individual request.
-    Since simulator aims at capturing the tail latency bahviour, each request
-    matters. The processing times in Request are dynamically updated when
-    the request passes through the services that process it.
+    Combines static and dynamic information of an individual request/response.
+    Since simulator aims at capturing the tail latency bahavior, each request
+    matters. The processing times are dynamically updated when the request
+    passes through the services. A request becomes a response once its upstream
+    flag is dropped.
     """
 
     def __init__(self, region_name : str, request_type : str, request_id = None):
@@ -30,5 +31,5 @@ class Request:
         self.replies_expected = 1 # to implement the fan-in on the level of service
 
     def set_downstream(self):
-        
+
         self.upstream = False

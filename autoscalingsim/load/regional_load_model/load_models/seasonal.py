@@ -3,7 +3,7 @@ import numpy as np
 import calendar
 
 from ..regional_load_model import RegionalLoadModel
-from ..requests_distributions import SlicedRequestsNumDistribution
+from .requests_distribution.requests_distribution import SlicedRequestsNumDistribution
 from ...request import Request
 from ....utils.error_check import ErrorChecker
 
