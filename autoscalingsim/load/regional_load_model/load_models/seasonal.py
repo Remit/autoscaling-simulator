@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
-import calendar
 
+from .parsers.patterns_parsers.seasonal_load_parser import SeasonalLoadPatternParser
 from .parsers.reqs_distributions_parser import DistributionsParser
 from .parsers.reqs_ratios_parser import RatiosParser
 from ..regional_load_model import RegionalLoadModel
@@ -11,16 +11,7 @@ from ....utils.error_check import ErrorChecker
 @RegionalLoadModel.register('seasonal')
 class SeasonalLoadModel(RegionalLoadModel):
 
-    """
-    Implementation of the seasonal load generation model.
-
-    TODO:
-        implement support for holidays etc.
-    """
-
     SECONDS_IN_DAY = 86_400
-    MONTHS_IDS = {month: index for index, month in enumerate(calendar.month_abbr) if month}
-    MONTHS_IDS['all'] = 0
 
     def __init__(self,
                  region_name : str,
@@ -31,34 +22,9 @@ class SeasonalLoadModel(RegionalLoadModel):
         # Static state
         self.region_name = region_name
         self.simulation_step = simulation_step
-        self.reqs_types_ratios = {}
-        self.reqs_generators = {}
-        self.monthly_vals = {}
+        self.load = {}
 
-        pattern_type = ErrorChecker.key_check_and_load('type', pattern, 'region_name', self.region_name)
-        if pattern_type == 'values':
-
-            params = ErrorChecker.key_check_and_load('params', pattern, 'region_name', self.region_name)
-            for pattern in params:
-
-                month = ErrorChecker.key_check_and_load('month', pattern, 'region_name', self.region_name)
-                if not month in self.__class__.MONTHS_IDS:
-                    raise ValueError(f'Unknown month provided: {month}')
-
-                month_id = self.__class__.MONTHS_IDS[month]
-                if not month_id in self.monthly_vals:
-                    self.monthly_vals[month_id] = {}
-
-                day_of_week = ErrorChecker.key_check_and_load('day_of_week', pattern, 'region_name', self.region_name)
-                if day_of_week == 'weekday':
-                    for day_id in range(5):
-                        self.monthly_vals[month_id][day_id] = ErrorChecker.key_check_and_load('values', pattern, 'region_name', self.region_name)
-                elif day_of_week == 'weekend':
-                    for day_id in range(5, 7):
-                        self.monthly_vals[month_id][day_id] = ErrorChecker.key_check_and_load('values', pattern, 'region_name', self.region_name)
-                else:
-                    raise ValueError(f'day_of_week value {day_of_week} undefined for {self.__class__.__name__}')
-
+        self.monthly_vals = SeasonalLoadPatternParser.get(ErrorChecker.key_check_and_load('type', pattern, 'region_name', self.region_name)).parse(pattern)
         self.reqs_types_ratios = RatiosParser.parse(load_configs)
         self.reqs_generators = DistributionsParser.parse(load_configs)
 
@@ -77,10 +43,9 @@ class SeasonalLoadModel(RegionalLoadModel):
         self.current_month = -1
         self.current_time_unit = -1
         self.cur_second_in_time_unit = -1
-        self.load = {}
 
-    def generate_requests(self,
-                          timestamp : pd.Timestamp):
+    def generate_requests(self, timestamp : pd.Timestamp):
+
         gen_reqs = []
         month = 0
         if timestamp.month in self.monthly_vals:

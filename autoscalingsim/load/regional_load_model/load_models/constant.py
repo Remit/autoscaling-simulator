@@ -1,5 +1,6 @@
 import pandas as pd
 
+from .parsers.patterns_parsers.constant_load_parser import ConstantLoadPatternParser
 from .parsers.reqs_ratios_parser import RatiosParser
 from ..regional_load_model import RegionalLoadModel
 from ...request import Request
@@ -14,32 +15,10 @@ class ConstantLoadModel(RegionalLoadModel):
                  simulation_step : pd.Timedelta):
 
         self.region_name = region_name
-        self.load_distribution_in_steps_buckets = None
-        self.reqs_types_ratios = {}
-        self.interval_of_time = None
         self.simulation_step = simulation_step
         self.load = {}
 
-        pattern_type = ErrorChecker.key_check_and_load('type', pattern, 'region_name', self.region_name)
-        if pattern_type == 'single_value':
-
-            params = ErrorChecker.key_check_and_load('params', pattern, 'region_name', self.region_name)
-            requests_count_per_unit_of_time = ErrorChecker.key_check_and_load('value', params, 'region_name', self.region_name)
-            interval_of_time_raw = ErrorChecker.key_check_and_load('interval_of_time', params, 'region_name', self.region_name)
-            unit_of_time = ErrorChecker.key_check_and_load('unit_of_time', params, 'region_name', self.region_name)
-            self.interval_of_time = pd.Timedelta(interval_of_time_raw, unit = unit_of_time)
-
-            if self.simulation_step > self.interval_of_time:
-                raise ValueError('The simulation step should be smaller or equal to the interval of time, for which the requests are generated')
-
-            simulation_steps_count = self.interval_of_time // self.simulation_step
-            requests_count_per_simulation_step = requests_count_per_unit_of_time // simulation_steps_count
-            self.load_distribution_in_steps_buckets = [requests_count_per_simulation_step] * simulation_steps_count
-            # Distributing the leftovers (if any)
-            leftover_requests_count = requests_count_per_unit_of_time % simulation_steps_count
-            for i in range(leftover_requests_count):
-                self.load_distribution_in_steps_buckets[i] += 1
-
+        self.interval_of_time, self.load_distribution_in_steps_buckets = ConstantLoadPatternParser.get(ErrorChecker.key_check_and_load('type', pattern, 'region_name', self.region_name)).parse(pattern, simulation_step)
         self.reqs_types_ratios = RatiosParser.parse(load_configs)
 
     def generate_requests(self, timestamp : pd.Timestamp):
