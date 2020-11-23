@@ -1,6 +1,6 @@
 import pandas as pd
 
-from .valuesfilter import ValuesFilter
+from .filtering.valuesfilter import ValuesFilter
 from .aggregation.valuesaggregator import ValuesAggregator
 from .stabilization.stabilizer import Stabilizer
 from .forecasting.forecaster import MetricForecaster

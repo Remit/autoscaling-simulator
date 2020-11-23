@@ -1,4 +1,3 @@
-import pandas as pd
 from abc import ABC, abstractmethod
 
 class ValuesFilter(ABC):
@@ -37,21 +36,4 @@ class ValuesFilter(ABC):
 
         return cls._Registry[name]
 
-@ValuesFilter.register('defaultNA')
-class DefaultNA(ValuesFilter):
-
-    """
-    Substitutes all the NA values for the default value, e.g. 0.
-    """
-
-    def __init__(self, config : dict):
-
-        param_key = 'default_value'
-        if param_key in config:
-            self.default_value = config[param_key]
-        else:
-            raise ValueError(f'Not found key {param_key} in the parameters of the {self.__class__.__name__} filter.')
-
-    def __call__(self, values : pd.DataFrame):
-
-        return values.fillna(self.default_value)
+from .filters import *
