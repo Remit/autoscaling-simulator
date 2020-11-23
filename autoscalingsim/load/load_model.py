@@ -35,10 +35,4 @@ class LoadModel:
 
     def get_generated_load(self):
 
-        load = {}
-        for region_name, region_load_model in self.region_models.items():
-            load[region_name] = {}
-            for req_type, dict_load in region_load_model.load.items():
-                load[region_name][req_type] = pd.DataFrame(dict_load).set_index('datetime')
-
-        return load
+        return { region_name : region_load_model.get_stat() for region_name, region_load_model in self.region_models.items()}

@@ -37,6 +37,10 @@ class RegionalLoadModel(ABC):
 
         pass
 
+    def get_stat(self):
+
+        return { req_type : pd.DataFrame(dict_load).set_index('datetime') for req_type, dict_load in self.load.items() }
+
     def _update_stat(self, timestamp : pd.Timestamp, req_type : str, reqs_num : int):
 
         """ Stat is stored as dicts to improve the performance that suffers when using dataframes frequently """
