@@ -7,7 +7,7 @@ from . import forecasting
 from .limiter import Limiter
 
 from ....utils.state.statemanagers import StateReader
-from ....utils.state.entity_state.entities_states_reg import EntitiesStatesRegionalized
+from ....utils.state.entity_state.group_of_services_reg import GroupOfServicesRegionalized
 from ....utils.state.entity_state.scaling_aspects import ScalingAspect
 from ....utils.error_check import ErrorChecker
 
@@ -24,7 +24,7 @@ class MetricDescription:
     }
 
     def __init__(self,
-                 entity_name,
+                 service_name,
                  aspect_name,
                  metric_source_name,
                  metric_name,
@@ -38,9 +38,9 @@ class MetricDescription:
                  priority,
                  initial_max_limit,
                  initial_min_limit,
-                 initial_entity_representation_in_metric):
+                 initial_service_representation_in_metric):
 
-        self.entity_name = entity_name
+        self.service_name = service_name
         self.aspect_name = aspect_name
         self.metric_source_name = metric_source_name
         self.metric_name = metric_name
@@ -54,17 +54,17 @@ class MetricDescription:
         self.priority = priority
         self.initial_max_limit = initial_max_limit
         self.initial_min_limit = initial_min_limit
-        self.initial_entity_representation_in_metric = initial_entity_representation_in_metric
+        self.initial_service_representation_in_metric = initial_service_representation_in_metric
         self.state_reader = None
 
     def convert_to_metric(self,
                           regions : list,
-                          entity_name : str = None,
+                          service_name : str = None,
                           metric_source_name : str = None,
                           state_reader : StateReader = None):
 
-        if entity_name is None:
-            entity_name = self.entity_name
+        if service_name is None:
+            service_name = self.service_name
 
         if metric_source_name is None:
             metric_source_name = self.metric_source_name
@@ -73,7 +73,7 @@ class MetricDescription:
             state_reader = self.state_reader
 
         return ScalingMetricRegionalized(regions,
-                                         entity_name,
+                                         service_name,
                                          self.aspect_name,
                                          metric_source_name,
                                          self.metric_name,
@@ -87,7 +87,7 @@ class MetricDescription:
                                          self.priority,
                                          self.initial_max_limit,
                                          self.initial_min_limit,
-                                         self.initial_entity_representation_in_metric,
+                                         self.initial_service_representation_in_metric,
                                          state_reader)
 
 class ScalingMetricRegionalized:
@@ -101,7 +101,7 @@ class ScalingMetricRegionalized:
 
     def __init__(self,
                  regions : list,
-                 entity_name : str,
+                 service_name : str,
                  aspect_name : str,
                  metric_source_name : str,
                  metric_name : str,
@@ -115,17 +115,17 @@ class ScalingMetricRegionalized:
                  priority : int,
                  max_limit : float,
                  min_limit : float,
-                 entity_representation_in_metric : float,
+                 service_representation_in_metric : float,
                  state_reader : StateReader):
 
-        # Description of the entity to scale, includes:
-        # - the name of the entity to scale, e.g. service name
-        # - the name of the entity's aspect to scale, e.g. instance count
-        self.entity_name = entity_name
+        # Description of the service to scale, includes:
+        # - the name of the service to scale, e.g. service name
+        # - the name of the service's aspect to scale, e.g. instance count
+        self.service_name = service_name
         self.aspect_name = aspect_name
 
         # Description of the metric used for scaling, includes:
-        # - the name of the metric source, e.g. service name or the name of some external entity
+        # - the name of the metric source, e.g. service name or the name of some external service
         # - the name of the metric in the metric source specified by the name above
         self.metric_source_name = metric_source_name
         self.metric_name = metric_name
@@ -148,30 +148,30 @@ class ScalingMetricRegionalized:
                                                                  priority,
                                                                  max_limit_aspect,
                                                                  min_limit_aspect,
-                                                                 entity_representation_in_metric)
+                                                                 service_representation_in_metric)
 
     def __call__(self):
 
         """
         Computes desired aspect value according to the metric for each region.
         The returned dataframe is transformed into an aggregated timeline of
-        regionalized entities state. In each entities state there is information
-        only for a single entity since the metric is associated with a single entity.
-        The aggregation across multiple entities happends at the Scaling Manager.
+        regionalized services state. In each services state there is information
+        only for a single service since the metric is associated with a single service.
+        The aggregation across multiple services happends at the Scaling Manager.
         """
 
         regionalized_desired_ts_raw = {}
         for region_name, metric in self.metrics_per_region.items():
 
-            metric_vals = self.state_reader.get_metric_value(self.entity_name,
+            metric_vals = self.state_reader.get_metric_value(self.service_name,
                                                              region_name,
                                                              self.metric_name)
 
-            cur_aspect_val = self.state_reader.get_aspect_value(self.entity_name,
+            cur_aspect_val = self.state_reader.get_aspect_value(self.service_name,
                                                                 region_name,
                                                                 self.aspect_name)
 
-            entity_res_reqs = self.state_reader.get_resource_requirements(self.entity_name,
+            service_res_reqs = self.state_reader.get_resource_requirements(self.service_name,
                                                                           region_name)
 
             desired_scaled_aspect_val_pr = metric(metric_vals, cur_aspect_val)
@@ -183,12 +183,12 @@ class ScalingMetricRegionalized:
                 if not timestamp in regionalized_desired_ts_raw:
                     regionalized_desired_ts_raw[timestamp] = {}
                 regionalized_desired_ts_raw[timestamp][region_name] = {}
-                regionalized_desired_ts_raw[timestamp][region_name][self.entity_name] = aspects_dict
+                regionalized_desired_ts_raw[timestamp][region_name][self.service_name] = aspects_dict
 
         timeline_of_regionalized_desired_states = {}
         for timestamp, regionalized_desired_val in regionalized_desired_ts_raw.items():
-            timeline_of_regionalized_desired_states[timestamp] = EntitiesStatesRegionalized(regionalized_desired_val,
-                                                                                            {self.entity_name: entity_res_reqs})
+            timeline_of_regionalized_desired_states[timestamp] = GroupOfServicesRegionalized(regionalized_desired_val,
+                                                                                            {self.service_name: service_res_reqs})
 
         return timeline_of_regionalized_desired_states
 
@@ -196,8 +196,8 @@ class ScalingMetric:
 
     """
     Abstract description of a metric used to determine by how much should the
-    associated entity be scaled. For instance, the ScalingMetric could be the
-    CPU utilization. The associated ScaledEntity that contains the metric
+    associated service be scaled. For instance, the ScalingMetric could be the
+    CPU utilization. The associated Scaledservice that contains the metric
     could be the node (= VM). Decouples scaling metric from the scaled aspect -
     the metric can come from entirely different source, e.g. external.
     """
@@ -214,7 +214,7 @@ class ScalingMetric:
                  priority : int,
                  max_limit_aspect : ScalingAspect,
                  min_limit_aspect : ScalingAspect,
-                 entity_representation_in_metric : float):
+                 service_representation_in_metric : float):
 
         # Static state
         self.region_name = region_name
@@ -238,7 +238,7 @@ class ScalingMetric:
 
         # Scaling determinants:
         # integer value that determines the position of the metric in the
-        # sequence of metrics used to scale the entity; the higher the priority
+        # sequence of metrics used to scale the service; the higher the priority
         # the closer is the metric to the beginning of the sequence, e.g. if
         # there are metrics CPU with the priority 15 and memory with the priority
         # -5, then the sequential aggregation thereof results in first computing
@@ -273,26 +273,26 @@ class ScalingMetric:
         # Dynamic state
 
         # current min-max limits on the post-scaling result for the
-        # aspect of the scaled entity (count of scaled entities in case of horizontal scaling
-        # or resource limits of scaled entities in case of vertical scaling)
+        # aspect of the scaled service (count of scaled services in case of horizontal scaling
+        # or resource limits of scaled services in case of vertical scaling)
         self.limiter = Limiter(min_limit_aspect, max_limit_aspect)
 
-        # current representation of the entity in terms of metric, for instance
-        # if the entity is the node and the metric is CPU utilization, and the capacity adaptation type is discrete,
+        # current representation of the service in terms of metric, for instance
+        # if the service is the node and the metric is CPU utilization, and the capacity adaptation type is discrete,
         # then the representation may be 1 which means that 100 utilization translates
         # into 1 node of the given type. This property sits in dynamic category since
         # it might get changed during the predictive autoscaling over time with
-        # new information becoming available about how the entities react on the change
-        # in metric, e.g. if the metric is the requests per second and the entity is node,
+        # new information becoming available about how the services react on the change
+        # in metric, e.g. if the metric is the requests per second and the service is node,
         # there is no universal correspondence for every app and every request type.
-        self.entity_representation_in_metric = entity_representation_in_metric
+        self.service_representation_in_metric = service_representation_in_metric
 
     def __call__(self,
                  cur_metric_vals : pd.DataFrame,
                  cur_aspect_val : ScalingAspect):
 
         """
-        Computes the desired state of the associated scaled entity (e.g. service)
+        Computes the desired state of the associated scaled service (e.g. service)
         according to this particular metric.
         """
 
@@ -315,15 +315,15 @@ class ScalingMetric:
             # Computing how does metric value related to the target --
             # the assumption is that the closer it is to the target value,
             # the better the current state of the application/infrastructure
-            # reflects the needs of the scaled entity in terms of this metric.
+            # reflects the needs of the scaled service in terms of this metric.
             # The computed ratio is used to calaculate the desired amount of the
             # scaled aspect (e.g. CPU shares or service instances) by using
-            # the representation of the metric in terms of the scaled entity and
-            # the current amount of the scaled entity. Lastly, the computed
+            # the representation of the metric in terms of the scaled service and
+            # the current amount of the scaled service. Lastly, the computed
             # desired amount of the scaled aspect is stabilized to avoid
             # oscillations in it that may cause too much overhead when scaling.
             metric_ratio = aggregated_metric_vals / self.target_value
-            desired_scaled_aspect = cur_aspect_val * metric_ratio * self.entity_representation_in_metric
+            desired_scaled_aspect = cur_aspect_val * metric_ratio * self.service_representation_in_metric
             desired_scaled_aspect_stabilized = self.stabilizer(desired_scaled_aspect)
 
             #print(f'metric_ratio: {metric_ratio}')

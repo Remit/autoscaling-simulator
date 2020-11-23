@@ -1,5 +1,5 @@
 from .region import Region
-from .entity_state.entities_states_reg import EntitiesStatesRegionalized
+from .entity_state.group_of_services_reg import GroupOfServicesRegionalized
 
 from ..deltarepr.platform_state_delta import PlatformStateDelta
 
@@ -126,4 +126,4 @@ class PlatformState:
 
     def extract_collective_services_states(self):
 
-        return EntitiesStatesRegionalized({ region_name : region.extract_collective_services_state() for region_name, region in self.regions.items() })
+        return GroupOfServicesRegionalized({ region_name : region.extract_collective_services_state() for region_name, region in self.regions.items() })

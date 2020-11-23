@@ -9,7 +9,7 @@ from .score import StateScore
 from .....utils.state.region import Region
 from .....utils.state.statemanagers import StateReader
 from .....utils.state.platform_state import PlatformState
-from .....utils.state.entity_state.entities_states_reg import EntitiesStatesRegionalized
+from .....utils.state.entity_state.group_of_services_reg import GroupOfServicesRegionalized
 
 class DesiredChangeCalculator:
 
@@ -39,16 +39,16 @@ class DesiredChangeCalculator:
         self.scaled_service_instance_requirements_by_service = scaled_service_instance_requirements_by_service
 
     def __call__(self,
-                 services_states : EntitiesStatesRegionalized,
+                 group_of_services_reg : GroupOfServicesRegionalized,
                  state_duration_h : float):
 
         # TODO: add logic to check whether empty results are returned
         regions = {}
         scores_per_region = {}
 
-        for region_name, services_state in services_states:
+        for region_name, group_of_services in group_of_services_reg:
             # Place
-            placements_lst = self.placer.compute_nodes_requirements(services_state, region_name)
+            placements_lst = self.placer.compute_nodes_requirements(group_of_services, region_name)
 
             # Score
             scored_placements_lst = self.scorer(placements_lst, state_duration_h)

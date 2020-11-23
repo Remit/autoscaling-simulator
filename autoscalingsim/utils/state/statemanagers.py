@@ -1,7 +1,6 @@
 import pandas as pd
 
 from .platform_state import PlatformState
-from .entity_state.entities_states_reg import EntitiesStatesRegionalized
 from .entity_state.scaling_aspects import ScalingAspect
 from .node_group_state.node_group import HomogeneousNodeGroup
 

@@ -23,7 +23,7 @@
       {
         "service": "default",
         "scaling_effect_aggregation_rule_name": "maxScale",
-        "scaled_entity_name": "Service",
+        "scaled_service_name": "Service",
         "scaled_aspect_name": "count",
         "metrics_descriptions": [
           {
@@ -71,7 +71,7 @@
             "priority": 1,
             "initial_max_limit": 15,
             "initial_min_limit": 1,
-            "initial_entity_representation_in_metric": 1
+            "initial_service_representation_in_metric": 1
           }
         ]
       }

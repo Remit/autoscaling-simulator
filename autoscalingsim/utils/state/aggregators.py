@@ -32,7 +32,7 @@ class Max:
 
         last_max_val = 0
         for state in states_list:
-            regionalized_repr = state.extract_countable_representation(conf)
+            regionalized_repr = state.get_countable_representation(conf)
             for reg_repr in regionalized_repr.values():
                 repr_val = sum(list(reg_repr.values()))
                 if repr_val > last_max_val:
@@ -55,7 +55,7 @@ class Min:
 
         last_min_val = float('Inf')
         for state in states_list:
-            regionalized_repr = state.extract_countable_representation(conf)
+            regionalized_repr = state.get_countable_representation(conf)
             for reg_repr in regionalized_repr.values():
                 repr_val = sum(list(reg_repr.values()))
                 if repr_val < last_min_val:

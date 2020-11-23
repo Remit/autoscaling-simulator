@@ -8,7 +8,7 @@ from .metric.valuesaggregator import ValuesAggregator
 from .metric.stabilizer import Stabilizer
 from .metric.forecasting import MetricForecaster
 
-from .scaled.scaled_entity_settings import ScaledEntityScalingSettings
+from .scaled.scaled_service_settings import ScaledServiceScalingSettings
 
 from ...utils.error_check import ErrorChecker
 
@@ -53,7 +53,7 @@ class ScalingPolicyConfiguration:
             for service_config in services_config:
                 service_key = 'service'
                 service_name = ErrorChecker.key_check_and_load(service_key, service_config, self.__class__.__name__)
-                scaled_entity_name = ErrorChecker.key_check_and_load('scaled_entity_name', service_config, service_key, service_name)
+                scaled_service_name = ErrorChecker.key_check_and_load('scaled_service_name', service_config, service_key, service_name)
                 scaled_aspect_name = ErrorChecker.key_check_and_load('scaled_aspect_name', service_config, service_key, service_name)
 
                 metrics_descriptions = []
@@ -74,9 +74,9 @@ class ScalingPolicyConfiguration:
                     priority = ErrorChecker.key_check_and_load('priority', metric_description_json, service_key, service_name)
                     initial_max_limit = ErrorChecker.key_check_and_load('initial_max_limit', metric_description_json, service_key, service_name)
                     initial_min_limit = ErrorChecker.key_check_and_load('initial_min_limit', metric_description_json, service_key, service_name)
-                    initial_entity_representation_in_metric = ErrorChecker.key_check_and_load('initial_entity_representation_in_metric', metric_description_json, service_key, service_name)
+                    initial_service_representation_in_metric = ErrorChecker.key_check_and_load('initial_service_representation_in_metric', metric_description_json, service_key, service_name)
 
-                    metric_descr = MetricDescription(scaled_entity_name,
+                    metric_descr = MetricDescription(scaled_service_name,
                                                      scaled_aspect_name,
                                                      metric_source_name,
                                                      metric_name,
@@ -90,15 +90,15 @@ class ScalingPolicyConfiguration:
                                                      priority,
                                                      initial_max_limit,
                                                      initial_min_limit,
-                                                     initial_entity_representation_in_metric)
+                                                     initial_service_representation_in_metric)
 
                     metrics_descriptions.append(metric_descr)
 
                 scaling_effect_aggregation_rule_name = ErrorChecker.key_check_and_load('scaling_effect_aggregation_rule_name', service_config, service_key, service_name)
-                self.services_scaling_config[service_name] = ScaledEntityScalingSettings(metrics_descriptions,
-                                                                                         scaling_effect_aggregation_rule_name,
-                                                                                         scaled_entity_name,
-                                                                                         scaled_aspect_name)
+                self.services_scaling_config[service_name] = ScaledServiceScalingSettings(metrics_descriptions,
+                                                                                          scaling_effect_aggregation_rule_name,
+                                                                                          scaled_service_name,
+                                                                                          scaled_aspect_name)
 
                 # TODO: platform_config processing
 

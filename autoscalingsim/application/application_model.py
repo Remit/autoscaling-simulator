@@ -18,7 +18,7 @@ class ApplicationModel:
     Each service posses two buffers shared among all its instances, one for
     downstream requests and one for upstream requests (responses). The processed
     are taken from the service to be transmitted to the next in line by the application
-    model. Each service in an application model represents a scaling entity, i.e.
+    model. Each service in an application model represents a scaling service, i.e.
     pods/containers.
 
     Attributes:
@@ -90,7 +90,7 @@ class ApplicationModel:
         for service_deployment_conf in self.application_model_conf.service_deployments_confs:
             self.deployment_model.add_service_deployment_conf(service_deployment_conf)
 
-        # Taking correct scaling settings for the service which is derived from a ScaledEntity
+        # Taking correct scaling settings for the service which is derived from a ScaledService
         for service_conf in self.application_model_conf.service_confs:
             service_scaling_settings = self.scaling_policy.get_service_scaling_settings(service_conf.service_name)
             service = service_conf.to_service(starting_time, service_scaling_settings, self.state_reader)
@@ -101,7 +101,7 @@ class ApplicationModel:
             self.scaling_manager.add_source(service)
 
         self.platform_model.init_platform_state_deltas(list(set(self.application_model_conf.regions)), starting_time, self.deployment_model.to_init_platform_state_delta())
-        self.scaling_policy.init_adjustment_policy(self.application_model_conf.entity_instance_requirements, self.state_reader)
+        self.scaling_policy.init_adjustment_policy(self.application_model_conf.service_instance_requirements, self.state_reader)
 
     def step(self, cur_timestamp : pd.Timestamp, simulation_step : pd.Timedelta):
 

@@ -3,19 +3,19 @@ import pandas as pd
 
 from .service_state.service_state_reg import ServiceStateRegionalized
 
-from ..scaling.policiesbuilder.scaled.scaled_entity import ScaledEntity
+from ..scaling.policiesbuilder.scaled.scaled_service import ScaledService
 from ..scaling.policiesbuilder.scaling_policy_conf import ScalingPolicyConfiguration
 from ..load.request import Request
 from ..utils.requirements import ResourceRequirements
 from ..utils.state.statemanagers import StateReader
 
-class Service(ScaledEntity):
+class Service(ScaledService):
 
     """
     Represents a service in an application. Provides high-level API for the
     associated application model.
     The service logic is hidden in its member *state*. Scaling-related functionality
-    is initialized through the base class ScaledEntity.
+    is initialized through the base class ScaledService.
 
     Attributes:
 

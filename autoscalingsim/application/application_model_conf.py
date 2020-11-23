@@ -8,7 +8,7 @@ from .application_structure import ApplicationStructure
 
 from ..deployment.service_deployment_conf import ServiceDeploymentConfiguration
 from ..infrastructure_platform.platform_model import PlatformModel
-from ..scaling.policiesbuilder.scaled.scaled_entity_settings import ScaledEntityScalingSettings
+from ..scaling.policiesbuilder.scaled.scaled_service_settings import ScaledServiceScalingSettings
 from ..utils.request_processing_info import RequestProcessingInfo
 from ..utils.size import Size
 from ..utils.state.statemanagers import StateReader
@@ -41,7 +41,7 @@ class ServiceConfiguration:
 
     def to_service(self,
                    starting_time : pd.Timestamp,
-                   service_scaling_settings : ScaledEntityScalingSettings,
+                   service_scaling_settings : ScaledServiceScalingSettings,
                    state_reader : StateReader):
 
         return Service(self.service_name,
@@ -68,7 +68,7 @@ class ApplicationModelConfiguration:
         regions (list of str): a list of regions that the application services
             are deployed in.
 
-        entity_instance_requirements (dict of str -> ResourceRequirements):
+        service_instance_requirements (dict of str -> ResourceRequirements):
             system resource requirements for an instance of every service.
 
         reqs_processing_infos (dict of *request type* -> RequestProcessingInfo):
@@ -97,7 +97,7 @@ class ApplicationModelConfiguration:
 
         self.name = None
         self.regions = []
-        self.entity_instance_requirements = {}
+        self.service_instance_requirements = {}
         self.reqs_processing_infos = {}
         self.service_deployments_confs = []
         self.service_confs = []
@@ -197,7 +197,7 @@ class ApplicationModelConfiguration:
 
                     buffers_config = ErrorChecker.key_check_and_load('buffers_config', service_config, 'service', service_name)
                     system_requirements = ResourceRequirements.from_dict(ErrorChecker.key_check_and_load('system_requirements', service_config, 'service', service_name))
-                    self.entity_instance_requirements[service_name] = system_requirements
+                    self.service_instance_requirements[service_name] = system_requirements
 
                     init_service_aspects_regionalized = {}
                     node_infos_regionalized = {}

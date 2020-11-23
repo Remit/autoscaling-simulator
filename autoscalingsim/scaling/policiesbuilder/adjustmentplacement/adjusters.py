@@ -10,9 +10,9 @@ from ...platform_scaling_model import PlatformScalingModel
 
 from ....utils.combiners import Combiner
 from ....utils.error_check import ErrorChecker
-from ....utils.deltarepr.timelines.entities_changes_timeline import TimelineOfDesiredEntitiesChanges
+from ....utils.deltarepr.timelines.services_changes_timeline import TimelineOfDesiredServicesChanges
 from ....utils.deltarepr.timelines.delta_timeline import DeltaTimeline
-from ....utils.state.entity_state.entities_states_reg import EntitiesStatesRegionalized
+from ....utils.state.entity_state.group_of_services_reg import GroupOfServicesRegionalized
 from ....utils.state.statemanagers import StateReader
 from ....utils.state.platform_state import PlatformState
 from ....utils.state.state_duration import StateDuration
@@ -29,8 +29,8 @@ class Adjuster(ABC):
     def __init__(self,
                  application_scaling_model : ApplicationScalingModel,
                  platform_scaling_model : PlatformScalingModel,
-                 node_for_scaled_entities_types : dict,
-                 scaled_entity_instance_requirements_by_entity : dict,
+                 node_for_scaled_services_types : dict,
+                 scaled_service_instance_requirements_by_service : dict,
                  optimizer_type : str,
                  placement_hint : str,
                  combiner_settings : dict,
@@ -39,7 +39,7 @@ class Adjuster(ABC):
 
         self.application_scaling_model = application_scaling_model
         self.platform_scaling_model = platform_scaling_model
-        self.scaled_entity_instance_requirements_by_entity = scaled_entity_instance_requirements_by_entity
+        self.scaled_service_instance_requirements_by_service = scaled_service_instance_requirements_by_service
         self.scorer = Scorer(score_calculator_class())
 
         combiner_type = ErrorChecker.key_check_and_load('type', combiner_settings, self.__class__.__name__)
@@ -49,20 +49,20 @@ class Adjuster(ABC):
         self.desired_change_calculator = DesiredChangeCalculator(placement_hint,
                                                                  self.scorer,
                                                                  optimizer_type,
-                                                                 node_for_scaled_entities_types,
-                                                                 scaled_entity_instance_requirements_by_entity,
+                                                                 node_for_scaled_services_types,
+                                                                 scaled_service_instance_requirements_by_service,
                                                                  state_reader)
 
     def adjust(self,
                cur_timestamp : pd.Timestamp,
-               entities_scaling_events : dict,
+               services_scaling_events : dict,
                current_state : PlatformState):
 
         """
         Implements the collaborative platform and application adjustment logic,
         gluing the layer together.
 
-        It starts by taking the unmet changes in the number of entities that
+        It starts by taking the unmet changes in the number of services that
         are extracted from the scaling events provided as a parameter. Next,
         until all the unmet changes are accommodated, the loop proceeds as follows.
         It first computes the adjusment to accommodate the application
@@ -78,7 +78,7 @@ class Adjuster(ABC):
         performing any changes to the original platform capacity and any migration.
         The second alternative (2.b) is to scrap the old platform capacity and to
         substitute it with the new joint platform capacity that hosts both the
-        entities instances deployed using the old platform capacity and the new
+        service instances deployed using the old platform capacity and the new
         ones, added by the scaling events. This alternative incurs additional cost
         on maintanining the old capacity for some time in each region until the
         start up of the new platform capacity and service instances finishes
@@ -92,8 +92,8 @@ class Adjuster(ABC):
                                            self.application_scaling_model,
                                            current_state)
 
-        timeline_of_unmet_changes = TimelineOfDesiredEntitiesChanges(self.combiner,
-                                                                     entities_scaling_events,
+        timeline_of_unmet_changes = TimelineOfDesiredServicesChanges(self.combiner,
+                                                                     services_scaling_events,
                                                                      cur_timestamp)
 
         ts_of_unmet_change, unmet_change = timeline_of_unmet_changes.next()
@@ -107,9 +107,9 @@ class Adjuster(ABC):
             # 1. We try to accommodate the unmet_change on the existing containers.
             # This may result in the scale down. The scale down is performed in such
             # a way that the largest possible group of unused containers is removed.
-            # Otherwise, only the number of entities is affected.
+            # Otherwise, only the number of services is affected.
             in_work_state_delta, unmet_change = in_work_state.compute_soft_adjustment(unmet_change,
-                                                                                      self.scaled_entity_instance_requirements_by_entity)
+                                                                                      self.scaled_service_instance_requirements_by_service)
             timeline_of_deltas.add_state_delta(ts_of_unmet_change, in_work_state_delta)
 
             # 2. If an unmet positive change is left after we tried to accommodate
@@ -126,8 +126,7 @@ class Adjuster(ABC):
 
                 ts_next = timeline_of_unmet_changes.peek(ts_of_unmet_change)
                 state_duration_h = (ts_next - ts_of_unmet_change) / pd.Timedelta(1, unit = 'h')
-                unmet_change_state = EntitiesStatesRegionalized(unmet_change,
-                                                                self.scaled_entity_instance_requirements_by_entity)
+                unmet_change_state = GroupOfServicesRegionalized(unmet_change, self.scaled_service_instance_requirements_by_service)
 
                 in_work_placements_per_region = in_work_state.to_placements()
 
@@ -139,9 +138,9 @@ class Adjuster(ABC):
                                                                                StateDuration.from_single_value(state_duration_h))
 
                 # 2.b: New cluster and migration
-                in_work_collective_entities_states = in_work_state.extract_collective_services_states()
-                in_work_collective_entities_states += unmet_change_state
-                state_substitution_deltas, state_score_substitution = self.desired_change_calculator(in_work_collective_entities_states,
+                in_work_collective_services_states = in_work_state.extract_collective_services_states()
+                in_work_collective_services_states += unmet_change_state
+                state_substitution_deltas, state_score_substitution = self.desired_change_calculator(in_work_collective_services_states,
                                                                                                      state_duration_h)
 
                 till_state_substitution_h = state_substitution_deltas.till_full_enforcement(self.platform_scaling_model,
@@ -182,8 +181,8 @@ class CostMinimizer(Adjuster):
     def __init__(self,
                  application_scaling_model : ApplicationScalingModel,
                  platform_scaling_model : PlatformScalingModel,
-                 node_for_scaled_entities_types : dict,
-                 scaled_entity_instance_requirements_by_entity : dict,
+                 node_for_scaled_services_types : dict,
+                 scaled_service_instance_requirements_by_service : dict,
                  state_reader : StateReader,
                  optimizer_type = 'OptimizerScoreMaximizer',
                  placement_hint = 'shared',
@@ -192,8 +191,8 @@ class CostMinimizer(Adjuster):
         score_calculator_class = ScoreCalculator.get(self.__class__.__name__)
         super().__init__(application_scaling_model,
                          platform_scaling_model,
-                         node_for_scaled_entities_types,
-                         scaled_entity_instance_requirements_by_entity,
+                         node_for_scaled_services_types,
+                         scaled_service_instance_requirements_by_service,
                          optimizer_type,
                          placement_hint,
                          combiner_type,
