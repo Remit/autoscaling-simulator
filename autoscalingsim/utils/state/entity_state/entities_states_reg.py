@@ -169,10 +169,6 @@ class EntitiesStatesRegionalizedDelta:
 
         return EntitiesStatesRegionalizedDelta(self.deltas.copy())
 
-    def extract_raw_scaling_aspects_changes(self):
+    def get_raw_scaling_aspects_changes(self):
 
-        raw_representation = {}
-        for region_name, region_delta in self.deltas.items():
-            raw_representation[region_name] = region_delta.extract_raw_scaling_aspects_changes()
-
-        return raw_representation
+        return { region_name : region_delta.get_raw_scaling_aspects_changes() for region_name, region_delta in self.deltas.items() }

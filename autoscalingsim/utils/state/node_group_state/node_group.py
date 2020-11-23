@@ -39,10 +39,7 @@ class NodeGroup(ABC):
 
     def get_aspect_value_of_services_state(self, service_name : str, aspect_name : str):
 
-        if self.services_state is None:
-            return ScalingAspect.get(aspect_name)(0)
-        else:
-            return self.services_state.get_aspect_value(service_name, aspect_name)
+        return ScalingAspect.get(aspect_name)(0) if self.services_state is None else self.services_state.get_aspect_value_for_service(service_name, aspect_name)
 
     def get_running_services(self):
 
@@ -77,7 +74,7 @@ class HomogeneousNodeGroup(NodeGroup):
                  node_info : NodeInfo,
                  nodes_count : int,
                  services_instances_counts : dict = {},
-                 requirements_by_entity : dict = {}):
+                 requirements_by_service : dict = {}):
 
         super().__init__(node_info.get_name(), node_info.get_provider(), nodes_count)
 
@@ -88,7 +85,7 @@ class HomogeneousNodeGroup(NodeGroup):
         self.shared_processor = RequestsProcessor()
 
         if isinstance(services_instances_counts, dict):
-            self.services_state = GroupOfServices(services_instances_counts, requirements_by_entity)
+            self.services_state = GroupOfServices(services_instances_counts, requirements_by_service)
         elif isinstance(services_instances_counts, GroupOfServices):
             self.services_state = services_instances_counts
         else:
@@ -168,7 +165,7 @@ class HomogeneousNodeGroup(NodeGroup):
                                         + system_resources_for_req
 
         if (not system_resources_to_be_taken.is_full()) \
-         and (self.services_state.get_entity_count(req.processing_service) \
+         and (self.services_state.get_service_count(req.processing_service) \
                > sum( self.shared_processor.get_in_processing_stat(req.processing_service).values() ) ):
             return True
         else:
@@ -234,8 +231,8 @@ class HomogeneousNodeGroup(NodeGroup):
 
     def _count_aspect_soft_adjustment(self,
                                       unmet_changes : dict,
-                                      scaled_entity_instance_requirements_by_entity : dict,
-                                      node_sys_resource_usage_by_entity_sorted : dict) -> tuple:
+                                      scaled_service_instance_requirements_by_service : dict,
+                                      node_sys_resource_usage_by_service_sorted : dict) -> tuple:
 
         #nodes_count_to_consider = self.nodes_count
         generalized_deltas = []
@@ -245,12 +242,12 @@ class HomogeneousNodeGroup(NodeGroup):
             #unmet_changes_prev = unmet_changes.copy()
         node_sys_resource_usage = self.system_resources_usage.copy()
 
-        # Starting with the largest entity and proceeding to the smallest one in terms of
+        # Starting with the largest service and proceeding to the smallest one in terms of
         # resource usage requirements. This is made to reduce the resource usage fragmentation.
         services_cnt_change = {}
-        dynamic_services_instances_count = self.services_state.extract_aspect_value('count')
+        dynamic_services_instances_count = self.services_state.get_raw_aspect_value_for_every_service('count')
 
-        for service_name, service_instance_resource_usage in node_sys_resource_usage_by_entity_sorted.items():
+        for service_name, service_instance_resource_usage in node_sys_resource_usage_by_service_sorted.items():
             if service_name in unmet_changes and service_name in dynamic_services_instances_count:
 
                 # Case of adding services to the existing nodes
@@ -294,7 +291,7 @@ class HomogeneousNodeGroup(NodeGroup):
         if len(services_cnt_change_count) > 0:
             if nodes_to_accommodate_res_usage < self.nodes_count:
                 # scale down for nodes
-                new_services_instances_counts = self.services_state.extract_aspect_value('count')
+                new_services_instances_counts = self.services_state.get_raw_aspect_value_for_every_service('count')
 
                 node_group = HomogeneousNodeGroup(self.node_info, self.nodes_count - nodes_to_accommodate_res_usage, self.services_state.copy())# ?self.services_state.copy()
 
@@ -307,7 +304,7 @@ class HomogeneousNodeGroup(NodeGroup):
 
             # Planning scale down for all the services count change from the solution
             services_group_delta = GroupOfServicesDelta(services_cnt_change_count, in_change = True, virtual = False,
-                                                        services_reqs = scaled_entity_instance_requirements_by_entity)
+                                                        services_reqs = scaled_service_instance_requirements_by_service)
 
             gd = GeneralizedDelta(node_group_delta, services_group_delta)
             generalized_deltas.append(gd)
@@ -318,31 +315,31 @@ class HomogeneousNodeGroup(NodeGroup):
         return (generalized_deltas, unmet_changes)
 
     def compute_soft_adjustment(self,
-                                scaled_entity_adjustment_in_aspects : dict,
-                                scaled_entity_instance_requirements_by_entity : dict) -> tuple:
+                                scaled_service_adjustment_in_aspects : dict,
+                                scaled_service_instance_requirements_by_service : dict) -> tuple:
 
         """
         Derives adjustments to the node group in terms of services added/removed.
         The computation may result in multiple groups.
 
-        Before adding an entity instance, it is first checked, whether its
+        Before adding a service instance, it is first checked, whether its
         requirements can be accomodated by the group (spare resources available).
-        Similarly, before removing an entity instance, it is checked,
+        Similarly, before removing a service instance, it is checked,
         whether there are any instances of the given type at all.
         """
 
-        node_sys_resource_usage_by_entity = {}
-        for scaled_entity, instance_requirements in scaled_entity_instance_requirements_by_entity.items():
-            node_sys_resource_usage_by_entity[scaled_entity] = self.node_info.system_resources_to_take_from_requirements(instance_requirements)
+        node_sys_resource_usage_by_service = {}
+        for scaled_service, instance_requirements in scaled_service_instance_requirements_by_service.items():
+            node_sys_resource_usage_by_service[scaled_service] = self.node_info.system_resources_to_take_from_requirements(instance_requirements)
 
         # Sort in decreasing order of consumed system resources:
         # both allocation and deallocation profit more from first trying to
         # place or remove the largest services
-        node_sys_resource_usage_by_entity_sorted = OrderedDict(reversed(sorted(node_sys_resource_usage_by_entity.items(),
+        node_sys_resource_usage_by_service_sorted = OrderedDict(reversed(sorted(node_sys_resource_usage_by_service.items(),
                                                                                 key = lambda elem: elem[1])))
 
         unmet_changes_per_aspect = {}
-        for service_name, aspects_change_dict in scaled_entity_adjustment_in_aspects.items():
+        for service_name, aspects_change_dict in scaled_service_adjustment_in_aspects.items():
             for aspect_name, aspect_change_val in aspects_change_dict.items():
                 aspect_dict = unmet_changes_per_aspect.get(aspect_name, {})
                 aspect_dict[service_name] = aspect_change_val
@@ -354,14 +351,14 @@ class HomogeneousNodeGroup(NodeGroup):
             method_name = f'_{aspect_name}_aspect_soft_adjustment'
             #try:
             aspect_based_generalized_deltas, aspect_based_unmet_changes_res = self.__getattribute__(method_name)(services_changes_dict,
-                                                                                                                     scaled_entity_instance_requirements_by_entity,
-                                                                                                                     node_sys_resource_usage_by_entity_sorted)
+                                                                                                                     scaled_service_instance_requirements_by_service,
+                                                                                                                     node_sys_resource_usage_by_service_sorted)
 
             generalized_deltas.extend(aspect_based_generalized_deltas)
             for service_name, change_val in aspect_based_unmet_changes_res.items():
-                unmet_changes_per_entity = unmet_changes.get(service_name, {})
-                unmet_changes_per_entity[aspect_name] = change_val
-                unmet_changes[service_name] = unmet_changes_per_entity
+                unmet_changes_per_service = unmet_changes.get(service_name, {})
+                unmet_changes_per_service[aspect_name] = change_val
+                unmet_changes[service_name] = unmet_changes_per_service
 
             #except AttributeError:
             #    raise ValueError(f'Support for computing the soft adjustment for the desired aspect type is not implemented: {aspect_name}')
@@ -474,7 +471,7 @@ class GeneralizedDelta:
         new_deltas = {}
         if self.node_group_delta.in_change and (not self.node_group_delta.virtual):
             delay_from_nodes = pd.Timedelta(0, unit = 'ms')
-            max_entity_delay = pd.Timedelta(0, unit = 'ms')
+            max_service_delay = pd.Timedelta(0, unit = 'ms')
             node_group_delta_virtual = None
 
             node_group_delay, node_group_delta = platform_scaling_model.delay(self.node_group_delta)
@@ -483,7 +480,7 @@ class GeneralizedDelta:
             if self.node_group_delta.sign < 0:
                 # Adjusting params for the graceful scale down
                 if len(services_groups_deltas_by_delays) > 0:
-                    max_entity_delay = max(list(services_groups_deltas_by_delays.keys()))
+                    max_service_delay = max(list(services_groups_deltas_by_delays.keys()))
                 node_group_delta_virtual = self.node_group_delta.copy()
             elif self.node_group_delta.sign > 0:
                 # Adjusting params for scale up
@@ -491,7 +488,7 @@ class GeneralizedDelta:
                 node_group_delta_virtual = node_group_delta.copy()
 
             # Delta for nodes
-            new_timestamp = delta_timestamp + max_entity_delay + node_group_delay
+            new_timestamp = delta_timestamp + max_service_delay + node_group_delay
             if not new_timestamp in new_deltas:
                 new_deltas[new_timestamp] = []
             new_deltas[new_timestamp].append(GeneralizedDelta(node_group_delta, None))

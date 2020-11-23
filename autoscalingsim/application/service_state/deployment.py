@@ -102,4 +102,4 @@ class Deployment:
 
     def get_aspect_value(self, aspect_name : str):
 
-        return self.node_group.get_aspect_value_of_entities_state(self.service_name, aspect_name)
+        return self.node_group.get_aspect_value_of_services_state(self.service_name, aspect_name)

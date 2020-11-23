@@ -70,18 +70,18 @@ class ScalingManager(StateManager):
         an argument to the call.
         """
 
-        # Enforces scaling aspects values on scaled entities
+        # Enforces scaling aspects values on scaled services
         scaling_infos = platform_state.extract_node_groups(False)
         for region_name, regional_node_groups in scaling_infos.items():
             for node_group in regional_node_groups:
-                for entity_name in node_group.get_running_entities():
-                    self.update_placement(entity_name, region_name, node_group)
+                for service_name in node_group.get_running_services():
+                    self.update_placement(service_name, region_name, node_group)
 
-    def mark_groups_for_removal(self, entity_name : str,
+    def mark_groups_for_removal(self, service_name : str,
                                 node_groups_ids_mark_for_removal_regionalized : dict):
 
-        if not entity_name in self.entities:
-            raise ValueError(f'An attempt to mark groups for removal for {entity_name} that is unknown to {self.__class__.__name__}')
+        if not service_name in self.entities:
+            raise ValueError(f'An attempt to mark groups for removal for {service_name} that is unknown to {self.__class__.__name__}')
 
         for region_name, node_group_ids in node_groups_ids_mark_for_removal_regionalized.items():
             self.entities[entity_name].state.prepare_groups_for_removal(region_name, node_group_ids)

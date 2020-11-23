@@ -144,7 +144,7 @@ class ServiceInstancesGroup:
 
     def to_delta(self, direction = 1):
 
-        return self.__class__.from_group(self, direction)
+        return ServiceInstancesGroupDelta.from_group(self, direction)
 
 class ServiceInstancesGroupDeltaCommon(ABC):
 
@@ -283,7 +283,7 @@ class GroupOfServices:
 
     def can_be_coerced(self, services_group_delta : 'GroupOfServicesDelta') -> bool:
 
-        if not isinstance(services_group_delta, EntitiesGroupDelta):
+        if not isinstance(services_group_delta, GroupOfServicesDelta):
             raise TypeError(f'Unexpected type for coercion: {services_group_delta.__class__.__name__}')
 
         for service_name, change_val in services_group_delta.to_services_raw_count_change().items():
@@ -346,7 +346,7 @@ class GroupOfServices:
                 elif sign == 1:
                     new_groups[service_name] = service_group_to_add
         else:
-            raise TypeError(f'An attempt to add the operand of type {services_to_add.__class__.__name__} to the {self.__class__.__name__} when expecting type EntitiesGroupDelta or EntitiesState')
+            raise TypeError(f'An attempt to add the operand of type {services_to_add.__class__.__name__} to the {self.__class__.__name__} when expecting type GroupOfServicesDelta or GroupOfServices')
 
         # Prune new groups from 0-sized groups
         #new_groups_adj = {}
@@ -384,7 +384,7 @@ class GroupOfServices:
 
     def to_delta(self, direction : int = 1):
 
-        return GroupOfServicesDelta.from_service_group_deltas({ service_name : group.to_delta(direction) for service_name, group in self.services_groups.items() })
+        return GroupOfServicesDelta.from_deltas({ service_name : group.to_delta(direction) for service_name, group in self.services_groups.items() })
 
     def get_scaling_aspects_for_every_service(self):
 
@@ -407,7 +407,7 @@ class GroupOfServices:
 
     def get_service_count(self, service_name : str):
 
-        return self.get_aspect_value(service_name, 'count').get_value()
+        return self.get_aspect_value_for_service(service_name, 'count').get_value()
 
     def get_service_resource_requirements(self, service_name : str):
 
@@ -431,7 +431,7 @@ class GroupOfServicesDelta:
                  in_change : bool = True, virtual : bool = False, services_reqs : dict = {}):
 
         self.deltas = { service_name : ServiceInstancesGroupDelta(service_name, aspects_vals, services_reqs[service_name]) \
-                                        if service_name in services_reqs else ServiceInstancesGroupDeltaDummy(service_name, aspects_vals) \
+                                        if service_name in services_reqs else ServiceInstancesGroupDeltaWildcard(service_name, aspects_vals) \
                                         for service_name, aspects_vals in aspects_vals_per_entity.items() }
 
         # Signifies whether the delta should be considered during the enforcing or not.
@@ -479,8 +479,8 @@ class GroupOfServicesDelta:
             else:
                 new_deltas[service_name] = other_delta.deltas[service_name]
 
-        return self.__class__.from_service_group_deltas({ service_name : delta for service_name, delta in new_deltas.items() if delta.to_raw_change()['count'] != 0 },
-                                                        self.in_change, self.virtual)
+        return self.__class__.from_deltas({ service_name : delta for service_name, delta in new_deltas.items() if delta.to_raw_change()['count'] != 0 },
+                                          self.in_change, self.virtual)
 
     def add(self, other_delta : ServiceInstancesGroupDelta):
 
@@ -521,7 +521,7 @@ class GroupOfServicesDelta:
 
     def copy(self):
 
-        return self.__class__.from_service_group_deltas(self.deltas.copy(), self.in_change, self.virtual)
+        return self.__class__.from_deltas(self.deltas.copy(), self.in_change, self.virtual)
 
     def __repr__(self):
 

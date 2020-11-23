@@ -22,33 +22,33 @@ class DesiredChangeCalculator:
                  placement_hint : str,
                  scorer : Scorer,
                  optimizer_type : str,
-                 node_for_scaled_entities_types : dict,
-                 scaled_entity_instance_requirements_by_entity : dict,
+                 node_for_scaled_services_types : dict,
+                 scaled_service_instance_requirements_by_service : dict,
                  reader : StateReader):
 
         self.placer = Placer(placement_hint,
-                             node_for_scaled_entities_types,
-                             scaled_entity_instance_requirements_by_entity,
+                             node_for_scaled_services_types,
+                             scaled_service_instance_requirements_by_service,
                              reader)
 
         self.scorer = scorer
         optimizer_class = Optimizer.get(optimizer_type)
         self.optimizer = optimizer_class()
 
-        self.node_for_scaled_entities_types = node_for_scaled_entities_types
-        self.scaled_entity_instance_requirements_by_entity = scaled_entity_instance_requirements_by_entity
+        self.node_for_scaled_services_types = node_for_scaled_services_types
+        self.scaled_service_instance_requirements_by_service = scaled_service_instance_requirements_by_service
 
     def __call__(self,
-                 entities_states : EntitiesStatesRegionalized,
+                 services_states : EntitiesStatesRegionalized,
                  state_duration_h : float):
 
         # TODO: add logic to check whether empty results are returned
         regions = {}
         scores_per_region = {}
 
-        for region_name, entities_state in entities_states:
+        for region_name, services_state in services_states:
             # Place
-            placements_lst = self.placer.compute_nodes_requirements(entities_state, region_name)
+            placements_lst = self.placer.compute_nodes_requirements(services_state, region_name)
 
             # Score
             scored_placements_lst = self.scorer(placements_lst, state_duration_h)
@@ -56,10 +56,10 @@ class DesiredChangeCalculator:
             # Optimize
             selected_placement = self.optimizer(scored_placements_lst)
 
-            for ep in selected_placement.entities_placements:
+            for ep in selected_placement.services_placements:
                 print('ep11')
                 print(ep.nodes_count)
-                print(ep.entities_state.get_entities_counts())
+                print(ep.services_state.get_services_counts())
 
             regions[region_name] = Region.from_conf(region_name, selected_placement)
 

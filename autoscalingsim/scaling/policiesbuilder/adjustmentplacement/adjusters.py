@@ -139,7 +139,7 @@ class Adjuster(ABC):
                                                                                StateDuration.from_single_value(state_duration_h))
 
                 # 2.b: New cluster and migration
-                in_work_collective_entities_states = in_work_state.extract_collective_entities_states()
+                in_work_collective_entities_states = in_work_state.extract_collective_services_states()
                 in_work_collective_entities_states += unmet_change_state
                 state_substitution_deltas, state_score_substitution = self.desired_change_calculator(in_work_collective_entities_states,
                                                                                                      state_duration_h)

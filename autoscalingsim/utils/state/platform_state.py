@@ -67,8 +67,6 @@ class PlatformState:
 
     def extract_countable_representation(self, conf : dict = {'in-change': True}):
 
-        """ Used to unify the aggregation scheme both for nodes and entities """
-
         return self.extract_node_counts(conf['in-change'])
 
     def extract_node_counts(self, in_change : bool):
@@ -97,9 +95,9 @@ class PlatformState:
                                 scaling_aspects_adjustment_in_existing_nodes : dict,
                                 scaled_entity_instance_requirements_by_entity : dict) -> tuple:
         """
-        Attempts to place the entities in the existing nodes.
+        Attempts to place the service instances in the existing nodes.
         Returns the deltas of homogeneous groups in regions (or none) and
-        the scaled entities remaining unaccommodated to attempt other options.
+        the scaled services remaining unaccommodated to attempt other options.
 
         Does not change the state.
         """
@@ -126,6 +124,6 @@ class PlatformState:
 
         return (state_delta, unmet_scaled_entity_adjustment)
 
-    def extract_collective_entities_states(self):
+    def extract_collective_services_states(self):
 
-        return EntitiesStatesRegionalized({ region_name : region.extract_collective_entities_state() for region_name, region in self.regions.items() })
+        return EntitiesStatesRegionalized({ region_name : region.extract_collective_services_state() for region_name, region in self.regions.items() })
