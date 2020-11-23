@@ -1,13 +1,19 @@
 {
   "policy": {
-    "sync_period_ms": 30000,
+    "sync_period": {
+      "value": 30,
+      "unit": "s"
+    },
     "adjustment_goal": "cost_minimization",
     "optimizer_type": "OptimizerScoreMaximizer",
     "placement_hint": "shared",
     "combiner": {
       "type": "windowed",
       "conf": {
-        "window_size_ms": 50
+        "resolution": {
+          "value": 50,
+          "unit": "ms"
+        }
       }
     }
   },
@@ -17,7 +23,7 @@
       {
         "service": "default",
         "scaling_effect_aggregation_rule_name": "maxScale",
-        "scaled_entity_name": "Service",
+        "scaled_service_name": "Service",
         "scaled_aspect_name": "count",
         "metrics_descriptions": [
           {
@@ -32,14 +38,20 @@
             "values_aggregator_conf": {
               "name": "avgAggregator",
               "config": {
-                "resolution_window_ms": 10
+                "resolution": {
+                  "value": 400,
+                  "unit": "ms"
+                }
               }
             },
-            "target_value": 0.2,
+            "target_value": 0.05,
             "stabilizer_conf": {
               "name": "maxStabilizer",
               "config": {
-                "resolution_window_ms": 100
+                "resolution": {
+                  "value": 400,
+                  "unit": "ms"
+                }
               }
             },
             "timing_type": "predictive",
@@ -48,7 +60,10 @@
               "config": {
                 "averaging_interval": 10
               },
-              "resolution_ms": 10,
+              "resolution": {
+                "value": 10,
+                "unit": "ms"
+              },
               "history_data_buffer_size": 20,
               "fhorizon_in_steps": 5
             },
@@ -56,7 +71,7 @@
             "priority": 1,
             "initial_max_limit": 15,
             "initial_min_limit": 1,
-            "initial_entity_representation_in_metric": 1
+            "initial_service_representation_in_metric": 1
           }
         ]
       }

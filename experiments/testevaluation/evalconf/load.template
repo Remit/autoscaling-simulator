@@ -11,14 +11,9 @@
 					"unit_of_time": "s"
         }
 			},
-			"load_configs": [{
-					"request_type": "auth",
-					"load_config": {
-						"ratio": 1.0
-					}
-				},
+			"load_configs": [
 				{
-					"request_type": "buy",
+					"request_type": "auth",
 					"load_config": {
 						"ratio": 1.0
 					}

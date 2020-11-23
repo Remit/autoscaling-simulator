@@ -2,8 +2,9 @@ import pandas as pd
 import numpy as np
 import calendar
 
+from .parsers.reqs_distributions_parser import DistributionsParser
+from .parsers.reqs_ratios_parser import RatiosParser
 from ..regional_load_model import RegionalLoadModel
-from .requests_distribution.requests_distribution import SlicedRequestsNumDistribution
 from ...request import Request
 from ....utils.error_check import ErrorChecker
 
@@ -58,19 +59,8 @@ class SeasonalLoadModel(RegionalLoadModel):
                 else:
                     raise ValueError(f'day_of_week value {day_of_week} undefined for {self.__class__.__name__}')
 
-        for conf in load_configs:
-            req_type = ErrorChecker.key_check_and_load('request_type', conf, 'region_name', self.region_name)
-            load_config = ErrorChecker.key_check_and_load('load_config', conf, 'region_name', self.region_name)
-            req_ratio = ErrorChecker.key_check_and_load('ratio', load_config, 'region_name', self.region_name)
-
-            if req_ratio < 0.0 or req_ratio > 1.0:
-                raise ValueError(f'Unacceptable ratio value for the request of type {req_type}')
-            self.reqs_types_ratios[req_type] = req_ratio
-
-            sliced_distribution = ErrorChecker.key_check_and_load('sliced_distribution', load_config, 'region_name', self.region_name)
-            req_distribution_type = ErrorChecker.key_check_and_load('type', sliced_distribution, 'region_name', self.region_name)
-            req_distribution_params = ErrorChecker.key_check_and_load('params', sliced_distribution, 'region_name', self.region_name)
-            self.reqs_generators[req_type] = SlicedRequestsNumDistribution.get(req_distribution_type)(req_distribution_params)
+        self.reqs_types_ratios = RatiosParser.parse(load_configs)
+        self.reqs_generators = DistributionsParser.parse(load_configs)
 
         # Dynamic state
         self.current_means_split_across_seconds = {}
