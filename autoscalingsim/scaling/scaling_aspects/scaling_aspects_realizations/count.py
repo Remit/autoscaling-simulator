@@ -2,7 +2,8 @@ import math
 import numbers
 import pandas as pd
 
-from autoscalingsim.state.service_state.scaling_aspects import ScalingAspect, ScalingAspectDelta
+from autoscalingsim.scaling.scaling_aspects.scaling_aspects import ScalingAspect
+from autoscalingsim.deltarepr.scaling_aspect_delta import ScalingAspectDelta
 from autoscalingsim.utils import df_convenience
 
 @ScalingAspect.register('count')

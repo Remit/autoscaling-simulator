@@ -1,11 +1,12 @@
 from collections import OrderedDict
 
 from .placement import Placement
-from .node_group_state.node_group import HomogeneousNodeGroup, NodeGroupDelta, GeneralizedDelta
+from .node_group_state.node_group import HomogeneousNodeGroup
 from .node_group_state.node_group_set import HomogeneousNodeGroupSet
-from .service_state.service_group import GroupOfServicesDelta, GroupOfServices
 
 from autoscalingsim.deltarepr.regional_delta import RegionalDelta
+from autoscalingsim.deltarepr.node_group_delta import NodeGroupDelta
+from autoscalingsim.deltarepr.generalized_delta import GeneralizedDelta
 
 class Region:
 
@@ -215,7 +216,9 @@ class Region:
 
     def extract_collective_services_state(self):
 
-        region_collective_service_state = GroupOfServices()
+        import autoscalingsim.state.service_state.group_of_services as gos
+
+        region_collective_service_state = gos.GroupOfServices()
         for group in self.homogeneous_groups:
             region_collective_service_state += group.services_state
 

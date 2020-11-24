@@ -1,4 +1,4 @@
-from .service_state.service_group import GroupOfServices
+import autoscalingsim.state.service_state.group_of_services as gos
 
 from autoscalingsim.infrastructure_platform.node_information.system_resource_usage import SystemResourceUsage
 
@@ -17,7 +17,7 @@ class InNodePlacement:
     def __init__(self,
                  node_info : 'NodeInfo',
                  capacity_taken : SystemResourceUsage,
-                 placed_services : GroupOfServices):
+                 placed_services : gos.GroupOfServices):
 
         self.node_info = node_info
         self.capacity_taken = capacity_taken
@@ -33,7 +33,7 @@ class ServicesPlacement:
     def __init__(self,
                  node_info : 'NodeInfo',
                  nodes_count : int,
-                 services_state : GroupOfServices):
+                 services_state : gos.GroupOfServices):
 
         self.node_info = node_info
         self.nodes_count = nodes_count
@@ -51,8 +51,7 @@ class Placement:
         self.services_placements = services_placements
         self.score = None
 
-    def add_services_placement(self,
-                               other_services_placement : ServicesPlacement):
+    def add_services_placement(self, other_services_placement : ServicesPlacement):
 
         if not isinstance(other_services_placement, ServicesPlacement):
             raise TypeError(f'Wrong type on adding a new services placement: {other_services_placement.__class__.__name__}')
@@ -60,12 +59,12 @@ class Placement:
         self.services_placements.append(other_services_placement)
 
     def __iter__(self):
+
         return PlacementIterator(self)
 
 class PlacementIterator:
 
-    def __init__(self,
-                 placement : Placement):
+    def __init__(self, placement : Placement):
 
         self._placement = placement
         self._index = 0

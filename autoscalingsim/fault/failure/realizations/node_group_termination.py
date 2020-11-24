@@ -1,5 +1,7 @@
 from autoscalingsim.fault.failure.failure import NodeGroupFailure
-from autoscalingsim.state.node_group_state.node_group import HomogeneousNodeGroupDummy, NodeGroupDelta, GeneralizedDelta
+from autoscalingsim.state.node_group_state.node_group import HomogeneousNodeGroupDummy
+from autoscalingsim.deltarepr.node_group_delta import NodeGroupDelta
+from autoscalingsim.deltarepr.generalized_delta import GeneralizedDelta
 from autoscalingsim.deltarepr.regional_delta import RegionalDelta
 
 @NodeGroupFailure.register('termination')

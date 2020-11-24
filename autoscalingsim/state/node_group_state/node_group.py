@@ -5,8 +5,7 @@ from abc import ABC
 
 from .requests_processor import RequestsProcessor
 
-from autoscalingsim.state.service_state.service_group import GroupOfServicesDelta, GroupOfServices
-from autoscalingsim.state.service_state.scaling_aspects import ScalingAspect
+from autoscalingsim.scaling.scaling_aspects import ScalingAspect
 from autoscalingsim.infrastructure_platform.node_information.system_resource_usage import SystemResourceUsage
 from autoscalingsim.infrastructure_platform.node_information.node import NodeInfo
 from autoscalingsim.infrastructure_platform.link import NodeGroupLink
@@ -76,6 +75,8 @@ class HomogeneousNodeGroup(NodeGroup):
                  services_instances_counts : dict = {},
                  requirements_by_service : dict = {}):
 
+        import autoscalingsim.state.service_state.group_of_services as gos
+
         super().__init__(node_info.get_name(), node_info.get_provider(), nodes_count)
 
         self.node_info = node_info
@@ -85,8 +86,8 @@ class HomogeneousNodeGroup(NodeGroup):
         self.shared_processor = RequestsProcessor()
 
         if isinstance(services_instances_counts, dict):
-            self.services_state = GroupOfServices(services_instances_counts, requirements_by_service)
-        elif isinstance(services_instances_counts, GroupOfServices):
+            self.services_state = gos.GroupOfServices(services_instances_counts, requirements_by_service)
+        elif isinstance(services_instances_counts, gos.GroupOfServices):
             self.services_state = services_instances_counts
         else:
             raise TypeError(f'Incorrect type of the services_instances_counts when creating {self.__class__.__name__}: {services_instances_counts.__class__.__name__}')
@@ -202,14 +203,16 @@ class HomogeneousNodeGroup(NodeGroup):
 
         return self.services_state.extract_scaling_aspects()
 
-    def add_to_services_state(self, services_group_delta : GroupOfServicesDelta):
+    def add_to_services_state(self, services_group_delta : 'GroupOfServicesDelta'):
 
         self.services_state += services_group_delta
         _, self.system_resources_usage = self.node_info.services_require_system_resources(self.services_state, self.nodes_count)
 
     def nullify_services_state(self):
 
-        self.services_state = GroupOfServices()
+        import autoscalingsim.state.service_state.group_of_services as gos
+
+        self.services_state = gos.GroupOfServices()
         self.system_resources_usage = SystemResourceUsage(self.node_info, self.nodes_count)
 
     def copy(self):
@@ -218,21 +221,28 @@ class HomogeneousNodeGroup(NodeGroup):
 
     def to_delta(self, direction : int = 1):
 
+        import autoscalingsim.deltarepr.node_group_delta as n_grp_delta
+        import autoscalingsim.deltarepr.generalized_delta as g_delta
+
         """
-        Converts this node group into the *unenforced* GeneralizedDelta representation.
+        Converts this node group into the *unenforced* g_delta.GeneralizedDelta representation.
         By default: scale up direction.
         """
 
         node_group = self.copy()
         node_group.nullify_services_state()
-        node_group_delta = NodeGroupDelta(node_group, sign = direction)
+        node_group_delta = n_grp_delta.NodeGroupDelta(node_group, sign = direction)
 
-        return GeneralizedDelta(node_group_delta, self.services_state.to_delta(direction))
+        return g_delta.GeneralizedDelta(node_group_delta, self.services_state.to_delta(direction))
 
     def _count_aspect_soft_adjustment(self,
                                       unmet_changes : dict,
                                       scaled_service_instance_requirements_by_service : dict,
                                       node_sys_resource_usage_by_service_sorted : dict) -> tuple:
+
+        import autoscalingsim.deltarepr.node_group_delta as n_grp_delta
+        import autoscalingsim.deltarepr.generalized_delta as g_delta
+        import autoscalingsim.deltarepr.group_of_services_delta as gos_delta
 
         #nodes_count_to_consider = self.nodes_count
         generalized_deltas = []
@@ -296,17 +306,17 @@ class HomogeneousNodeGroup(NodeGroup):
                 node_group = HomogeneousNodeGroup(self.node_info, self.nodes_count - nodes_to_accommodate_res_usage, self.services_state.copy())# ?self.services_state.copy()
 
                 # Planning scale down for min_nodes_needed
-                node_group_delta = NodeGroupDelta(node_group, sign = -1, in_change = True, virtual = False)
+                node_group_delta = n_grp_delta.NodeGroupDelta(node_group, sign = -1, in_change = True, virtual = False)
 
             else:
                 # scale down/up only for services, nodegroup remains unchanged
-                node_group_delta = NodeGroupDelta(self.copy(), sign = 1, in_change = False, virtual = True)
+                node_group_delta = n_grp_delta.NodeGroupDelta(self.copy(), sign = 1, in_change = False, virtual = True)
 
             # Planning scale down for all the services count change from the solution
-            services_group_delta = GroupOfServicesDelta(services_cnt_change_count, in_change = True, virtual = False,
-                                                        services_reqs = scaled_service_instance_requirements_by_service)
+            services_group_delta = gos_delta.GroupOfServicesDelta(services_cnt_change_count, in_change = True, virtual = False,
+                                                                  services_reqs = scaled_service_instance_requirements_by_service)
 
-            gd = GeneralizedDelta(node_group_delta, services_group_delta)
+            gd = g_delta.GeneralizedDelta(node_group_delta, services_group_delta)
             generalized_deltas.append(gd)
 
         # Returning generalized deltas (enforced and not enforced) and the unmet changes in services counts
@@ -364,144 +374,3 @@ class HomogeneousNodeGroup(NodeGroup):
             #    raise ValueError(f'Support for computing the soft adjustment for the desired aspect type is not implemented: {aspect_name}')
 
         return (generalized_deltas, unmet_changes)
-
-class NodeGroupDelta:
-
-    """
-    Wraps the node group change and the direction of change, i.e.
-    addition or subtraction.
-    """
-
-    def __init__(self,
-                 node_group : HomogeneousNodeGroup,
-                 sign : int = 1,
-                 in_change : bool = True,
-                 virtual : bool = False):
-
-        if not isinstance(node_group, NodeGroup):
-            raise TypeError(f'The provided parameter is not of {NodeGroup.__name__} type: {node_group.__class__.__name__}')
-        self.node_group = node_group
-
-        if not isinstance(sign, int):
-            raise TypeError(f'The provided sign parameters is not of {int.__name__} type: {sign.__class__.__name__}')
-        self.sign = sign
-
-        # Signifies whether the delta is just desired (True) or already delayed (False).
-        self.in_change = in_change
-        # Signifies whether the delta should be considered during the enforcing or not.
-        # The aim of 'virtual' property is to keep the connection between the deltas after the enforcement.
-        self.virtual = virtual
-
-    def copy(self):
-
-        return self.__class__(self.node_group, self.sign, self.in_change, self.virtual)
-
-    def enforce(self):
-
-        return self.__class__(self.node_group, self.sign, False)
-
-    def get_provider(self):
-
-        return self.node_group.node_info.get_provider()
-
-    def get_node_type(self):
-
-        return self.node_group.node_info.node_type
-
-    def get_node_group_id(self):
-
-        return self.node_group.id
-
-class GeneralizedDelta:
-
-    """
-    Binds deltas on different resource abstraction levels such as level of nodes and
-    the level of services.
-    """
-
-    def __init__(self,
-                 node_group_delta : NodeGroupDelta,
-                 services_group_delta : GroupOfServicesDelta):
-
-        if not isinstance(node_group_delta, NodeGroupDelta) and not node_group_delta is None:
-            raise TypeError(f'The parameter value provided for the initialization of {self.__class__.__name__} is not of {NodeGroupDelta.__name__} type')
-
-        if (not isinstance(services_group_delta, GroupOfServicesDelta)) and (not services_group_delta is None):
-            raise TypeError(f'The parameter value provided for the initialization of {self.__class__.__name__} is not of {GroupOfServicesDelta.__name__} type')
-
-        self.node_group_delta = node_group_delta
-        self.services_group_delta = services_group_delta
-        self.cached_enforcement = {}
-
-    def till_full_enforcement(self,
-                              platform_scaling_model,
-                              application_scaling_model,
-                              delta_timestamp : pd.Timestamp):
-
-        """
-        Computes time required for the enforcement to finish at all levels.
-        Performs the enforcement underneath to not do the computation twice.
-        """
-
-        new_deltas = self.enforce(platform_scaling_model,
-                                  application_scaling_model,
-                                  delta_timestamp)
-
-        return max(new_deltas.keys()) - delta_timestamp if len(new_deltas) > 0 else pd.Timedelta(0, unit = 'ms')
-
-    def enforce(self,
-                platform_scaling_model,
-                application_scaling_model,
-                delta_timestamp : pd.Timestamp):
-
-        """
-        Forms enforced deltas for both parts of the generalized delta and returns
-        these as timelines. The enforcement takes into account a sequence of the
-        scaling actions. On scale down, all the services should terminate first.
-        On scale up, a node group should boot first.
-
-        In addition, it caches the enforcement on first computation since
-        the preliminary till_full_enforcement method requires it.
-        """
-
-        if delta_timestamp in self.cached_enforcement:
-            return self.cached_enforcement[delta_timestamp]
-
-        self.cached_enforcement = {}
-        new_deltas = {}
-        if self.node_group_delta.in_change and (not self.node_group_delta.virtual):
-            delay_from_nodes = pd.Timedelta(0, unit = 'ms')
-            max_service_delay = pd.Timedelta(0, unit = 'ms')
-            node_group_delta_virtual = None
-
-            node_group_delay, node_group_delta = platform_scaling_model.delay(self.node_group_delta)
-            services_groups_deltas_by_delays = application_scaling_model.delay(self.services_group_delta)
-
-            if self.node_group_delta.sign < 0:
-                # Adjusting params for the graceful scale down
-                if len(services_groups_deltas_by_delays) > 0:
-                    max_service_delay = max(list(services_groups_deltas_by_delays.keys()))
-                node_group_delta_virtual = self.node_group_delta.copy()
-            elif self.node_group_delta.sign > 0:
-                # Adjusting params for scale up
-                delay_from_nodes = node_group_delay
-                node_group_delta_virtual = node_group_delta.copy()
-
-            # Delta for nodes
-            new_timestamp = delta_timestamp + max_service_delay + node_group_delay
-            if not new_timestamp in new_deltas:
-                new_deltas[new_timestamp] = []
-            new_deltas[new_timestamp].append(GeneralizedDelta(node_group_delta, None))
-
-            # Deltas for services -- connecting them to the corresponding nodes
-            for delay, services_group_delta in services_groups_deltas_by_delays.items():
-                new_timestamp = delta_timestamp + delay + delay_from_nodes
-                if not new_timestamp in new_deltas:
-                    new_deltas[new_timestamp] = []
-
-                node_group_delta_virtual.virtual = True
-                new_deltas[new_timestamp].append(GeneralizedDelta(node_group_delta_virtual, services_group_delta))
-
-        self.cached_enforcement[delta_timestamp] = new_deltas
-
-        return new_deltas

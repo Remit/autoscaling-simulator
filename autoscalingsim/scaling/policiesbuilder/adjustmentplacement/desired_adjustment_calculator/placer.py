@@ -2,7 +2,7 @@ from collections import OrderedDict
 
 from autoscalingsim.infrastructure_platform.node_information.system_resource_usage import SystemResourceUsage
 from autoscalingsim.state.placement import *
-from autoscalingsim.state.service_state.service_group import GroupOfServices
+from autoscalingsim.state.service_state.group_of_services import GroupOfServices
 from autoscalingsim.scaling.state_reader import StateReader
 
 class Placer:

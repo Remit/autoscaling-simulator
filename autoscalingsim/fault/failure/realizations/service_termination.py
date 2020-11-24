@@ -1,6 +1,8 @@
 from autoscalingsim.fault.failure.failure import ServiceFailure
-from autoscalingsim.state.node_group_state.node_group import HomogeneousNodeGroupDummy, NodeGroupDelta, GeneralizedDelta
-from autoscalingsim.state.service_state.service_group import GroupOfServicesDelta
+from autoscalingsim.state.node_group_state.node_group import HomogeneousNodeGroupDummy
+from autoscalingsim.deltarepr.node_group_delta import NodeGroupDelta
+from autoscalingsim.deltarepr.generalized_delta import GeneralizedDelta
+from autoscalingsim.deltarepr.group_of_services_delta import GroupOfServicesDelta
 from autoscalingsim.deltarepr.regional_delta import RegionalDelta
 
 @ServiceFailure.register('termination')

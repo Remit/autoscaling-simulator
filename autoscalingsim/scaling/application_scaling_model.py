@@ -1,7 +1,6 @@
 import pandas as pd
 from collections import OrderedDict
 
-from autoscalingsim.state.service_state.service_group import GroupOfServicesDelta
 from autoscalingsim.utils.error_check import ErrorChecker
 
 class ServiceScalingInfo:
@@ -66,7 +65,7 @@ class ApplicationScalingModel:
                 scaling_info.set_scaled_aspect_name(scaled_aspect_name)
 
     def delay(self,
-              services_group_delta : GroupOfServicesDelta):
+              services_group_delta : 'GroupOfServicesDelta'):
 
         """
         Implements the delay operation on the application level. Returns multiple
