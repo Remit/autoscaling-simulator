@@ -1,7 +1,7 @@
 import pandas as pd
 from collections import OrderedDict
 
-from autoscalingsim.state.entity_state.service_group import GroupOfServicesDelta
+from autoscalingsim.state.service_state.service_group import GroupOfServicesDelta
 from autoscalingsim.utils.error_check import ErrorChecker
 
 class ServiceScalingInfo:

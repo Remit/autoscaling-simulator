@@ -1,7 +1,7 @@
 import pandas as pd
 
 from autoscalingsim.state.platform_state import PlatformState
-from autoscalingsim.state.entity_state.scaling_aspects import ScalingAspect
+from autoscalingsim.state.service_state.scaling_aspects import ScalingAspect
 from autoscalingsim.state.node_group_state.node_group import HomogeneousNodeGroup
 
 class ScalingManager:

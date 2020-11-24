@@ -8,7 +8,7 @@ from autoscalingsim.load.request import Request
 from autoscalingsim.application.requests_buffer import RequestsBuffer
 from autoscalingsim.application import buffer_utilization
 from autoscalingsim.infrastructure_platform.node_information.system_resource_usage import SystemResourceUsage
-from autoscalingsim.state.entity_state.scaling_aspects import ScalingAspect
+from autoscalingsim.state.service_state.scaling_aspects import ScalingAspect
 from autoscalingsim.state.node_group_state.node_group import HomogeneousNodeGroup
 from autoscalingsim.utils.requirements import ResourceRequirements
 from autoscalingsim.utils.error_check import ErrorChecker

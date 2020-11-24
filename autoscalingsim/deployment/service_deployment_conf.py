@@ -1,5 +1,5 @@
 from autoscalingsim.deltarepr.regional_delta import RegionalDelta
-from autoscalingsim.state.entity_state.service_group import GroupOfServicesDelta
+from autoscalingsim.state.service_state.service_group import GroupOfServicesDelta
 from autoscalingsim.state.node_group_state.node_group import HomogeneousNodeGroup, NodeGroupDelta, GeneralizedDelta
 from autoscalingsim.deltarepr.platform_state_delta import PlatformStateDelta
 from autoscalingsim.utils.requirements import ResourceRequirements

@@ -7,8 +7,8 @@ from .forecasting.forecaster import MetricForecaster
 from .limiter import Limiter
 
 from autoscalingsim.scaling.state_reader import StateReader
-from autoscalingsim.state.entity_state.group_of_services_reg import GroupOfServicesRegionalized
-from autoscalingsim.state.entity_state.scaling_aspects import ScalingAspect
+from autoscalingsim.state.service_state.group_of_services_reg import GroupOfServicesRegionalized
+from autoscalingsim.state.service_state.scaling_aspects import ScalingAspect
 from autoscalingsim.utils.error_check import ErrorChecker
 
 class MetricDescription:

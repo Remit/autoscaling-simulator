@@ -3,7 +3,7 @@ from collections import OrderedDict
 from .placement import Placement
 from .node_group_state.node_group import HomogeneousNodeGroup, NodeGroupDelta, GeneralizedDelta
 from .node_group_state.node_group_set import HomogeneousNodeGroupSet
-from .entity_state.service_group import GroupOfServicesDelta, GroupOfServices
+from .service_state.service_group import GroupOfServicesDelta, GroupOfServices
 
 from autoscalingsim.deltarepr.regional_delta import RegionalDelta
 

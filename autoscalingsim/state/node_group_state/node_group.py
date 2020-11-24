@@ -5,8 +5,8 @@ from abc import ABC
 
 from .requests_processor import RequestsProcessor
 
-from autoscalingsim.state.entity_state.service_group import GroupOfServicesDelta, GroupOfServices
-from autoscalingsim.state.entity_state.scaling_aspects import ScalingAspect
+from autoscalingsim.state.service_state.service_group import GroupOfServicesDelta, GroupOfServices
+from autoscalingsim.state.service_state.scaling_aspects import ScalingAspect
 from autoscalingsim.infrastructure_platform.node_information.system_resource_usage import SystemResourceUsage
 from autoscalingsim.infrastructure_platform.node_information.node import NodeInfo
 from autoscalingsim.infrastructure_platform.link import NodeGroupLink

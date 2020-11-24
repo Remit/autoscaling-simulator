@@ -4,7 +4,7 @@ from .system_resource_usage import SystemResourceUsage
 
 from autoscalingsim.utils.size import Size
 from autoscalingsim.utils.requirements import ResourceRequirements
-from autoscalingsim.state.entity_state.service_group import GroupOfServices
+from autoscalingsim.state.service_state.service_group import GroupOfServices
 
 class NodeInfo:
 

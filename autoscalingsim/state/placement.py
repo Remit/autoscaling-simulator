@@ -1,4 +1,4 @@
-from .entity_state.service_group import GroupOfServices
+from .service_state.service_group import GroupOfServices
 
 from autoscalingsim.infrastructure_platform.node_information.system_resource_usage import SystemResourceUsage
 
