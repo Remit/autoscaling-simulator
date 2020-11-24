@@ -1,7 +1,7 @@
 import pandas as pd
 
 from abc import ABC, abstractmethod
-from ..state.state import ScaledEntityState
+from .tempstate import TempState
 
 class UtilizationMetric:
 
@@ -14,7 +14,7 @@ class UtilizationMetric:
 
         self.metric_name = metric_name
         self.utilization = {'datetime': [], 'value': []}
-        self.tmp_state = ScaledEntityState.TempState()
+        self.tmp_state = TempState()
 
     def update(self,
                cur_ts : pd.Timestamp,

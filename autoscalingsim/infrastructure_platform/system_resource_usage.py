@@ -1,10 +1,9 @@
 import operator
 import numbers
 
-from ..state.usage import Usage
 from ..utils.size import Size
 
-class SystemResourceUsage(Usage):
+class SystemResourceUsage:
 
     """
     Represents system resources usage, e.g. vCPU, memory, and network bandwidth.

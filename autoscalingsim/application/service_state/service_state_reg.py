@@ -2,12 +2,11 @@ import pandas as pd
 
 from .service_state import ServiceState
 
-from ...state.state import ScaledEntityState
 from ...state.node_group_state.node_group import HomogeneousNodeGroup
 from ...utils.requirements import ResourceRequirements
 from ...load.request import Request
 
-class ServiceStateRegionalized(ScaledEntityState):
+class ServiceStateRegionalized:
 
     """
     Maintains regional states of the deployed service instances.
