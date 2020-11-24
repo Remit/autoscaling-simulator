@@ -2,7 +2,7 @@ import numbers
 import math
 from abc import ABC, abstractmethod
 
-from .....utils.functions import InvertingFunction
+from autoscalingsim.utils.functions import InvertingFunction
 
 class StateScore:
 

@@ -3,11 +3,11 @@ import pandas as pd
 from .response_stats import ResponseStats
 from .application_model_conf import ApplicationModelConfiguration
 
-from ..deployment.deployment_model import DeploymentModel
-from ..infrastructure_platform.platform_model import PlatformModel
-from ..scaling.policiesbuilder.scaling_policy import ScalingPolicy
-from ..state.statemanagers import StateReader, ScalingManager
-from ..utils.requirements import ResourceRequirements
+from autoscalingsim.deployment.deployment_model import DeploymentModel
+from autoscalingsim.infrastructure_platform.platform_model import PlatformModel
+from autoscalingsim.scaling.policiesbuilder.scaling_policy import ScalingPolicy
+from autoscalingsim.state.statemanagers import StateReader, ScalingManager
+from autoscalingsim.utils.requirements import ResourceRequirements
 
 class ApplicationModel:
 

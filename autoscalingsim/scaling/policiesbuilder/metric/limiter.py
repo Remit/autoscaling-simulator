@@ -2,7 +2,7 @@ import pandas as pd
 
 from abc import ABC, abstractmethod
 
-from ....state.entity_state.scaling_aspects import ScalingAspect
+from autoscalingsim.state.entity_state.scaling_aspects import ScalingAspect
 
 class Limiter:
     """

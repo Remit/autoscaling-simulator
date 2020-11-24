@@ -1,6 +1,7 @@
-from ..placement import Placement, ServicesPlacement
 from .node_group import HomogeneousNodeGroup, GeneralizedDelta, NodeGroupDelta
-from ...deltarepr.regional_delta import RegionalDelta
+
+from autoscalingsim.state.placement import Placement, ServicesPlacement
+from autoscalingsim.deltarepr.regional_delta import RegionalDelta
 
 class HomogeneousNodeGroupSet:
 

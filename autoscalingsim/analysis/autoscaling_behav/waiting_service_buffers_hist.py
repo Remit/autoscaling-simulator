@@ -5,7 +5,7 @@ import matplotlib.ticker as ticker
 
 from matplotlib import pyplot as plt
 
-from .. import plotting_constants
+import autoscalingsim.analysis.plotting_constants as plotting_constants
 
 class WaitingServiceBuffersHistogram:
 

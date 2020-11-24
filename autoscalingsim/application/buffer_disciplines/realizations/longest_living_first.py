@@ -1,9 +1,8 @@
 import bisect
 import pandas as pd
 
-from ..discipline import QueuingDiscipline
-
-from ....load.request import Request
+from autoscalingsim.application.buffer_disciplines.discipline import QueuingDiscipline
+from autoscalingsim.load.request import Request
 
 @QueuingDiscipline.register('OF')
 class OldestFirstQueue(QueuingDiscipline):

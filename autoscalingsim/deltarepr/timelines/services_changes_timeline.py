@@ -1,6 +1,6 @@
 import pandas as pd
 
-from ...utils.combiners import Combiner
+from autoscalingsim.utils.combiners import Combiner
 
 class TimelineOfDesiredServicesChanges:
 

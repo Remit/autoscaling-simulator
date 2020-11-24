@@ -1,6 +1,6 @@
 import pandas as pd
 
-from ..utils.utilization import EntityUtilization
+from autoscalingsim.utils.utilization import EntityUtilization
 
 waiting_time_metric_name = 'waiting_time'
 waiting_requests_count_metric_name = 'waiting_requests_count'

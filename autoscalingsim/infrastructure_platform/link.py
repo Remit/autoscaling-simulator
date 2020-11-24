@@ -1,7 +1,7 @@
 import pandas as pd
 
-from ..load.request import Request
-from ..utils.size import Size
+from autoscalingsim.load.request import Request
+from autoscalingsim.utils.size import Size
 
 class NodeGroupLink:
 

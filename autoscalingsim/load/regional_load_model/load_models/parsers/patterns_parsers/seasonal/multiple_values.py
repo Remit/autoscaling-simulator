@@ -1,7 +1,7 @@
 import pandas as pd
 
-from ..seasonal_load_parser import SeasonalLoadPatternParser
-from .......utils.error_check import ErrorChecker
+from autoscalingsim.load.regional_load_model.load_models.parsers.patterns_parsers.seasonal_load_parser import SeasonalLoadPatternParser
+from autoscalingsim.utils.error_check import ErrorChecker
 
 @SeasonalLoadPatternParser.register('values')
 class MultipleValuesSeasonalLoadPatternParser(SeasonalLoadPatternParser):

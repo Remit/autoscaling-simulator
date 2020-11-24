@@ -6,9 +6,9 @@ from matplotlib import pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from collections.abc import Iterable
 
-from .. import plotting_constants
+import autoscalingsim.analysis.plotting_constants as plotting_constants
 
-from ...infrastructure_platform.platform_model import PlatformModel
+from autoscalingsim.infrastructure_platform.platform_model import PlatformModel
 
 class NodesUsageLineGraph:
 

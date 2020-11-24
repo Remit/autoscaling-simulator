@@ -3,7 +3,7 @@ import pandas as pd
 from abc import ABC, abstractmethod
 from collections import deque
 
-from ...load.request import Request
+from autoscalingsim.load.request import Request
 
 class QueuingDiscipline(ABC):
 

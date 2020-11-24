@@ -3,7 +3,7 @@ import pandas as pd
 
 from .regional_load_model.regional_load_model import RegionalLoadModel
 
-from ..utils.error_check import ErrorChecker
+from autoscalingsim.utils.error_check import ErrorChecker
 
 class LoadModel:
 

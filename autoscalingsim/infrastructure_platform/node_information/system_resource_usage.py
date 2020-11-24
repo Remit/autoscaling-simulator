@@ -1,7 +1,7 @@
 import operator
 import numbers
 
-from ..utils.size import Size
+from autoscalingsim.utils.size import Size
 
 class SystemResourceUsage:
 

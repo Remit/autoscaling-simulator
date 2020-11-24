@@ -1,6 +1,6 @@
 import collections
 
-from ..scaling.policiesbuilder.adjustmentplacement.desired_adjustment_calculator.score import StateScore
+from autoscalingsim.scaling.policiesbuilder.adjustmentplacement.desired_adjustment_calculator.score import StateScore
 
 class StateDuration:
 

@@ -2,7 +2,7 @@ import pandas as pd
 
 from .forecasting_model import ForecastingModel
 
-from .....utils.error_check import ErrorChecker
+from autoscalingsim.utils.error_check import ErrorChecker
 
 class MetricForecaster:
 

@@ -3,7 +3,7 @@ import pandas as pd
 
 from matplotlib import pyplot as plt
 
-from ..analysis import plotting_constants
+from autoscalingsim.analysis import plotting_constants
 
 class LoadVsResponseTimeGraph:
 

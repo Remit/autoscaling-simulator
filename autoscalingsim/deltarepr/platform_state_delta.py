@@ -2,10 +2,9 @@ import pandas as pd
 
 from .regional_delta import RegionalDelta
 
-from ..state.state_duration import StateDuration
-
-from ..scaling.platform_scaling_model import PlatformScalingModel
-from ..scaling.application_scaling_model import ApplicationScalingModel
+from autoscalingsim.state.state_duration import StateDuration
+from autoscalingsim.scaling.platform_scaling_model import PlatformScalingModel
+from autoscalingsim.scaling.application_scaling_model import ApplicationScalingModel
 
 class PlatformStateDelta:
 

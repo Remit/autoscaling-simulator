@@ -4,9 +4,9 @@ import pandas as pd
 from .adjustmentplacement.adjustment_policy import AdjustmentPolicy
 from .scaling_policy_conf import ScalingPolicyConfiguration
 
-from ..scaling_model import ScalingModel
-from ...infrastructure_platform.platform_model import PlatformModel
-from ...state.statemanagers import StateReader, ScalingManager
+from autoscalingsim.scaling.scaling_model import ScalingModel
+from autoscalingsim.infrastructure_platform.platform_model import PlatformModel
+from autoscalingsim.state.statemanagers import StateReader, ScalingManager
 
 class ScalingPolicy:
 

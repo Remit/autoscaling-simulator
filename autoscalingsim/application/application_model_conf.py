@@ -6,14 +6,14 @@ import pandas as pd
 from .service import Service
 from .application_structure import ApplicationStructure
 
-from ..deployment.service_deployment_conf import ServiceDeploymentConfiguration
-from ..infrastructure_platform.platform_model import PlatformModel
-from ..scaling.policiesbuilder.scaled.scaled_service_settings import ScaledServiceScalingSettings
-from ..utils.request_processing_info import RequestProcessingInfo
-from ..utils.size import Size
-from ..state.statemanagers import StateReader
-from ..utils.requirements import ResourceRequirements
-from ..utils.error_check import ErrorChecker
+from autoscalingsim.deployment.service_deployment_conf import ServiceDeploymentConfiguration
+from autoscalingsim.infrastructure_platform.platform_model import PlatformModel
+from autoscalingsim.scaling.policiesbuilder.scaled.scaled_service_settings import ScaledServiceScalingSettings
+from autoscalingsim.state.statemanagers import StateReader
+from autoscalingsim.utils.request_processing_info import RequestProcessingInfo
+from autoscalingsim.utils.size import Size
+from autoscalingsim.utils.requirements import ResourceRequirements
+from autoscalingsim.utils.error_check import ErrorChecker
 
 class ServiceConfiguration:
 

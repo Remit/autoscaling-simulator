@@ -3,7 +3,7 @@ import pandas as pd
 
 from .score import Score
 
-from .....infrastructure_platform.node_information.node import NodeInfo
+from autoscalingsim.infrastructure_platform.node_information.node import NodeInfo
 
 class ScoreCalculator(ABC):
 

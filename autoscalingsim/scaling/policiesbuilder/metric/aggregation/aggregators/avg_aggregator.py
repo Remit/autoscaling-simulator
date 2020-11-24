@@ -1,8 +1,7 @@
 import pandas as pd
 
-from ..valuesaggregator import ValuesAggregator
-
-from ......utils.error_check import ErrorChecker
+from autoscalingsim.scaling.policiesbuilder.metric.aggregation.valuesaggregator import ValuesAggregator
+from autoscalingsim.utils.error_check import ErrorChecker
 
 @ValuesAggregator.register('avgAggregator')
 class AvgAggregator(ValuesAggregator):

@@ -1,10 +1,10 @@
 import pandas as pd
 
-from ..system_resource_usage import SystemResourceUsage
+from .system_resource_usage import SystemResourceUsage
 
-from ...utils.size import Size
-from ...utils.requirements import ResourceRequirements
-from ...state.entity_state.service_group import GroupOfServices
+from autoscalingsim.utils.size import Size
+from autoscalingsim.utils.requirements import ResourceRequirements
+from autoscalingsim.state.entity_state.service_group import GroupOfServices
 
 class NodeInfo:
 

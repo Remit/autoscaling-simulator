@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 
-from ..utils.error_check import ErrorChecker
-from ..state.node_group_state.node_group import NodeGroupDelta
+from autoscalingsim.state.node_group_state.node_group import NodeGroupDelta
+from autoscalingsim.utils.error_check import ErrorChecker
 
 class NodeScalingInfo:
 

@@ -1,6 +1,5 @@
-from ..requests_distribution.requests_distribution import SlicedRequestsNumDistribution
-
-from .....utils.error_check import ErrorChecker
+from autoscalingsim.load.regional_load_model.load_models.requests_distribution.requests_distribution import SlicedRequestsNumDistribution
+from autoscalingsim.utils.error_check import ErrorChecker
 
 class DistributionsParser:
 

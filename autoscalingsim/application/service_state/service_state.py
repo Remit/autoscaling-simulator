@@ -4,14 +4,14 @@ import pandas as pd
 from .deployment import Deployment
 from .service_metric import ServiceMetric
 
-from ...load.request import Request
-from ...application.requests_buffer import RequestsBuffer
-from ...application import buffer_utilization
-from ...infrastructure_platform.system_resource_usage import SystemResourceUsage
-from ...state.entity_state.scaling_aspects import ScalingAspect
-from ...state.node_group_state.node_group import HomogeneousNodeGroup
-from ...utils.requirements import ResourceRequirements
-from ...utils.error_check import ErrorChecker
+from autoscalingsim.load.request import Request
+from autoscalingsim.application.requests_buffer import RequestsBuffer
+from autoscalingsim.application import buffer_utilization
+from autoscalingsim.infrastructure_platform.node_information.system_resource_usage import SystemResourceUsage
+from autoscalingsim.state.entity_state.scaling_aspects import ScalingAspect
+from autoscalingsim.state.node_group_state.node_group import HomogeneousNodeGroup
+from autoscalingsim.utils.requirements import ResourceRequirements
+from autoscalingsim.utils.error_check import ErrorChecker
 
 class ServiceState:
 

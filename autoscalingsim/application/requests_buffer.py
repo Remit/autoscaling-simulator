@@ -3,8 +3,8 @@ import pandas as pd
 from .buffer_disciplines.discipline import QueuingDiscipline
 from .buffer_utilization import BufferUtilization
 
-from ..load.request import Request
-from ..infrastructure_platform.link import NodeGroupLink
+from autoscalingsim.load.request import Request
+from autoscalingsim.infrastructure_platform.link import NodeGroupLink
 
 class RequestsBuffer:
 

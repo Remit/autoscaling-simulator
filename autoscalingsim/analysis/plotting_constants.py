@@ -1,4 +1,4 @@
-from ..infrastructure_platform.system_resource_usage import SystemResourceUsage
+from autoscalingsim.infrastructure_platform.node_information.system_resource_usage import SystemResourceUsage
 
 PUBLISHING_DPI = 600
 MAX_PLOTS_CNT_ROW = 4

@@ -4,15 +4,15 @@ from collections import OrderedDict
 from abc import ABC
 
 from .requests_processor import RequestsProcessor
-from ..entity_state.service_group import GroupOfServicesDelta, GroupOfServices
-from ..entity_state.scaling_aspects import ScalingAspect
 
-from ...infrastructure_platform.system_resource_usage import SystemResourceUsage
-from ...infrastructure_platform.node_information.node import NodeInfo
-from ...infrastructure_platform.link import NodeGroupLink
-from ...infrastructure_platform.node_group_utilization import NodeGroupUtilization
-from ...load.request import Request
-from ...utils.requirements import ResourceRequirements
+from autoscalingsim.state.entity_state.service_group import GroupOfServicesDelta, GroupOfServices
+from autoscalingsim.state.entity_state.scaling_aspects import ScalingAspect
+from autoscalingsim.infrastructure_platform.node_information.system_resource_usage import SystemResourceUsage
+from autoscalingsim.infrastructure_platform.node_information.node import NodeInfo
+from autoscalingsim.infrastructure_platform.link import NodeGroupLink
+from autoscalingsim.infrastructure_platform.node_group_utilization import NodeGroupUtilization
+from autoscalingsim.load.request import Request
+from autoscalingsim.utils.requirements import ResourceRequirements
 
 class NodeGroup(ABC):
 

@@ -4,8 +4,9 @@ import pandas as pd
 import numpy as np
 
 from .failure.failure import ServiceFailure, NodeGroupFailure
-from ..deltarepr.platform_state_delta import PlatformStateDelta
-from ..utils.error_check import ErrorChecker
+
+from autoscalingsim.deltarepr.platform_state_delta import PlatformStateDelta
+from autoscalingsim.utils.error_check import ErrorChecker
 
 class FaultModel:
 

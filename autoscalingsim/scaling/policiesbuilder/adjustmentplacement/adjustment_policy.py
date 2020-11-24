@@ -3,10 +3,10 @@ import collections
 
 from . import adjusters
 
-from ...scaling_model import ScalingModel
-from ..scaling_policy_conf import ScalingPolicyConfiguration
-from ....state.platform_state import PlatformState
-from ....state.statemanagers import StateReader
+from autoscalingsim.scaling.scaling_model import ScalingModel
+from autoscalingsim.scaling.policiesbuilder.scaling_policy_conf import ScalingPolicyConfiguration
+from autoscalingsim.state.platform_state import PlatformState
+from autoscalingsim.state.statemanagers import StateReader
 
 class AdjustmentPolicy:
 

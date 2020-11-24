@@ -2,9 +2,9 @@ import pandas as pd
 
 from .service_state import ServiceState
 
-from ...state.node_group_state.node_group import HomogeneousNodeGroup
-from ...utils.requirements import ResourceRequirements
-from ...load.request import Request
+from autoscalingsim.load.request import Request
+from autoscalingsim.state.node_group_state.node_group import HomogeneousNodeGroup
+from autoscalingsim.utils.requirements import ResourceRequirements
 
 class ServiceStateRegionalized:
 

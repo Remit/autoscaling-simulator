@@ -2,9 +2,9 @@ import collections
 import pandas as pd
 
 from .scaling_aggregation import ScalingEffectAggregationRule
-
-from ....state.statemanagers import StateReader
 from .scaled_service_settings import ScaledServiceScalingSettings
+
+from autoscalingsim.state.statemanagers import StateReader
 
 class ScaledService:
 

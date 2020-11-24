@@ -5,17 +5,17 @@ from .desired_adjustment_calculator.score_calculators import ScoreCalculator
 from .desired_adjustment_calculator.desired_calc import DesiredChangeCalculator
 from .desired_adjustment_calculator.scorer import Scorer
 
-from ...application_scaling_model import ApplicationScalingModel
-from ...platform_scaling_model import PlatformScalingModel
+from autoscalingsim.scaling.application_scaling_model import ApplicationScalingModel
+from autoscalingsim.scaling.platform_scaling_model import PlatformScalingModel
 
-from ....utils.combiners import Combiner
-from ....utils.error_check import ErrorChecker
-from ....deltarepr.timelines.services_changes_timeline import TimelineOfDesiredServicesChanges
-from ....deltarepr.timelines.delta_timeline import DeltaTimeline
-from ....state.entity_state.group_of_services_reg import GroupOfServicesRegionalized
-from ....state.statemanagers import StateReader
-from ....state.platform_state import PlatformState
-from ....state.state_duration import StateDuration
+from autoscalingsim.utils.combiners import Combiner
+from autoscalingsim.utils.error_check import ErrorChecker
+from autoscalingsim.deltarepr.timelines.services_changes_timeline import TimelineOfDesiredServicesChanges
+from autoscalingsim.deltarepr.timelines.delta_timeline import DeltaTimeline
+from autoscalingsim.state.entity_state.group_of_services_reg import GroupOfServicesRegionalized
+from autoscalingsim.state.statemanagers import StateReader
+from autoscalingsim.state.platform_state import PlatformState
+from autoscalingsim.state.state_duration import StateDuration
 
 class Adjuster(ABC):
 

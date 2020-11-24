@@ -1,9 +1,9 @@
 from collections import OrderedDict
 
-from .....infrastructure_platform.system_resource_usage import SystemResourceUsage
-from .....state.placement import *
-from .....state.entity_state.service_group import GroupOfServices
-from .....state.statemanagers import StateReader
+from autoscalingsim.infrastructure_platform.node_information.system_resource_usage import SystemResourceUsage
+from autoscalingsim.state.placement import *
+from autoscalingsim.state.entity_state.service_group import GroupOfServices
+from autoscalingsim.state.statemanagers import StateReader
 
 class Placer:
 

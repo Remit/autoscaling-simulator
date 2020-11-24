@@ -4,18 +4,16 @@ import pandas as pd
 from .node_information.node import NodeInfo
 from .node_information.provider_nodes import ProviderNodes
 
-from ..scaling.platform_scaling_model import PlatformScalingModel
-from ..scaling.application_scaling_model import ApplicationScalingModel
-from ..scaling.policiesbuilder.adjustmentplacement.adjustment_policy import AdjustmentPolicy
-
-from ..state.platform_state import PlatformState
-from ..state.statemanagers import StateReader, ScalingManager
-from ..deltarepr.platform_state_delta import PlatformStateDelta
-from ..deltarepr.timelines.delta_timeline import DeltaTimeline
-from ..utils.size import Size
-from ..utils.error_check import ErrorChecker
-
-from ..fault.fault_model import FaultModel
+from autoscalingsim.scaling.platform_scaling_model import PlatformScalingModel
+from autoscalingsim.scaling.application_scaling_model import ApplicationScalingModel
+from autoscalingsim.scaling.policiesbuilder.adjustmentplacement.adjustment_policy import AdjustmentPolicy
+from autoscalingsim.state.platform_state import PlatformState
+from autoscalingsim.state.statemanagers import StateReader, ScalingManager
+from autoscalingsim.deltarepr.platform_state_delta import PlatformStateDelta
+from autoscalingsim.deltarepr.timelines.delta_timeline import DeltaTimeline
+from autoscalingsim.utils.size import Size
+from autoscalingsim.utils.error_check import ErrorChecker
+from autoscalingsim.fault.fault_model import FaultModel
 
 class PlatformModel:
 

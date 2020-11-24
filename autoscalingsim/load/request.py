@@ -1,7 +1,7 @@
 import uuid
 import pandas as pd
 
-from ..utils.requirements import ResourceRequirements
+from autoscalingsim.utils.requirements import ResourceRequirements
 
 class Request:
 

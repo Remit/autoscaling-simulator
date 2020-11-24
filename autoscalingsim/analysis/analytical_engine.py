@@ -11,7 +11,7 @@ from .autoscaling_behav.nodes_usage_line_graph import NodesUsageLineGraph
 from .autoscaling_behav.waiting_service_buffers_hist import WaitingServiceBuffersHistogram
 from .autoscaling_behav.distribution_requests_times_bars import DistributionRequestsTimesBarchart
 
-from ..simulation.simulation import Simulation
+from autoscalingsim.simulation.simulation import Simulation
 
 class AnalysisFramework:
 
@@ -37,7 +37,7 @@ class AnalysisFramework:
               a bar for each request type
             > Autoscaling time budget evaluation graphs
     """
-    
+
     def __init__(self,
                  simulation_step : pd.Timedelta,
                  figures_dir = None):

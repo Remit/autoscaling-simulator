@@ -5,7 +5,7 @@ import pandas as pd
 from .metric.scalingmetric import MetricDescription
 from .scaled.scaled_service_settings import ScaledServiceScalingSettings
 
-from ...utils.error_check import ErrorChecker
+from autoscalingsim.utils.error_check import ErrorChecker
 
 class ScalingPolicyConfiguration:
 

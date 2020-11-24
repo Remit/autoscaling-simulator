@@ -1,8 +1,7 @@
 import pandas as pd
 
-from ..stabilizer import Stabilizer
-
-from ......utils.error_check import ErrorChecker
+from autoscalingsim.scaling.policiesbuilder.metric.stabilization.stabilizer import Stabilizer
+from autoscalingsim.utils.error_check import ErrorChecker
 
 @Stabilizer.register('maxStabilizer')
 class MaxStabilizer(Stabilizer):

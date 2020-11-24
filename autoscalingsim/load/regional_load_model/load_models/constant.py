@@ -2,9 +2,10 @@ import pandas as pd
 
 from .parsers.patterns_parsers.constant_load_parser import ConstantLoadPatternParser
 from .parsers.reqs_ratios_parser import RatiosParser
-from ..regional_load_model import RegionalLoadModel
-from ...request import Request
-from ....utils.error_check import ErrorChecker
+
+from autoscalingsim.load.regional_load_model.regional_load_model import RegionalLoadModel
+from autoscalingsim.load.request import Request
+from autoscalingsim.utils.error_check import ErrorChecker
 
 @RegionalLoadModel.register('constant')
 class ConstantLoadModel(RegionalLoadModel):

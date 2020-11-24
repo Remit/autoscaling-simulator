@@ -1,7 +1,7 @@
 import pandas as pd
 
-from ..constant_load_parser import ConstantLoadPatternParser
-from .......utils.error_check import ErrorChecker
+from autoscalingsim.load.regional_load_model.load_models.parsers.patterns_parsers.constant_load_parser import ConstantLoadPatternParser
+from autoscalingsim.utils.error_check import ErrorChecker
 
 @ConstantLoadPatternParser.register('single_value')
 class SingleValueConstantLoadPatternParser(ConstantLoadPatternParser):

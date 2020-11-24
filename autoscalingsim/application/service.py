@@ -3,11 +3,11 @@ import pandas as pd
 
 from .service_state.service_state_reg import ServiceStateRegionalized
 
-from ..scaling.policiesbuilder.scaled.scaled_service import ScaledService
-from ..scaling.policiesbuilder.scaling_policy_conf import ScalingPolicyConfiguration
-from ..load.request import Request
-from ..utils.requirements import ResourceRequirements
-from ..state.statemanagers import StateReader
+from autoscalingsim.scaling.policiesbuilder.scaled.scaled_service import ScaledService
+from autoscalingsim.scaling.policiesbuilder.scaling_policy_conf import ScalingPolicyConfiguration
+from autoscalingsim.load.request import Request
+from autoscalingsim.state.statemanagers import StateReader
+from autoscalingsim.utils.requirements import ResourceRequirements
 
 class Service(ScaledService):
 

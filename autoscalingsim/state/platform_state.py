@@ -1,7 +1,7 @@
 from .region import Region
 from .entity_state.group_of_services_reg import GroupOfServicesRegionalized
 
-from ..deltarepr.platform_state_delta import PlatformStateDelta
+from autoscalingsim.deltarepr.platform_state_delta import PlatformStateDelta
 
 class PlatformState:
 

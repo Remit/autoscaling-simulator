@@ -1,4 +1,4 @@
-from .....utils.error_check import ErrorChecker
+from autoscalingsim.utils.error_check import ErrorChecker
 
 class RatiosParser:
 

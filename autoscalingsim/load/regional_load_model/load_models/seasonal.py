@@ -4,9 +4,10 @@ import numpy as np
 from .parsers.patterns_parsers.seasonal_load_parser import SeasonalLoadPatternParser
 from .parsers.reqs_distributions_parser import DistributionsParser
 from .parsers.reqs_ratios_parser import RatiosParser
-from ..regional_load_model import RegionalLoadModel
-from ...request import Request
-from ....utils.error_check import ErrorChecker
+
+from autoscalingsim.load.regional_load_model.regional_load_model import RegionalLoadModel
+from autoscalingsim.load.request import Request
+from autoscalingsim.utils.error_check import ErrorChecker
 
 @RegionalLoadModel.register('seasonal')
 class SeasonalLoadModel(RegionalLoadModel):

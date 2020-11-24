@@ -8,8 +8,9 @@ from time import sleep
 from jinja2 import Template
 
 from .load_vs_response_time import LoadVsResponseTimeGraph
-from ..simulator import Simulator
-from ..utils.error_check import ErrorChecker
+
+from autoscalingsim.simulator import Simulator
+from autoscalingsim.utils.error_check import ErrorChecker
 
 class SimulationQualityEvaluationFramework:
 

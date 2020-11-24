@@ -3,7 +3,7 @@ import numpy as np
 
 from abc import ABC, abstractmethod
 
-from ....state import aggregators
+from autoscalingsim.state import aggregators
 
 class ScalingEffectAggregationRule(ABC):
 

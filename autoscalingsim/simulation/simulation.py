@@ -4,8 +4,8 @@ import pandas as pd
 
 from tqdm import tqdm
 
-from ..application.application_model import ApplicationModel
-from ..load.load_model import LoadModel
+from autoscalingsim.application.application_model import ApplicationModel
+from autoscalingsim.load.load_model import LoadModel
 
 class Simulation:
     """

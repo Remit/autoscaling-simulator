@@ -1,4 +1,4 @@
-from ..load.request import Request
+from autoscalingsim.load.request import Request
 
 class ResponseStatsRegional:
 

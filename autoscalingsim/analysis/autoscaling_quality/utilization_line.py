@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 import matplotlib.ticker as ticker
 from collections.abc import Iterable
 
-from .. import plotting_constants
+import autoscalingsim.analysis.plotting_constants as plotting_constants
 
 class UtilizationLineGraph:
 

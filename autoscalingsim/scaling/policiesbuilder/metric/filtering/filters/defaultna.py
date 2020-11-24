@@ -1,8 +1,7 @@
 import pandas as pd
 
-from ..valuesfilter import ValuesFilter
-
-from ......utils.error_check import ErrorChecker
+from autoscalingsim.scaling.policiesbuilder.metric.filtering.valuesfilter import ValuesFilter
+from autoscalingsim.utils.error_check import ErrorChecker
 
 @ValuesFilter.register('defaultNA')
 class DefaultNA(ValuesFilter):

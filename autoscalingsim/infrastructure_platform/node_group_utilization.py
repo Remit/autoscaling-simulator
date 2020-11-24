@@ -1,7 +1,8 @@
 import pandas as pd
 
-from .system_resource_usage import SystemResourceUsage
-from ..utils.utilization import EntityUtilization
+from .node_information.system_resource_usage import SystemResourceUsage
+
+from autoscalingsim.utils.utilization import EntityUtilization
 
 class ServiceUtilization(EntityUtilization):
 

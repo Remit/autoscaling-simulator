@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from ...utils.error_check import ErrorChecker
+from autoscalingsim.utils.error_check import ErrorChecker
 
 class Failure(ABC):
 
