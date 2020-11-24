@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import pandas as pd
 
-from ...infrastructure_platform.node_information.node import NodeInfo
+from ..infrastructure_platform.node_information.node import NodeInfo
 
 class ScaledEntityState(ABC):
 

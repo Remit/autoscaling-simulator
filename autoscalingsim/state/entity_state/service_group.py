@@ -5,8 +5,8 @@ from abc import ABC
 
 from .scaling_aspects import ScalingAspect, ScalingAspectDelta
 
-from ...error_check import ErrorChecker
-from ...requirements import ResourceRequirements
+from ...utils.error_check import ErrorChecker
+from ...utils.requirements import ResourceRequirements
 
 class ServiceInstancesGroup:
 

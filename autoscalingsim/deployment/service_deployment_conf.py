@@ -1,8 +1,8 @@
-from ..utils.deltarepr.regional_delta import RegionalDelta
-from ..utils.state.entity_state.service_group import GroupOfServicesDelta
-from ..utils.state.node_group_state.node_group import HomogeneousNodeGroup, NodeGroupDelta, GeneralizedDelta
+from ..deltarepr.regional_delta import RegionalDelta
+from ..state.entity_state.service_group import GroupOfServicesDelta
+from ..state.node_group_state.node_group import HomogeneousNodeGroup, NodeGroupDelta, GeneralizedDelta
 from ..utils.requirements import ResourceRequirements
-from ..utils.deltarepr.platform_state_delta import PlatformStateDelta
+from ..deltarepr.platform_state_delta import PlatformStateDelta
 
 class ServiceDeploymentConfiguration:
 

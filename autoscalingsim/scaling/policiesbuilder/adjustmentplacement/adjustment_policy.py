@@ -5,8 +5,8 @@ from . import adjusters
 
 from ...scaling_model import ScalingModel
 from ..scaling_policy_conf import ScalingPolicyConfiguration
-from ....utils.state.platform_state import PlatformState
-from ....utils.state.statemanagers import StateReader
+from ....state.platform_state import PlatformState
+from ....state.statemanagers import StateReader
 
 class AdjustmentPolicy:
 

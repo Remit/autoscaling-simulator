@@ -1,7 +1,7 @@
 import pandas as pd
 
 from abc import ABC, abstractmethod
-from .state.state import ScaledEntityState
+from ..state.state import ScaledEntityState
 
 class UtilizationMetric:
 

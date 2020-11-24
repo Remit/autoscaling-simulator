@@ -10,12 +10,12 @@ from ...platform_scaling_model import PlatformScalingModel
 
 from ....utils.combiners import Combiner
 from ....utils.error_check import ErrorChecker
-from ....utils.deltarepr.timelines.services_changes_timeline import TimelineOfDesiredServicesChanges
-from ....utils.deltarepr.timelines.delta_timeline import DeltaTimeline
-from ....utils.state.entity_state.group_of_services_reg import GroupOfServicesRegionalized
-from ....utils.state.statemanagers import StateReader
-from ....utils.state.platform_state import PlatformState
-from ....utils.state.state_duration import StateDuration
+from ....deltarepr.timelines.services_changes_timeline import TimelineOfDesiredServicesChanges
+from ....deltarepr.timelines.delta_timeline import DeltaTimeline
+from ....state.entity_state.group_of_services_reg import GroupOfServicesRegionalized
+from ....state.statemanagers import StateReader
+from ....state.platform_state import PlatformState
+from ....state.state_duration import StateDuration
 
 class Adjuster(ABC):
 

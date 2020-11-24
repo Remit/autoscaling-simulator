@@ -2,7 +2,7 @@ import pandas as pd
 from collections import OrderedDict
 
 from ..utils.error_check import ErrorChecker
-from ..utils.state.entity_state.service_group import GroupOfServicesDelta
+from ..state.entity_state.service_group import GroupOfServicesDelta
 
 class ServiceScalingInfo:
 

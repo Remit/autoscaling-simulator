@@ -8,8 +8,8 @@ from ...load.request import Request
 from ...application.requests_buffer import RequestsBuffer
 from ...application import buffer_utilization
 from ...infrastructure_platform.system_resource_usage import SystemResourceUsage
-from ...utils.state.entity_state.scaling_aspects import ScalingAspect
-from ...utils.state.node_group_state.node_group import HomogeneousNodeGroup
+from ...state.entity_state.scaling_aspects import ScalingAspect
+from ...state.node_group_state.node_group import HomogeneousNodeGroup
 from ...utils.requirements import ResourceRequirements
 from ...utils.error_check import ErrorChecker
 

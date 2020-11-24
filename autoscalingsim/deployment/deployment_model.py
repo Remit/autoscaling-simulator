@@ -1,7 +1,7 @@
 from .service_deployment_conf import ServiceDeploymentConfiguration
 
 from ..utils.requirements import ResourceRequirements
-from ..utils.deltarepr.platform_state_delta import PlatformStateDelta
+from ..deltarepr.platform_state_delta import PlatformStateDelta
 
 class DeploymentModel:
 

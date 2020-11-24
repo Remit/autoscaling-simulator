@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 from ..utils.error_check import ErrorChecker
-from ..utils.state.node_group_state.node_group import NodeGroupDelta
+from ..state.node_group_state.node_group import NodeGroupDelta
 
 class NodeScalingInfo:
 

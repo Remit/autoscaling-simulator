@@ -1,7 +1,7 @@
 import operator
 import numbers
 
-from ..utils.state.usage import Usage
+from ..state.usage import Usage
 from ..utils.size import Size
 
 class SystemResourceUsage(Usage):

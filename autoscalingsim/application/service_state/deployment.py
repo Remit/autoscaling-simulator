@@ -1,6 +1,6 @@
 import pandas as pd
 
-from ...utils.state.node_group_state.node_group import HomogeneousNodeGroup
+from ...state.node_group_state.node_group import HomogeneousNodeGroup
 from ...utils.requirements import ResourceRequirements
 from ...load.request import Request
 from ...infrastructure_platform.system_resource_usage import SystemResourceUsage

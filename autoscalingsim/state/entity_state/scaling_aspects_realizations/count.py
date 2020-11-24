@@ -3,7 +3,7 @@ import numbers
 import pandas as pd
 
 from ..scaling_aspects import ScalingAspect, ScalingAspectDelta
-from .....utils import df_convenience
+from ....utils import df_convenience
 
 @ScalingAspect.register('count')
 class Count(ScalingAspect):
@@ -68,7 +68,7 @@ class Count(ScalingAspect):
             raise TypeError(f'An attempt to perform floor division operation on {self.__class__.__name__} with an object of unknown type {other_aspect_val.__class__.__name__}')
 
         return Count(self.value // other_aspect_val.value)
-        
+
     def __radd__(self,
                  other):
 

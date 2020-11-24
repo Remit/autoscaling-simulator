@@ -3,7 +3,7 @@ import pandas as pd
 
 from .scaling_aggregation import ScalingEffectAggregationRule
 
-from ....utils.state.statemanagers import StateReader
+from ....state.statemanagers import StateReader
 from .scaled_service_settings import ScaledServiceScalingSettings
 
 class ScaledService:

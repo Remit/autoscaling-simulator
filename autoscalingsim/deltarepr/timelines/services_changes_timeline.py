@@ -1,6 +1,6 @@
 import pandas as pd
 
-from ...combiners import Combiner
+from ...utils.combiners import Combiner
 
 class TimelineOfDesiredServicesChanges:
 

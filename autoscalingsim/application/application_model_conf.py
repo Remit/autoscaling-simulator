@@ -11,7 +11,7 @@ from ..infrastructure_platform.platform_model import PlatformModel
 from ..scaling.policiesbuilder.scaled.scaled_service_settings import ScaledServiceScalingSettings
 from ..utils.request_processing_info import RequestProcessingInfo
 from ..utils.size import Size
-from ..utils.state.statemanagers import StateReader
+from ..state.statemanagers import StateReader
 from ..utils.requirements import ResourceRequirements
 from ..utils.error_check import ErrorChecker
 

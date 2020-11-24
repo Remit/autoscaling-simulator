@@ -6,7 +6,7 @@ from .application_model_conf import ApplicationModelConfiguration
 from ..deployment.deployment_model import DeploymentModel
 from ..infrastructure_platform.platform_model import PlatformModel
 from ..scaling.policiesbuilder.scaling_policy import ScalingPolicy
-from ..utils.state.statemanagers import StateReader, ScalingManager
+from ..state.statemanagers import StateReader, ScalingManager
 from ..utils.requirements import ResourceRequirements
 
 class ApplicationModel:

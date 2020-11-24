@@ -1,7 +1,7 @@
 import pandas as pd
 
-from ...scaling.platform_scaling_model import PlatformScalingModel
-from ...scaling.application_scaling_model import ApplicationScalingModel
+from ..scaling.platform_scaling_model import PlatformScalingModel
+from ..scaling.application_scaling_model import ApplicationScalingModel
 
 class RegionalDelta:
 

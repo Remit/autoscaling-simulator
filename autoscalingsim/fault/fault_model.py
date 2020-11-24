@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 
 from .failure.failure import ServiceFailure, NodeGroupFailure
-from ..utils.deltarepr.platform_state_delta import PlatformStateDelta
+from ..deltarepr.platform_state_delta import PlatformStateDelta
 from ..utils.error_check import ErrorChecker
 
 class FaultModel:

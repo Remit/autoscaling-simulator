@@ -6,9 +6,9 @@ from .stabilization.stabilizer import Stabilizer
 from .forecasting.forecaster import MetricForecaster
 from .limiter import Limiter
 
-from ....utils.state.statemanagers import StateReader
-from ....utils.state.entity_state.group_of_services_reg import GroupOfServicesRegionalized
-from ....utils.state.entity_state.scaling_aspects import ScalingAspect
+from ....state.statemanagers import StateReader
+from ....state.entity_state.group_of_services_reg import GroupOfServicesRegionalized
+from ....state.entity_state.scaling_aspects import ScalingAspect
 from ....utils.error_check import ErrorChecker
 
 class MetricDescription:

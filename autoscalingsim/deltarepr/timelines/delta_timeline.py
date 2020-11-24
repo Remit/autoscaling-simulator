@@ -4,9 +4,9 @@ import pandas as pd
 from ...state.platform_state import PlatformState
 from ..platform_state_delta import PlatformStateDelta
 
-from ....scaling.application_scaling_model import ApplicationScalingModel
-from ....scaling.platform_scaling_model import PlatformScalingModel
-from ....fault.fault_model import FaultModel
+from ...scaling.application_scaling_model import ApplicationScalingModel
+from ...scaling.platform_scaling_model import PlatformScalingModel
+from ...fault.fault_model import FaultModel
 
 class DeltaTimeline:
 

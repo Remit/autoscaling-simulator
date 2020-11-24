@@ -8,10 +8,10 @@ from ..scaling.platform_scaling_model import PlatformScalingModel
 from ..scaling.application_scaling_model import ApplicationScalingModel
 from ..scaling.policiesbuilder.adjustmentplacement.adjustment_policy import AdjustmentPolicy
 
-from ..utils.state.platform_state import PlatformState
-from ..utils.state.statemanagers import StateReader, ScalingManager
-from ..utils.deltarepr.platform_state_delta import PlatformStateDelta
-from ..utils.deltarepr.timelines.delta_timeline import DeltaTimeline
+from ..state.platform_state import PlatformState
+from ..state.statemanagers import StateReader, ScalingManager
+from ..deltarepr.platform_state_delta import PlatformStateDelta
+from ..deltarepr.timelines.delta_timeline import DeltaTimeline
 from ..utils.size import Size
 from ..utils.error_check import ErrorChecker
 

@@ -1,5 +1,5 @@
 from .entity_state.service_group import GroupOfServices
-from ...infrastructure_platform.system_resource_usage import SystemResourceUsage
+from ..infrastructure_platform.system_resource_usage import SystemResourceUsage
 
 class InNodePlacement:
 

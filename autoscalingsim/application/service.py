@@ -7,7 +7,7 @@ from ..scaling.policiesbuilder.scaled.scaled_service import ScaledService
 from ..scaling.policiesbuilder.scaling_policy_conf import ScalingPolicyConfiguration
 from ..load.request import Request
 from ..utils.requirements import ResourceRequirements
-from ..utils.state.statemanagers import StateReader
+from ..state.statemanagers import StateReader
 
 class Service(ScaledService):
 

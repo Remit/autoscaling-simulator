@@ -4,7 +4,7 @@ from ..system_resource_usage import SystemResourceUsage
 
 from ...utils.size import Size
 from ...utils.requirements import ResourceRequirements
-from ...utils.state.entity_state.service_group import GroupOfServices
+from ...state.entity_state.service_group import GroupOfServices
 
 class NodeInfo:
 
