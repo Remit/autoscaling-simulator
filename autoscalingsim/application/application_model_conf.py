@@ -9,7 +9,7 @@ from .application_structure import ApplicationStructure
 from autoscalingsim.deployment.service_deployment_conf import ServiceDeploymentConfiguration
 from autoscalingsim.infrastructure_platform.platform_model import PlatformModel
 from autoscalingsim.scaling.policiesbuilder.scaled.scaled_service_settings import ScaledServiceScalingSettings
-from autoscalingsim.state.statemanagers import StateReader
+from autoscalingsim.scaling.state_reader import StateReader
 from autoscalingsim.utils.request_processing_info import RequestProcessingInfo
 from autoscalingsim.utils.size import Size
 from autoscalingsim.utils.requirements import ResourceRequirements

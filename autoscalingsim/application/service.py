@@ -6,7 +6,7 @@ from .service_state.service_state_reg import ServiceStateRegionalized
 from autoscalingsim.scaling.policiesbuilder.scaled.scaled_service import ScaledService
 from autoscalingsim.scaling.policiesbuilder.scaling_policy_conf import ScalingPolicyConfiguration
 from autoscalingsim.load.request import Request
-from autoscalingsim.state.statemanagers import StateReader
+from autoscalingsim.scaling.state_reader import StateReader
 from autoscalingsim.utils.requirements import ResourceRequirements
 
 class Service(ScaledService):

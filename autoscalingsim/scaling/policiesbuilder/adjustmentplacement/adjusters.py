@@ -13,7 +13,7 @@ from autoscalingsim.utils.error_check import ErrorChecker
 from autoscalingsim.deltarepr.timelines.services_changes_timeline import TimelineOfDesiredServicesChanges
 from autoscalingsim.deltarepr.timelines.delta_timeline import DeltaTimeline
 from autoscalingsim.state.entity_state.group_of_services_reg import GroupOfServicesRegionalized
-from autoscalingsim.state.statemanagers import StateReader
+from autoscalingsim.scaling.state_reader import StateReader
 from autoscalingsim.state.platform_state import PlatformState
 from autoscalingsim.state.state_duration import StateDuration
 

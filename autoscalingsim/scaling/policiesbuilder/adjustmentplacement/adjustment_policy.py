@@ -6,7 +6,7 @@ from . import adjusters
 from autoscalingsim.scaling.scaling_model import ScalingModel
 from autoscalingsim.scaling.policiesbuilder.scaling_policy_conf import ScalingPolicyConfiguration
 from autoscalingsim.state.platform_state import PlatformState
-from autoscalingsim.state.statemanagers import StateReader
+from autoscalingsim.scaling.state_reader import StateReader
 
 class AdjustmentPolicy:
 

@@ -6,7 +6,8 @@ from .application_model_conf import ApplicationModelConfiguration
 from autoscalingsim.deployment.deployment_model import DeploymentModel
 from autoscalingsim.infrastructure_platform.platform_model import PlatformModel
 from autoscalingsim.scaling.policiesbuilder.scaling_policy import ScalingPolicy
-from autoscalingsim.state.statemanagers import StateReader, ScalingManager
+from autoscalingsim.scaling.state_reader import StateReader
+from autoscalingsim.scaling.scaling_manager import ScalingManager
 from autoscalingsim.utils.requirements import ResourceRequirements
 
 class ApplicationModel:

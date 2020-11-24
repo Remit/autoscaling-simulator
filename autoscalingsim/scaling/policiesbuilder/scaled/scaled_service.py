@@ -4,7 +4,7 @@ import pandas as pd
 from .scaling_aggregation import ScalingEffectAggregationRule
 from .scaled_service_settings import ScaledServiceScalingSettings
 
-from autoscalingsim.state.statemanagers import StateReader
+from autoscalingsim.scaling.state_reader import StateReader
 
 class ScaledService:
 

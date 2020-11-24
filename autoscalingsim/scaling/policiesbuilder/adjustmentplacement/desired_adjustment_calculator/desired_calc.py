@@ -7,7 +7,7 @@ from .scorer import Scorer
 from .score import StateScore
 
 from autoscalingsim.state.region import Region
-from autoscalingsim.state.statemanagers import StateReader
+from autoscalingsim.scaling.state_reader import StateReader
 from autoscalingsim.state.platform_state import PlatformState
 from autoscalingsim.state.entity_state.group_of_services_reg import GroupOfServicesRegionalized
 

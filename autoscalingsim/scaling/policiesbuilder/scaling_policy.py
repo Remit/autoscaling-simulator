@@ -6,7 +6,8 @@ from .scaling_policy_conf import ScalingPolicyConfiguration
 
 from autoscalingsim.scaling.scaling_model import ScalingModel
 from autoscalingsim.infrastructure_platform.platform_model import PlatformModel
-from autoscalingsim.state.statemanagers import StateReader, ScalingManager
+from autoscalingsim.scaling.state_reader import StateReader
+from autoscalingsim.scaling.scaling_manager import ScalingManager
 
 class ScalingPolicy:
 
