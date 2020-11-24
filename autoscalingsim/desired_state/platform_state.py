@@ -1,5 +1,5 @@
 from .region import Region
-from .service_state.group_of_services_reg import GroupOfServicesRegionalized
+from .service_group.group_of_services_reg import GroupOfServicesRegionalized
 
 from autoscalingsim.deltarepr.platform_state_delta import PlatformStateDelta
 

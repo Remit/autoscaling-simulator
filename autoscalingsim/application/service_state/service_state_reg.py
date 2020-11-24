@@ -3,7 +3,7 @@ import pandas as pd
 from .service_state import ServiceState
 
 from autoscalingsim.load.request import Request
-from autoscalingsim.state.node_group_state.node_group import HomogeneousNodeGroup
+from autoscalingsim.desired_state.node_group.node_group import HomogeneousNodeGroup
 from autoscalingsim.utils.requirements import ResourceRequirements
 
 class ServiceStateRegionalized:

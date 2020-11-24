@@ -7,9 +7,9 @@ from .node_information.provider_nodes import ProviderNodes
 from autoscalingsim.scaling.platform_scaling_model import PlatformScalingModel
 from autoscalingsim.scaling.application_scaling_model import ApplicationScalingModel
 from autoscalingsim.scaling.policiesbuilder.adjustmentplacement.adjustment_policy import AdjustmentPolicy
-from autoscalingsim.state.platform_state import PlatformState
 from autoscalingsim.scaling.state_reader import StateReader
 from autoscalingsim.scaling.scaling_manager import ScalingManager
+from autoscalingsim.desired_state.platform_state import PlatformState
 from autoscalingsim.deltarepr.platform_state_delta import PlatformStateDelta
 from autoscalingsim.deltarepr.timelines.delta_timeline import DeltaTimeline
 from autoscalingsim.utils.size import Size

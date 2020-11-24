@@ -89,7 +89,7 @@ class ServiceInstancesGroupDelta(ServiceInstancesGroupDeltaCommon):
     @classmethod
     def from_group(cls : type, service_group : 'ServiceInstancesGroup', sign : int = 1):
 
-        import autoscalingsim.state.service_state.service_instances_group as sig
+        import autoscalingsim.desired_state.service_group.service_instances_group as sig
 
         if not isinstance(sign, int):
             raise TypeError(f'The provided sign parameters is not of {int.__name__} type: {sign.__class__.__name__}')
@@ -112,7 +112,7 @@ class ServiceInstancesGroupDelta(ServiceInstancesGroupDeltaCommon):
 
     def to_service_group(self):
 
-        import autoscalingsim.state.service_state.service_instances_group as sig
+        import autoscalingsim.desired_state.service_group.service_instances_group as sig
 
         return sig.ServiceInstancesGroup(self.service_name, self.service_resource_reqs,
                                          self.to_raw_change())

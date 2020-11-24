@@ -4,8 +4,8 @@ import pandas as pd
 from .adjustmentplacement.adjustment_policy import AdjustmentPolicy
 from .scaling_policy_conf import ScalingPolicyConfiguration
 
-from autoscalingsim.scaling.scaling_model import ScalingModel
 from autoscalingsim.infrastructure_platform.platform_model import PlatformModel
+from autoscalingsim.scaling.scaling_model import ScalingModel
 from autoscalingsim.scaling.state_reader import StateReader
 from autoscalingsim.scaling.scaling_manager import ScalingManager
 

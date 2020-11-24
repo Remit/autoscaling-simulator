@@ -1,4 +1,4 @@
-from autoscalingsim.state.service_state.group_of_services import GroupOfServices
+from .group_of_services import GroupOfServices
 
 class GroupOfServicesRegionalized:
 

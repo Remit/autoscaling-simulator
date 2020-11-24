@@ -1,6 +1,6 @@
 import pandas as pd
 
-from autoscalingsim.state.node_group_state.node_group import HomogeneousNodeGroup
+from autoscalingsim.desired_state.node_group.node_group import HomogeneousNodeGroup
 from autoscalingsim.utils.requirements import ResourceRequirements
 from autoscalingsim.load.request import Request
 from autoscalingsim.infrastructure_platform.node_information.system_resource_usage import SystemResourceUsage

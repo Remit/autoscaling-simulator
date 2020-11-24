@@ -1,4 +1,4 @@
-from autoscalingsim.state.node_group_state.node_group import NodeGroup, HomogeneousNodeGroup
+from autoscalingsim.desired_state.node_group.node_group import NodeGroup, HomogeneousNodeGroup
 
 class NodeGroupDelta:
 

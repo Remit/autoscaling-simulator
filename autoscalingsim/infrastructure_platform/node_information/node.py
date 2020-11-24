@@ -4,6 +4,7 @@ from .system_resource_usage import SystemResourceUsage
 
 from autoscalingsim.utils.size import Size
 from autoscalingsim.utils.requirements import ResourceRequirements
+from autoscalingsim.desired_state.service_group.group_of_services import GroupOfServices
 
 class NodeInfo:
 
@@ -62,7 +63,7 @@ class NodeInfo:
 
         return SystemResourceUsage(self, 1, res_requirements.to_dict())
 
-    def services_require_system_resources(self, services_state : 'GroupOfServices',
+    def services_require_system_resources(self, services_state : GroupOfServices,
                                           instances_count : int = 1) -> tuple:
 
         """
@@ -73,9 +74,7 @@ class NodeInfo:
         the services can at all be accommodated by this node type.
         """
 
-        import autoscalingsim.state.service_state.group_of_services as gos
-
-        if not isinstance(services_state, gos.GroupOfServices):
+        if not isinstance(services_state, GroupOfServices):
             raise TypeError(f'Unexpected type provided to compute the required capacity: {type(services_state)}')
 
         requirements_by_service = services_state.get_services_requirements()

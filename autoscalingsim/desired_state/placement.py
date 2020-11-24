@@ -1,4 +1,4 @@
-from autoscalingsim.state.service_state.group_of_services import GroupOfServices
+from .service_group.group_of_services import GroupOfServices
 from autoscalingsim.infrastructure_platform.node_information.system_resource_usage import SystemResourceUsage
 
 class InNodePlacement:

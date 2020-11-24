@@ -1,5 +1,5 @@
 from autoscalingsim.fault.failure.failure import ServiceFailure
-from autoscalingsim.state.node_group_state.node_group import HomogeneousNodeGroupDummy
+from autoscalingsim.desired_state.node_group.node_group import HomogeneousNodeGroupDummy
 from autoscalingsim.deltarepr.node_group_delta import NodeGroupDelta
 from autoscalingsim.deltarepr.generalized_delta import GeneralizedDelta
 from autoscalingsim.deltarepr.group_of_services_delta import GroupOfServicesDelta

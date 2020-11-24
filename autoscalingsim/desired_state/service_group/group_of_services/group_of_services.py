@@ -9,7 +9,7 @@ class GroupOfServices:
 
     def __init__(self, groups_or_aspects : dict = {}, services_resource_reqs : dict = {}):
 
-        import autoscalingsim.state.service_state.service_instances_group as sig
+        import autoscalingsim.desired_state.service_group.service_instances_group as sig
 
         self.services_groups = {}
 

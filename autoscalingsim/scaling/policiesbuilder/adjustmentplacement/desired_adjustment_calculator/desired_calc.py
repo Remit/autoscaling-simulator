@@ -6,10 +6,10 @@ from .placer import Placer
 from .scorer import Scorer
 from .score import StateScore
 
-from autoscalingsim.state.region import Region
 from autoscalingsim.scaling.state_reader import StateReader
-from autoscalingsim.state.platform_state import PlatformState
-from autoscalingsim.state.service_state.group_of_services_reg import GroupOfServicesRegionalized
+from autoscalingsim.desired_state.region import Region
+from autoscalingsim.desired_state.platform_state import PlatformState
+from autoscalingsim.desired_state.service_group.group_of_services_reg import GroupOfServicesRegionalized
 
 class DesiredChangeCalculator:
 

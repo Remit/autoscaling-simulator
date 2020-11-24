@@ -81,7 +81,7 @@ class HomogeneousNodeGroup(NodeGroup):
                  services_instances_counts : dict = {},
                  requirements_by_service : dict = {}):
 
-        import autoscalingsim.state.service_state.group_of_services as gos
+        import autoscalingsim.desired_state.service_group.group_of_services as gos
 
         super().__init__(node_info.get_name(), node_info.get_provider(), nodes_count)
 
@@ -216,7 +216,7 @@ class HomogeneousNodeGroup(NodeGroup):
 
     def nullify_services_state(self):
 
-        import autoscalingsim.state.service_state.group_of_services as gos
+        import autoscalingsim.desired_state.service_group.group_of_services as gos
 
         self.services_state = gos.GroupOfServices()
         self.system_resources_usage = SystemResourceUsage(self.node_info, self.nodes_count)

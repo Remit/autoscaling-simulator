@@ -2,8 +2,8 @@ import pandas as pd
 
 from .scaling_aspects import ScalingAspect
 
-from autoscalingsim.state.platform_state import PlatformState
-from autoscalingsim.state.node_group_state.node_group import HomogeneousNodeGroup
+from autoscalingsim.desired_state.platform_state import PlatformState
+from autoscalingsim.desired_state.node_group.node_group import HomogeneousNodeGroup
 
 class ScalingManager:
 

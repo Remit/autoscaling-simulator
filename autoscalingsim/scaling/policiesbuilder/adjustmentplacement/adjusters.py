@@ -12,10 +12,10 @@ from autoscalingsim.utils.combiners import Combiner
 from autoscalingsim.utils.error_check import ErrorChecker
 from autoscalingsim.deltarepr.timelines.services_changes_timeline import TimelineOfDesiredServicesChanges
 from autoscalingsim.deltarepr.timelines.delta_timeline import DeltaTimeline
-from autoscalingsim.state.service_state.group_of_services_reg import GroupOfServicesRegionalized
 from autoscalingsim.scaling.state_reader import StateReader
-from autoscalingsim.state.platform_state import PlatformState
-from autoscalingsim.state.state_duration import StateDuration
+from autoscalingsim.desired_state.platform_state import PlatformState
+from autoscalingsim.desired_state.state_duration import StateDuration
+from autoscalingsim.desired_state.service_group.group_of_services_reg import GroupOfServicesRegionalized
 
 class Adjuster(ABC):
 

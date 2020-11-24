@@ -3,7 +3,7 @@ import pandas as pd
 from .score_calculators import *
 from .score import StateScore
 
-from autoscalingsim.state.state_duration import StateDuration
+from autoscalingsim.desired_state.state_duration import StateDuration
 
 class Scorer:
 
