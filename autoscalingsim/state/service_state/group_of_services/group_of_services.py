@@ -56,6 +56,11 @@ class GroupOfServices:
 
         return self.__class__(self.services_groups.copy())
 
+    def __repr__(self):
+
+        return f'{self.__class__.__name__}( groups_or_aspects = {self.services_groups}, \
+                                            services_resource_reqs = {self.get_services_requirements()})'
+
     def __add__(self, other):
 
         return self._add(other, 1)

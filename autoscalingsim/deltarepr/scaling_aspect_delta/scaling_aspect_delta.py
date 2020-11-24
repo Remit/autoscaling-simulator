@@ -54,3 +54,8 @@ class ScalingAspectDelta:
     def get_aspect_type(self):
 
         return self.scaling_aspect.__class__
+
+    def __repr__(self):
+
+        return f'{self.__class__.__name__}(scaling_aspect = {self.scaling_aspect},\
+                                           sign = {self.sign})'

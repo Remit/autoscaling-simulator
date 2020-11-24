@@ -96,3 +96,8 @@ class GeneralizedDelta:
         self.cached_enforcement[delta_timestamp] = new_deltas
 
         return new_deltas
+
+    def __repr__(self):
+
+        return f'{self.__class__.__name__}(node_group_delta = {self.node_group_delta}, \
+                                           services_group_delta = {self.services_group_delta})'

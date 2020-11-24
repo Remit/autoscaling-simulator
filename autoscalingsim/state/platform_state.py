@@ -90,6 +90,9 @@ class PlatformState:
 
         return self.__class__(self.regions.copy())
 
+    def __repr__(self):
+
+        return f'{self.__class__.__name__}( regions = {self.regions} )'
 
     def compute_soft_adjustment(self,
                                 scaling_aspects_adjustment_in_existing_nodes : dict,

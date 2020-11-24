@@ -17,11 +17,7 @@ class RegionalDelta:
         self.region_name = region_name
         self.generalized_deltas = generalized_deltas_lst
 
-    def __iter__(self):
-        return RegionalDeltaIterator(self)
-
-    def __add__(self,
-                other_regional_delta : 'RegionalDelta'):
+    def __add__(self, other_regional_delta : 'RegionalDelta'):
 
         if not isinstance(other_regional_delta, RegionalDelta):
             raise TypeError(f'An attempt to add an object of type {other_regional_delta.__class__.__name__} to an object of type {self.__class__.__name__}')
@@ -99,6 +95,15 @@ class RegionalDelta:
                                                            gen_deltas_per_ts)]
 
         return new_timestamped_rd
+
+    def __repr__(self):
+
+        return f'{self.__class__.__name__}( region_name = {self.region_name}, \
+                                            generalized_deltas_lst = {self.generalized_deltas})'
+
+    def __iter__(self):
+
+        return RegionalDeltaIterator(self)
 
 class RegionalDeltaIterator:
 

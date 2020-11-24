@@ -1,5 +1,4 @@
-import autoscalingsim.state.service_state.group_of_services as gos
-
+from autoscalingsim.state.service_state.group_of_services import GroupOfServices
 from autoscalingsim.infrastructure_platform.node_information.system_resource_usage import SystemResourceUsage
 
 class InNodePlacement:
@@ -16,12 +15,18 @@ class InNodePlacement:
 
     def __init__(self,
                  node_info : 'NodeInfo',
-                 capacity_taken : SystemResourceUsage,
-                 placed_services : gos.GroupOfServices):
+                 system_resource_usage : SystemResourceUsage,
+                 placed_services : GroupOfServices):
 
         self.node_info = node_info
-        self.capacity_taken = capacity_taken
+        self.system_resource_usage = system_resource_usage
         self.placed_services = placed_services
+
+    def __repr__(self):
+
+        return f'{self.__class__.__name__}( node_info = {self.node_info}, \
+                                            system_resource_usage = {self.system_resource_usage}, \
+                                            placed_services = {self.placed_services})'
 
 class ServicesPlacement:
 
@@ -33,11 +38,17 @@ class ServicesPlacement:
     def __init__(self,
                  node_info : 'NodeInfo',
                  nodes_count : int,
-                 services_state : gos.GroupOfServices):
+                 services_state : GroupOfServices):
 
         self.node_info = node_info
         self.nodes_count = nodes_count
         self.services_state = services_state
+
+    def __repr__(self):
+
+        return f'{self.__class__.__name__}( node_info = {self.node_info},\
+                                            nodes_count = {self.nodes_count},\
+                                            services_state = {self.services_state})'
 
 class Placement:
 
@@ -45,8 +56,7 @@ class Placement:
     Wraps a final placement representation.
     """
 
-    def __init__(self,
-                 services_placements : list = []):
+    def __init__(self, services_placements : list = []):
 
         self.services_placements = services_placements
         self.score = None

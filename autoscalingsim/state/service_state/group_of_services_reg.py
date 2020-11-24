@@ -81,6 +81,10 @@ class GroupOfServicesRegionalized:
 
         return self.get_scaling_aspect_for_every_service(conf['scaled_aspect_name'])
 
+    def __repr__(self):
+
+        return f'{self.__class__.__name__}( services_groups_per_region = {self._services_groups_per_region} )'
+
 class GroupOfServicesRegionalizedIterator:
 
     def __init__(self, regionalized_groups : GroupOfServicesRegionalized):

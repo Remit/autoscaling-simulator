@@ -33,11 +33,7 @@ class PlatformStateDelta:
         else:
             raise TypeError(f'Unknown type of init argument for {self.__class__.__name__}: {regional_deltas.__class__.__name__}')
 
-    def __iter__(self):
-        return PlatformStateDeltaIterator(self)
-
-    def __add__(self,
-                other_state_delta : 'PlatformStateDelta'):
+    def __add__(self, other_state_delta : 'PlatformStateDelta'):
 
         if not isinstance(other_state_delta, PlatformStateDelta):
             raise TypeError(f'An attempt to add an object of type {other_state_delta.__class__.__name__} to an object of type {self.__class__.__name__}')
@@ -105,6 +101,15 @@ class PlatformStateDelta:
             new_timestamped_sd[timestamp] = PlatformStateDelta(reg_deltas_per_ts, True)
 
         return new_timestamped_sd
+
+    def __repr__(self):
+
+        return f'{self.__class__.__name__}( regional_deltas = {self.deltas_per_region}, \
+                                            is_enforced = {self.is_enforced})'
+
+    def __iter__(self):
+
+        return PlatformStateDeltaIterator(self)
 
 class PlatformStateDeltaIterator:
 

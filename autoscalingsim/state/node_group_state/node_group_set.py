@@ -156,6 +156,11 @@ class HomogeneousNodeGroupSet:
 
         return self.__class__(self._homogeneous_groups.copy(), self._in_change_homogeneous_groups.copy())
 
+    def __repr__(self):
+
+        return f'{self.__class__.__name__}(homogeneous_groups = {self._homogeneous_groups},\
+                                           homogeneous_groups_in_change = {self._in_change_homogeneous_groups})'
+
     def __iter__(self):
 
         return HomogeneousNodeGroupSetIterator(self)

@@ -198,22 +198,6 @@ class Region:
 
         return Region(self.region_name, homogeneous_groups)
 
-    #def finish_change_forservices_(self,
-    #                               services_booting_period_expired,
-    #                               services_termination_period_expired):
-    #
-    #    """
-    #    Transfers in-change services (booting/terminating) into the ready state by
-    #    modifying in_change_services_instances_counts and services_instances_counts
-    #    of the node_group. Changes the state.
-    #    """
-
-    #    for group in self.homogeneous_groups:
-    #        new_group = group.finish_change_forservices_(services_booting_period_expired,
-    #                                                     services_termination_period_expired)
-    #        self.homogeneous_groups.remove_group_by_id(group.id)
-    #        self.homogeneous_groups.add_group(new_group)
-
     def extract_collective_services_state(self):
 
         import autoscalingsim.state.service_state.group_of_services as gos
@@ -223,3 +207,8 @@ class Region:
             region_collective_service_state += group.services_state
 
         return region_collective_service_state
+
+    def __repr__(self):
+
+        return f'{self.__class__.__name__}( region_name = {self.region_name}, \
+                                            homogeneous_groups_and_deltas = {self.homogeneous_groups})'

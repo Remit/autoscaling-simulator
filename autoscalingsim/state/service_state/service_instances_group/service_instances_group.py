@@ -140,6 +140,12 @@ class ServiceInstancesGroup:
         return self.__class__(self.service_name, self.service_resource_reqs,
                               self.scaling_aspects.copy())
 
+    def __repr__(self):
+
+        return f'{self.__class__.__name__}(service_name = {self.service_name}, \
+                                           service_resource_reqs = {self.service_resource_reqs}, \
+                                           aspects_vals = {self.scaling_aspects})'
+
     def to_delta(self, direction = 1):
 
         return ServiceInstancesGroupDelta.from_group(self, direction)

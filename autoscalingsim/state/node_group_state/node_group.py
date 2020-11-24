@@ -52,6 +52,12 @@ class HomogeneousNodeGroupDummy(NodeGroup):
 
         super().__init__(node_type, provider, nodes_count)
 
+    def __repr__(self):
+
+        return f'{self.__class__.__name__}(node_type = {self.node_type}, \
+                                           provider = {self.provider}, \
+                                           nodes_count = {self.nodes_count})'
+
 class HomogeneousNodeGroup(NodeGroup):
 
     """
@@ -214,6 +220,13 @@ class HomogeneousNodeGroup(NodeGroup):
 
         self.services_state = gos.GroupOfServices()
         self.system_resources_usage = SystemResourceUsage(self.node_info, self.nodes_count)
+
+    def __repr__(self):
+
+        return f'{self.__class__.__name__}( node_info = {self.node_info}, \
+                                            nodes_count = {self.nodes_count}, \
+                                            services_instances_counts = {self.services_state.get_services_counts()}, \
+                                            requirements_by_service = {self.services_state.get_services_requirements()})'
 
     def copy(self):
 
