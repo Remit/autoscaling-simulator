@@ -11,10 +11,10 @@ class MetricForecaster:
     model and calculating the forecasts for the defined forecasting horizon.
     """
 
-    def __init__(self, timing_type : str, config : dict, metric_type : type):
+    def __init__(self, config : dict, metric_type : type):
 
         self.metric_type = metric_type
-        self.fhorizon_in_steps = ErrorChecker.key_check_and_load('fhorizon_in_steps', config)
+        self.fhorizon_in_steps = ErrorChecker.key_check_and_load('horizon_in_steps', config)
         self.history_data_buffer_size = int(ErrorChecker.key_check_and_load('history_data_buffer_size', config))
 
         resolution_raw = ErrorChecker.key_check_and_load('resolution', config, self.__class__.__name__)
@@ -22,13 +22,7 @@ class MetricForecaster:
         resolution_unit = ErrorChecker.key_check_and_load('unit', resolution_raw, self.__class__.__name__)
         self.resolution = pd.Timedelta(resolution_value, unit = resolution_unit)
 
-        if timing_type == 'predictive':
-            forecasting_model_name = ErrorChecker.key_check_and_load('name', config)
-            forecasting_model_params = ErrorChecker.key_check_and_load('config', config)
-            self.model = ForecastingModel.get(forecasting_model_name)(forecasting_model_params)
-        else:
-            self.model = None
-
+        self.model = ForecastingModel.get(ErrorChecker.key_check_and_load('name', config))(config)
         self.history_data_buffer = pd.DataFrame(columns=['datetime', 'value']).set_index('datetime')
 
     def __call__(self, metric_vals : pd.DataFrame):
@@ -40,11 +34,10 @@ class MetricForecaster:
         at least the historical data is extracted for the accumulation.
         """
 
-        forecast = metric_vals
-        if not self.model is None:
-            self._update(metric_vals)
+        self._update(metric_vals)
 
-            forecast = self.model.predict(metric_vals, self.fhorizon_in_steps, self.resolution)
+        forecast = self.model.predict(metric_vals, self.fhorizon_in_steps, self.resolution)
+        if self.metric_type == pd.Timedelta:
             forecast.value = [ self.metric_type(forecasted_val) for forecasted_val in forecast.value ]
 
         return forecast

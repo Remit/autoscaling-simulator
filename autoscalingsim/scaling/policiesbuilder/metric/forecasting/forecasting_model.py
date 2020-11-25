@@ -41,4 +41,13 @@ class ForecastingModel(ABC):
 
         return cls._Registry[name]
 
+    def _construct_future_interval(self, metric_vals : pd.DataFrame,
+                                   fhorizon_in_steps : int, resolution : pd.Timedelta):
+
+        forecasting_interval_start = max(metric_vals.index) + resolution
+        forecasting_interval_end = forecasting_interval_start + fhorizon_in_steps * resolution
+
+        return pd.date_range(forecasting_interval_start, forecasting_interval_end,
+                             resolution.microseconds // 1000)
+
 from .models import *

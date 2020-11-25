@@ -19,8 +19,7 @@ class MetricDescription:
 
     # First value in the list is the default
     reference_configs_dict = {
-        'capacity_adaptation_type': ['discrete', 'continuous'],
-        'timing_type': ['reactive', 'predictive']
+        'capacity_adaptation_type': ['discrete', 'continuous']
     }
 
     def __init__(self,
@@ -33,7 +32,6 @@ class MetricDescription:
                  values_aggregator_conf,
                  target_value,
                  stabilizer_conf,
-                 timing_type,
                  forecaster_conf,
                  capacity_adaptation_type,
                  priority,
@@ -50,7 +48,6 @@ class MetricDescription:
         self.values_aggregator_conf = values_aggregator_conf
         self.target_value = target_value
         self.stabilizer_conf = stabilizer_conf
-        self.timing_type = timing_type
         self.forecaster_conf = forecaster_conf
         self.capacity_adaptation_type = capacity_adaptation_type
         self.priority = priority
@@ -84,7 +81,6 @@ class MetricDescription:
                                          self.values_aggregator_conf,
                                          self.target_value,
                                          self.stabilizer_conf,
-                                         self.timing_type,
                                          self.forecaster_conf,
                                          self.capacity_adaptation_type,
                                          self.priority,
@@ -113,7 +109,6 @@ class ScalingMetricRegionalized:
                  values_aggregator_conf : dict,
                  target_value : float,
                  stabilizer_conf : dict,
-                 timing_type : str,
                  forecaster_conf : dict,
                  capacity_adaptation_type : str,
                  priority : int,
@@ -147,7 +142,6 @@ class ScalingMetricRegionalized:
                                                                  values_aggregator_conf,
                                                                  target_value,
                                                                  stabilizer_conf,
-                                                                 timing_type,
                                                                  forecaster_conf,
                                                                  capacity_adaptation_type,
                                                                  priority,
@@ -214,7 +208,6 @@ class ScalingMetric:
                  values_aggregator_conf : dict,
                  target_value : float,
                  stabilizer_conf : dict,
-                 timing_type : str,
                  forecaster_conf : dict,
                  capacity_adaptation_type : str,
                  priority : int,
@@ -270,8 +263,7 @@ class ScalingMetric:
         # either the real metric value or its forecast is used.
         # The use of the "predictive" demands presence of the
         # forecaster.
-        self.timing_type = timing_type
-        self.forecaster = MetricForecaster(timing_type, forecaster_conf, self.metric_type)
+        self.forecaster = MetricForecaster(forecaster_conf, self.metric_type)
 
         # either continuous (for vertical scaling) or discrete (for
         # horizontal scaling)
@@ -306,9 +298,7 @@ class ScalingMetric:
             # with the datetime index. Can be a single value or a sequence of
             # values (in this case, some metric history is incorporated)
 
-            metric_vals = cur_metric_vals
-            if self.timing_type == 'predictive':
-                metric_vals = self.forecaster(cur_metric_vals)
+            metric_vals = self.forecaster(cur_metric_vals)
 
             # Filtering raw metric values (e.g. by removing NA or some
             # abnormal values, or by smoothing the signal) and aggregating

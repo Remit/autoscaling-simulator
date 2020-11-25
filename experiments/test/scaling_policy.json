@@ -58,9 +58,8 @@
                 }
               }
             },
-            "timing_type": "predictive",
             "forecaster_conf": {
-              "name": "simpleAvg",
+              "name": "reactive",
               "config": {
                 "averaging_interval": {
                   "value": 100,
@@ -72,7 +71,7 @@
                 "unit": "ms"
               },
               "history_data_buffer_size": 20,
-              "fhorizon_in_steps": 5
+              "horizon_in_steps": 5
             },
             "capacity_adaptation_type": "discrete",
             "priority": 1,

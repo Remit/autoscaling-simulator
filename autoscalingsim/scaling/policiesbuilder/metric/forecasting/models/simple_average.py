@@ -12,8 +12,9 @@ class SimpleAverage(ForecastingModel):
     horizon.
     """
 
-    def __init__(self, forecasting_model_params : dict):
+    def __init__(self, config : dict):
 
+        forecasting_model_params = ErrorChecker.key_check_and_load('config', config)
         averaging_interval_raw = ErrorChecker.key_check_and_load('averaging_interval', forecasting_model_params)
         value = ErrorChecker.key_check_and_load('value', averaging_interval_raw)
         unit = ErrorChecker.key_check_and_load('unit', averaging_interval_raw)
@@ -24,18 +25,9 @@ class SimpleAverage(ForecastingModel):
 
         self.averaged_value = data[data.index >= data.index.max() - self.averaging_interval].value.mean()
 
-    def predict(self, metric_vals : pd.DataFrame, fhorizon_in_steps : int,
-                resolution : pd.Timedelta):
+    def predict(self, metric_vals : pd.DataFrame, horizon_in_steps : int, resolution : pd.Timedelta):
 
-        forecasting_interval_start = metric_vals.iloc[-1:,].index[0] + resolution
-        forecasting_interval_end = forecasting_interval_start + fhorizon_in_steps * resolution
-        forecast_interval = pd.date_range(start = forecasting_interval_start,
-                                          end = forecasting_interval_end,
-                                          freq = str(resolution.microseconds // 1000) + 'L')
-        forecasts_df = pd.DataFrame(forecast_interval, columns = ['date'])
-        forecasts_df['value'] = [self.averaged_value] * len(forecast_interval)
-        forecasts_df['datetime'] = pd.to_datetime(forecasts_df['date'])
-        forecasts_df = forecasts_df.set_index('datetime')
-        forecasts_df.drop(['date'], axis=1, inplace=True)
+        forecast_interval = self._construct_future_interval(metric_vals, horizon_in_steps, resolution)
 
-        return forecasts_df
+        return pd.DataFrame({ metric_vals.index.name : forecast_interval,
+                              'value': [self.averaged_value] * len(forecast_interval)} ).set_index(metric_vals.index.name)
