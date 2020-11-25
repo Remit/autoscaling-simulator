@@ -1,6 +1,7 @@
 import pandas as pd
 
 from autoscalingsim.utils.utilization import EntityUtilization
+from autoscalingsim.utils.df_convenience import convert_to_class
 
 waiting_time_metric_name = 'waiting_time'
 waiting_requests_count_metric_name = 'waiting_requests_count'
@@ -27,11 +28,8 @@ class BufferUtilization(EntityUtilization):
 
     def get(self, metric_name : str, interval : pd.Timedelta):
 
-        """
-        Overrides the parent class method to handle the case of providing
-        the waiting time in an appropriate format.
-        """
+        """ Provides the waiting time in an appropriate format """
 
         res = super().get(metric_name, interval)
 
-        return pd.Timedelta(res, unit = 'ms') if metric_name == waiting_time_metric_name else res
+        return convert_to_class(res, pd.Timedelta, unit = 'ms') if metric_name == waiting_time_metric_name else res

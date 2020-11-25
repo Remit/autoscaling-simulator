@@ -160,20 +160,9 @@ class ApplicationModel:
 
     def enter_requests(self, new_requests : list):
 
-        """
-        Enters new requests into the application model to be processed
-        on the next call to the step method.
-        """
-
         self.new_requests = new_requests
 
     def post_process(self):
-
-        """
-        Performs some actions at the end of the simulation. Since only
-        the simulator knows, when the simulation ends, this method is
-        to be called by the simulator.
-        """
 
         # Collect the utilization information from all the services
         for service_name, service in self.services.items():

@@ -43,10 +43,9 @@ class Count(ScalingAspect):
         if isinstance(scalar_or_df, numbers.Number):
             return Count(int(self.value * scalar_or_df))
         elif isinstance(scalar_or_df, pd.DataFrame):
-            return df_convenience.convert_to_class(scalar_or_df * self.value,
-                                                   self.__class__)
+            return df_convenience.convert_to_class(scalar_or_df * self.value, self.__class__)
         else:
-            raise TypeError(f'An attempt to multiply by non-int of type {scalar.__class__.__name__}')
+            raise TypeError(f'An attempt to multiply by non-int of type {scalar_or_df.__class__.__name__}')
 
     def __mod__(self, other_aspect_val : 'Count'):
 

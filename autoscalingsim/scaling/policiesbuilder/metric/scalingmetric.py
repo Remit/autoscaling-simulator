@@ -28,6 +28,7 @@ class MetricDescription:
                  aspect_name,
                  metric_source_name,
                  metric_name,
+                 metric_type,
                  values_filter_conf,
                  values_aggregator_conf,
                  target_value,
@@ -44,6 +45,7 @@ class MetricDescription:
         self.aspect_name = aspect_name
         self.metric_source_name = metric_source_name
         self.metric_name = metric_name
+        self.metric_type = metric_type
         self.values_filter_conf = values_filter_conf
         self.values_aggregator_conf = values_aggregator_conf
         self.target_value = target_value
@@ -77,6 +79,7 @@ class MetricDescription:
                                          self.aspect_name,
                                          metric_source_name,
                                          self.metric_name,
+                                         self.metric_type,
                                          self.values_filter_conf,
                                          self.values_aggregator_conf,
                                          self.target_value,
@@ -105,6 +108,7 @@ class ScalingMetricRegionalized:
                  aspect_name : str,
                  metric_source_name : str,
                  metric_name : str,
+                 metric_type : type,
                  values_filter_conf : dict,
                  values_aggregator_conf : dict,
                  target_value : float,
@@ -138,6 +142,7 @@ class ScalingMetricRegionalized:
         self.metrics_per_region = {}
         for region_name in regions:
             self.metrics_per_region[region_name] = ScalingMetric(region_name,
+                                                                 metric_type,
                                                                  values_filter_conf,
                                                                  values_aggregator_conf,
                                                                  target_value,
@@ -204,6 +209,7 @@ class ScalingMetric:
 
     def __init__(self,
                  region_name : str,
+                 metric_type : type,
                  values_filter_conf : dict,
                  values_aggregator_conf : dict,
                  target_value : float,
@@ -218,6 +224,7 @@ class ScalingMetric:
 
         # Static state
         self.region_name = region_name
+        self.metric_type = metric_type
 
         # Metric values preprocessing:
         # a filter that takes some of the metrics values depending
@@ -234,7 +241,7 @@ class ScalingMetric:
         # TODO: consider values aggregators chains
         va_name = ErrorChecker.key_check_and_load('name', values_aggregator_conf, 'region', region_name)
         va_conf = ErrorChecker.key_check_and_load('config', values_aggregator_conf, 'region', region_name)
-        self.values_aggregator = ValuesAggregator.get(va_name)(va_conf)
+        self.values_aggregator = ValuesAggregator.get(va_name)(va_conf, self.metric_type)
 
         # Scaling determinants:
         # integer value that determines the position of the metric in the
@@ -264,7 +271,7 @@ class ScalingMetric:
         # The use of the "predictive" demands presence of the
         # forecaster.
         self.timing_type = timing_type
-        self.forecaster = MetricForecaster(timing_type, forecaster_conf)
+        self.forecaster = MetricForecaster(timing_type, forecaster_conf, self.metric_type)
 
         # either continuous (for vertical scaling) or discrete (for
         # horizontal scaling)
@@ -287,9 +294,7 @@ class ScalingMetric:
         # there is no universal correspondence for every app and every request type.
         self.service_representation_in_metric = service_representation_in_metric
 
-    def __call__(self,
-                 cur_metric_vals : pd.DataFrame,
-                 cur_aspect_val : ScalingAspect):
+    def __call__(self, cur_metric_vals : pd.DataFrame, cur_aspect_val : ScalingAspect):
 
         """
         Computes the desired state of the associated scaled service (e.g. service)
@@ -343,10 +348,7 @@ class ScalingMetric:
         else:
             return pd.DataFrame()
 
-    def update_limits(self,
-                      new_min,
-                      new_max):
+    def update_limits(self, new_min, new_max):
 
         if not limiter is None:
-            self.limiter.update_limits(new_min,
-                                       new_max)
+            self.limiter.update_limits(new_min, new_max)

@@ -28,7 +28,8 @@
         "metrics_descriptions": [
           {
             "metric_source_name": "Service",
-            "metric_name": "vCPU",
+            "metric_name": "waiting_time",
+            "metric_type": "Timedelta",
             "values_filter_conf": {
               "name": "defaultNA",
               "config": {
@@ -44,7 +45,10 @@
                 }
               }
             },
-            "target_value": 0.05,
+            "target_value": {
+              "value": 100,
+              "unit": "ms"
+            },
             "stabilizer_conf": {
               "name": "maxStabilizer",
               "config": {
@@ -58,7 +62,10 @@
             "forecaster_conf": {
               "name": "simpleAvg",
               "config": {
-                "averaging_interval": 10
+                "averaging_interval": {
+                  "value": 100,
+                  "unit": "ms"
+                }
               },
               "resolution": {
                 "value": 10,

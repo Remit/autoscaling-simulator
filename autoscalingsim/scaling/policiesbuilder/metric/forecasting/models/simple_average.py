@@ -14,16 +14,17 @@ class SimpleAverage(ForecastingModel):
 
     def __init__(self, forecasting_model_params : dict):
 
-        self.averaging_interval = int(ErrorChecker.key_check_and_load('averaging_interval', forecasting_model_params))
-        self.averaged_value = 0
+        averaging_interval_raw = ErrorChecker.key_check_and_load('averaging_interval', forecasting_model_params)
+        value = ErrorChecker.key_check_and_load('value', averaging_interval_raw)
+        unit = ErrorChecker.key_check_and_load('unit', averaging_interval_raw)
+        self.averaging_interval = pd.Timedelta(value, unit = unit)
+        self.averaged_value = None
 
     def fit(self, data : pd.DataFrame):
 
-        self.averaged_value = float(data[-self.averaging_interval:].mean())
+        self.averaged_value = data[data.index >= data.index.max() - self.averaging_interval].value.mean()
 
-    def predict(self,
-                metric_vals : pd.DataFrame,
-                fhorizon_in_steps : int,
+    def predict(self, metric_vals : pd.DataFrame, fhorizon_in_steps : int,
                 resolution : pd.Timedelta):
 
         forecasting_interval_start = metric_vals.iloc[-1:,].index[0] + resolution

@@ -2,7 +2,7 @@ import operator
 import pandas as pd
 
 from .deployment import Deployment
-from .service_metric import ServiceMetric
+from .service_metric import ServiceMetric, SumAggregator
 
 from autoscalingsim.load.request import Request
 from autoscalingsim.application.requests_buffer import RequestsBuffer
@@ -113,10 +113,10 @@ class ServiceState:
         self.service_metrics_and_sources = {
             'upstream_waiting_time': ServiceMetric(buffer_utilization.waiting_time_metric_name, [self.upstream_buf]),
             'downstream_waiting_time': ServiceMetric(buffer_utilization.waiting_time_metric_name, [self.downstream_buf]),
-            'waiting_time': ServiceMetric(buffer_utilization.waiting_time_metric_name, [self.upstream_buf, self.downstream_buf], sum),
+            'waiting_time': ServiceMetric(buffer_utilization.waiting_time_metric_name, [self.upstream_buf, self.downstream_buf], SumAggregator()),
             'upstream_waiting_requests_count': ServiceMetric(buffer_utilization.waiting_requests_count_metric_name, [self.upstream_buf]),
             'downstream_waiting_requests_count': ServiceMetric(buffer_utilization.waiting_requests_count_metric_name, [self.downstream_buf]),
-            'waiting_requests_count': ServiceMetric(buffer_utilization.waiting_requests_count_metric_name, [self.upstream_buf, self.downstream_buf], sum)
+            'waiting_requests_count': ServiceMetric(buffer_utilization.waiting_requests_count_metric_name, [self.upstream_buf, self.downstream_buf], SumAggregator())
         }
 
     def add_request(self, req : Request, simulation_step : pd.Timedelta):

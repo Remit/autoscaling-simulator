@@ -11,9 +11,9 @@ class MetricForecaster:
     model and calculating the forecasts for the defined forecasting horizon.
     """
 
-    def __init__(self, timing_type : str, config : dict):
+    def __init__(self, timing_type : str, config : dict, metric_type : type):
 
-        # Static State
+        self.metric_type = metric_type
         self.fhorizon_in_steps = ErrorChecker.key_check_and_load('fhorizon_in_steps', config)
         self.history_data_buffer_size = int(ErrorChecker.key_check_and_load('history_data_buffer_size', config))
 
@@ -44,9 +44,8 @@ class MetricForecaster:
         if not self.model is None:
             self._update(metric_vals)
 
-            forecast = self.model.predict(metric_vals,
-                                          self.fhorizon_in_steps,
-                                          self.resolution)
+            forecast = self.model.predict(metric_vals, self.fhorizon_in_steps, self.resolution)
+            forecast.value = [ self.metric_type(forecasted_val) for forecasted_val in forecast.value ]
 
         return forecast
 
@@ -58,6 +57,9 @@ class MetricForecaster:
         to the collected data. The model is afterwards updated on each new observation
         if there was no interrupt in data acquisition (determined by the timestamps).
         """
+
+        if self.metric_type == pd.Timedelta:
+            metric_vals.value = [ metric_val.value for metric_val in metric_vals.value ]
 
         self.history_data_buffer = self.history_data_buffer.append(metric_vals)
         self.history_data_buffer = self.history_data_buffer.iloc[-self.history_data_buffer_size:,]
