@@ -121,32 +121,16 @@ class ServiceState:
 
     def add_request(self, req : Request, simulation_step : pd.Timedelta):
 
-        """
-        Puts a request in one of the requests buffers depending on
-        whether it moves upstream (request) or downstrem (response).
-        """
-
         self.upstream_buf.put(req, simulation_step) if req.upstream else self.downstream_buf.put(req, simulation_step)
 
     def get_processed(self):
 
-        """
-        Returns the requests that were processed by any instance of the
-        current service. The requests are collected across all the deployments.
-        """
+        return [ req for deployment in self.deployments.values() for req in deployment.get_processed_for_service() ]
 
-        processed_requests = []
-        for deployment in self.deployments.values():
-            processed_requests.extend(deployment.get_processed_for_service())
-
-        return processed_requests
-
-    def step(self,
-             cur_timestamp : pd.Timestamp,
-             simulation_step : pd.Timedelta):
+    def step(self, cur_timestamp : pd.Timestamp, simulation_step : pd.Timedelta):
 
         """
-        Makes a simulation step on this service state. Making a simulation step
+        Makes a simulation step for this service state. Making a simulation step
         includes advancing the requests waiting in the buffers and putting
         them in the node group that has enough free system resources and
         enough spare service instances running. At the end of the step,
@@ -275,14 +259,9 @@ class ServiceState:
         The collected values are summed up and returned.
         """
 
-        aspect_values_collected = []
-        for deployment in self.deployments.values():
-            aspect_values_collected.append(deployment.get_aspect_value(aspect_name))
+        return sum([ deployment.get_aspect_value(aspect_name) for deployment in self.deployments.values() ])
 
-        return sum(aspect_values_collected)
-
-    def get_metric_value(self,
-                         metric_name : str,
+    def get_metric_value(self, metric_name : str,
                          interval : pd.Timedelta = pd.Timedelta(0, unit = 'ms')):
 
         """
@@ -345,8 +324,4 @@ class ServiceState:
 
     def _count_service_instances(self):
 
-        service_instances_count = 0
-        for deployment in self.deployments.values():
-            service_instances_count += deployment.get_aspect_value('count').get_value()
-
-        return service_instances_count
+        return sum([ deployment.get_aspect_value('count').get_value() for deployment in self.deployments.values() ])

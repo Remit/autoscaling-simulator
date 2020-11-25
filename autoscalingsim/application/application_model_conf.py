@@ -39,21 +39,14 @@ class ServiceConfiguration:
         self.averaging_interval = averaging_interval
         self.sampling_interval = sampling_interval
 
-    def to_service(self,
-                   starting_time : pd.Timestamp,
+    def to_service(self, starting_time : pd.Timestamp,
                    service_scaling_settings : ScaledServiceScalingSettings,
                    state_reader : StateReader):
 
-        return Service(self.service_name,
-                       starting_time,
-                       self.service_regions,
-                       self.system_requirements,
-                       self.buffers_config,
-                       self.reqs_processing_infos,
-                       service_scaling_settings,
-                       state_reader,
-                       self.averaging_interval,
-                       self.sampling_interval)
+        return Service(self.service_name, starting_time, self.service_regions,
+                       self.system_requirements, self.buffers_config,
+                       self.reqs_processing_infos, service_scaling_settings,
+                       state_reader, self.averaging_interval, self.sampling_interval)
 
 class ApplicationModelConfiguration:
 
@@ -90,9 +83,7 @@ class ApplicationModelConfiguration:
 
     """
 
-    def __init__(self,
-                 config_file : str,
-                 platform_model : PlatformModel,
+    def __init__(self, config_file : str, platform_model : PlatformModel,
                  simulation_step : pd.Timedelta):
 
         self.name = None
@@ -181,10 +172,8 @@ class ApplicationModelConfiguration:
 
                     request_processing_requirements = ErrorChecker.key_check_and_load('processing_requirements', request_info, 'request_type', request_type)
 
-                    req_proc_info = RequestProcessingInfo(request_type, entry_service,
-                                                          processing_times, timeout,
-                                                          request_size, response_size,
-                                                          request_operation_type, request_processing_requirements)
+                    req_proc_info = RequestProcessingInfo(request_type, entry_service, processing_times, timeout,
+                                                          request_size, response_size, request_operation_type, request_processing_requirements)
                     self.reqs_processing_infos[request_type] = req_proc_info
 
                 ##############################################################################
@@ -243,8 +232,6 @@ class ApplicationModelConfiguration:
 
     def get_entry_service(self, req_type : str) -> str:
 
-        """ Returns a name of the entry service for the given request type """
-
         if not req_type in self.reqs_processing_infos:
             raise ValueError(f'No request processing information found for {req_type} request type')
 
@@ -252,19 +239,13 @@ class ApplicationModelConfiguration:
 
     def get_next_services(self, service_name : str) -> list:
 
-        """ Returns a list of all the *upstream* services for the provided service """
-
         return self.structure.get_next_services(service_name)
 
     def get_prev_services(self, service_name : str) -> list:
 
-        """ Returns a list of all the *downstream* services for the provided service """
-
         return self.structure.get_prev_services(service_name)
 
     def get_upstream_processing_time(self, req_type : str, service_name : str):
-
-        """ Provides an upstream processing time for the given type of request in the given service """
 
         if not req_type in self.reqs_processing_infos:
             raise ValueError(f'No request processing information found for {req_type} request type')
@@ -272,8 +253,6 @@ class ApplicationModelConfiguration:
         return self.reqs_processing_infos[req_type].get_upstream_processing_time(service_name)
 
     def get_downstream_processing_time(self, req_type : str, service_name : str):
-
-        """ Provides a downstream processing time for the given type of request in the given service """
 
         if not req_type in self.reqs_processing_infos:
             raise ValueError(f'No request processing information found for {req_type} request type')

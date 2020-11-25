@@ -8,20 +8,14 @@ from autoscalingsim.infrastructure_platform.link import NodeGroupLink
 
 class RequestsBuffer:
 
-    """
-    Represents buffers where the requests wait to be served.
-    """
+    """ Represents buffers where the requests wait to be served """
 
-    def __init__(self,
-                 capacity_by_request_type_base : dict,
-                 queuing_discipline : str = 'FIFO'):
+    def __init__(self, capacity_by_request_type_base : dict, queuing_discipline : str = 'FIFO'):
 
         self.capacity_by_request_type_base = capacity_by_request_type_base
         self.capacity_by_request_type = self.capacity_by_request_type_base.copy() # updatable
         self.discipline = QueuingDiscipline.get(queuing_discipline)()
-        self.reqs_cnt = {}
-        for request_type in capacity_by_request_type_base.keys():
-            self.reqs_cnt[request_type] = 0
+        self.reqs_cnt = { request_type : 0 for request_type in self.capacity_by_request_type_base }
         self.links = []
 
         self.links_index = {}
@@ -49,16 +43,13 @@ class RequestsBuffer:
                     self.reqs_cnt[req.request_type] += 1
                     self.discipline.insert(req)
 
-    def update_utilization(self,
-                           cur_timestamp : pd.Timestamp,
-                           averaging_interval : pd.Timedelta):
+    def update_utilization(self, cur_timestamp : pd.Timestamp,  averaging_interval : pd.Timedelta):
 
         self.utilization.update_waiting_time(cur_timestamp,
                                              self.discipline.get_average_waiting_time(),
                                              averaging_interval)
 
-        self.utilization.update_waiting_requests_count(cur_timestamp,
-                                                       sum(self.reqs_cnt.values()),
+        self.utilization.update_waiting_requests_count(cur_timestamp, sum(self.reqs_cnt.values()),
                                                        averaging_interval)
 
     def update_capacity(self, service_instances_count : int):

@@ -13,18 +13,14 @@ class BufferUtilization(EntityUtilization):
 
         super().__init__(self.__class__.metrics)
 
-    def update_waiting_time(self,
-                            timestamp : pd.Timestamp,
-                            value : pd.Timedelta,
+    def update_waiting_time(self, timestamp : pd.Timestamp, value : pd.Timedelta,
                             averaging_interval : pd.Timedelta):
 
         if isinstance(value, pd.Timedelta):
             value = value.microseconds // 1000
         self.update('waiting_time', timestamp, value, averaging_interval)
 
-    def update_waiting_requests_count(self,
-                                      timestamp : pd.Timestamp,
-                                      value : int,
+    def update_waiting_requests_count(self, timestamp : pd.Timestamp, value : int,
                                       averaging_interval : pd.Timedelta):
 
         self.update('waiting_requests_count', timestamp, value, averaging_interval)
@@ -37,7 +33,5 @@ class BufferUtilization(EntityUtilization):
         """
 
         res = super().get(metric_name, interval)
-        if metric_name == waiting_time_metric_name:
-            res = pd.Timedelta(res, unit = 'ms')
 
-        return res
+        return pd.Timedelta(res, unit = 'ms') if metric_name == waiting_time_metric_name else res

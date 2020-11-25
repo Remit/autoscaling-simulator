@@ -48,26 +48,16 @@ class ServiceStateRegionalized:
 
         self.region_states[req.region_name].add_request(req, simulation_step)
 
-    def get_processed(self):
+    def get_processed(self) -> list:
 
-        """ Returns processed requests collected across all the regions. """
-
-        processed_requests = []
-        for service_state in self.region_states.values():
-            processed_requests.extend(service_state.get_processed())
-
-        return processed_requests
+        return [ req for service_state in self.region_states.values() for req in service_state.get_processed() ]
 
     def step(self, cur_timestamp : pd.Timestamp, simulation_step : pd.Timedelta):
-
-        """ Issues a simulation step for service state in each region """
 
         for service_state in self.region_states.values():
             service_state.step(cur_timestamp, simulation_step)
 
     def prepare_groups_for_removal(self, region_name : str, node_group_ids : list):
-
-        """ Prepares the node groups with given ids for removal in the given region """
 
         if region_name in self.region_states:
             for node_group_id in node_group_ids:
@@ -75,15 +65,11 @@ class ServiceStateRegionalized:
 
     def force_remove_groups(self, region_name : str, node_group_ids : list):
 
-        """ Removes the node groups with given ids from the given region """
-
         if region_name in self.region_states:
             for node_group_id in node_group_ids:
                 self.region_states[region_name].force_remove_group(node_group_id)
 
     def update_placement(self, region_name : str, node_group : HomogeneousNodeGroup):
-
-        """ Updates the service placement in the given region """
 
         if not region_name in self.region_states:
             raise ValueError(f'A state for the given region name {region_name} was not found')
@@ -92,8 +78,6 @@ class ServiceStateRegionalized:
 
     def get_aspect_value(self, region_name : str, aspect_name : str):
 
-        """ Returns the value of the given scaling aspect for the service in the given region """
-
         if not region_name in self.region_states:
             raise ValueError(f'A state for the given region name {region_name} was not found')
 
@@ -101,32 +85,18 @@ class ServiceStateRegionalized:
 
     def get_metric_value(self, region_name : str, metric_name : str):
 
-        """ Returns utilization metric values for the given metric in the given region """
-
         if not region_name in self.region_states:
             raise ValueError(f'A state for the given region name {region_name} was not found')
 
         return self.region_states[region_name].get_metric_value(metric_name)
 
-    def check_out_system_resources_utilization(self):
+    def check_out_system_resources_utilization(self) -> dict:
 
-        """
-        Provides system resources utilization for the current state across
-        all the regions that it is deployed in.
-        """
+        return { region_name : region_state.check_out_system_resources_utilization() for region_name, region_state in self.region_states.items() }
 
-        utilization_per_region = {}
-        for region_name, region_state in self.region_states.items():
-            utilization_per_region[region_name] = region_state.check_out_system_resources_utilization()
+    def get_resource_requirements(self, region_name : str) -> ResourceRequirements:
 
-        return utilization_per_region
-
-    def get_resource_requirements(self, region_name : str):
-
-        """
-        Provides the resource requirements of a single instance of this service
-        in the given region_name
-        """
+        """ Provides resource requirements of a single service instance """
 
         if not region_name in self.region_states:
             raise ValueError(f'A state for the given region name {region_name} was not found')

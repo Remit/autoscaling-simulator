@@ -36,8 +36,6 @@ class ResponseStatsRegional:
 
 class ResponseStats:
 
-    """ Contains stats for the processed requests """
-
     def __init__(self):
         self.regional_stats = {}
 
@@ -50,24 +48,12 @@ class ResponseStats:
 
     def get_response_times_by_request(self):
 
-        response_times = {}
-        for region_name, reg_stats in self.regional_stats.items():
-            response_times[region_name] = reg_stats.response_times_by_request
-
-        return response_times
+        return { region_name : reg_stats.response_times_by_request for region_name, reg_stats in self.regional_stats.items() }
 
     def get_network_times_by_request(self):
 
-        network_times = {}
-        for region_name, reg_stats in self.regional_stats.items():
-            network_times[region_name] = reg_stats.network_times_by_request
-
-        return network_times
+        return { region_name : reg_stats.network_times_by_request for region_name, reg_stats in self.regional_stats.items() }
 
     def get_buffer_times_by_request(self):
 
-        buffer_times = {}
-        for region_name, reg_stats in self.regional_stats.items():
-            buffer_times[region_name] = reg_stats.buffer_times_by_request
-
-        return buffer_times
+        return { region_name : reg_stats.buffer_times_by_request for region_name, reg_stats in self.regional_stats.items() }
