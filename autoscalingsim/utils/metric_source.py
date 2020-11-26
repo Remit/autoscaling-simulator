@@ -10,7 +10,7 @@ class MetricSource(ABC):
         pass
 
     @abstractmethod
-    def get_metric_value(self, region_name : str, metric_name : str):
+    def get_metric_value(self, region_name : str, metric_name : str, submetric_name : str):
 
         pass
 

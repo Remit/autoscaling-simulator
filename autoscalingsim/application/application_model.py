@@ -80,6 +80,7 @@ class ApplicationModel:
 
         self.new_requests = []
         self.response_stats = ResponseStats()
+        state_reader.add_source('response_stats', self.response_stats)
         self.scaling_manager = ScalingManager()
         self.deployment_model = DeploymentModel()
         self.platform_model.set_scaling_manager(self.scaling_manager)
@@ -153,7 +154,7 @@ class ApplicationModel:
                             req.replies_expected = replies_expected
                             self.services[prev_service_name].add_request(req, simulation_step)
                     else:
-                        self.response_stats.add_request(req) # Reached the user, updating responses stats
+                        self.response_stats.add_request(cur_timestamp, req) # Reached the user, updating responses stats
 
         # Calling scaling policy that determines the need to scale
         self.scaling_policy.reconcile_state(cur_timestamp)

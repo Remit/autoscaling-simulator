@@ -36,7 +36,7 @@ class WaitingServiceBuffersHistogram:
                             services_order[service_name] = plot_id
                             plot_id += 1
 
-                max_cnt_of_services = max([len(buffers_waiting_times) for buffers_waiting_times in buffer_times_by_request.values()])
+                max_cnt_of_services = len(services_order)#max([len(buffers_waiting_times) for buffers_waiting_times in buffer_times_by_request.values()])
 
                 inner_rows_cnt = 1
                 inner_cols_cnt = max_cnt_of_services

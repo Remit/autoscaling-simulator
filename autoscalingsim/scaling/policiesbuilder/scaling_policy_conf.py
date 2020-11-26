@@ -60,10 +60,9 @@ class ScalingPolicyConfiguration:
 
                     metric_source_name = ErrorChecker.key_check_and_load('metric_source_name', metric_description_json, service_key, service_name)
                     metric_name = ErrorChecker.key_check_and_load('metric_name', metric_description_json, service_key, service_name)
+                    submetric_name = ErrorChecker.key_check_and_load('submetric_name', metric_description_json, service_key, service_name, default = '')
                     metric_type = ErrorChecker.key_check_and_load('metric_type', metric_description_json, service_key, service_name)
-                    metric_params = None
-                    if MetricConverter.knows(metric_type):
-                        metric_params = ErrorChecker.key_check_and_load('metric_params', metric_description_json, service_key, service_name)
+                    metric_params = ErrorChecker.key_check_and_load('metric_params', metric_description_json, service_key, service_name, default = {})
                     metric_converter = MetricConverter.get(metric_type)(metric_params)
 
                     # TODO: think of non-obligatory parameters that can be identified as none
@@ -88,6 +87,7 @@ class ScalingPolicyConfiguration:
                                                      scaled_aspect_name,
                                                      metric_source_name,
                                                      metric_name,
+                                                     submetric_name,
                                                      metric_converter,
                                                      values_filter_conf,
                                                      values_aggregator_conf,

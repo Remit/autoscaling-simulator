@@ -13,9 +13,10 @@ class ErrorChecker:
     def key_check_and_load(key,
                            structure,
                            obj_type = None,
-                           obj_name = None):
+                           obj_name = None,
+                           default = None):
 
-        if not key in structure:
+        if not key in structure and default is None:
 
             error_msg = f'No {key} specified'
             if not obj_type is None:
@@ -25,7 +26,7 @@ class ErrorChecker:
 
             raise ValueError(error_msg)
 
-        return structure[key]
+        return structure[key] if key in structure else default
 
     @staticmethod
     def value_check(parameter_name,

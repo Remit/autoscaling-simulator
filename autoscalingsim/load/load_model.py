@@ -38,7 +38,7 @@ class LoadModel(MetricSource):
 
         return { region_name : region_load_model.get_stat() for region_name, region_load_model in self.region_models.items()}
 
-    def get_metric_value(self, region_name : str, req_type : str):
+    def get_metric_value(self, region_name : str, req_type : str, submetric_name : str):
 
         if not region_name in self.region_models:
             raise ValueError(f'A load model for the given region name {region_name} was not found')

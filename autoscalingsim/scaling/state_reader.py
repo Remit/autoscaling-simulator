@@ -21,12 +21,12 @@ class StateReader:
 
         return self.sources[source_name].get_aspect_value(region_name, aspect_name)
 
-    def get_metric_value(self, source_name : str, region_name : str, metric_name : str):
+    def get_metric_value(self, source_name : str, region_name : str, metric_name : str, submetric_name : str):
 
         if not source_name in self.sources:
             raise ValueError(f'An attempt to call the source {source_name} that is not in the list of {self.__class__.__name__}')
 
-        return self.sources[source_name].get_metric_value(region_name, metric_name)
+        return self.sources[source_name].get_metric_value(region_name, metric_name, submetric_name)
 
     def get_resource_requirements(self, source_name : str, region_name : str):
 

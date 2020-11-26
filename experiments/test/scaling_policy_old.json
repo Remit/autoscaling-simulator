@@ -27,9 +27,8 @@
         "scaled_aspect_name": "count",
         "metrics_descriptions": [
           {
-            "metric_source_name": "response_stats",
-            "metric_name": "buffer_time",
-            "submetric_name": "*",
+            "metric_source_name": "Service",
+            "metric_name": "waiting_time",
             "metric_type": "duration",
             "metric_params": {
               "duration_unit": "ms"

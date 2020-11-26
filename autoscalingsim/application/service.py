@@ -77,7 +77,7 @@ class Service(ScaledService, MetricSource):
 
         return self.state.get_aspect_value(region_name, aspect_name)
 
-    def get_metric_value(self, region_name : str, metric_name : str):
+    def get_metric_value(self, region_name : str, metric_name : str, submetric_name : str):
 
         return self.state.get_metric_value(region_name, metric_name)
 

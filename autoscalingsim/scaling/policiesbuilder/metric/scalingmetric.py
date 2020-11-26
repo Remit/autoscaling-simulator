@@ -23,6 +23,7 @@ class MetricDescription:
                  aspect_name,
                  metric_source_name,
                  metric_name,
+                 submetric_name,
                  metric_converter,
                  values_filter_conf,
                  values_aggregator_conf,
@@ -38,6 +39,7 @@ class MetricDescription:
         self.aspect_name = aspect_name
         self.metric_source_name = metric_source_name
         self.metric_name = metric_name
+        self.submetric_name = submetric_name
         self.metric_converter = metric_converter
         self.values_filter_conf = values_filter_conf
         self.values_aggregator_conf = values_aggregator_conf
@@ -70,6 +72,7 @@ class MetricDescription:
                                          self.aspect_name,
                                          metric_source_name,
                                          self.metric_name,
+                                         self.submetric_name,
                                          self.metric_converter,
                                          self.values_filter_conf,
                                          self.values_aggregator_conf,
@@ -97,6 +100,7 @@ class ScalingMetricRegionalized:
                  aspect_name : str,
                  metric_source_name : str,
                  metric_name : str,
+                 submetric_name : str,
                  metric_converter : MetricConverter,
                  values_filter_conf : dict,
                  values_aggregator_conf : dict,
@@ -120,6 +124,7 @@ class ScalingMetricRegionalized:
         # - the name of the metric in the metric source specified by the name above
         self.metric_source_name = metric_source_name
         self.metric_name = metric_name
+        self.submetric_name = submetric_name
 
         self.state_reader = state_reader
 
@@ -155,7 +160,8 @@ class ScalingMetricRegionalized:
 
             metric_vals = self.state_reader.get_metric_value(self.metric_source_name,
                                                              region_name,
-                                                             self.metric_name)
+                                                             self.metric_name,
+                                                             self.submetric_name)
 
             cur_aspect_val = self.state_reader.get_aspect_value(self.service_name,
                                                                 region_name,
