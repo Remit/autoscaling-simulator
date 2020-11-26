@@ -3,11 +3,9 @@ from .size import Size
 
 class MetricUnitsRegistry:
 
-    """ """
-
     _Registry = {
-        'Timedelta': pd.Timedelta,
-        'Size': Size
+        'duration': pd.Timedelta,
+        'size': Size
     }
 
     @classmethod

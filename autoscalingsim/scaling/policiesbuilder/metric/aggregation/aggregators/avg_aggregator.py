@@ -11,9 +11,7 @@ class AvgAggregator(ValuesAggregator):
     time window of desired resolution.
     """
 
-    def __init__(self, config : dict, metric_type : type):
-
-        super().__init__(metric_type)
+    def __init__(self, config : dict):
 
         resolution_raw = ErrorChecker.key_check_and_load('resolution', config, self.__class__.__name__)
         resolution_value = ErrorChecker.key_check_and_load('value', resolution_raw, self.__class__.__name__)
@@ -22,6 +20,4 @@ class AvgAggregator(ValuesAggregator):
 
     def __call__(self, data : pd.DataFrame):
 
-        data.value = self._convert_output(self._convert_input(data).rolling(self.resolution).mean())
-
-        return data
+        return data.rolling(self.resolution).mean()

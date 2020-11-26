@@ -7,6 +7,7 @@ from .metric.scalingmetric import MetricDescription
 from .scaled.scaled_service_settings import ScaledServiceScalingSettings
 
 from autoscalingsim.utils.metric_units_registry import MetricUnitsRegistry
+from autoscalingsim.utils.metric_converter import MetricConverter
 from autoscalingsim.utils.error_check import ErrorChecker
 
 class ScalingPolicyConfiguration:
@@ -59,7 +60,11 @@ class ScalingPolicyConfiguration:
 
                     metric_source_name = ErrorChecker.key_check_and_load('metric_source_name', metric_description_json, service_key, service_name)
                     metric_name = ErrorChecker.key_check_and_load('metric_name', metric_description_json, service_key, service_name)
-                    metric_type = MetricUnitsRegistry.get(ErrorChecker.key_check_and_load('metric_type', metric_description_json, service_key, service_name))
+                    metric_type = ErrorChecker.key_check_and_load('metric_type', metric_description_json, service_key, service_name)
+                    metric_params = None
+                    if MetricConverter.knows(metric_type):
+                        metric_params = ErrorChecker.key_check_and_load('metric_params', metric_description_json, service_key, service_name)
+                    metric_converter = MetricConverter.get(metric_type)(metric_params)
 
                     # TODO: think of non-obligatory parameters that can be identified as none
                     values_filter_conf = ErrorChecker.key_check_and_load('values_filter_conf', metric_description_json, service_key, service_name)
@@ -68,10 +73,11 @@ class ScalingPolicyConfiguration:
                     forecaster_conf = ErrorChecker.key_check_and_load('forecaster_conf', metric_description_json, service_key, service_name)
 
                     target_value = ErrorChecker.key_check_and_load('target_value', metric_description_json, service_key, service_name)
+                    metric_unit_type = MetricUnitsRegistry.get(metric_type)
                     if isinstance(target_value, collections.Mapping):
                         value = ErrorChecker.key_check_and_load('value', target_value, service_key, service_name)
                         unit = ErrorChecker.key_check_and_load('unit', target_value, service_key, service_name)
-                        target_value = metric_type(value, unit = unit)
+                        target_value = metric_unit_type(value, unit = unit)
 
                     priority = ErrorChecker.key_check_and_load('priority', metric_description_json, service_key, service_name)
                     initial_max_limit = ErrorChecker.key_check_and_load('initial_max_limit', metric_description_json, service_key, service_name)
@@ -82,7 +88,7 @@ class ScalingPolicyConfiguration:
                                                      scaled_aspect_name,
                                                      metric_source_name,
                                                      metric_name,
-                                                     metric_type,
+                                                     metric_converter,
                                                      values_filter_conf,
                                                      values_aggregator_conf,
                                                      target_value,

@@ -9,6 +9,7 @@ from .limiter import Limiter
 from autoscalingsim.scaling.state_reader import StateReader
 from autoscalingsim.desired_state.service_group.group_of_services_reg import GroupOfServicesRegionalized
 from autoscalingsim.scaling.scaling_aspects import ScalingAspect
+from autoscalingsim.utils.metric_converter import MetricConverter
 from autoscalingsim.utils.error_check import ErrorChecker
 
 class MetricDescription:
@@ -16,13 +17,13 @@ class MetricDescription:
     """
     Stores all the necessary information to create a scaling metric.
     """
-    
+
     def __init__(self,
                  service_name,
                  aspect_name,
                  metric_source_name,
                  metric_name,
-                 metric_type,
+                 metric_converter,
                  values_filter_conf,
                  values_aggregator_conf,
                  target_value,
@@ -37,7 +38,7 @@ class MetricDescription:
         self.aspect_name = aspect_name
         self.metric_source_name = metric_source_name
         self.metric_name = metric_name
-        self.metric_type = metric_type
+        self.metric_converter = metric_converter
         self.values_filter_conf = values_filter_conf
         self.values_aggregator_conf = values_aggregator_conf
         self.target_value = target_value
@@ -69,7 +70,7 @@ class MetricDescription:
                                          self.aspect_name,
                                          metric_source_name,
                                          self.metric_name,
-                                         self.metric_type,
+                                         self.metric_converter,
                                          self.values_filter_conf,
                                          self.values_aggregator_conf,
                                          self.target_value,
@@ -96,7 +97,7 @@ class ScalingMetricRegionalized:
                  aspect_name : str,
                  metric_source_name : str,
                  metric_name : str,
-                 metric_type : type,
+                 metric_converter : MetricConverter,
                  values_filter_conf : dict,
                  values_aggregator_conf : dict,
                  target_value : float,
@@ -128,7 +129,7 @@ class ScalingMetricRegionalized:
         self.metrics_per_region = {}
         for region_name in regions:
             self.metrics_per_region[region_name] = ScalingMetric(region_name,
-                                                                 metric_type,
+                                                                 metric_converter,
                                                                  values_filter_conf,
                                                                  values_aggregator_conf,
                                                                  target_value,
@@ -193,7 +194,7 @@ class ScalingMetric:
 
     def __init__(self,
                  region_name : str,
-                 metric_type : type,
+                 metric_converter : MetricConverter,
                  values_filter_conf : dict,
                  values_aggregator_conf : dict,
                  target_value : float,
@@ -206,7 +207,7 @@ class ScalingMetric:
 
         # Static state
         self.region_name = region_name
-        self.metric_type = metric_type
+        self.metric_converter = metric_converter
 
         # Metric values preprocessing:
         # a filter that takes some of the metrics values depending
@@ -223,7 +224,7 @@ class ScalingMetric:
         # TODO: consider values aggregators chains
         va_name = ErrorChecker.key_check_and_load('name', values_aggregator_conf, 'region', region_name)
         va_conf = ErrorChecker.key_check_and_load('config', values_aggregator_conf, 'region', region_name)
-        self.values_aggregator = ValuesAggregator.get(va_name)(va_conf, self.metric_type)
+        self.values_aggregator = ValuesAggregator.get(va_name)(va_conf)
 
         # Scaling determinants:
         # integer value that determines the position of the metric in the
@@ -252,7 +253,7 @@ class ScalingMetric:
         # either the real metric value or its forecast is used.
         # The use of the "predictive" demands presence of the
         # forecaster.
-        self.forecaster = MetricForecaster(forecaster_conf, self.metric_type)
+        self.forecaster = MetricForecaster(forecaster_conf)
 
         # Dynamic state
 
@@ -291,6 +292,7 @@ class ScalingMetric:
             # e.g. by averaging with the sliding window of a particular length
             filtered_metric_vals = self.values_filter(metric_vals)
             aggregated_metric_vals = self.values_aggregator(filtered_metric_vals)
+            converted_metric_vals = self.metric_converter.convert_df(aggregated_metric_vals)
 
             # Computing how does metric value related to the target --
             # the assumption is that the closer it is to the target value,
@@ -302,7 +304,7 @@ class ScalingMetric:
             # the current amount of the scaled service. Lastly, the computed
             # desired amount of the scaled aspect is stabilized to avoid
             # oscillations in it that may cause too much overhead when scaling.
-            metric_ratio = aggregated_metric_vals / self.target_value
+            metric_ratio = converted_metric_vals / self.target_value
             desired_scaled_aspect = cur_aspect_val * metric_ratio * self.service_representation_in_metric
             desired_scaled_aspect_stabilized = self.stabilizer(desired_scaled_aspect)
 
