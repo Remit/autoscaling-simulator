@@ -27,9 +27,9 @@
         "scaled_aspect_name": "count",
         "metrics_descriptions": [
           {
-            "metric_source_name": "Load",
-            "metric_name": "*",
-            "metric_type": "int",
+            "metric_source_name": "Service",
+            "metric_name": "waiting_time",
+            "metric_type": "Timedelta",
             "values_filter_conf": {
               "name": "defaultNA",
               "config": {
@@ -45,7 +45,10 @@
                 }
               }
             },
-            "target_value": 2,
+            "target_value": {
+              "value": 100,
+              "unit": "ms"
+            },
             "stabilizer_conf": {
               "name": "maxStabilizer",
               "config": {

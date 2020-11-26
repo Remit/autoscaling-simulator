@@ -16,12 +16,7 @@ class MetricDescription:
     """
     Stores all the necessary information to create a scaling metric.
     """
-
-    # First value in the list is the default
-    reference_configs_dict = {
-        'capacity_adaptation_type': ['discrete', 'continuous']
-    }
-
+    
     def __init__(self,
                  service_name,
                  aspect_name,
@@ -33,7 +28,6 @@ class MetricDescription:
                  target_value,
                  stabilizer_conf,
                  forecaster_conf,
-                 capacity_adaptation_type,
                  priority,
                  initial_max_limit,
                  initial_min_limit,
@@ -49,7 +43,6 @@ class MetricDescription:
         self.target_value = target_value
         self.stabilizer_conf = stabilizer_conf
         self.forecaster_conf = forecaster_conf
-        self.capacity_adaptation_type = capacity_adaptation_type
         self.priority = priority
         self.initial_max_limit = initial_max_limit
         self.initial_min_limit = initial_min_limit
@@ -82,7 +75,6 @@ class MetricDescription:
                                          self.target_value,
                                          self.stabilizer_conf,
                                          self.forecaster_conf,
-                                         self.capacity_adaptation_type,
                                          self.priority,
                                          self.initial_max_limit,
                                          self.initial_min_limit,
@@ -110,7 +102,6 @@ class ScalingMetricRegionalized:
                  target_value : float,
                  stabilizer_conf : dict,
                  forecaster_conf : dict,
-                 capacity_adaptation_type : str,
                  priority : int,
                  max_limit : float,
                  min_limit : float,
@@ -143,7 +134,6 @@ class ScalingMetricRegionalized:
                                                                  target_value,
                                                                  stabilizer_conf,
                                                                  forecaster_conf,
-                                                                 capacity_adaptation_type,
                                                                  priority,
                                                                  max_limit_aspect,
                                                                  min_limit_aspect,
@@ -209,7 +199,6 @@ class ScalingMetric:
                  target_value : float,
                  stabilizer_conf : dict,
                  forecaster_conf : dict,
-                 capacity_adaptation_type : str,
                  priority : int,
                  max_limit_aspect : ScalingAspect,
                  min_limit_aspect : ScalingAspect,
@@ -264,10 +253,6 @@ class ScalingMetric:
         # The use of the "predictive" demands presence of the
         # forecaster.
         self.forecaster = MetricForecaster(forecaster_conf, self.metric_type)
-
-        # either continuous (for vertical scaling) or discrete (for
-        # horizontal scaling)
-        self.capacity_adaptation_type = capacity_adaptation_type
 
         # Dynamic state
 
