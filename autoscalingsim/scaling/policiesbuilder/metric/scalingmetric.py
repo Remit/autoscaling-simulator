@@ -162,7 +162,7 @@ class ScalingMetricRegionalized:
         regionalized_desired_ts_raw = {}
         for region_name, metric in self.metrics_per_region.items():
 
-            metric_vals = self.state_reader.get_metric_value(self.service_name,
+            metric_vals = self.state_reader.get_metric_value(self.metric_source_name,
                                                              region_name,
                                                              self.metric_name)
 

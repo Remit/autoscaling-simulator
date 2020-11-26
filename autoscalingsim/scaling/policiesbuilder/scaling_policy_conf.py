@@ -67,7 +67,7 @@ class ScalingPolicyConfiguration:
                     stabilizer_conf = ErrorChecker.key_check_and_load('stabilizer_conf', metric_description_json, service_key, service_name)
                     forecaster_conf = ErrorChecker.key_check_and_load('forecaster_conf', metric_description_json, service_key, service_name)
                     capacity_adaptation_type = ErrorChecker.key_check_and_load('capacity_adaptation_type', metric_description_json, service_key, service_name)
-                    
+
                     target_value = ErrorChecker.key_check_and_load('target_value', metric_description_json, service_key, service_name)
                     if isinstance(target_value, collections.Mapping):
                         value = ErrorChecker.key_check_and_load('value', target_value, service_key, service_name)
