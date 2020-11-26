@@ -7,6 +7,7 @@ class RegionalLoadModel(ABC):
     An interface for different kinds of load models (per region)
     """
 
+    ALL_REQUEST_TYPES_WILDCARD = '*'
     _Registry = {}
 
     @classmethod
@@ -50,5 +51,26 @@ class RegionalLoadModel(ABC):
             self.load[req_type]['value'].append(reqs_num)
         else:
             self.load[req_type] = {'datetime': [timestamp], 'value': [reqs_num]}
+
+    def get_requests_count_per_unit_of_time(self, req_type : str,
+                                            averaging_interval : pd.Timedelta = pd.Timedelta(10, unit = 'ms')):
+
+        req_types_to_consider = [req_type]
+        if req_type == self.__class__.ALL_REQUEST_TYPES_WILDCARD:
+            req_types_to_consider = self.load.keys()
+        elif not req_type in self.load:
+            raise ValueError(f'No request of type {req_type} found in the load stats for region {self.region_name}')
+
+        request_counts = pd.DataFrame(columns = ['value'], index = pd.to_datetime([]))
+
+        for req_type in req_types_to_consider:
+            cur_request_counts = pd.DataFrame(self.load[req_type]).set_index('datetime')
+            # Aligning the time series
+            common_index = cur_request_counts.index.union(request_counts.index)#.astype(cur_request_counts.index.dtype)
+            cur_request_counts = cur_request_counts.reindex(common_index, fill_value = 0)
+            request_counts = request_counts.reindex(common_index, fill_value = 0)
+            request_counts += cur_request_counts
+
+        return request_counts.rolling(averaging_interval).mean()
 
 from .load_models import *

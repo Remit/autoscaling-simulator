@@ -269,7 +269,8 @@ class ServiceState:
         utilization, requests arrival and processing stats.
         """
 
-        service_metric_value = pd.DataFrame(columns = ['datetime', 'value']).set_index('datetime')
+        service_metric_value = pd.DataFrame(columns = ['value'], index = pd.to_datetime([]))
+        #service_metric_value = pd.DataFrame(columns = ['datetime', 'value']).set_index('datetime')
         # Case of resource utilization metric
         if metric_name in SystemResourceUsage.system_resources:
             for deployment in self.deployments.values():

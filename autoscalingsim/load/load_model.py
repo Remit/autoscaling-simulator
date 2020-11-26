@@ -3,9 +3,10 @@ import pandas as pd
 
 from .regional_load_model.regional_load_model import RegionalLoadModel
 
+from autoscalingsim.utils.metric_source import MetricSource
 from autoscalingsim.utils.error_check import ErrorChecker
 
-class LoadModel:
+class LoadModel(MetricSource):
 
     """ Combines regional workload generation models. Parses the configuration file. """
 
@@ -36,3 +37,22 @@ class LoadModel:
     def get_generated_load(self):
 
         return { region_name : region_load_model.get_stat() for region_name, region_load_model in self.region_models.items()}
+
+    def get_metric_value(self, region_name : str, req_type : str):
+
+        if not region_name in self.region_models:
+            raise ValueError(f'A load model for the given region name {region_name} was not found')
+
+        return self.region_models[region_name].get_requests_count_per_unit_of_time(req_type)
+
+    def get_aspect_value(self, region_name : str, aspect_name : str):
+
+        raise NotImplementedError(f'Not supported for {self.__class__.__name__}')
+
+    def get_resource_requirements(self, region_name : str):
+
+        raise NotImplementedError(f'Not supported for {self.__class__.__name__}')
+
+    def get_placement_parameter(self, region_name : str, parameter : str):
+
+        raise NotImplementedError(f'Not supported for {self.__class__.__name__}')
