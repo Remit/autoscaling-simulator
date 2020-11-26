@@ -71,6 +71,7 @@ class ApplicationModel:
                  simulation_step : pd.Timedelta,
                  platform_model : PlatformModel,
                  scaling_policy : ScalingPolicy,
+                 state_reader : StateReader,
                  config_file : str):
 
         self.services = {}
@@ -79,12 +80,11 @@ class ApplicationModel:
 
         self.new_requests = []
         self.response_stats = ResponseStats()
-        self.state_reader = StateReader()
         self.scaling_manager = ScalingManager()
         self.deployment_model = DeploymentModel()
         self.platform_model.set_scaling_manager(self.scaling_manager)
         self.scaling_policy.set_scaling_manager(self.scaling_manager)
-        self.scaling_policy.set_state_reader(self.state_reader)
+        self.scaling_policy.set_state_reader(state_reader)
         self.utilization = {}
         self.application_model_conf = ApplicationModelConfiguration(config_file, platform_model, simulation_step)
 
@@ -94,15 +94,15 @@ class ApplicationModel:
         # Taking correct scaling settings for the service which is derived from a ScaledService
         for service_conf in self.application_model_conf.service_confs:
             service_scaling_settings = self.scaling_policy.get_service_scaling_settings(service_conf.service_name)
-            service = service_conf.to_service(starting_time, service_scaling_settings, self.state_reader)
+            service = service_conf.to_service(starting_time, service_scaling_settings, state_reader)
             self.services[service_conf.service_name] = service
 
             # Adding services as sources to the state managers
-            self.state_reader.add_source(service)
+            state_reader.add_source(service_conf.service_name, service)
             self.scaling_manager.add_source(service)
 
         self.platform_model.init_platform_state_deltas(list(set(self.application_model_conf.regions)), starting_time, self.deployment_model.to_init_platform_state_delta())
-        self.scaling_policy.init_adjustment_policy(self.application_model_conf.service_instance_requirements, self.state_reader)
+        self.scaling_policy.init_adjustment_policy(self.application_model_conf.service_instance_requirements, state_reader)
 
     def step(self, cur_timestamp : pd.Timestamp, simulation_step : pd.Timedelta):
 

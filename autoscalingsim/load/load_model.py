@@ -9,7 +9,7 @@ class LoadModel:
 
     """ Combines regional workload generation models. Parses the configuration file. """
 
-    def __init__(self, simulation_step : pd.Timedelta, filename : str, reqs_types_ratios : dict = None):
+    def __init__(self, simulation_step : pd.Timedelta, filename : str):
 
         self.region_models = {}
 

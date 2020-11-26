@@ -8,8 +8,9 @@ from autoscalingsim.scaling.policiesbuilder.scaling_policy_conf import ScalingPo
 from autoscalingsim.load.request import Request
 from autoscalingsim.scaling.state_reader import StateReader
 from autoscalingsim.utils.requirements import ResourceRequirements
+from autoscalingsim.utils.metric_source import MetricSource
 
-class Service(ScaledService):
+class Service(ScaledService, MetricSource):
 
     """
     Represents a service in an application. Provides high-level API for the
@@ -71,3 +72,19 @@ class Service(ScaledService):
     def check_out_system_resources_utilization(self):
 
         return self.state.check_out_system_resources_utilization()
+
+    def get_aspect_value(self, region_name : str, aspect_name : str):
+
+        return self.state.get_aspect_value(region_name, aspect_name)
+
+    def get_metric_value(self, region_name : str, metric_name : str):
+
+        return self.state.get_metric_value(region_name, metric_name)
+
+    def get_resource_requirements(self, region_name : str):
+
+        return self.state.get_resource_requirements(region_name)
+
+    def get_placement_parameter(self, region_name : str, parameter : str):
+
+        return self.get_placement_parameter(region_name, parameter)

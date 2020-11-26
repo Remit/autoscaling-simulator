@@ -11,6 +11,7 @@ from .infrastructure_platform.platform_model import PlatformModel
 from .application.application_model import ApplicationModel
 from .simulation.simulation import Simulation
 from .scaling.policiesbuilder.scaling_policy import ScalingPolicy
+from .scaling.state_reader import StateReader
 
 class Simulator:
     """
@@ -64,8 +65,12 @@ class Simulator:
                  (not self.__class__.CONF_APPLICATION_MODEL_KEY in config):
                     raise ValueError('The config listing file misses at least one key model.')
 
+                state_reader = StateReader()
+
                 load_model = LoadModel(self.simulation_step,
                                        os.path.join(configs_dir, config[self.__class__.CONF_LOAD_MODEL_KEY]))
+
+                state_reader.add_source('Load', load_model)
 
                 scaling_model = ScalingModel(self.simulation_step,
                                              os.path.join(configs_dir, config[self.__class__.CONF_SCALING_MODEL_KEY]))
@@ -91,6 +96,7 @@ class Simulator:
                                                      self.simulation_step,
                                                      platform_model,
                                                      scaling_policy,
+                                                     state_reader,
                                                      os.path.join(configs_dir, config[self.__class__.CONF_APPLICATION_MODEL_KEY]))
 
                 self.simulations[simulation_name] = Simulation(load_model,
