@@ -1,7 +1,6 @@
 import pandas as pd
 
-from autoscalingsim.scaling.platform_scaling_model import PlatformScalingModel
-from autoscalingsim.scaling.application_scaling_model import ApplicationScalingModel
+from autoscalingsim.scaling.scaling_model.scaling_model import ScalingModel
 
 class RegionalDelta:
 
@@ -61,28 +60,24 @@ class RegionalDelta:
         return ids_for_removal_per_region
 
     def till_full_enforcement(self,
-                              platform_scaling_model : PlatformScalingModel,
-                              application_scaling_model : ApplicationScalingModel,
+                              scaling_model : ScalingModel,
                               delta_timestamp : pd.Timestamp):
 
         time_till_enforcement_per_gd = []
         for generalized_delta in self.generalized_deltas:
-            time_till_enforcement_per_gd.append(generalized_delta.till_full_enforcement(platform_scaling_model,
-                                                                                        application_scaling_model,
+            time_till_enforcement_per_gd.append(generalized_delta.till_full_enforcement(scaling_model,
                                                                                         delta_timestamp))
 
         return max(time_till_enforcement_per_gd)
 
     def enforce(self,
-                platform_scaling_model : PlatformScalingModel,
-                application_scaling_model : ApplicationScalingModel,
+                scaling_model : ScalingModel,
                 delta_timestamp : pd.Timestamp):
 
         new_timestamped_gd_ts = {}
         for generalized_delta in self.generalized_deltas:
 
-            new_timestamped_gd = generalized_delta.enforce(platform_scaling_model,
-                                                           application_scaling_model,
+            new_timestamped_gd = generalized_delta.enforce(scaling_model,
                                                            delta_timestamp)
 
             for timestamp, generalized_deltas in new_timestamped_gd.items():

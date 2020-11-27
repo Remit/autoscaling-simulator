@@ -1,9 +1,8 @@
 class StateReader:
 
     """
-    Acts as a read-only access point to the scattered metrics associated with
-    different sources such as services and other information sources,
-    maybe external ones.
+    A read-only access point to the scattered metrics associated with
+    different sources such as services, load model, and response stats.
     """
 
     def __init__(self, sources_dict = None):

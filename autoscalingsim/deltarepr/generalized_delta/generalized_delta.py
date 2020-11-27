@@ -24,9 +24,7 @@ class GeneralizedDelta:
         self.services_group_delta = services_group_delta
         self.cached_enforcement = {}
 
-    def till_full_enforcement(self,
-                              platform_scaling_model,
-                              application_scaling_model,
+    def till_full_enforcement(self, scaling_model,
                               delta_timestamp : pd.Timestamp):
 
         """
@@ -34,16 +32,11 @@ class GeneralizedDelta:
         Performs the enforcement underneath to not do the computation twice.
         """
 
-        new_deltas = self.enforce(platform_scaling_model,
-                                  application_scaling_model,
-                                  delta_timestamp)
+        new_deltas = self.enforce(scaling_model, delta_timestamp)
 
         return max(new_deltas.keys()) - delta_timestamp if len(new_deltas) > 0 else pd.Timedelta(0, unit = 'ms')
 
-    def enforce(self,
-                platform_scaling_model,
-                application_scaling_model,
-                delta_timestamp : pd.Timestamp):
+    def enforce(self, scaling_model, delta_timestamp : pd.Timestamp):
 
         """
         Forms enforced deltas for both parts of the generalized delta and returns
@@ -65,8 +58,8 @@ class GeneralizedDelta:
             max_service_delay = pd.Timedelta(0, unit = 'ms')
             node_group_delta_virtual = None
 
-            node_group_delay, node_group_delta = platform_scaling_model.delay(self.node_group_delta)
-            services_groups_deltas_by_delays = application_scaling_model.delay(self.services_group_delta)
+            node_group_delay, node_group_delta = scaling_model.platform_delay(self.node_group_delta)
+            services_groups_deltas_by_delays = scaling_model.application_delay(self.services_group_delta)
 
             if self.node_group_delta.sign < 0:
                 # Adjusting params for the graceful scale down

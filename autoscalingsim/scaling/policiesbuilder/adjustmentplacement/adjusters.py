@@ -5,17 +5,15 @@ from .desired_adjustment_calculator.score_calculators import ScoreCalculator
 from .desired_adjustment_calculator.desired_calc import DesiredChangeCalculator
 from .desired_adjustment_calculator.scorer import Scorer
 
-from autoscalingsim.scaling.application_scaling_model import ApplicationScalingModel
-from autoscalingsim.scaling.platform_scaling_model import PlatformScalingModel
-
-from autoscalingsim.utils.combiners import Combiner
-from autoscalingsim.utils.error_check import ErrorChecker
 from autoscalingsim.deltarepr.timelines.services_changes_timeline import TimelineOfDesiredServicesChanges
 from autoscalingsim.deltarepr.timelines.delta_timeline import DeltaTimeline
 from autoscalingsim.scaling.state_reader import StateReader
+from autoscalingsim.scaling.scaling_model import ScalingModel
 from autoscalingsim.desired_state.platform_state import PlatformState
 from autoscalingsim.desired_state.state_duration import StateDuration
 from autoscalingsim.desired_state.service_group.group_of_services_reg import GroupOfServicesRegionalized
+from autoscalingsim.utils.combiners import Combiner
+from autoscalingsim.utils.error_check import ErrorChecker
 
 class Adjuster(ABC):
 
@@ -27,8 +25,7 @@ class Adjuster(ABC):
     """
 
     def __init__(self,
-                 application_scaling_model : ApplicationScalingModel,
-                 platform_scaling_model : PlatformScalingModel,
+                 scaling_model : ScalingModel,
                  node_for_scaled_services_types : dict,
                  scaled_service_instance_requirements_by_service : dict,
                  optimizer_type : str,
@@ -37,8 +34,7 @@ class Adjuster(ABC):
                  score_calculator_class : ScoreCalculator,
                  state_reader : StateReader):
 
-        self.application_scaling_model = application_scaling_model
-        self.platform_scaling_model = platform_scaling_model
+        self.scaling_model = scaling_model
         self.scaled_service_instance_requirements_by_service = scaled_service_instance_requirements_by_service
         self.scorer = Scorer(score_calculator_class())
 
@@ -88,8 +84,7 @@ class Adjuster(ABC):
         on the next iteration of the loop.
         """
 
-        timeline_of_deltas = DeltaTimeline(self.platform_scaling_model,
-                                           self.application_scaling_model,
+        timeline_of_deltas = DeltaTimeline(self.scaling_model,
                                            current_state)
 
         timeline_of_unmet_changes = TimelineOfDesiredServicesChanges(self.combiner,
@@ -143,8 +138,7 @@ class Adjuster(ABC):
                 state_substitution_deltas, state_score_substitution = self.desired_change_calculator(in_work_collective_services_states,
                                                                                                      state_duration_h)
 
-                till_state_substitution_h = state_substitution_deltas.till_full_enforcement(self.platform_scaling_model,
-                                                                                            self.application_scaling_model,
+                till_state_substitution_h = state_substitution_deltas.till_full_enforcement(self.scaling_model,
                                                                                             ts_of_unmet_change)
 
                 state_score_substitution += self.scorer.evaluate_placements(in_work_placements_per_region,
@@ -179,8 +173,7 @@ class CostMinimizer(Adjuster):
     """
 
     def __init__(self,
-                 application_scaling_model : ApplicationScalingModel,
-                 platform_scaling_model : PlatformScalingModel,
+                 scaling_model : ScalingModel,
                  node_for_scaled_services_types : dict,
                  scaled_service_instance_requirements_by_service : dict,
                  state_reader : StateReader,
@@ -189,8 +182,7 @@ class CostMinimizer(Adjuster):
                  combiner_type = 'windowed'):
 
         score_calculator_class = ScoreCalculator.get(self.__class__.__name__)
-        super().__init__(application_scaling_model,
-                         platform_scaling_model,
+        super().__init__(scaling_model,
                          node_for_scaled_services_types,
                          scaled_service_instance_requirements_by_service,
                          optimizer_type,

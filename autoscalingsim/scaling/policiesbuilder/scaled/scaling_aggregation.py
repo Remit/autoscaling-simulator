@@ -167,10 +167,6 @@ class ParallelScalingEffectAggregationRule(ScalingEffectAggregationRule):
 @ScalingEffectAggregationRule.register('maxScale')
 class MaxScalingEffectAggregationRule(ParallelScalingEffectAggregationRule):
 
-    """
-    maxScale - pairwise aggregation by taking the max value.
-    """
-
     def __init__(self,
                  metrics_by_priority : dict,
                  scaled_aspect_name : str):
@@ -179,10 +175,6 @@ class MaxScalingEffectAggregationRule(ParallelScalingEffectAggregationRule):
 
 @ScalingEffectAggregationRule.register('minScale')
 class MinScalingEffectAggregationRule(ParallelScalingEffectAggregationRule):
-
-    """
-    minScale - pairwise aggregation by taking the min value.
-    """
 
     def __init__(self,
                  metrics_by_priority : dict,

@@ -1,21 +1,31 @@
 import collections
 import pandas as pd
+from abc import ABC, abstractmethod
 
 from .scaling_aggregation import ScalingEffectAggregationRule
 from .scaled_service_settings import ScaledServiceScalingSettings
 
 from autoscalingsim.scaling.state_reader import StateReader
+from autoscalingsim.desired_state.node_group.node_group import HomogeneousNodeGroup
 
-class ScaledService:
+class ScaledService(ABC):
 
-    """
-    Base class for every service that is to be scaled.
-    It provides the functionality to compute the desired state of the scaled
-    aspect of the scaled service (e.g. instance count) based on metrics and
-    aggregation rule. The primary desired scaled aspects values are provided
-    by these metrics, then they are aggregated using the rule. Essentially,
-    the aggregating rule defines the calaculation scheme over the metrics.
-    """
+    """ Defines a subset of scaling-related functionality and interface for a service """
+
+    @abstractmethod
+    def prepare_groups_for_removal_in_region(self, region_name : str, node_group_ids : list):
+
+        pass
+
+    @abstractmethod
+    def force_remove_groups_in_region(self, region_name : str, node_groups_ids : list):
+
+        pass
+
+    @abstractmethod
+    def update_placement_in_region(self, region_name : str, node_group : HomogeneousNodeGroup):
+
+        pass
 
     def __init__(self,
                  scaled_service_class : str,
@@ -62,18 +72,9 @@ class ScaledService:
 
     def reconcile_desired_state(self):
 
-        desired_states_timeline = None
-        if not self.scaling_effect_aggregation_rule is None:
-            desired_states_timeline = self.scaling_effect_aggregation_rule()
+        return self.scaling_effect_aggregation_rule() if not self.scaling_effect_aggregation_rule is None else None
 
-        return desired_states_timeline
+    def set_state_reader(self, state_reader_ref):
 
-    def set_state_reader(self,
-                         state_reader_ref):
-        """
-        Sets access point to the Metric Manager to query the relevant data for the ScalingMetric.
-        Can be set only after the manager is initialized with all the relevant metrics providers.
-        """
-
-        for _, metric in self.metrics_by_priority:
+        for metric in self.metrics_by_priority.values():
             metric.state_reader = state_reader_ref

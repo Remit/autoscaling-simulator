@@ -82,8 +82,7 @@ class Simulator:
                                              self.simulation_step,
                                              os.path.join(configs_dir, config[self.__class__.CONF_FAULT_MODEL_KEY]))
 
-                platform_model = PlatformModel(scaling_model.platform_scaling_model,
-                                               scaling_model.application_scaling_model,
+                platform_model = PlatformModel(scaling_model,
                                                fault_model,
                                                os.path.join(configs_dir, config[self.__class__.CONF_PLATFORM_MODEL_KEY]))
 

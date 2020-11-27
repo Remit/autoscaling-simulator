@@ -1,9 +1,5 @@
 class ScaledServiceScalingSettings:
 
-    """
-    Wraps all the scaling settings relevant for a ScaledService.
-    """
-
     def __init__(self,
                  metrics_descriptions,
                  scaling_effect_aggregation_rule_name,

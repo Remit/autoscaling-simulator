@@ -31,8 +31,7 @@ class AdjustmentPolicy:
                                state_reader : StateReader):
 
         adjuster_class = adjusters.Registry.get(self.scaling_settings.adjustment_goal)
-        self.adjuster = adjuster_class(self.scaling_model.application_scaling_model,
-                                       self.scaling_model.platform_scaling_model,
+        self.adjuster = adjuster_class(self.scaling_model,
                                        node_for_scaled_services_types,
                                        service_instance_requirements,
                                        state_reader,

@@ -2,8 +2,7 @@ from collections import OrderedDict
 import pandas as pd
 
 from autoscalingsim.desired_state.platform_state import PlatformState
-from autoscalingsim.scaling.application_scaling_model import ApplicationScalingModel
-from autoscalingsim.scaling.platform_scaling_model import PlatformScalingModel
+from autoscalingsim.scaling.scaling_model import ScalingModel
 from autoscalingsim.fault.fault_model import FaultModel
 from autoscalingsim.deltarepr.platform_state_delta import PlatformStateDelta
 
@@ -15,12 +14,10 @@ class DeltaTimeline:
     """
 
     def __init__(self,
-                 platform_scaling_model : PlatformScalingModel,
-                 application_scaling_model : ApplicationScalingModel,
+                 scaling_model : ScalingModel,
                  current_state : PlatformState):
 
-        self.platform_scaling_model = platform_scaling_model
-        self.application_scaling_model = application_scaling_model
+        self.scaling_model = scaling_model
         self.actual_state = current_state.copy()
 
         self.timeline = {}
@@ -143,9 +140,7 @@ class DeltaTimeline:
 
         node_groups_ids_mark_for_removal = {}
 
-        new_timestamped_state_deltas = state_delta.enforce(self.platform_scaling_model,
-                                                           self.application_scaling_model,
-                                                           timestamp)
+        new_timestamped_state_deltas = state_delta.enforce(self.scaling_model, timestamp)
 
         # Marking node groups ids that should prepare for the removal, i.e. no requests should be sent there
         state_delta_regionalized_ids_for_removal = state_delta.get_node_groups_ids_for_removal()

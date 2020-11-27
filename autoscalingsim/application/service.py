@@ -5,8 +5,9 @@ from .service_state.service_state_reg import ServiceStateRegionalized
 
 from autoscalingsim.scaling.policiesbuilder.scaled.scaled_service import ScaledService
 from autoscalingsim.scaling.policiesbuilder.scaling_policy_conf import ScalingPolicyConfiguration
-from autoscalingsim.load.request import Request
 from autoscalingsim.scaling.state_reader import StateReader
+from autoscalingsim.load.request import Request
+from autoscalingsim.desired_state.node_group.node_group import HomogeneousNodeGroup
 from autoscalingsim.utils.requirements import ResourceRequirements
 from autoscalingsim.utils.metric_source import MetricSource
 
@@ -88,3 +89,15 @@ class Service(ScaledService, MetricSource):
     def get_placement_parameter(self, region_name : str, parameter : str):
 
         return self.get_placement_parameter(region_name, parameter)
+
+    def prepare_groups_for_removal_in_region(self, region_name : str, node_group_ids : list):
+
+        self.state.prepare_groups_for_removal(region_name, node_group_ids)
+
+    def force_remove_groups_in_region(self, region_name : str, node_groups_ids : list):
+
+        self.state.force_remove_groups(region_name, node_groups_ids)
+
+    def update_placement_in_region(self, region_name : str, node_group : HomogeneousNodeGroup):
+
+        self.state.update_placement(region_name, node_group)

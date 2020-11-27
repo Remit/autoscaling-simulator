@@ -3,14 +3,9 @@ import pandas as pd
 from .regional_delta import RegionalDelta
 
 from autoscalingsim.desired_state.state_duration import StateDuration
-from autoscalingsim.scaling.platform_scaling_model import PlatformScalingModel
-from autoscalingsim.scaling.application_scaling_model import ApplicationScalingModel
+from autoscalingsim.scaling.scaling_model.scaling_model import ScalingModel
 
 class PlatformStateDelta:
-
-    """
-    Wraps multiple regional deltas.
-    """
 
     def __init__(self,
                  regional_deltas : dict = {},
@@ -68,29 +63,23 @@ class PlatformStateDelta:
         return regionalized_ids
 
     def till_full_enforcement(self,
-                              platform_scaling_model : PlatformScalingModel,
-                              application_scaling_model : ApplicationScalingModel,
+                              scaling_model : ScalingModel,
                               delta_timestamp : pd.Timestamp):
 
         time_till_enforcement_per_rd = {}
         for region_name, regional_delta in self.deltas_per_region.items():
-            time_till_enforcement_per_rd[region_name] = regional_delta.till_full_enforcement(platform_scaling_model,
-                                                                                             application_scaling_model,
-                                                                                             delta_timestamp) / pd.Timedelta(1, unit = 'h')
+            time_till_enforcement_per_rd[region_name] = regional_delta.till_full_enforcement(scaling_model, delta_timestamp) / pd.Timedelta(1, unit = 'h')
 
         return StateDuration(time_till_enforcement_per_rd)
 
     def enforce(self,
-                platform_scaling_model : PlatformScalingModel,
-                application_scaling_model : ApplicationScalingModel,
+                scaling_model : ScalingModel,
                 delta_timestamp : pd.Timestamp):
 
         new_timestamped_rd_ts = {}
         for regional_delta in self.deltas_per_region.values():
 
-            new_timestamped_rd = regional_delta.enforce(platform_scaling_model,
-                                                        application_scaling_model,
-                                                        delta_timestamp)
+            new_timestamped_rd = regional_delta.enforce(scaling_model, delta_timestamp)
 
             for timestamp, regionalized_deltas in new_timestamped_rd.items():
                 new_timestamped_rd_ts[timestamp] = new_timestamped_rd_ts.get(timestamp, []) + regionalized_deltas

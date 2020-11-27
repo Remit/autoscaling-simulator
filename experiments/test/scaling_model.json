@@ -5,38 +5,80 @@
 			"nodes": [
 				{
 					"type": "t3.nano",
-					"booting_duration_ms": 500,
-					"termination_duration_ms": 500
+					"booting_duration": {
+						"value": 500,
+						"unit": "ms"
+					},
+					"termination_duration": {
+						"value": 500,
+						"unit": "ms"
+					}
 				},
 				{
 					"type": "t3.micro",
-					"booting_duration_ms": 500,
-					"termination_duration_ms": 500
+					"booting_duration": {
+						"value": 500,
+						"unit": "ms"
+					},
+					"termination_duration": {
+						"value": 500,
+						"unit": "ms"
+					}
 				},
 				{
 					"type": "t3.small",
-					"booting_duration_ms": 500,
-					"termination_duration_ms": 500
+					"booting_duration": {
+						"value": 500,
+						"unit": "ms"
+					},
+					"termination_duration": {
+						"value": 500,
+						"unit": "ms"
+					}
 				},
 				{
 					"type": "t3.medium",
-					"booting_duration_ms": 500,
-					"termination_duration_ms": 500
+					"booting_duration": {
+						"value": 500,
+						"unit": "ms"
+					},
+					"termination_duration": {
+						"value": 500,
+						"unit": "ms"
+					}
 				},
 				{
 					"type": "t3.large",
-					"booting_duration_ms": 500,
-					"termination_duration_ms": 500
+					"booting_duration": {
+						"value": 500,
+						"unit": "ms"
+					},
+					"termination_duration": {
+						"value": 500,
+						"unit": "ms"
+					}
 				},
 				{
 					"type": "t3.xlarge",
-					"booting_duration_ms": 500,
-					"termination_duration_ms": 500
+					"booting_duration": {
+						"value": 500,
+						"unit": "ms"
+					},
+					"termination_duration": {
+						"value": 500,
+						"unit": "ms"
+					}
 				},
 				{
 					"type": "t3.2xlarge",
-					"booting_duration_ms": 500,
-					"termination_duration_ms": 500
+					"booting_duration": {
+						"value": 500,
+						"unit": "ms"
+					},
+					"termination_duration": {
+						"value": 500,
+						"unit": "ms"
+					}
 				}
 			]
 		}
@@ -45,18 +87,36 @@
 		"services": [
 			{
 				"name": "frontend",
-				"booting_duration_ms": 10,
-				"termination_duration_ms": 0
+				"booting_duration": {
+					"value": 10,
+					"unit": "ms"
+				},
+				"termination_duration": {
+					"value": 0,
+					"unit": "ms"
+				}
 			},
 			{
 				"name": "appserver",
-				"booting_duration_ms": 10,
-				"termination_duration_ms": 0
+				"booting_duration": {
+					"value": 10,
+					"unit": "ms"
+				},
+				"termination_duration": {
+					"value": 0,
+					"unit": "ms"
+				}
 			},
 			{
 				"name": "db",
-				"booting_duration_ms": 50,
-				"termination_duration_ms": 10
+				"booting_duration": {
+					"value": 50,
+					"unit": "ms"
+				},
+				"termination_duration": {
+					"value": 10,
+					"unit": "ms"
+				}
 			}
 		]
 	}

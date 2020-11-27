@@ -4,8 +4,7 @@ import pandas as pd
 from .node_information.node import NodeInfo
 from .node_information.provider_nodes import ProviderNodes
 
-from autoscalingsim.scaling.platform_scaling_model import PlatformScalingModel
-from autoscalingsim.scaling.application_scaling_model import ApplicationScalingModel
+from autoscalingsim.scaling.scaling_model import ScalingModel
 from autoscalingsim.scaling.policiesbuilder.adjustmentplacement.adjustment_policy import AdjustmentPolicy
 from autoscalingsim.scaling.state_reader import StateReader
 from autoscalingsim.scaling.scaling_manager import ScalingManager
@@ -71,13 +70,11 @@ class PlatformModel:
     node_count_key = 'count'
 
     def __init__(self,
-                 platform_scaling_model : PlatformScalingModel,
-                 application_scaling_model : ApplicationScalingModel,
+                 scaling_model : ScalingModel,
                  fault_model : FaultModel,
                  config_file: str):
 
-        self.platform_scaling_model = platform_scaling_model
-        self.application_scaling_model = application_scaling_model
+        self.scaling_model = scaling_model
         self.fault_model = fault_model
 
         self.adjustment_policy = None
@@ -168,8 +165,7 @@ class PlatformModel:
         provided in the application deployment configuration.
         """
 
-        self.state_deltas_timeline = DeltaTimeline(self.platform_scaling_model,
-                                                   self.application_scaling_model,
+        self.state_deltas_timeline = DeltaTimeline(self.scaling_model,
                                                    PlatformState(regions))
 
         self.state_deltas_timeline.add_state_delta(init_timestamp, init_platform_state_delta)
