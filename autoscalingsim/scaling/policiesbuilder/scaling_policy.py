@@ -1,4 +1,3 @@
-import os
 import pandas as pd
 
 from .adjustmentplacement.adjustment_policy import AdjustmentPolicy
@@ -42,91 +41,37 @@ class ScalingPolicy:
 
     """
 
-    class ScalingState:
+    def __init__(self, config_file : str, starting_time : pd.Timestamp, scaling_model : ScalingModel,
+                 platform_model : PlatformModel, state_reader : StateReader, scaling_manager : ScalingManager):
 
-        def __init__(self,
-                     starting_time : pd.Timestamp):
-
-            self.last_sync_timestamp = starting_time
-
-        def get_val(self,
-                    attribute_name):
-
-            if not hasattr(self, attribute_name):
-                raise ValueError(f'Attribute {attribute_name} not found in {self.__class__.__name__}')
-
-            return self.__getattribute__(attribute_name)
-
-        def update_val(self,
-                       attribute_name,
-                       attribute_val):
-
-            if not hasattr(self, attribute_name):
-                raise ValueError(f'Untimed attribute {attribute_name} not found in {self.__class__.__name__}')
-
-            self.__setattr__(attribute_name, attribute_val)
-
-    def __init__(self,
-                 config_file : str,
-                 starting_time : pd.Timestamp,
-                 scaling_model : ScalingModel,
-                 platform_model : PlatformModel):
-
-        self.scaling_manager = None
+        self.scaling_manager = scaling_manager
+        self.state_reader = state_reader
         self.platform_model = platform_model
-        self.state = ScalingPolicy.ScalingState(starting_time)
-
-        if not os.path.isfile(config_file):
-            raise ValueError(f'No {self.__class__.__name__} configuration file found under the path {config_file}')
+        self.last_sync_timestamp = starting_time
 
         self.scaling_settings = ScalingPolicyConfiguration(config_file)
         scaling_model.initialize_with_services_scaling_conf(self.scaling_settings.services_scaling_config)
-        self.platform_model.set_adjustment_policy(AdjustmentPolicy(scaling_model,
-                                                                   self.scaling_settings))
+        self.platform_model.set_adjustment_policy(AdjustmentPolicy(scaling_model, self.scaling_settings))
 
-    def init_adjustment_policy(self,
-                               service_instance_requirements : dict,
-                               state_reader : StateReader):
+    def init_adjustment_policy(self, service_instance_requirements : dict):
 
-        self.platform_model.init_adjustment_policy(service_instance_requirements,
-                                                   state_reader)
+        self.platform_model.init_adjustment_policy(service_instance_requirements, self.state_reader)
 
     def reconcile_state(self, cur_timestamp : pd.Timestamp):
 
-        if (cur_timestamp - self.state.get_val('last_sync_timestamp')) > self.scaling_settings.sync_period:
+        if cur_timestamp - self.last_sync_timestamp > self.scaling_settings.sync_period:
 
-            # Scale -> scaling services to accomodate the workload
-            desired_states_to_process = {}
-            if not self.scaling_manager is None:
-                desired_states_to_process = self.scaling_manager.compute_desired_state()
+            desired_states_to_process = self.scaling_manager.compute_desired_state()
 
             if len(desired_states_to_process) > 0:
                 # TODO: Combine -> scaling app as a whole to remove bottlenecks
 
-                # Adjust /w placement constraints -> adjusting the platform
-                # to the demands of the scaled app while taking into account
-                # adjustment goals such as minimization of the cost of the
-                # platform resources used and obeying the placement constraints.
                 self.platform_model.adjust(cur_timestamp, desired_states_to_process)
 
-            # Updating the timestamp of the last state reconciliation
-            self.state.update_val('last_sync_timestamp', cur_timestamp)
-
-        # Enforce use scaling_aspect_manager
-        # this part goes independent of the sync period since it's about
-        # implementing the scaling decision which is e.g. in desired state, not taking it
+            self.last_sync_timestamp = cur_timestamp
 
         self.platform_model.step(cur_timestamp)
-
 
     def get_service_scaling_settings(self, service_name : str):
 
         return self.scaling_settings.get_service_scaling_settings(service_name)
-
-    def set_scaling_manager(self, scaling_manager : ScalingManager):
-
-        self.scaling_manager = scaling_manager
-
-    def set_state_reader(self, state_reader : StateReader):
-
-        self.state_reader = state_reader

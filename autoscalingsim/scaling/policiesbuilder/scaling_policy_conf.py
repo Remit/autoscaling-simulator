@@ -1,4 +1,5 @@
 import json
+import os
 import numbers
 import collections
 import pandas as pd
@@ -22,6 +23,9 @@ class ScalingPolicyConfiguration:
         self.app_structure_scaling_config = None
         self.services_scaling_config = {}
         self.platform_scaling_config = None
+
+        if not os.path.isfile(config_file):
+            raise ValueError(f'No {self.__class__.__name__} configuration file found under the path {config_file}')
 
         with open(config_file) as f:
 

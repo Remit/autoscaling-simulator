@@ -72,23 +72,21 @@ class ApplicationModel:
                  platform_model : PlatformModel,
                  scaling_policy : ScalingPolicy,
                  state_reader : StateReader,
+                 scaling_manager : ScalingManager,
                  config_file : str):
 
         self.services = {}
+        self.new_requests = []
+        self.utilization = {}
+
         self.platform_model = platform_model
         self.scaling_policy = scaling_policy
 
-        self.new_requests = []
         self.deployment_model = DeploymentModel()
-        self.utilization = {}
         self.application_model_conf = ApplicationModelConfiguration(config_file, platform_model, simulation_step)
         self.response_stats = ResponseStatsRegionalized(self.application_model_conf.regions,
                                                         self.application_model_conf.reqs_processing_infos.keys())
         state_reader.add_source('response_stats', self.response_stats)
-        self.scaling_policy.set_state_reader(state_reader)
-        self.scaling_manager = ScalingManager()
-        self.platform_model.set_scaling_manager(self.scaling_manager)
-        self.scaling_policy.set_scaling_manager(self.scaling_manager)
 
         for service_deployment_conf in self.application_model_conf.service_deployments_confs:
             self.deployment_model.add_service_deployment_conf(service_deployment_conf)
@@ -101,10 +99,10 @@ class ApplicationModel:
 
             # Adding services as sources to the state managers
             state_reader.add_source(service_conf.service_name, service)
-            self.scaling_manager.add_source(service)
+            scaling_manager.add_source(service)
 
         self.platform_model.init_platform_state_deltas(list(set(self.application_model_conf.regions)), starting_time, self.deployment_model.to_init_platform_state_delta())
-        self.scaling_policy.init_adjustment_policy(self.application_model_conf.service_instance_requirements, state_reader)
+        self.scaling_policy.init_adjustment_policy(self.application_model_conf.service_instance_requirements)
 
     def step(self, cur_timestamp : pd.Timestamp, simulation_step : pd.Timedelta):
 

@@ -72,13 +72,14 @@ class PlatformModel:
     def __init__(self,
                  scaling_model : ScalingModel,
                  fault_model : FaultModel,
+                 scaling_manager : ScalingManager,
                  config_file: str):
 
         self.scaling_model = scaling_model
         self.fault_model = fault_model
 
         self.adjustment_policy = None
-        self.scaling_manager = None
+        self.scaling_manager = scaling_manager
         self.providers_configs = {}
         self.state_deltas_timeline = None
 
@@ -136,18 +137,16 @@ class PlatformModel:
 
         actual_state, node_groups_ids_mark_for_removal, node_groups_ids_remove = self.state_deltas_timeline.roll_out_updates(cur_timestamp)
 
-        if not self.scaling_manager is None:
+        if not actual_state is None:
+            self.scaling_manager.set_deployments(actual_state)
 
-            if not actual_state is None:
-                self.scaling_manager.set_deployments(actual_state)
+        if len(node_groups_ids_mark_for_removal) > 0:
+            for service_name, node_groups_ids_mark_for_removal_regionalized in node_groups_ids_mark_for_removal.items():
+                self.scaling_manager.mark_groups_for_removal(service_name, node_groups_ids_mark_for_removal_regionalized)
 
-            if len(node_groups_ids_mark_for_removal) > 0:
-                for service_name, node_groups_ids_mark_for_removal_regionalized in node_groups_ids_mark_for_removal.items():
-                    self.scaling_manager.mark_groups_for_removal(service_name, node_groups_ids_mark_for_removal_regionalized)
-
-            if len(node_groups_ids_remove) > 0:
-                for region_name, node_groups_ids in node_groups_ids_remove.items():
-                    self.scaling_manager.remove_groups_for_region(region_name, node_groups_ids)
+        if len(node_groups_ids_remove) > 0:
+            for region_name, node_groups_ids in node_groups_ids_remove.items():
+                self.scaling_manager.remove_groups_for_region(region_name, node_groups_ids)
 
     def init_adjustment_policy(self, entity_instance_requirements : dict,
                                state_reader : StateReader):
@@ -189,10 +188,6 @@ class PlatformModel:
 
         if not adjusted_timeline_of_deltas is None:
             self.state_deltas_timeline.merge(adjusted_timeline_of_deltas)
-
-    def set_scaling_manager(self, scaling_manager : ScalingManager):
-
-        self.scaling_manager = scaling_manager
 
     def set_adjustment_policy(self, adjustment_policy : AdjustmentPolicy):
 

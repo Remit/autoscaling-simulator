@@ -12,6 +12,7 @@ from .application.application_model import ApplicationModel
 from .simulation.simulation import Simulation
 from .scaling.policiesbuilder.scaling_policy import ScalingPolicy
 from .scaling.state_reader import StateReader
+from .scaling.scaling_manager import ScalingManager
 
 class Simulator:
     """
@@ -66,6 +67,7 @@ class Simulator:
                     raise ValueError('The config listing file misses at least one key model.')
 
                 state_reader = StateReader()
+                scaling_manager = ScalingManager()
 
                 load_model = LoadModel(self.simulation_step,
                                        os.path.join(configs_dir, config[self.__class__.CONF_LOAD_MODEL_KEY]))
@@ -84,18 +86,22 @@ class Simulator:
 
                 platform_model = PlatformModel(scaling_model,
                                                fault_model,
+                                               scaling_manager,
                                                os.path.join(configs_dir, config[self.__class__.CONF_PLATFORM_MODEL_KEY]))
 
                 scaling_policy = ScalingPolicy(os.path.join(configs_dir, config[self.__class__.CONF_SCALING_POLICY_KEY]),
                                                self.starting_time,
                                                scaling_model,
-                                               platform_model)
+                                               platform_model,
+                                               state_reader,
+                                               scaling_manager)
 
                 application_model = ApplicationModel(self.starting_time,
                                                      self.simulation_step,
                                                      platform_model,
                                                      scaling_policy,
                                                      state_reader,
+                                                     scaling_manager,
                                                      os.path.join(configs_dir, config[self.__class__.CONF_APPLICATION_MODEL_KEY]))
 
                 self.simulations[simulation_name] = Simulation(load_model,
