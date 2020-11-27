@@ -29,7 +29,7 @@ class Service(ScaledService, MetricSource):
     """
 
     def __init__(self,
-                 name : str,
+                 service_name : str,
                  init_timestamp : pd.Timestamp,
                  service_regions : list,
                  resource_requirements : ResourceRequirements,
@@ -41,15 +41,14 @@ class Service(ScaledService, MetricSource):
                  sampling_interval : pd.Timedelta):
 
         # Initializing scaling-related functionality in the superclass
-        super().__init__(self.__class__.__name__,
-                         name,
+        super().__init__(service_name,
                          scaling_setting_for_service,
                          state_reader,
                          service_regions)
 
-        self.name = name
+        self.name = service_name
 
-        self.state = ServiceStateRegionalized(name,
+        self.state = ServiceStateRegionalized(service_name,
                                               init_timestamp,
                                               service_regions,
                                               averaging_interval,

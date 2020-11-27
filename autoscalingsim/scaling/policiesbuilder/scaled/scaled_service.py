@@ -10,6 +10,8 @@ from autoscalingsim.desired_state.node_group.node_group import HomogeneousNodeGr
 
 class ScaledService(ABC):
 
+    SERVICE_NAME_WILDCARD = 'default'
+
     """ Defines a subset of scaling-related functionality and interface for a service """
 
     @abstractmethod
@@ -28,7 +30,6 @@ class ScaledService(ABC):
         pass
 
     def __init__(self,
-                 scaled_service_class : str,
                  scaled_service_name : str,
                  scaling_setting_for_service : ScaledServiceScalingSettings,
                  state_reader : StateReader,
@@ -43,10 +44,10 @@ class ScaledService(ABC):
                 m_service_name = metric_description.service_name
                 m_source_name = metric_description.metric_source_name
 
-                if m_service_name == scaled_service_class:
+                if m_service_name == self.__class__.SERVICE_NAME_WILDCARD:
                     m_service_name = scaled_service_name
 
-                if m_source_name == scaled_service_class:
+                if m_source_name == self.__class__.SERVICE_NAME_WILDCARD:
                     m_source_name = scaled_service_name
 
                 if m_service_name == scaled_service_name:

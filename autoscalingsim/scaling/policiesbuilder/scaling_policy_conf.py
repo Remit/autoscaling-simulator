@@ -1,14 +1,11 @@
 import json
 import os
 import numbers
-import collections
 import pandas as pd
 
 from .metric.scalingmetric import MetricDescription
 from .scaled.scaled_service_settings import ScaledServiceScalingSettings
 
-from autoscalingsim.utils.metric_units_registry import MetricUnitsRegistry
-from autoscalingsim.utils.metric_converter import MetricConverter
 from autoscalingsim.utils.error_check import ErrorChecker
 
 class ScalingPolicyConfiguration:
@@ -53,63 +50,15 @@ class ScalingPolicyConfiguration:
 
             # Services settings
             for service_config in services_config:
-                service_key = 'service'
-                service_name = ErrorChecker.key_check_and_load(service_key, service_config, self.__class__.__name__)
-                scaled_service_name = ErrorChecker.key_check_and_load('scaled_service_name', service_config, service_key, service_name)
-                scaled_aspect_name = ErrorChecker.key_check_and_load('scaled_aspect_name', service_config, service_key, service_name)
 
-                metrics_descriptions = []
-                metric_descriptions_json = ErrorChecker.key_check_and_load('metrics_descriptions', service_config, service_key, service_name)
-                for metric_description_json in metric_descriptions_json:
+                service_name = ErrorChecker.key_check_and_load('service_name', service_config, self.__class__.__name__)
+                scaled_aspect_name = ErrorChecker.key_check_and_load('scaled_aspect_name', service_config, 'service', service_name)
+                metric_descriptions = ErrorChecker.key_check_and_load('metrics_descriptions', service_config, 'service', service_name)
+                metrics_descriptions = [ MetricDescription(service_name, scaled_aspect_name, md_conf) for md_conf in metric_descriptions ]
 
-                    metric_source_name = ErrorChecker.key_check_and_load('metric_source_name', metric_description_json, service_key, service_name)
-                    metric_name = ErrorChecker.key_check_and_load('metric_name', metric_description_json, service_key, service_name)
-                    submetric_name = ErrorChecker.key_check_and_load('submetric_name', metric_description_json, service_key, service_name, default = '')
-                    metric_type = ErrorChecker.key_check_and_load('metric_type', metric_description_json, service_key, service_name)
-                    metric_params = ErrorChecker.key_check_and_load('metric_params', metric_description_json, service_key, service_name, default = {})
-                    metric_converter = MetricConverter.get(metric_type)(metric_params)
-
-                    # TODO: think of non-obligatory parameters that can be identified as none
-                    values_filter_conf = ErrorChecker.key_check_and_load('values_filter_conf', metric_description_json, service_key, service_name)
-                    values_aggregator_conf = ErrorChecker.key_check_and_load('values_aggregator_conf', metric_description_json, service_key, service_name)
-                    stabilizer_conf = ErrorChecker.key_check_and_load('stabilizer_conf', metric_description_json, service_key, service_name)
-                    forecaster_conf = ErrorChecker.key_check_and_load('forecaster_conf', metric_description_json, service_key, service_name)
-
-                    target_value = ErrorChecker.key_check_and_load('target_value', metric_description_json, service_key, service_name)
-                    metric_unit_type = MetricUnitsRegistry.get(metric_type)
-                    if isinstance(target_value, collections.Mapping):
-                        value = ErrorChecker.key_check_and_load('value', target_value, service_key, service_name)
-                        unit = ErrorChecker.key_check_and_load('unit', target_value, service_key, service_name)
-                        target_value = metric_unit_type(value, unit = unit)
-
-                    priority = ErrorChecker.key_check_and_load('priority', metric_description_json, service_key, service_name)
-                    initial_max_limit = ErrorChecker.key_check_and_load('initial_max_limit', metric_description_json, service_key, service_name)
-                    initial_min_limit = ErrorChecker.key_check_and_load('initial_min_limit', metric_description_json, service_key, service_name)
-                    initial_service_representation_in_metric = ErrorChecker.key_check_and_load('initial_service_representation_in_metric', metric_description_json, service_key, service_name)
-
-                    metric_descr = MetricDescription(scaled_service_name,
-                                                     scaled_aspect_name,
-                                                     metric_source_name,
-                                                     metric_name,
-                                                     submetric_name,
-                                                     metric_converter,
-                                                     values_filter_conf,
-                                                     values_aggregator_conf,
-                                                     target_value,
-                                                     stabilizer_conf,
-                                                     forecaster_conf,
-                                                     priority,
-                                                     initial_max_limit,
-                                                     initial_min_limit,
-                                                     initial_service_representation_in_metric)
-
-                    metrics_descriptions.append(metric_descr)
-
-                scaling_effect_aggregation_rule_name = ErrorChecker.key_check_and_load('scaling_effect_aggregation_rule_name', service_config, service_key, service_name)
                 self.services_scaling_config[service_name] = ScaledServiceScalingSettings(metrics_descriptions,
-                                                                                          scaling_effect_aggregation_rule_name,
-                                                                                          scaled_service_name,
-                                                                                          scaled_aspect_name)
+                                                                                          ErrorChecker.key_check_and_load('scaling_effect_aggregation_rule_name', service_config, 'service', service_name),
+                                                                                          service_name, scaled_aspect_name)
 
                 # TODO: platform_config processing
 

@@ -21,9 +21,8 @@
     "structure": {},
     "services": [
       {
-        "service": "default",
+        "service_name": "default",
         "scaling_effect_aggregation_rule_name": "maxScale",
-        "scaled_service_name": "Service",
         "scaled_aspect_name": "count",
         "metrics_descriptions": [
           {
