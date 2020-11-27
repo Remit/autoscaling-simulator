@@ -1,6 +1,6 @@
 import pandas as pd
 
-from .response_stats import ResponseStats
+from .response_stats import ResponseStatsRegionalized
 from .application_model_conf import ApplicationModelConfiguration
 
 from autoscalingsim.deployment.deployment_model import DeploymentModel
@@ -79,15 +79,16 @@ class ApplicationModel:
         self.scaling_policy = scaling_policy
 
         self.new_requests = []
-        self.response_stats = ResponseStats()
-        state_reader.add_source('response_stats', self.response_stats)
-        self.scaling_manager = ScalingManager()
         self.deployment_model = DeploymentModel()
-        self.platform_model.set_scaling_manager(self.scaling_manager)
-        self.scaling_policy.set_scaling_manager(self.scaling_manager)
-        self.scaling_policy.set_state_reader(state_reader)
         self.utilization = {}
         self.application_model_conf = ApplicationModelConfiguration(config_file, platform_model, simulation_step)
+        self.response_stats = ResponseStatsRegionalized(self.application_model_conf.regions,
+                                                        self.application_model_conf.reqs_processing_infos.keys())
+        state_reader.add_source('response_stats', self.response_stats)
+        self.scaling_policy.set_state_reader(state_reader)
+        self.scaling_manager = ScalingManager()
+        self.platform_model.set_scaling_manager(self.scaling_manager)
+        self.scaling_policy.set_scaling_manager(self.scaling_manager)
 
         for service_deployment_conf in self.application_model_conf.service_deployments_confs:
             self.deployment_model.add_service_deployment_conf(service_deployment_conf)
