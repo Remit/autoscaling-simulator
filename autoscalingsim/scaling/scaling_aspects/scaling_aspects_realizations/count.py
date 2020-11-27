@@ -9,57 +9,42 @@ from autoscalingsim.utils import df_convenience
 @ScalingAspect.register('count')
 class Count(ScalingAspect):
 
-    """
-    Count of scaled entities.
-    """
+    """ Count of instances of a scaled entity, e.g. service """
 
     def __init__(self, value : float):
 
         super().__init__('count', math.ceil(value), 0)
 
-    def __add__(self, other_aspect_or_delta):
+    def __add__(self, other):
 
-        if isinstance(other_aspect_or_delta, self.__class__):
-            return Count(self.value + other_aspect_or_delta.get_value())
-        elif isinstance(other_aspect_or_delta, ScalingAspectDelta):
-            if not isinstance(self, other_aspect_or_delta.get_aspect_type()):
-                raise ValueError(f'An attempt to add different scaling aspects: {self.__class__.__name__} and {other_aspect_or_delta.get_aspect_type().__name__}')
+        return self._add(other, 1)
 
-            return Count(self.value + other_aspect_or_delta.to_raw_change())
+    def __sub__(self, other):
+
+        return self._add(other, -1)
+
+    def __mul__(self, other):
+
+        if isinstance(other, numbers.Number):
+            return Count(int(self.value * other))
+        elif isinstance(other, pd.DataFrame):
+            return df_convenience.convert_to_class(other * self.value, self.__class__)
         else:
-            raise TypeError(f'An attempt to add an object of unknown type {other_aspect_or_delta.__class__.__name__} to {self.__class__.__name__}')
+            raise TypeError(f'An attempt to multiply by non-int of type {other.__class__.__name__}')
 
-    def __sub__(self, other_aspect_or_delta):
+    def __mod__(self, other):
 
-        if isinstance(other_aspect_or_delta, self.__class__):
-            return self.__add__(ScalingAspectDelta(other_aspect_or_delta, -1))
-        elif isinstance(other_aspect_or_delta, ScalingAspectDelta):
-            return self.__add__(other_aspect_or_delta)
-        else:
-            raise TypeError(f'An attempt to subtract an object of unknown type {other_aspect_or_delta.__class__.__name__} from {self.__class__.__name__}')
+        if not isinstance(other, self.__class__):
+            raise TypeError(f'An attempt to perform modulo operation on {self.__class__.__name__} with an object of unknown type {other.__class__.__name__}')
 
-    def __mul__(self, scalar_or_df : numbers.Number):
+        return Count(self.value % other.value)
 
-        if isinstance(scalar_or_df, numbers.Number):
-            return Count(int(self.value * scalar_or_df))
-        elif isinstance(scalar_or_df, pd.DataFrame):
-            return df_convenience.convert_to_class(scalar_or_df * self.value, self.__class__)
-        else:
-            raise TypeError(f'An attempt to multiply by non-int of type {scalar_or_df.__class__.__name__}')
+    def __floordiv__(self, other):
 
-    def __mod__(self, other_aspect_val : 'Count'):
+        if not isinstance(other, self.__class__):
+            raise TypeError(f'An attempt to perform floor division operation on {self.__class__.__name__} with an object of unknown type {other.__class__.__name__}')
 
-        if not isinstance(other_aspect_val, self.__class__):
-            raise TypeError(f'An attempt to perform modulo operation on {self.__class__.__name__} with an object of unknown type {other_aspect_val.__class__.__name__}')
-
-        return Count(self.value % other_aspect_val.value)
-
-    def __floordiv__(self, other_aspect_val : 'Count'):
-
-        if not isinstance(other_aspect_val, self.__class__):
-            raise TypeError(f'An attempt to perform floor division operation on {self.__class__.__name__} with an object of unknown type {other_aspect_val.__class__.__name__}')
-
-        return Count(self.value // other_aspect_val.value)
+        return Count(self.value // other.value)
 
     def __radd__(self, other):
 
@@ -71,3 +56,15 @@ class Count(ScalingAspect):
     def __repr__(self):
 
         return f'{self.__class__.__name__}( value = {self.value})'
+
+    def _add(self, other, direction : int):
+
+        if isinstance(other, self.__class__):
+            return Count(self.value + direction * other.get_value())
+        elif isinstance(other, ScalingAspectDelta):
+            if not isinstance(self, other.get_aspect_type()):
+                raise ValueError(f'An attempt to combine different scaling aspects: {self.__class__.__name__} and {other.get_aspect_type().__name__}')
+
+            return Count(self.value + direction * other.to_raw_change())
+        else:
+            raise TypeError(f'An attempt to combine with an object of unknown type {other.__class__.__name__}')
