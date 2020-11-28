@@ -10,11 +10,6 @@ from autoscalingsim.utils.error_check import ErrorChecker
 
 class ScalingPolicyConfiguration:
 
-    """
-    Wraps the configuration of the scaling policy extracted from the configuration
-    file.
-    """
-
     def __init__(self, config_file : str):
 
         self.app_structure_scaling_config = None

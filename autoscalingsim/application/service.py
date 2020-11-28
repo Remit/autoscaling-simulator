@@ -1,17 +1,18 @@
 import numpy as np
 import pandas as pd
+import collections
 
 from .service_state.service_state_reg import ServiceStateRegionalized
 
-from autoscalingsim.scaling.policiesbuilder.scaled.scaled_service import ScaledService
 from autoscalingsim.scaling.policiesbuilder.scaling_policy_conf import ScalingPolicyConfiguration
+from autoscalingsim.scaling.policiesbuilder.scaled.scaling_aggregation import ScalingEffectAggregationRule
 from autoscalingsim.scaling.state_reader import StateReader
 from autoscalingsim.load.request import Request
 from autoscalingsim.desired_state.node_group.node_group import HomogeneousNodeGroup
 from autoscalingsim.utils.requirements import ResourceRequirements
 from autoscalingsim.utils.metric_source import MetricSource
 
-class Service(ScaledService, MetricSource):
+class Service(MetricSource):
 
     """
     Represents a service in an application. Provides high-level API for the
@@ -28,6 +29,8 @@ class Service(ScaledService, MetricSource):
         service_name (str): stores the name of the service.
     """
 
+    SERVICE_NAME_WILDCARD = 'default'
+
     def __init__(self,
                  service_name : str,
                  init_timestamp : pd.Timestamp,
@@ -40,13 +43,25 @@ class Service(ScaledService, MetricSource):
                  averaging_interval : pd.Timedelta,
                  sampling_interval : pd.Timedelta):
 
-        # Initializing scaling-related functionality in the superclass
-        super().__init__(service_name,
-                         scaling_setting_for_service,
-                         state_reader,
-                         service_regions)
+        # Initializing scaling-related functionality
+        metrics_by_priority = {}
+        for metric_description in scaling_setting_for_service.metrics_descriptions:
 
-        self.name = service_name
+            m_service_name = metric_description.service_name
+            m_source_name = metric_description.metric_source_name
+
+            if m_service_name == self.__class__.SERVICE_NAME_WILDCARD:
+                m_service_name = service_name
+
+            if m_source_name == self.__class__.SERVICE_NAME_WILDCARD:
+                m_source_name = service_name
+
+            if m_service_name == service_name:
+                metrics_by_priority[metric_description.priority] = metric_description.convert_to_metric(service_regions, m_service_name, m_source_name, state_reader)
+
+        self.metrics_by_priority = collections.OrderedDict(sorted(metrics_by_priority.items()))
+        self.scaling_effect_aggregation_rule = ScalingEffectAggregationRule.get(scaling_setting_for_service.scaling_effect_aggregation_rule_name)(self.metrics_by_priority,
+                                                                                                                                                  scaling_setting_for_service.scaled_aspect_name)
 
         self.state = ServiceStateRegionalized(service_name,
                                               init_timestamp,
@@ -56,6 +71,10 @@ class Service(ScaledService, MetricSource):
                                               request_processing_infos,
                                               buffers_config,
                                               sampling_interval)
+
+    def reconcile_desired_state(self):
+
+        return self.scaling_effect_aggregation_rule()
 
     def add_request(self, req : Request, simulation_step : pd.Timedelta):
 

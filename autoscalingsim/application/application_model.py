@@ -99,7 +99,7 @@ class ApplicationModel:
 
             # Adding services as sources to the state managers
             state_reader.add_source(service_conf.service_name, service)
-            scaling_manager.add_source(service)
+            scaling_manager.add_scaled_service(service_conf.service_name, service)
 
         self.platform_model.init_platform_state_deltas(list(set(self.application_model_conf.regions)), starting_time, self.deployment_model.to_init_platform_state_delta())
         self.scaling_policy.init_adjustment_policy(self.application_model_conf.service_instance_requirements)

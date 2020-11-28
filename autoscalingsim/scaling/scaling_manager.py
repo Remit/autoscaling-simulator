@@ -16,9 +16,9 @@ class ScalingManager:
 
         self.services = services_dict if not services_dict is None else {}
 
-    def add_source(self, service_ref):
+    def add_scaled_service(self, service_name : str, service_ref):
 
-        if not service_ref.name in self.services: self.services[service_ref.name] = service_ref
+        if not service_name in self.services: self.services[service_name] = service_ref
 
     def set_deployments(self, platform_state : PlatformState):
 
