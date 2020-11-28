@@ -7,7 +7,6 @@ from .service import Service
 from .application_structure import ApplicationStructure
 
 from autoscalingsim.deployment.service_deployment_conf import ServiceDeploymentConfiguration
-from autoscalingsim.infrastructure_platform.platform_model import PlatformModel
 from autoscalingsim.scaling.policiesbuilder.scaled.scaled_service_settings import ScaledServiceScalingSettings
 from autoscalingsim.scaling.state_reader import StateReader
 from autoscalingsim.utils.request_processing_info import RequestProcessingInfo
@@ -24,7 +23,6 @@ class ServiceConfiguration:
 
     def __init__(self,
                  service_name : str,
-                 service_regions : list,
                  system_requirements : ResourceRequirements,
                  buffers_config : dict,
                  reqs_processing_infos : dict,
@@ -32,18 +30,17 @@ class ServiceConfiguration:
                  sampling_interval : pd.Timedelta):
 
         self.service_name = service_name
-        self.service_regions = service_regions
         self.system_requirements = system_requirements
         self.buffers_config = buffers_config
         self.reqs_processing_infos = reqs_processing_infos
         self.averaging_interval = averaging_interval
         self.sampling_interval = sampling_interval
 
-    def to_service(self, starting_time : pd.Timestamp,
+    def to_service(self, service_regions : list, starting_time : pd.Timestamp,
                    service_scaling_settings : ScaledServiceScalingSettings,
                    state_reader : StateReader):
 
-        return Service(self.service_name, starting_time, self.service_regions,
+        return Service(self.service_name, starting_time, service_regions,
                        self.system_requirements, self.buffers_config,
                        self.reqs_processing_infos, service_scaling_settings,
                        state_reader, self.averaging_interval, self.sampling_interval)
@@ -83,8 +80,7 @@ class ApplicationModelConfiguration:
 
     """
 
-    def __init__(self, config_file : str, platform_model : PlatformModel,
-                 simulation_step : pd.Timedelta):
+    def __init__(self, config_file : str, simulation_step : pd.Timedelta):
 
         self.name = None
         self.regions = []
@@ -188,36 +184,7 @@ class ApplicationModelConfiguration:
                     system_requirements = ResourceRequirements.from_dict(ErrorChecker.key_check_and_load('system_requirements', service_config, 'service', service_name))
                     self.service_instance_requirements[service_name] = system_requirements
 
-                    init_service_aspects_regionalized = {}
-                    node_infos_regionalized = {}
-                    node_counts_regionalized = {}
-                    deployment = ErrorChecker.key_check_and_load('deployment', service_config, 'service', service_name)
-                    service_regions = []
-                    for region_name, region_deployment_conf in deployment.items():
-                        service_regions.append(region_name)
-
-                        init_service_aspects_regionalized[region_name] = ErrorChecker.key_check_and_load('init_aspects', region_deployment_conf, 'service', service_name)
-
-                        platform_info = ErrorChecker.key_check_and_load('platform', region_deployment_conf, 'service', service_name)
-                        provider = ErrorChecker.key_check_and_load('provider', platform_info, 'service', service_name)
-                        node_type = ErrorChecker.key_check_and_load('node_type', platform_info, 'service', service_name)
-                        node_info = platform_model.get_node_info(provider, node_type)
-                        node_infos_regionalized[region_name] = node_info
-
-                        node_count = ErrorChecker.key_check_and_load('count', platform_info, 'service', service_name)
-                        ErrorChecker.value_check('node_count', node_count, operator.gt, 0, [f'service {service_name}'])
-                        node_counts_regionalized[region_name] = node_count
-
-                    self.regions.extend(service_regions)
-
-                    self.service_deployments_confs.append(ServiceDeploymentConfiguration(service_name,
-                                                                                         init_service_aspects_regionalized,
-                                                                                         node_infos_regionalized,
-                                                                                         node_counts_regionalized,
-                                                                                         system_requirements))
-
                     self.service_confs.append(ServiceConfiguration(service_name,
-                                                                   service_regions,
                                                                    system_requirements,
                                                                    buffers_config,
                                                                    self.reqs_processing_infos,

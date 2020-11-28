@@ -16,11 +16,7 @@ class FaultModel:
     where the PlatformState is rolled out with the method roll_out_updates.
     """
 
-    def __init__(self,
-                 simulation_start : pd.Timestamp,
-                 time_to_simulate : pd.Timedelta,
-                 simulation_step : pd.Timedelta,
-                 config_file : str):
+    def __init__(self, simulation_conf : dict, config_file : str):
 
         """
         Initializes failures in the Fault Model from the configuration file.
@@ -38,7 +34,7 @@ class FaultModel:
 
         self.failures = {}
 
-        steps_count = time_to_simulate // simulation_step
+        steps_count = simulation_conf['time_to_simulate'] // simulation_conf['simulation_step']
 
         if not isinstance(config_file, str):
             raise ValueError(f'Incorrect format of the path to the configuration file for the {self.__class__.__name__}, should be string')
@@ -54,7 +50,7 @@ class FaultModel:
                     failure_class = NodeGroupFailure.get(ErrorChecker.key_check_and_load('type', node_failure_conf))
                     prob = ErrorChecker.key_check_and_load('probability', node_failure_conf)
                     if np.random.binomial(1, prob) == 1: # failure will happen
-                        self._add_failure(simulation_start, simulation_step, steps_count, failure_class, node_failure_conf)
+                        self._add_failure(simulation_conf['starting_time'], simulation_conf['simulation_step'], steps_count, failure_class, node_failure_conf)
 
 
                 service_failures = ErrorChecker.key_check_and_load('services_failures', config)
@@ -62,7 +58,7 @@ class FaultModel:
                     failure_class = ServiceFailure.get(ErrorChecker.key_check_and_load('type', service_failure_conf))
                     prob = ErrorChecker.key_check_and_load('probability', service_failure_conf)
                     if np.random.binomial(1, prob) == 1: # failure will happen
-                        self._add_failure(simulation_start, simulation_step, steps_count, failure_class, service_failure_conf)
+                        self._add_failure(simulation_conf['starting_time'], simulation_conf['simulation_step'], steps_count, failure_class, service_failure_conf)
 
     def get_failure_state_deltas(self, cur_timestamp : pd.Timestamp):
 

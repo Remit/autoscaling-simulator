@@ -1,12 +1,14 @@
+import os
+import json
 import pandas as pd
 import collections
 
 from . import adjusters
 
 from autoscalingsim.scaling.scaling_model import ScalingModel
-from autoscalingsim.scaling.policiesbuilder.scaling_policy_conf import ScalingPolicyConfiguration
 from autoscalingsim.scaling.state_reader import StateReader
 from autoscalingsim.desired_state.platform_state import PlatformState
+from autoscalingsim.utils.error_check import ErrorChecker
 
 class AdjustmentPolicy:
 
@@ -19,34 +21,38 @@ class AdjustmentPolicy:
     """
 
     def __init__(self,
+                 node_for_scaled_services_types : dict,
+                 service_instance_requirements : dict,
+                 state_reader : StateReader,
                  scaling_model : ScalingModel,
-                 scaling_settings : ScalingPolicyConfiguration):
+                 config_file : str):
 
         self.scaling_model = scaling_model
-        self.scaling_settings = scaling_settings
 
-    def init_adjustment_policy(self,
-                               node_for_scaled_services_types : dict,
-                               service_instance_requirements : dict,
-                               state_reader : StateReader):
+        if not isinstance(config_file, str):
+            raise ValueError(f'Incorrect format of the path to the configuration file for the {self.__class__.__name__}, should be string')
+        else:
+            if not os.path.isfile(config_file):
+                raise ValueError(f'No configuration file found under the path {config_file} for {self.__class__.__name__}')
 
-        adjuster_class = adjusters.Registry.get(self.scaling_settings.adjustment_goal)
-        self.adjuster = adjuster_class(self.scaling_model,
-                                       node_for_scaled_services_types,
-                                       service_instance_requirements,
-                                       state_reader,
-                                       self.scaling_settings.optimizer_type,
-                                       self.scaling_settings.placement_hint,
-                                       self.scaling_settings.combiner_settings)
+            with open(config_file) as f:
+                config = json.load(f)
+
+                adjustment_goal = ErrorChecker.key_check_and_load('adjustment_goal', config, self.__class__.__name__)
+                optimizer_type = ErrorChecker.key_check_and_load('optimizer_type', config, self.__class__.__name__)
+                placement_hint = ErrorChecker.key_check_and_load('placement_hint', config, self.__class__.__name__)
+                combiner_settings = ErrorChecker.key_check_and_load('combiner', config, self.__class__.__name__)
+
+                adjuster_class = adjusters.Registry.get(adjustment_goal)
+
+                self.adjuster = adjuster_class(self.scaling_model, node_for_scaled_services_types,
+                                               service_instance_requirements, state_reader,
+                                               optimizer_type, placement_hint, combiner_settings)
 
     def adjust(self,
                cur_timestamp : pd.Timestamp,
                desired_state_regionalized_per_timestamp : dict,
                platform_state : PlatformState):
-
-        """
-        Wraps the adjusting steps.
-        """
 
         services_scaling_events = collections.defaultdict(dict)
         prev_services_state = platform_state.extract_collective_services_states()

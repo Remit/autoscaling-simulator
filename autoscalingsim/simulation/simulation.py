@@ -67,23 +67,21 @@ class Simulation:
     def __init__(self,
                  load_model : LoadModel,
                  application_model : ApplicationModel,
-                 simulation_start : pd.Timestamp,
-                 time_to_simulate : pd.Timedelta,
-                 simulation_step : pd.Timedelta,
+                 simulation_conf : dict,
                  stat_updates_every_round : int = 0,
                  results_dir : str = None):
 
         # Static state
         self.load_model = load_model
         self.application_model = application_model
-        self.simulation_start = simulation_start
-        self.simulation_end = simulation_start + time_to_simulate
-        self.simulation_step = simulation_step
+        self.simulation_start = simulation_conf['starting_time']
+        self.simulation_end = self.simulation_start + simulation_conf['time_to_simulate']
+        self.simulation_step = simulation_conf['simulation_step']
         self.stat_updates_every_round = stat_updates_every_round
         self.results_dir = results_dir
 
         # Dynamic state
-        self.cur_simulation_time = simulation_start
+        self.cur_simulation_time = self.simulation_start
         self.sim_round = 0
 
     def start(self):
@@ -105,7 +103,7 @@ class Simulation:
                 progress_bar.update(1)
 
         # Post-processing, e.g. for metrics collection
-        self.application_model.post_process()
+        self.application_model.post_process(self.simulation_start, self.simulation_step, self.simulation_end)
 
         # Storing the simulation results on a disk
         if not self.results_dir is None:

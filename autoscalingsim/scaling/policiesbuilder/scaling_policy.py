@@ -7,6 +7,7 @@ from autoscalingsim.infrastructure_platform.platform_model import PlatformModel
 from autoscalingsim.scaling.scaling_model import ScalingModel
 from autoscalingsim.scaling.state_reader import StateReader
 from autoscalingsim.scaling.scaling_manager import ScalingManager
+from autoscalingsim.simulator import conf_keys
 
 class ScalingPolicy:
 
@@ -41,21 +42,19 @@ class ScalingPolicy:
 
     """
 
-    def __init__(self, config_file : str, starting_time : pd.Timestamp, scaling_model : ScalingModel,
-                 platform_model : PlatformModel, state_reader : StateReader, scaling_manager : ScalingManager):
+    def __init__(self, simulation_conf : dict, state_reader : StateReader,
+                 scaling_manager : ScalingManager, service_instance_requirements : dict, configs_contents_table : dict):
 
         self.scaling_manager = scaling_manager
-        self.state_reader = state_reader
-        self.platform_model = platform_model
-        self.last_sync_timestamp = starting_time
+        self.last_sync_timestamp = simulation_conf['starting_time']
 
-        self.scaling_settings = ScalingPolicyConfiguration(config_file)
-        scaling_model.initialize_with_services_scaling_conf(self.scaling_settings.services_scaling_config)
-        self.platform_model.set_adjustment_policy(AdjustmentPolicy(scaling_model, self.scaling_settings))
+        self.scaling_settings = ScalingPolicyConfiguration(configs_contents_table[conf_keys.CONF_SCALING_POLICY_KEY])
+        self.platform_model = PlatformModel(state_reader, scaling_manager, service_instance_requirements, self.scaling_settings.services_scaling_config, simulation_conf, configs_contents_table)
 
-    def init_adjustment_policy(self, service_instance_requirements : dict):
+    @property
+    def service_regions(self):
 
-        self.platform_model.init_adjustment_policy(service_instance_requirements, self.state_reader)
+        return self.platform_model.service_regions
 
     def reconcile_state(self, cur_timestamp : pd.Timestamp):
 
@@ -75,3 +74,15 @@ class ScalingPolicy:
     def get_service_scaling_settings(self, service_name : str):
 
         return self.scaling_settings.get_service_scaling_settings(service_name)
+
+    def compute_desired_node_count(self, simulation_start : pd.Timestamp,
+                                   simulation_step : pd.Timedelta,
+                                   simulation_end : pd.Timestamp) -> dict:
+
+        return self.platform_model.compute_desired_node_count(simulation_start, simulation_step, simulation_end)
+
+    def compute_actual_node_count(self, simulation_start : pd.Timestamp,
+                                  simulation_step : pd.Timedelta,
+                                  simulation_end : pd.Timestamp) -> dict:
+
+        return self.platform_model.compute_actual_node_count(simulation_start, simulation_step, simulation_end)

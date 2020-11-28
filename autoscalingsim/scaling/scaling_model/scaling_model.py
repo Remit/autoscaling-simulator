@@ -19,7 +19,7 @@ class ScalingModel:
     the application scaling model and the platform scaling model.
     """
 
-    def __init__(self, simulation_step : pd.Timedelta, config_filename : str):
+    def __init__(self, services_scaling_config : dict, simulation_step : pd.Timedelta, config_filename : str):
 
         with open(config_filename) as f:
             config = json.load(f)
@@ -36,11 +36,7 @@ class ScalingModel:
             app_config = ErrorChecker.key_check_and_load('application', config)
             service_scaling_infos_raw = ErrorChecker.key_check_and_load('services', app_config)
 
-            self.application_scaling_model = ApplicationScalingModel(service_scaling_infos_raw)
-
-    def initialize_with_services_scaling_conf(self, services_scaling_config : dict):
-
-        self.application_scaling_model.initialize_with_services_scaling_conf(services_scaling_config)
+            self.application_scaling_model = ApplicationScalingModel(service_scaling_infos_raw, services_scaling_config)
 
     def platform_delay(self, node_group_delta : NodeGroupDelta):
 

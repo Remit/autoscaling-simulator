@@ -1,0 +1,14 @@
+{
+  "adjustment_goal": "cost_minimization",
+  "optimizer_type": "OptimizerScoreMaximizer",
+  "placement_hint": "shared",
+  "combiner": {
+    "type": "windowed",
+    "conf": {
+      "resolution": {
+        "value": 50,
+        "unit": "ms"
+      }
+    }
+  }
+}

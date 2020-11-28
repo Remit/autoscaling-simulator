@@ -9,6 +9,7 @@ from autoscalingsim.scaling.policiesbuilder.scaling_policy import ScalingPolicy
 from autoscalingsim.scaling.state_reader import StateReader
 from autoscalingsim.scaling.scaling_manager import ScalingManager
 from autoscalingsim.utils.requirements import ResourceRequirements
+from autoscalingsim.simulator import conf_keys
 
 class ApplicationModel:
 
@@ -66,43 +67,32 @@ class ApplicationModel:
 
     """
 
-    def __init__(self,
-                 starting_time : pd.Timestamp,
-                 simulation_step : pd.Timedelta,
-                 platform_model : PlatformModel,
-                 scaling_policy : ScalingPolicy,
-                 state_reader : StateReader,
-                 scaling_manager : ScalingManager,
-                 config_file : str):
+    def __init__(self, simulation_conf : dict, state_reader : StateReader, configs_contents_table : dict):
 
         self.services = {}
         self.new_requests = []
-        self.utilization = {}
+        self._utilization = {}
 
-        self.platform_model = platform_model
-        self.scaling_policy = scaling_policy
+        self.application_model_conf = ApplicationModelConfiguration(configs_contents_table[conf_keys.CONF_APPLICATION_MODEL_KEY],
+                                                                    simulation_conf['simulation_step'])
 
-        self.deployment_model = DeploymentModel()
-        self.application_model_conf = ApplicationModelConfiguration(config_file, platform_model, simulation_step)
-        self.response_stats = ResponseStatsRegionalized(self.application_model_conf.regions,
-                                                        self.application_model_conf.reqs_processing_infos.keys())
+        scaling_manager = ScalingManager()
+        self.scaling_policy = ScalingPolicy(simulation_conf, state_reader, scaling_manager, self.application_model_conf.service_instance_requirements, configs_contents_table)
+        self.response_stats = ResponseStatsRegionalized(self.scaling_policy.service_regions, self.application_model_conf.reqs_processing_infos.keys())
         state_reader.add_source('response_stats', self.response_stats)
 
         for service_deployment_conf in self.application_model_conf.service_deployments_confs:
-            self.deployment_model.add_service_deployment_conf(service_deployment_conf)
+            deployment_model.add_service_deployment_conf(service_deployment_conf)
 
         # Taking correct scaling settings for the service which is derived from a ScaledService
         for service_conf in self.application_model_conf.service_confs:
             service_scaling_settings = self.scaling_policy.get_service_scaling_settings(service_conf.service_name)
-            service = service_conf.to_service(starting_time, service_scaling_settings, state_reader)
+            service = service_conf.to_service(self.scaling_policy.service_regions, simulation_conf['starting_time'], service_scaling_settings, state_reader)
             self.services[service_conf.service_name] = service
 
             # Adding services as sources to the state managers
             state_reader.add_source(service_conf.service_name, service)
             scaling_manager.add_scaled_service(service_conf.service_name, service)
-
-        self.platform_model.init_platform_state_deltas(list(set(self.application_model_conf.regions)), starting_time, self.deployment_model.to_init_platform_state_delta())
-        self.scaling_policy.init_adjustment_policy(self.application_model_conf.service_instance_requirements)
 
     def step(self, cur_timestamp : pd.Timestamp, simulation_step : pd.Timedelta):
 
@@ -162,8 +152,25 @@ class ApplicationModel:
 
         self.new_requests = new_requests
 
-    def post_process(self):
+    def post_process(self, simulation_start : pd.Timestamp, simulation_step : pd.Timedelta, simulation_end : pd.Timestamp):
 
         # Collect the utilization information from all the services
         for service_name, service in self.services.items():
-            self.utilization[service_name] = service.check_out_system_resources_utilization()
+            self._utilization[service_name] = service.check_out_system_resources_utilization()
+            self._desired_node_count = self.scaling_policy.compute_desired_node_count(simulation_start, simulation_step, simulation_end)
+            self._actual_node_count = self.scaling_policy.compute_desired_node_count(simulation_start, simulation_step, simulation_end)
+
+    @property
+    def utilization(self):
+
+        return self._utilization.copy()
+
+    @property
+    def desired_node_count(self):
+
+        return self._desired_node_count.copy()
+
+    @property
+    def actual_node_count(self):
+
+        return self._actual_node_count.copy()

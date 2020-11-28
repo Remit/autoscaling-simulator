@@ -4,17 +4,14 @@ import json
 import pandas as pd
 from datetime import datetime
 
+from . import conf_keys
 from .load.load_model import LoadModel
-from .scaling.scaling_model import ScalingModel
-from .fault.fault_model import FaultModel
-from .infrastructure_platform.platform_model import PlatformModel
 from .application.application_model import ApplicationModel
 from .simulation.simulation import Simulation
-from .scaling.policiesbuilder.scaling_policy import ScalingPolicy
 from .scaling.state_reader import StateReader
-from .scaling.scaling_manager import ScalingManager
 
 class Simulator:
+
     """
     Wraps multiple simulations sharing common timeline, i.e. simulation start,
     simulation step, and the time to simulate. Each simulation should be added
@@ -22,13 +19,6 @@ class Simulator:
     started by calling the start_simulation method; if no simulation name
     is specified, then all the simulations of Simulator are started.
     """
-
-    CONF_LOAD_MODEL_KEY = "load_model"
-    CONF_PLATFORM_MODEL_KEY = "platform_model"
-    CONF_APPLICATION_MODEL_KEY = "application_model"
-    CONF_SCALING_MODEL_KEY = "scaling_model"
-    CONF_SCALING_POLICY_KEY = "scaling_policy"
-    CONF_FAULT_MODEL_KEY = "fault_model"
 
     def __init__(self,
                  simulation_step : pd.Timedelta = pd.Timedelta(10, unit = 'ms'),
@@ -41,12 +31,10 @@ class Simulator:
         self.simulations = {}
         self.simulations_configs = {}
 
-    def add_simulation(self,
-                       configs_dir : str,
-                       results_dir : str = None,
+    def add_simulation(self, configs_dir : str, results_dir : str = None,
                        stat_updates_every_round : int = 0):
 
-        simulation_name = ""
+        simulation_name = ''
         if not os.path.exists(configs_dir):
             raise ValueError('The specified directory with the configuration files does not exist.')
 
@@ -59,56 +47,39 @@ class Simulator:
             try:
                 config = json.load(f)
 
-                if (not self.__class__.CONF_LOAD_MODEL_KEY in config) or \
-                 (not self.__class__.CONF_SCALING_MODEL_KEY in config) or \
-                 (not self.__class__.CONF_PLATFORM_MODEL_KEY in config) or \
-                 (not self.__class__.CONF_SCALING_POLICY_KEY in config) or \
-                 (not self.__class__.CONF_APPLICATION_MODEL_KEY in config):
+                if (not conf_keys.CONF_LOAD_MODEL_KEY in config) or \
+                 (not conf_keys.CONF_SCALING_MODEL_KEY in config) or \
+                 (not conf_keys.CONF_PLATFORM_MODEL_KEY in config) or \
+                 (not conf_keys.CONF_SCALING_POLICY_KEY in config) or \
+                 (not conf_keys.CONF_ADJUSTMENT_POLICY_KEY in config) or \
+                 (not conf_keys.CONF_DEPLOYMENT_MODEL_KEY in config) or \
+                 (not conf_keys.CONF_APPLICATION_MODEL_KEY in config):
                     raise ValueError('The config listing file misses at least one key model.')
 
+                configs_contents_table = {  conf_keys.CONF_APPLICATION_MODEL_KEY   : os.path.join(configs_dir, config[conf_keys.CONF_APPLICATION_MODEL_KEY]),
+                                            conf_keys.CONF_SCALING_POLICY_KEY      : os.path.join(configs_dir, config[conf_keys.CONF_SCALING_POLICY_KEY]),
+                                            conf_keys.CONF_PLATFORM_MODEL_KEY      : os.path.join(configs_dir, config[conf_keys.CONF_PLATFORM_MODEL_KEY]),
+                                            conf_keys.CONF_SCALING_MODEL_KEY       : os.path.join(configs_dir, config[conf_keys.CONF_SCALING_MODEL_KEY]),
+                                            conf_keys.CONF_DEPLOYMENT_MODEL_KEY    : os.path.join(configs_dir, config[conf_keys.CONF_DEPLOYMENT_MODEL_KEY]),
+                                            conf_keys.CONF_ADJUSTMENT_POLICY_KEY   : os.path.join(configs_dir, config[conf_keys.CONF_ADJUSTMENT_POLICY_KEY]) }
+
+                if conf_keys.CONF_FAULT_MODEL_KEY in config:
+                    configs_contents_table[conf_keys.CONF_FAULT_MODEL_KEY] = os.path.join(configs_dir, config[conf_keys.CONF_FAULT_MODEL_KEY])
+
+                simulation_conf = {'starting_time'    : self.starting_time,
+                                   'time_to_simulate' : self.time_to_simulate,
+                                   'simulation_step'  : self.simulation_step}
+
                 state_reader = StateReader()
-                scaling_manager = ScalingManager()
 
-                load_model = LoadModel(self.simulation_step,
-                                       os.path.join(configs_dir, config[self.__class__.CONF_LOAD_MODEL_KEY]))
-
+                load_model = LoadModel(self.simulation_step, os.path.join(configs_dir, config[conf_keys.CONF_LOAD_MODEL_KEY]))
                 state_reader.add_source('Load', load_model)
 
-                scaling_model = ScalingModel(self.simulation_step,
-                                             os.path.join(configs_dir, config[self.__class__.CONF_SCALING_MODEL_KEY]))
-
-                fault_model = None
-                if self.__class__.CONF_FAULT_MODEL_KEY in config:
-                    fault_model = FaultModel(self.starting_time,
-                                             self.time_to_simulate,
-                                             self.simulation_step,
-                                             os.path.join(configs_dir, config[self.__class__.CONF_FAULT_MODEL_KEY]))
-
-                platform_model = PlatformModel(scaling_model,
-                                               fault_model,
-                                               scaling_manager,
-                                               os.path.join(configs_dir, config[self.__class__.CONF_PLATFORM_MODEL_KEY]))
-
-                scaling_policy = ScalingPolicy(os.path.join(configs_dir, config[self.__class__.CONF_SCALING_POLICY_KEY]),
-                                               self.starting_time,
-                                               scaling_model,
-                                               platform_model,
-                                               state_reader,
-                                               scaling_manager)
-
-                application_model = ApplicationModel(self.starting_time,
-                                                     self.simulation_step,
-                                                     platform_model,
-                                                     scaling_policy,
-                                                     state_reader,
-                                                     scaling_manager,
-                                                     os.path.join(configs_dir, config[self.__class__.CONF_APPLICATION_MODEL_KEY]))
+                application_model = ApplicationModel(simulation_conf, state_reader, configs_contents_table)
 
                 self.simulations[simulation_name] = Simulation(load_model,
                                                                application_model,
-                                                               self.starting_time,
-                                                               self.time_to_simulate,
-                                                               self.simulation_step,
+                                                               simulation_conf,
                                                                stat_updates_every_round,
                                                                results_dir)
 

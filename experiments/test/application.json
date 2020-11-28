@@ -38,19 +38,7 @@
 				}
 			},
 			"next": ["appserver"],
-			"prev": [],
-			"deployment": {
-				"eu": {
-					"init_aspects": {
-						"count": 1
-					},
-					"platform": {
-						"provider": "aws",
-						"node_type": "t3.xlarge",
-						"count": 1
-					}
-				}
-			}
+			"prev": []
 		},
 		{
 			"name": "appserver",
@@ -79,19 +67,7 @@
 				}
 			},
 			"next": ["db"],
-			"prev": ["frontend"],
-			"deployment": {
-				"eu": {
-					"init_aspects": {
-						"count": 1
-					},
-					"platform": {
-						"provider": "aws",
-						"node_type": "t3.xlarge",
-						"count": 1
-					}
-				}
-			}
+			"prev": ["frontend"]
 		},
 		{
 			"name": "db",
@@ -120,19 +96,7 @@
 				}
 			},
 			"next": [],
-			"prev": ["appserver"],
-			"deployment": {
-				"eu": {
-					"init_aspects": {
-						"count": 1
-					},
-					"platform": {
-						"provider": "aws",
-						"node_type": "t3.xlarge",
-						"count": 1
-					}
-				}
-			}
+			"prev": ["appserver"]
 		}
 	],
 	"requests": [

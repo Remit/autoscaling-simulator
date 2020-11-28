@@ -8,28 +8,15 @@ class ApplicationScalingModel:
 
     """ Represents application services horizontal scaling behavior """
 
-    def __init__(self, service_scaling_infos_raw = []):
+    def __init__(self, service_scaling_infos_raw : list, services_scaling_config : dict):
 
         self.service_scaling_infos = {}
-
-        for service_scaling_info_raw in service_scaling_infos_raw:
-
-            service_name = ErrorChecker.key_check_and_load('name', service_scaling_info_raw)
-            self.service_scaling_infos[service_name] = ServiceScalingInfo(service_name, service_scaling_info_raw)
-
-    def initialize_with_services_scaling_conf(self, services_scaling_config : dict):
-
-        """
-        Initializes the application scaling model with the scaling configuration of
-        scaled services. The configuration is stored in the
-        scaling policy configuration file, hence it is added separately.
-        """
-
         default_service_conf = services_scaling_config.get('default', None)
-        for service_name, scaling_info in self.service_scaling_infos.items():
+        for service_scaling_info_raw in service_scaling_infos_raw:
+            service_name = ErrorChecker.key_check_and_load('name', service_scaling_info_raw)
             service_conf = services_scaling_config.get(service_name, default_service_conf)
             scaled_aspect_name = service_conf.scaled_aspect_name if not service_conf is None else 'count'
-            scaling_info.set_scaled_aspect_name(scaled_aspect_name)
+            self.service_scaling_infos[service_name] = ServiceScalingInfo(service_name, service_scaling_info_raw, scaled_aspect_name)
 
     def delay(self, services_group_delta : 'GroupOfServicesDelta'):
 

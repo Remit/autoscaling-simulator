@@ -71,12 +71,8 @@ class AnalysisFramework:
             response_times_regionalized = simulation.application_model.response_stats.get_response_times_by_request()
             buffer_times_regionalized = simulation.application_model.response_stats.get_buffer_times_by_request()
             network_times_regionalized = simulation.application_model.response_stats.get_network_times_by_request()
-            desired_node_count_regionalized = simulation.application_model.platform_model.compute_desired_node_count(simulation.simulation_start,
-                                                                                                                     self.simulation_step,
-                                                                                                                     simulation.simulation_end)
-            actual_node_count_regionalized = simulation.application_model.platform_model.compute_actual_node_count(simulation.simulation_start,
-                                                                                                                   self.simulation_step,
-                                                                                                                   simulation.simulation_end)
+            desired_node_count_regionalized = simulation.application_model.desired_node_count
+            actual_node_count_regionalized = simulation.application_model.actual_node_count
             utilization_per_service = simulation.application_model.utilization
 
         # Building figures with the internal functions

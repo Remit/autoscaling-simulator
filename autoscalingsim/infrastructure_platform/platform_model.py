@@ -5,12 +5,14 @@ from .node_information.node import NodeInfo
 from .node_information.provider_nodes import ProviderNodes
 
 from autoscalingsim.scaling.scaling_model import ScalingModel
+from autoscalingsim.deployment.deployment_model import DeploymentModel
 from autoscalingsim.scaling.policiesbuilder.adjustmentplacement.adjustment_policy import AdjustmentPolicy
 from autoscalingsim.scaling.state_reader import StateReader
 from autoscalingsim.scaling.scaling_manager import ScalingManager
 from autoscalingsim.desired_state.platform_state import PlatformState
 from autoscalingsim.deltarepr.platform_state_delta import PlatformStateDelta
 from autoscalingsim.deltarepr.timelines.delta_timeline import DeltaTimeline
+from autoscalingsim.simulator import conf_keys
 from autoscalingsim.utils.size import Size
 from autoscalingsim.utils.error_check import ErrorChecker
 from autoscalingsim.fault.fault_model import FaultModel
@@ -69,20 +71,18 @@ class PlatformModel:
     timestamps_key = 'timestamps'
     node_count_key = 'count'
 
-    def __init__(self,
-                 scaling_model : ScalingModel,
-                 fault_model : FaultModel,
-                 scaling_manager : ScalingManager,
-                 config_file: str):
 
-        self.scaling_model = scaling_model
-        self.fault_model = fault_model
+    def __init__(self, state_reader : StateReader, scaling_manager : ScalingManager, service_instance_requirements : dict,
+                 services_scaling_config : dict, simulation_conf : dict, configs_contents_table : dict):
 
-        self.adjustment_policy = None
         self.scaling_manager = scaling_manager
-        self.providers_configs = {}
-        self.state_deltas_timeline = None
 
+        self.scaling_model = ScalingModel(services_scaling_config, simulation_conf['simulation_step'], configs_contents_table[conf_keys.CONF_SCALING_MODEL_KEY])
+        self.fault_model = None if not conf_keys.CONF_FAULT_MODEL_KEY in configs_contents_table else FaultModel(simulation_conf,
+                                                                                                                configs_contents_table[conf_keys.CONF_FAULT_MODEL_KEY])
+
+        self.providers_configs = {}
+        config_file = configs_contents_table[conf_keys.CONF_PLATFORM_MODEL_KEY]
         if config_file is None:
             raise ValueError(f'Configuration file not provided for the {self.__class__.__name__}')
         else:
@@ -125,6 +125,27 @@ class PlatformModel:
                                                                        price_p_h, cpu_credits_h,
                                                                        latency, requests_acceleration_factor)
 
+        self.adjustment_policy = AdjustmentPolicy(self.providers_configs,
+                                                  service_instance_requirements,
+                                                  state_reader, self.scaling_model,
+                                                  configs_contents_table[conf_keys.CONF_ADJUSTMENT_POLICY_KEY])
+
+        deployment_model = DeploymentModel(service_instance_requirements,
+                                           self.providers_configs,
+                                           configs_contents_table[conf_keys.CONF_DEPLOYMENT_MODEL_KEY])
+
+        self._service_regions = deployment_model.regions
+
+        self.state_deltas_timeline = DeltaTimeline(self.scaling_model, PlatformState(self._service_regions))
+
+        self.state_deltas_timeline.add_state_delta(simulation_conf['starting_time'],
+                                                   deployment_model.to_init_platform_state_delta())
+
+    @property
+    def service_regions(self):
+
+        return self._service_regions.copy()
+
     def step(self, cur_timestamp : pd.Timestamp):
 
         """ Rolls out planned updates that are to occur before / at the provided time """
@@ -148,27 +169,6 @@ class PlatformModel:
             for region_name, node_groups_ids in node_groups_ids_remove.items():
                 self.scaling_manager.remove_groups_for_region(region_name, node_groups_ids)
 
-    def init_adjustment_policy(self, entity_instance_requirements : dict,
-                               state_reader : StateReader):
-
-        self.adjustment_policy.init_adjustment_policy(self.providers_configs,
-                                                      entity_instance_requirements,
-                                                      state_reader)
-
-    def init_platform_state_deltas(self, regions : list,
-                                   init_timestamp : pd.Timestamp,
-                                   init_platform_state_delta : PlatformStateDelta):
-
-        """
-        Builds an initial timeline of the Platform State deltas with the values
-        provided in the application deployment configuration.
-        """
-
-        self.state_deltas_timeline = DeltaTimeline(self.scaling_model,
-                                                   PlatformState(regions))
-
-        self.state_deltas_timeline.add_state_delta(init_timestamp, init_platform_state_delta)
-
     def get_node_info(self, provider : str, node_type : str) -> NodeInfo:
 
         if not provider in self.providers_configs:
@@ -188,10 +188,6 @@ class PlatformModel:
 
         if not adjusted_timeline_of_deltas is None:
             self.state_deltas_timeline.merge(adjusted_timeline_of_deltas)
-
-    def set_adjustment_policy(self, adjustment_policy : AdjustmentPolicy):
-
-        self.adjustment_policy = adjustment_policy
 
     def compute_desired_node_count(self, simulation_start : pd.Timestamp,
                                    simulation_step : pd.Timedelta,

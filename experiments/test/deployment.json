@@ -1,0 +1,47 @@
+[
+  {
+    "service_name": "frontend",
+    "deployment": {
+      "eu": {
+        "init_aspects": {
+          "count": 1
+        },
+        "platform": {
+          "provider": "aws",
+          "node_type": "t3.xlarge",
+          "count": 1
+        }
+      }
+    }
+  },
+  {
+    "service_name": "appserver",
+    "deployment": {
+      "eu": {
+        "init_aspects": {
+          "count": 1
+        },
+        "platform": {
+          "provider": "aws",
+          "node_type": "t3.xlarge",
+          "count": 1
+        }
+      }
+    }
+  },
+  {
+    "service_name": "db",
+    "deployment": {
+      "eu": {
+        "init_aspects": {
+          "count": 1
+        },
+        "platform": {
+          "provider": "aws",
+          "node_type": "t3.xlarge",
+          "count": 1
+        }
+      }
+    }
+  }
+]
