@@ -1,3 +1,4 @@
+import numbers
 import pandas as pd
 
 class PricePerUnitTime:
@@ -14,7 +15,7 @@ class PricePerUnitTime:
             time_ratio = other / self.time_unit
             return self.value * time_ratio
 
-        elif isinstance(other, numebers.Number):
+        elif isinstance(other, numbers.Number):
             return self.__class__(self.value, self.time_unit)
 
         else:
