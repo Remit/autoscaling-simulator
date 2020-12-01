@@ -24,6 +24,19 @@ class GeneralizedDelta:
         self.services_group_delta = services_group_delta
         self.cached_enforcement = {}
 
+    @property
+    def is_full_delta(self):
+
+        return (not self.node_group_delta is None) and (not self.services_group_delta is None)
+
+    @property
+    def is_node_group_scale_down(self):
+
+        if not self.node_group_delta is None:
+            return False
+
+        return not self.node_group_delta.virtual and self.node_group_delta.is_scale_down
+
     def till_full_enforcement(self, scaling_model,
                               delta_timestamp : pd.Timestamp):
 

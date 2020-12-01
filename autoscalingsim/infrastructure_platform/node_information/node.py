@@ -3,6 +3,8 @@ import pandas as pd
 from .system_resource_usage import SystemResourceUsage
 
 from autoscalingsim.utils.size import Size
+from autoscalingsim.utils.price import PricePerUnitTime
+from autoscalingsim.utils.credits import CreditsPerUnitTime
 from autoscalingsim.utils.requirements import ResourceRequirements
 from autoscalingsim.desired_state.service_group.group_of_services import GroupOfServices
 
@@ -21,8 +23,8 @@ class NodeInfo:
                  memory : Size,
                  disk : Size,
                  network_bandwidth : Size,
-                 price_p_h : float = 0.0,
-                 cpu_credits_h : int = 0,
+                 price_per_unit_time : PricePerUnitTime = PricePerUnitTime(0),
+                 cpu_credits_per_unit_time : CreditsPerUnitTime = CreditsPerUnitTime('vCPU', 0),
                  latency : pd.Timedelta = pd.Timedelta(0, unit = 'ms'),
                  requests_acceleration_factor : float = 1.0,
                  labels : list = []):
@@ -33,8 +35,8 @@ class NodeInfo:
         self.memory = memory
         self.disk = disk
         self.network_bandwidth = network_bandwidth
-        self.price_p_h = price_p_h
-        self.cpu_credits_h = cpu_credits_h
+        self.price_per_unit_time = price_per_unit_time
+        self.cpu_credits_per_unit_time = cpu_credits_per_unit_time
         self.latency = latency
         self.requests_acceleration_factor = requests_acceleration_factor
         self.labels = labels
@@ -47,8 +49,8 @@ class NodeInfo:
                                            memory = {repr(self.memory)}, \
                                            disk = {repr(self.disk)}, \
                                            network_bandwidth = {repr(self.network_bandwidth)}, \
-                                           price_p_h = {self.price_p_h}, \
-                                           cpu_credits_h = {self.cpu_credits_h}, \
+                                           price_per_unit_time = {self.price_per_unit_time}, \
+                                           cpu_credits_per_unit_time = {self.cpu_credits_per_unit_time}, \
                                            latency = {self.latency}, \
                                            requests_acceleration_factor = {self.requests_acceleration_factor}, \
                                            labels = {self.labels})'

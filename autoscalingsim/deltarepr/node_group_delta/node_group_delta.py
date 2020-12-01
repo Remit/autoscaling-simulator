@@ -43,6 +43,17 @@ class NodeGroupDelta:
 
         return self.node_group.node_info.node_type
 
-    def get_node_group_id(self):
+    @property
+    def is_scale_down(self):
+
+        return self.sign == -1
+
+    @property
+    def is_scale_up(self):
+
+        return self.sign == 1
+
+    @property
+    def id(self):
 
         return self.node_group.id

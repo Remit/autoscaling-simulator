@@ -120,23 +120,23 @@ class Adjuster(ABC):
                     in_work_state = new_in_work_state
 
                 ts_next = timeline_of_unmet_changes.peek(ts_of_unmet_change)
-                state_duration_h = (ts_next - ts_of_unmet_change) / pd.Timedelta(1, unit = 'h')
+                state_duration = ts_next - ts_of_unmet_change
                 unmet_change_state = GroupOfServicesRegionalized(unmet_change, self.scaled_service_instance_requirements_by_service)
 
                 in_work_placements_per_region = in_work_state.to_placements()
 
                 # 2.a: Addition of new containers
                 state_simple_addition_deltas, state_score_simple_addition = self.desired_change_calculator(unmet_change_state,
-                                                                                                           state_duration_h)
+                                                                                                           state_duration)
 
                 state_score_simple_addition += self.scorer.evaluate_placements(in_work_placements_per_region,
-                                                                               StateDuration.from_single_value(state_duration_h))
+                                                                               StateDuration.from_single_value(state_duration))
 
                 # 2.b: New cluster and migration
                 in_work_collective_services_states = in_work_state.extract_collective_services_states()
                 in_work_collective_services_states += unmet_change_state
                 state_substitution_deltas, state_score_substitution = self.desired_change_calculator(in_work_collective_services_states,
-                                                                                                     state_duration_h)
+                                                                                                     state_duration)
 
                 till_state_substitution_h = state_substitution_deltas.till_full_enforcement(self.scaling_model,
                                                                                             ts_of_unmet_change)

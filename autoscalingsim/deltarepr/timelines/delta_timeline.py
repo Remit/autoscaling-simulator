@@ -143,8 +143,7 @@ class DeltaTimeline:
         new_timestamped_state_deltas = state_delta.enforce(self.scaling_model, timestamp)
 
         # Marking node groups ids that should prepare for the removal, i.e. no requests should be sent there
-        state_delta_regionalized_ids_for_removal = state_delta.get_node_groups_ids_for_removal()
-        for entity_name, state_delta_ids_for_removal_per_entity in state_delta_regionalized_ids_for_removal.items():
+        for entity_name, state_delta_ids_for_removal_per_entity in state_delta.node_groups_ids_for_removal.items():
             if not entity_name in node_groups_ids_mark_for_removal:
                 node_groups_ids_mark_for_removal[entity_name] = {}
 

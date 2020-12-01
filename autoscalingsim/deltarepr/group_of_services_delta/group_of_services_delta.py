@@ -77,7 +77,8 @@ class GroupOfServicesDelta:
         for delta in self.deltas.values():
             delta.set_count_sign(sign)
 
-    def get_services(self):
+    @property
+    def services(self):
 
         return list(self.deltas.keys())
 

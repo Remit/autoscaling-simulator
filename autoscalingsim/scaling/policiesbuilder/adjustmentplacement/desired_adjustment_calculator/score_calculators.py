@@ -62,11 +62,11 @@ class PriceScoreCalculator(ScoreCalculator):
 
     def __call__(self,
                  node_info : NodeInfo,
-                 duration_h : float,
+                 duration : pd.Timedelta,
                  nodes_count : int) -> tuple:
 
-        # TODO: consider taking cpu_credits_h into account
-        price = duration_h * nodes_count * node_info.price_p_h
+        # TODO: consider taking cpu_credits_per_unit_time into account
+        price = duration * node_info.price_per_unit_time * nodes_count
         score = self.score_class(price)
 
         return (score, price)

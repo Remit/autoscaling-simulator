@@ -40,7 +40,7 @@ class DesiredChangeCalculator:
 
     def __call__(self,
                  group_of_services_reg : GroupOfServicesRegionalized,
-                 state_duration_h : float):
+                 state_duration : pd.Timedelta):
 
         # TODO: add logic to check whether empty results are returned
         regions = {}
@@ -51,7 +51,7 @@ class DesiredChangeCalculator:
             placements_lst = self.placer.compute_nodes_requirements(group_of_services, region_name)
 
             # Score
-            scored_placements_lst = self.scorer(placements_lst, state_duration_h)
+            scored_placements_lst = self.scorer(placements_lst, state_duration)
 
             # Optimize
             selected_placement = self.optimizer(scored_placements_lst)

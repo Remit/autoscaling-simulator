@@ -27,7 +27,7 @@ class ApplicationScalingModel:
 
         delays_of_enforced_deltas = {}
         if not services_group_delta is None:
-            services_names = services_group_delta.get_services()
+            services_names = services_group_delta.services
 
             # Group services by their change enforcement time
             services_by_change_enforcement_delay = {}

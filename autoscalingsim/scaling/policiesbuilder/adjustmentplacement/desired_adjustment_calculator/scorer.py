@@ -22,7 +22,7 @@ class Scorer:
 
     def __call__(self,
                  placements_lst : list,
-                 state_duration_h : float):
+                 state_duration : pd.Timedelta):
 
         sane_placements_lst = []
         for placement in placements_lst:
@@ -30,7 +30,7 @@ class Scorer:
             for entities_placement in placement:
 
                 score, _ = self.score_calculator(entities_placement.node_info,
-                                                 state_duration_h,
+                                                 state_duration,
                                                  entities_placement.nodes_count)
                 cumulative_score += score
 

@@ -1,5 +1,8 @@
 import pandas as pd
 
+from autoscalingsim.utils.price import PricePerUnitTime
+from autoscalingsim.utils.credits import CreditsPerUnitTime
+
 from .node import NodeInfo
 
 class ProviderNodes:
@@ -12,13 +15,14 @@ class ProviderNodes:
         self.provider = provider
 
     def add_node_info(self, node_type : str, vCPU : int, memory : int, disk : int,
-                      network_bandwidth_MBps : int, price_p_h : float, cpu_credits_h : float,
+                      network_bandwidth_MBps : int, price_per_unit_time : PricePerUnitTime,
+                      cpu_credits_per_unit_time : CreditsPerUnitTime,
                       latency : pd.Timedelta, requests_acceleration_factor : float,
                       labels : list = []):
 
         self.node_infos[node_type] = NodeInfo(self.provider, node_type, vCPU, memory,
-                                              disk, network_bandwidth_MBps, price_p_h,
-                                              cpu_credits_h, latency,
+                                              disk, network_bandwidth_MBps, price_per_unit_time,
+                                              cpu_credits_per_unit_time, latency,
                                               requests_acceleration_factor, labels)
 
     def get_node_info(self, node_type : str):

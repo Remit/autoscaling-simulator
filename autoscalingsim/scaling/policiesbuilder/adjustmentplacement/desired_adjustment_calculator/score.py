@@ -61,6 +61,10 @@ class StateScore:
 
         return StateScore(new_scores_per_region)
 
+    def __iter__(self):
+
+        return StateScoreIterator(self)
+
     def collapse(self):
 
         """
@@ -80,6 +84,35 @@ class StateScore:
 
         else:
             raise ValueError(f'Empty {self.__class__.__name__} to collapse')
+
+    def score_for_region(self, region_name : str):
+
+        if not region_name in self.scores_per_region:
+            raise ValueError(f'Unexpected region name {region_name}')
+
+        return self.scores_per_region[region_name]
+
+    @property
+    def regions(self):
+
+        return list(self.scores_per_region.keys())
+
+class StateScoreIterator:
+
+    def __init__(self, state_score : 'StateScore'):
+
+        self._state_score = state_score
+        self._regions = state_score.regions
+        self._cur_index = 0
+
+    def __next__(self):
+
+        if self._cur_index < len(self._regions):
+            region_name = self._regions[self._cur_index]
+            self._cur_index += 1
+            return (region_name, self._state_score.score_for_region(region_name))
+
+        raise StopIteration
 
 class Score(ABC):
 
