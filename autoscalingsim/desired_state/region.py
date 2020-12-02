@@ -143,7 +143,7 @@ class Region:
 
             # If group became empty as a result of the above manipulations,
             # we delete it from the list
-            if group.is_empty():
+            if group.is_empty:
                 del group
 
         # try to accommodate the service instances in the groups sorted
