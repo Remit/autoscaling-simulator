@@ -1,4 +1,5 @@
 import pandas as pd
+from collections import defaultdict
 
 from .regional_delta import RegionalDelta
 
@@ -37,13 +38,13 @@ class PlatformStateDelta:
 
     def enforce(self, scaling_model : ScalingModel, delta_timestamp : pd.Timestamp):
 
-        enforced_regional_deltas = {}
+        enforced_regional_deltas = defaultdict(list)
         for regional_delta in self.deltas_per_region.values():
 
             new_timestamped_rd = regional_delta.enforce(scaling_model, delta_timestamp)
 
             for timestamp, regional_deltas in new_timestamped_rd.items():
-                enforced_regional_deltas[timestamp] = enforced_regional_deltas.get(timestamp, []) + regional_deltas
+                enforced_regional_deltas[timestamp].extend(regional_deltas)
 
         return { timestamp : self.__class__.create_enforced_delta(reg_deltas_per_ts) \
                     for timestamp, reg_deltas_per_ts in enforced_regional_deltas.items()}
@@ -73,13 +74,11 @@ class PlatformStateDelta:
     @property
     def node_groups_ids_for_removal(self):
 
-        regionalized_ids = {}
+        regionalized_ids = defaultdict(lambda: defaultdict(list))
         for region_name, regional_delta in self.deltas_per_region.items():
             ids_for_removal_per_entity = regional_delta.node_groups_ids_for_removal
             for entity_name, ids_for_removal in ids_for_removal_per_entity.items():
-                if not entity_name in regionalized_ids:
-                    regionalized_ids[entity_name] = {}
-                regionalized_ids[entity_name][region_name] = ids_for_removal
+                regionalized_ids[entity_name][region_name].extend(ids_for_removal)
 
         return regionalized_ids
 
