@@ -37,19 +37,6 @@ class RegionalDelta:
 
         return max(time_till_enforcement_per_gd)
 
-    @property
-    def node_groups_ids_for_removal(self):
-
-        ids_for_removal_per_service = {}
-        for gen_delta in self.generalized_deltas:
-            if gen_delta.is_node_group_scale_down and gen_delta.is_full_delta:
-                for service_name in gen_delta.services_group_delta.services:
-                    if not service_name in ids_for_removal_per_service:
-                        ids_for_removal_per_service[service_name] = []
-                    ids_for_removal_per_service[service_name].append(gen_delta.node_group_delta.id)
-
-        return ids_for_removal_per_service
-
     def __add__(self, other : 'RegionalDelta'):
 
         if not isinstance(other, RegionalDelta):
@@ -62,6 +49,19 @@ class RegionalDelta:
         new_generalized_deltas.extend(other.generalized_deltas)
 
         return RegionalDelta(self.region_name, new_generalized_deltas)
+
+    @property
+    def node_groups_ids_for_removal(self):
+
+        ids_for_removal_per_service = {}
+        for gen_delta in self.generalized_deltas:
+            if gen_delta.is_node_group_scale_down and gen_delta.is_full_delta:
+                for service_name in gen_delta.services_group_delta.services:
+                    if not service_name in ids_for_removal_per_service:
+                        ids_for_removal_per_service[service_name] = []
+                    ids_for_removal_per_service[service_name].append(gen_delta.node_group_delta.id)
+
+        return ids_for_removal_per_service
 
     def __iter__(self):
 

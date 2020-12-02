@@ -55,19 +55,6 @@ class PlatformStateDelta:
 
         return StateDuration(time_till_enforcement_per_reg_delta)
 
-    @property
-    def node_groups_ids_for_removal(self):
-
-        regionalized_ids = {}
-        for region_name, regional_delta in self.deltas_per_region.items():
-            ids_for_removal_per_entity = regional_delta.node_groups_ids_for_removal
-            for entity_name, ids_for_removal in ids_for_removal_per_entity.items():
-                if not entity_name in regionalized_ids:
-                    regionalized_ids[entity_name] = {}
-                regionalized_ids[entity_name][region_name] = ids_for_removal
-
-        return regionalized_ids
-
     def __add__(self, other_state_delta : 'PlatformStateDelta'):
 
         if not isinstance(other_state_delta, PlatformStateDelta):
@@ -83,6 +70,19 @@ class PlatformStateDelta:
 
         return PlatformStateDelta(new_regional_deltas)
 
+    @property
+    def node_groups_ids_for_removal(self):
+
+        regionalized_ids = {}
+        for region_name, regional_delta in self.deltas_per_region.items():
+            ids_for_removal_per_entity = regional_delta.node_groups_ids_for_removal
+            for entity_name, ids_for_removal in ids_for_removal_per_entity.items():
+                if not entity_name in regionalized_ids:
+                    regionalized_ids[entity_name] = {}
+                regionalized_ids[entity_name][region_name] = ids_for_removal
+
+        return regionalized_ids
+
     def __iter__(self):
 
         return PlatformStateDeltaIterator(self)
@@ -97,12 +97,13 @@ class PlatformStateDeltaIterator:
     def __init__(self, state_delta : PlatformStateDelta):
 
         self._state_delta = state_delta
+        self._region_names = list(state_delta.deltas_per_region.keys())
         self._index = 0
 
     def __next__(self):
 
-        if self._index < len(self._state_delta.deltas_per_region):
-            region_name = list(self._state_delta.deltas_per_region.keys())[self._index]
+        if self._index < len(self._region_names):
+            region_name = self._region_names[self._index]
             self._index += 1
             return (region_name, self._state_delta.deltas_per_region[region_name])
 

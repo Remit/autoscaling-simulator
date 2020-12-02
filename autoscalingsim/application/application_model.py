@@ -150,7 +150,7 @@ class ApplicationModel:
 
     def enter_requests(self, new_requests : list):
 
-        self.new_requests = new_requests
+        self.new_requests = new_requests.copy()
 
     def post_process(self, simulation_start : pd.Timestamp, simulation_step : pd.Timedelta, simulation_end : pd.Timestamp):
 
