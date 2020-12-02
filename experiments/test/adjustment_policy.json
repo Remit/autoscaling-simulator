@@ -1,6 +1,10 @@
 {
   "adjustment_goal": "cost_minimization",
   "optimizer_type": "OptimizerScoreMaximizer",
+  "adjustment_horizon": {
+    "value": 10,
+    "unit": "m"
+  },
   "placement_hint": "shared",
   "combiner": {
     "type": "windowed",

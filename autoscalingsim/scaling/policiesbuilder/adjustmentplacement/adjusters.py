@@ -25,6 +25,7 @@ class Adjuster(ABC):
     """
 
     def __init__(self,
+                 adjustment_horizon : dict,
                  scaling_model : ScalingModel,
                  node_for_scaled_services_types : dict,
                  scaled_service_instance_requirements_by_service : dict,
@@ -37,6 +38,10 @@ class Adjuster(ABC):
         self.scaling_model = scaling_model
         self.scaled_service_instance_requirements_by_service = scaled_service_instance_requirements_by_service
         self.scorer = Scorer(score_calculator_class())
+
+        adjustment_horizon_value = ErrorChecker.key_check_and_load('value', adjustment_horizon, self.__class__.__name__)
+        adjustment_horizon_unit = ErrorChecker.key_check_and_load('unit', adjustment_horizon, self.__class__.__name__)
+        self.adjustment_horizon = pd.Timedelta(adjustment_horizon_value, unit = adjustment_horizon_unit)
 
         combiner_type = ErrorChecker.key_check_and_load('type', combiner_settings, self.__class__.__name__)
         combiner_conf = ErrorChecker.key_check_and_load('conf', combiner_settings, self.__class__.__name__)
@@ -84,10 +89,10 @@ class Adjuster(ABC):
         on the next iteration of the loop.
         """
 
-        timeline_of_deltas = DeltaTimeline(self.scaling_model,
-                                           current_state)
+        timeline_of_deltas = DeltaTimeline(self.scaling_model, current_state)
 
-        timeline_of_unmet_changes = TimelineOfDesiredServicesChanges(self.combiner,
+        timeline_of_unmet_changes = TimelineOfDesiredServicesChanges(self.adjustment_horizon,
+                                                                     self.combiner,
                                                                      services_scaling_events,
                                                                      cur_timestamp)
 
@@ -146,20 +151,10 @@ class Adjuster(ABC):
 
                 # Comparing and selecting an alternative
                 chosen_state_delta = state_simple_addition_deltas if state_score_simple_addition.collapse() > state_score_substitution.collapse() else state_substitution_deltas
-                #for region_name, delta_per_region in chosen_state_delta:
-                #    print(delta_per_region)
-                #    print(region_name)
-                #    for gd in delta_per_region:
-                #        print(f'id: {gd.node_group_delta.node_group.id}')
-                #        print(f'count: {gd.node_group_delta.node_group.nodes_count}')
 
                 timeline_of_deltas.add_state_delta(ts_of_unmet_change, chosen_state_delta)
 
             ts_of_unmet_change, unmet_change = timeline_of_unmet_changes.next()
-
-            # If by this time len(unmet_change) > 0, then there were not enough
-            # resources or budget.
-            #timeline_of_unmet_changes.overwrite(ts_of_unmet_change, unmet_change)
 
         return timeline_of_deltas if timeline_of_deltas.updated_at_least_once() else None
 
@@ -171,6 +166,7 @@ class CostMinimizer(Adjuster):
     """
 
     def __init__(self,
+                 adjustment_horizon : dict,
                  scaling_model : ScalingModel,
                  node_for_scaled_services_types : dict,
                  scaled_service_instance_requirements_by_service : dict,
@@ -180,7 +176,8 @@ class CostMinimizer(Adjuster):
                  combiner_type = 'windowed'):
 
         score_calculator_class = ScoreCalculator.get(self.__class__.__name__)
-        super().__init__(scaling_model,
+        super().__init__(adjustment_horizon,
+                         scaling_model,
                          node_for_scaled_services_types,
                          scaled_service_instance_requirements_by_service,
                          optimizer_type,

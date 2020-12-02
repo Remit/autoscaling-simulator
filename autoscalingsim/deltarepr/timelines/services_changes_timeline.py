@@ -4,16 +4,14 @@ from autoscalingsim.utils.combiners import Combiner
 
 class TimelineOfDesiredServicesChanges:
 
-    def __init__(self,
-                 combiner : Combiner,
+    def __init__(self, adjustment_horizon : pd.Timedelta, combiner : Combiner,
                  scaling_events_timelines_per_region_per_service : dict,
                  cur_timestamp : pd.Timestamp):
 
         # TODO: do not add zero-changes
-        # TODO: horizon into params
 
         self.timeline_of_services_changes = {}
-        self.horizon = pd.Timedelta(10, unit = 'm')
+        self.horizon = adjustment_horizon
         self.combiner = combiner
         self.current_timestamp = {}
         self.current_index = {}
@@ -54,18 +52,3 @@ class TimelineOfDesiredServicesChanges:
                 return (min_cur_timestamp, services_scalings_on_ts)
 
         return (None, None)
-
-    def overwrite(self,
-                  timestamp,
-                  unmet_change_per_region):
-
-        for region_name, unmet_change in unmet_change_per_region.items():
-            if not region_name in self.timeline_of_services_changes:
-                self.timeline_of_services_changes[region_name] = {}
-
-            if len(unmet_change) > 0:
-                self.current_timestamp[region_name] = timestamp
-                self.current_index[region_name] = list(self.timeline_of_services_changes[region_name].keys()).index(self.current_timestamp[region_name])
-
-            if timestamp in self.timeline_of_services_changes[region_name]:
-                self.timeline_of_services_changes[region_name][timestamp] = unmet_change

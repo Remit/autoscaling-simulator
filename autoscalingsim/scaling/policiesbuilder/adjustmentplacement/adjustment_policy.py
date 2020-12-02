@@ -39,13 +39,14 @@ class AdjustmentPolicy:
                 config = json.load(f)
 
                 adjustment_goal = ErrorChecker.key_check_and_load('adjustment_goal', config, self.__class__.__name__)
+                adjustment_horizon = ErrorChecker.key_check_and_load('adjustment_horizon', config, self.__class__.__name__)
                 optimizer_type = ErrorChecker.key_check_and_load('optimizer_type', config, self.__class__.__name__)
                 placement_hint = ErrorChecker.key_check_and_load('placement_hint', config, self.__class__.__name__)
                 combiner_settings = ErrorChecker.key_check_and_load('combiner', config, self.__class__.__name__)
 
                 adjuster_class = adjusters.Registry.get(adjustment_goal)
 
-                self.adjuster = adjuster_class(self.scaling_model, node_for_scaled_services_types,
+                self.adjuster = adjuster_class(adjustment_horizon, self.scaling_model, node_for_scaled_services_types,
                                                service_instance_requirements, state_reader,
                                                optimizer_type, placement_hint, combiner_settings)
 
