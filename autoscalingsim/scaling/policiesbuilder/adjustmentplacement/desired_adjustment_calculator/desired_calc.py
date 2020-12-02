@@ -59,7 +59,7 @@ class DesiredChangeCalculator:
             for ep in selected_placement.services_placements:
                 print('ep11')
                 print(ep.nodes_count)
-                print(ep.services_state.get_services_counts())
+                print(ep.services_state.services_counts)
 
             regions[region_name] = Region.from_conf(region_name, selected_placement)
 

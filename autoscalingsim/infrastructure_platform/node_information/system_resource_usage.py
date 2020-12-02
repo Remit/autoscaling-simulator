@@ -28,8 +28,8 @@ class SystemResourceUsage:
 
         self.node_info = node_info
 
-        self.uid = node_info.get_unique_id()
-        self.instance_max_usage = node_info.get_max_usage()
+        self.uid = node_info.unique_id
+        self.instance_max_usage = node_info.max_usage
         self.instance_count = instance_count
 
         self.system_resources_usage = {}

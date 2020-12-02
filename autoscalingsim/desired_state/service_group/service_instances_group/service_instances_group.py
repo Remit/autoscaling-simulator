@@ -124,16 +124,17 @@ class ServiceInstancesGroup:
 
         self.scaling_aspects[aspect.name] = aspect
 
-    def get_aspect_value(self, aspect_name : str):
+    def aspect_value(self, aspect_name : str):
 
         if not aspect_name in self.scaling_aspects:
             raise ValueError(f'Unexpected aspect to get: {aspect_name}')
 
         return self.scaling_aspects[aspect_name].copy()
 
-    def get_resource_requirements(self):
+    @property
+    def resource_requirements(self):
 
-        return self.service_resource_reqs
+        return self.service_resource_reqs.copy()
 
     def copy(self):
 

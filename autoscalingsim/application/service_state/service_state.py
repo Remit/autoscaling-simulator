@@ -260,7 +260,7 @@ class ServiceState:
         The collected values are summed up and returned.
         """
 
-        return sum([ deployment.get_aspect_value(aspect_name) for deployment in self.deployments.values() ])
+        return sum([ deployment.aspect_value(aspect_name) for deployment in self.deployments.values() ])
 
     def get_metric_value(self, metric_name : str,
                          interval : pd.Timedelta = pd.Timedelta(0, unit = 'ms')):
@@ -275,7 +275,7 @@ class ServiceState:
         # Case of resource utilization metric
         if metric_name in SystemResourceUsage.system_resources:
             for deployment in self.deployments.values():
-                cur_deployment_util = deployment.get_utilization(metric_name, interval)
+                cur_deployment_util = deployment.utilization(metric_name, interval)
 
                 # Aligning the time series
                 common_index = cur_deployment_util.index.union(service_metric_value.index).astype(cur_deployment_util.index.dtype)
@@ -283,7 +283,7 @@ class ServiceState:
                 service_metric_value = service_metric_value.reindex(common_index, fill_value = 0)
                 service_metric_value += cur_deployment_util
 
-            service_metric_value /= sum([deployment.get_nodes_count() for deployment in self.deployments.values()]) # normalization
+            service_metric_value /= sum([deployment.nodes_count for deployment in self.deployments.values()]) # normalization
 
         elif metric_name in self.service_metrics_and_sources:
 
@@ -316,7 +316,7 @@ class ServiceState:
         for system_resource_name in SystemResourceUsage.system_resources:
             if not system_resource_name in self.service_utilizations:
                 self.service_utilizations[system_resource_name] = pd.DataFrame(columns = ['datetime', 'value']).set_index('datetime')
-            deployment_util = deployment.get_utilization(system_resource_name) # take all the available data for the given resource
+            deployment_util = deployment.utilization(system_resource_name) # take all the available data for the given resource
 
             # Aligning the time series
             common_index = deployment_util.index.union(self.service_utilizations[system_resource_name].index)
@@ -326,4 +326,4 @@ class ServiceState:
 
     def _count_service_instances(self):
 
-        return sum([ deployment.get_aspect_value('count').value for deployment in self.deployments.values() ])
+        return sum([ deployment.aspect_value('count').value for deployment in self.deployments.values() ])

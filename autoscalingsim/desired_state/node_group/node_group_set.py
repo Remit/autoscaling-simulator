@@ -82,7 +82,7 @@ class HomogeneousNodeGroupSet:
                 else:
                     # attempt to find an appropriate candidate for failing its services
                     for group in groups_to_change.values():
-                        if group.services_state.can_be_coerced(services_group_delta):
+                        if group.services_state.is_compatible_with(services_group_delta):
                             group.add_to_services_state(services_group_delta)
 
                             compensating_services_group_delta = services_group_delta.copy()
@@ -104,7 +104,7 @@ class HomogeneousNodeGroupSet:
                     # attempt to find an appropriate candidate for failing in groups_to_change
                     self.removed_node_group_ids = []
                     for group_id, group in groups_to_change.items():
-                        if group.can_be_coerced(node_group_delta.node_group):
+                        if group.is_compatible_with(node_group_delta.node_group):
                             group.shrink(node_group_delta.node_group)
                             if group.nodes_count == 0:
                                 self.removed_node_group_ids.append(group_id)
@@ -145,7 +145,7 @@ class HomogeneousNodeGroupSet:
 
         node_counts_per_type = {}
         for node_group in groups_for_extraction.values():
-            node_type = node_group.node_info.get_name()
+            node_type = node_group.node_info.node_type
             if not node_type in node_counts_per_type:
                 node_counts_per_type[node_type] = 0
             node_counts_per_type[node_type] += node_group.nodes_count

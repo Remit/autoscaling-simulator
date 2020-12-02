@@ -57,6 +57,10 @@ class ResourceRequirements:
         self.network_bandwidth = network_bandwidth
         self.labels = labels
 
+    def copy(self):
+
+        return self.__class__(self.vCPU, self.memory, self.disk, self.network_bandwidth, self.labels)
+
     def to_dict(self):
 
         return {'vCPU': self.vCPU, 'memory': self.memory,

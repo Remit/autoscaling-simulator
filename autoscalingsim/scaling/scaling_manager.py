@@ -25,7 +25,7 @@ class ScalingManager:
         scaling_infos = platform_state.extract_node_groups(False)
         for region_name, regional_node_groups in scaling_infos.items():
             for node_group in regional_node_groups:
-                for service_name in node_group.get_running_services():
+                for service_name in node_group.running_services:
                     self.update_placement(service_name, region_name, node_group)
 
     def mark_groups_for_removal(self, service_name : str,

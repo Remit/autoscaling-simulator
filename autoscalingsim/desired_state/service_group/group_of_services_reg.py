@@ -57,9 +57,9 @@ class GroupOfServicesRegionalized:
         return GroupOfServicesRegionalizedIterator(self)
 
     # was get_value
-    def get_value_for_service(self, region_name : str, service_name : str):
+    #def get_value_for_service(self, region_name : str, service_name : str):
 
-        return self._services_groups_per_region[region_name].get_value(service_name) if region_name in self._services_groups_per_region else 0
+    #    return self._services_groups_per_region[region_name].get_value(service_name) if region_name in self._services_groups_per_region else 0
 
     def copy(self):
 
@@ -70,16 +70,16 @@ class GroupOfServicesRegionalized:
         return GroupOfServicesRegionalizedDelta.from_group(self._services_groups_per_region.copy())
 
     # was extract_aspect_representation
-    def get_scaling_aspect_for_every_service(self, aspect_name : str):
+    def scaling_aspect_for_every_service(self, aspect_name : str):
 
-        return { region_name : group_of_services.get_scaling_aspect_for_every_service(aspect_name) for region_name, group_of_services in self._services_groups_per_region.items() }
+        return { region_name : group_of_services.scaling_aspect_for_every_service(aspect_name) for region_name, group_of_services in self._services_groups_per_region.items() }
 
     # was extract_countable_representation
-    def get_countable_representation(self, conf : dict):
+    def countable_representation(self, conf : dict):
 
         """ Used to unify the aggregation scheme both for node groups and services """
 
-        return self.get_scaling_aspect_for_every_service(conf['scaled_aspect_name'])
+        return self.scaling_aspect_for_every_service(conf['scaled_aspect_name'])
 
     def __repr__(self):
 

@@ -29,31 +29,31 @@ class NodeInfo:
                  requests_acceleration_factor : float = 1.0,
                  labels : list = []):
 
-        self.provider = provider
-        self.node_type = node_type
-        self.vCPU = vCPU
-        self.memory = memory
-        self.disk = disk
-        self.network_bandwidth = network_bandwidth
-        self.price_per_unit_time = price_per_unit_time
-        self.cpu_credits_per_unit_time = cpu_credits_per_unit_time
-        self.latency = latency
-        self.requests_acceleration_factor = requests_acceleration_factor
-        self.labels = labels
+        self._provider = provider
+        self._node_type = node_type
+        self._vCPU = vCPU
+        self._memory = memory
+        self._disk = disk
+        self._network_bandwidth = network_bandwidth
+        self._price_per_unit_time = price_per_unit_time
+        self._cpu_credits_per_unit_time = cpu_credits_per_unit_time
+        self._latency = latency
+        self._requests_acceleration_factor = requests_acceleration_factor
+        self._labels = labels
 
     def __repr__(self):
 
-        return f'{self.__class__.__name__}(provider = {self.provider}, \
-                                           node_type = {self.node_type}, \
-                                           vCPU = {self.vCPU}, \
-                                           memory = {repr(self.memory)}, \
+        return f'{self.__class__.__name__}(provider = {self._provider}, \
+                                           node_type = {self._node_type}, \
+                                           vCPU = {self._vCPU}, \
+                                           memory = {repr(self._memory)}, \
                                            disk = {repr(self.disk)}, \
-                                           network_bandwidth = {repr(self.network_bandwidth)}, \
-                                           price_per_unit_time = {self.price_per_unit_time}, \
-                                           cpu_credits_per_unit_time = {self.cpu_credits_per_unit_time}, \
-                                           latency = {self.latency}, \
-                                           requests_acceleration_factor = {self.requests_acceleration_factor}, \
-                                           labels = {self.labels})'
+                                           network_bandwidth = {repr(self._network_bandwidth)}, \
+                                           price_per_unit_time = {self._price_per_unit_time}, \
+                                           cpu_credits_per_unit_time = {self._cpu_credits_per_unit_time}, \
+                                           latency = {self._latency}, \
+                                           requests_acceleration_factor = {self._requests_acceleration_factor}, \
+                                           labels = {self._labels})'
 
     def system_resources_to_take_from_requirements(self, res_requirements : ResourceRequirements) -> SystemResourceUsage:
 
@@ -79,8 +79,8 @@ class NodeInfo:
         if not isinstance(services_state, GroupOfServices):
             raise TypeError(f'Unexpected type provided to compute the required capacity: {type(services_state)}')
 
-        requirements_by_service = services_state.get_services_requirements()
-        counts_by_service = services_state.get_services_counts()
+        requirements_by_service = services_state.services_requirements
+        counts_by_service = services_state.services_counts
 
         joint_resource_requirements = ResourceRequirements.new_empty_resource_requirements()
         for service_name, requirements in requirements_by_service.items():
@@ -88,7 +88,7 @@ class NodeInfo:
             joint_resource_requirements += factor * requirements
 
         for label in joint_resource_requirements.labels:
-            if not label in self.labels:
+            if not label in self._labels:
                 return (False, 0.0)
 
         system_resource_usage = SystemResourceUsage(self, instances_count, joint_resource_requirements.to_dict())
@@ -96,27 +96,38 @@ class NodeInfo:
 
         return (allocated, system_resource_usage)
 
-    def get_unique_id(self) -> str:
+    @property
+    def unique_id(self) -> str:
 
-        return self.provider + self.node_type
+        return self._provider + self._node_type
 
-    def get_name(self) -> str:
+    @property
+    def node_type(self) -> str:
 
-        return self.node_type
+        return self._node_type
 
-    def get_provider(self) -> str:
+    @property
+    def latency(self) -> pd.Timedelta:
 
-        return self.provider
+        return self._latency
 
-    def get_max_usage(self) -> dict:
+    @property
+    def network_bandwidth(self) -> Size:
 
-        return {'vCPU': self.vCPU, 'memory': self.memory,
-                'disk': self.disk, 'network_bandwidth': self.network_bandwidth}
+        return self._network_bandwidth
 
-    def get_cost_per_unit_time(self) -> int:
+    @property
+    def provider(self) -> str:
 
-        return self.price_p_h
+        return self._provider
 
-    def get_performance(self) -> float:
+    @property
+    def price_per_unit_time(self) -> PricePerUnitTime:
 
-        return 0
+        return self._price_per_unit_time
+
+    @property
+    def max_usage(self) -> dict:
+
+        return {'vCPU': self._vCPU, 'memory': self._memory,
+                'disk': self._disk, 'network_bandwidth': self._network_bandwidth}

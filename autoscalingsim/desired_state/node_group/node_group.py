@@ -23,26 +23,21 @@ class NodeGroup(ABC):
         self.id = id(self)
         self.services_state = None
 
-    def can_be_coerced(self, node_group : 'NodeGroup'):
+    def is_compatible_with(self, node_group : 'NodeGroup'):
 
-        if not isinstance(node_group, NodeGroup):
-            raise TypeError(f'The provided node group is not of {self.__class__.__name__} type')
-
-        if ((self.node_type == node_group.node_type) and (self.provider == node_group.provider)) \
+        return ((self.node_type == node_group.node_type) and (self.provider == node_group.provider)) \
          or ((self.provider == node_group.provider) and (self.node_type == 'any' or node_group.node_type == 'any')) \
          or (self.provider == 'any' and self.node_type == 'any') \
-         or (node_group.provider == 'any' and node_group.node_type == 'any'):
-            return True
-        else:
-            return False
+         or (node_group.provider == 'any' and node_group.node_type == 'any')
 
-    def get_aspect_value_of_services_state(self, service_name : str, aspect_name : str):
+    def aspect_value_of_services_state(self, service_name : str, aspect_name : str):
 
-        return ScalingAspect.get(aspect_name)(0) if self.services_state is None else self.services_state.get_aspect_value_for_service(service_name, aspect_name)
+        return ScalingAspect.get(aspect_name)(0) if self.services_state is None else self.services_state.aspect_value_for_service(service_name, aspect_name)
 
-    def get_running_services(self):
+    @property
+    def running_services(self):
 
-        return [] if self.services_state is None else self.services_state.get_services()
+        return [] if self.services_state is None else self.services_state.services
 
 class HomogeneousNodeGroupDummy(NodeGroup):
 
@@ -83,10 +78,10 @@ class HomogeneousNodeGroup(NodeGroup):
 
         import autoscalingsim.desired_state.service_group.group_of_services as gos
 
-        super().__init__(node_info.get_name(), node_info.get_provider(), nodes_count)
+        super().__init__(node_info.node_type, node_info.provider, nodes_count)
 
         self.node_info = node_info
-        self.utilization = NodeGroupUtilization()
+        self._utilization = NodeGroupUtilization()
         self.uplink = NodeGroupLink(self.node_info.latency, self.nodes_count, self.node_info.network_bandwidth)
         self.downlink = NodeGroupLink(self.node_info.latency, self.nodes_count, self.node_info.network_bandwidth)
         self.shared_processor = RequestsProcessor()
@@ -112,15 +107,15 @@ class HomogeneousNodeGroup(NodeGroup):
         downlink_utilization = SystemResourceUsage(self.node_info, self.nodes_count,
                                                    system_resources_usage = { 'network_bandwidth': self.downlink.used_bandwidth})
 
-        self.utilization.update_with_system_resources_usage(service_name,
-                                                            timestamp,
-                                                            system_resources_usage + uplink_utilization + downlink_utilization,
-                                                            averaging_interval)
+        self._utilization.update_with_system_resources_usage(service_name,
+                                                             timestamp,
+                                                             system_resources_usage + uplink_utilization + downlink_utilization,
+                                                             averaging_interval)
 
-    def get_utilization(self, service_name : str, resource_name : str,
+    def utilization(self, service_name : str, resource_name : str,
                         interval : pd.Timedelta):
 
-        return self.utilization.get(service_name, resource_name, interval)
+        return self._utilization.get(service_name, resource_name, interval)
 
     def processed_for_service(self, service_name : str):
 
@@ -172,7 +167,7 @@ class HomogeneousNodeGroup(NodeGroup):
                                         + system_resources_for_req
 
         if (not system_resources_to_be_taken.is_full()) \
-         and (self.services_state.get_service_count(req.processing_service) \
+         and (self.services_state.instances_count_for_service(req.processing_service) \
                > sum( self.shared_processor.in_processing_stat_for_service(req.processing_service).values() ) ):
             return True
         else:
@@ -192,7 +187,7 @@ class HomogeneousNodeGroup(NodeGroup):
         if not isinstance(other_node_group, NodeGroup):
             raise TypeError(f'An attempt to subtract unrecognized type from the {self.__class__.__name__}: {other_node_group.__class__.__name__}')
 
-        if self.can_be_coerced(other_node_group):
+        if self.is_compatible_with(other_node_group):
 
             if not other_node_group.services_state is None:
                 self.services_state -= other_node_group.services_state
@@ -225,8 +220,8 @@ class HomogeneousNodeGroup(NodeGroup):
 
         return f'{self.__class__.__name__}( node_info = {self.node_info}, \
                                             nodes_count = {self.nodes_count}, \
-                                            services_instances_counts = {self.services_state.get_services_counts()}, \
-                                            requirements_by_service = {self.services_state.get_services_requirements()})'
+                                            services_instances_counts = {self.services_state.services_counts}, \
+                                            requirements_by_service = {self.services_state.services_requirements})'
 
     def copy(self):
 
@@ -268,7 +263,7 @@ class HomogeneousNodeGroup(NodeGroup):
         # Starting with the largest service and proceeding to the smallest one in terms of
         # resource usage requirements. This is made to reduce the resource usage fragmentation.
         services_cnt_change = {}
-        dynamic_services_instances_count = self.services_state.get_raw_aspect_value_for_every_service('count')
+        dynamic_services_instances_count = self.services_state.raw_aspect_value_for_every_service('count')
 
         for service_name, service_instance_resource_usage in node_sys_resource_usage_by_service_sorted.items():
             if service_name in unmet_changes and service_name in dynamic_services_instances_count:
@@ -300,7 +295,7 @@ class HomogeneousNodeGroup(NodeGroup):
         services_cnt_change = {service_name: change_val for service_name, change_val in services_cnt_change.items() if change_val != 0}
 
         nodes_to_accommodate_res_usage = max([math.ceil(res_usage / other_res_usage) \
-                                                for other_res_name, other_res_usage in self.node_info.get_max_usage().items() \
+                                                for other_res_name, other_res_usage in self.node_info.max_usage.items() \
                                                 for res_name, res_usage in node_sys_resource_usage.to_dict().items() \
                                                 if other_res_name == res_name and other_res_usage > other_res_usage.__class__(0)])
 
@@ -314,7 +309,7 @@ class HomogeneousNodeGroup(NodeGroup):
         if len(services_cnt_change_count) > 0:
             if nodes_to_accommodate_res_usage < self.nodes_count:
                 # scale down for nodes
-                new_services_instances_counts = self.services_state.get_raw_aspect_value_for_every_service('count')
+                new_services_instances_counts = self.services_state.raw_aspect_value_for_every_service('count')
 
                 node_group = HomogeneousNodeGroup(self.node_info, self.nodes_count - nodes_to_accommodate_res_usage, self.services_state.copy())# ?self.services_state.copy()
 

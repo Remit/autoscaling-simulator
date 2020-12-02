@@ -21,7 +21,7 @@ class NodeGroupDelta:
     @property
     def provider(self):
 
-        return self.node_group.node_info.get_provider()
+        return self.node_group.node_info.provider
 
     @property
     def node_type(self):

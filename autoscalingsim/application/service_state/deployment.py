@@ -86,13 +86,13 @@ class Deployment:
                                            timestamp,
                                            averaging_interval)
 
-    def get_utilization(self,
-                        resource_name : str,
-                        interval : pd.Timedelta = pd.Timedelta(0, unit = 'ms')):
+    def utilization(self, resource_name : str,
+                    interval : pd.Timedelta = pd.Timedelta(0, unit = 'ms')):
 
-        return self.node_group.get_utilization(self.service_name, resource_name, interval)
+        return self.node_group.utilization(self.service_name, resource_name, interval)
 
-    def get_nodes_count(self):
+    @property
+    def nodes_count(self):
 
         return self.node_group.nodes_count
 
@@ -100,6 +100,6 @@ class Deployment:
 
         return self.node_group.can_schedule_request(req, self.request_processing_infos)
 
-    def get_aspect_value(self, aspect_name : str):
+    def aspect_value(self, aspect_name : str):
 
-        return self.node_group.get_aspect_value_of_services_state(self.service_name, aspect_name)
+        return self.node_group.aspect_value_of_services_state(self.service_name, aspect_name)

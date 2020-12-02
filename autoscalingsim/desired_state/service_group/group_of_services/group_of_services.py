@@ -25,7 +25,7 @@ class GroupOfServices:
             else:
                 raise TypeError(f'Unknown type of the init parameter: {groups_or_aspects.__class__.__name__}')
 
-    def can_be_coerced(self, services_group_delta : GroupOfServicesDelta) -> bool:
+    def is_compatible_with(self, services_group_delta : GroupOfServicesDelta) -> bool:
 
         if not isinstance(services_group_delta, GroupOfServicesDelta):
             raise TypeError(f'Unexpected type for coercion: {services_group_delta.__class__.__name__}')
@@ -40,17 +40,20 @@ class GroupOfServices:
         for service_group in self.services_groups.values():
             service_group.downsize_proportionally(downsizing_coef)
 
-    def get_services_counts(self) -> dict:
+    @property
+    def services_counts(self) -> dict:
 
-        return { service_name : group.get_aspect_value('count').value for service_name, group in self.services_groups.items() }
+        return { service_name : group.aspect_value('count').value for service_name, group in self.services_groups.items() }
 
-    def get_services(self) -> list:
+    @property
+    def services(self) -> list:
 
         return list(self.services_groups.keys())
 
-    def get_services_requirements(self) -> dict:
+    @property
+    def services_requirements(self) -> dict:
 
-        return { service_name : group.get_resource_requirements() for service_name, group in self.services_groups.items() }
+        return { service_name : group.resource_requirements for service_name, group in self.services_groups.items() }
 
     def copy(self):
 
@@ -59,7 +62,7 @@ class GroupOfServices:
     def __repr__(self):
 
         return f'{self.__class__.__name__}( groups_or_aspects = {self.services_groups}, \
-                                            services_resource_reqs = {self.get_services_requirements()})'
+                                            services_resource_reqs = {self.services_requirements})'
 
     def __add__(self, other):
 
@@ -135,32 +138,32 @@ class GroupOfServices:
 
         return GroupOfServicesDelta.from_deltas({ service_name : group.to_delta(direction) for service_name, group in self.services_groups.items() })
 
-    def get_scaling_aspects_for_every_service(self):
+    def scaling_aspects_for_every_service(self):
 
         return { service_name : service_group.scaling_aspects for service_name, service_group in self.services_groups.items() }
 
     # was extract_aspect_representation
-    def get_scaling_aspect_for_every_service(self, aspect_name : str):
+    def scaling_aspect_for_every_service(self, aspect_name : str):
 
-        return { service_name : service_group.get_aspect_value(aspect_name) for service_name, service_group in self.services_groups.items() }
+        return { service_name : service_group.aspect_value(aspect_name) for service_name, service_group in self.services_groups.items() }
 
     # was extract_aspect_value
-    def get_raw_aspect_value_for_every_service(self, aspect_name : str):
+    def raw_aspect_value_for_every_service(self, aspect_name : str):
 
-        return { service_name : service_group.get_aspect_value(aspect_name).value for service_name, service_group in self.services_groups.items() }
+        return { service_name : service_group.aspect_value(aspect_name).value for service_name, service_group in self.services_groups.items() }
 
     # was get_aspect_value
-    def get_aspect_value_for_service(self, service_name : str, aspect_name : str):
+    def aspect_value_for_service(self, service_name : str, aspect_name : str):
 
-        return self.services_groups[service_name].get_aspect_value(aspect_name) if service_name in self.services_groups else ScalingAspect.get(aspect_name)(0)
+        return self.services_groups[service_name].aspect_value(aspect_name) if service_name in self.services_groups else ScalingAspect.get(aspect_name)(0)
 
-    def get_service_count(self, service_name : str):
+    def instances_count_for_service(self, service_name : str):
 
-        return self.get_aspect_value_for_service(service_name, 'count').value
+        return self.aspect_value_for_service(service_name, 'count').value
 
-    def get_service_resource_requirements(self, service_name : str):
+    def instance_resource_requirements_for_service(self, service_name : str):
 
         if not service_name in self.services_groups:
             raise ValueError(f'An attempt to get the resource requirements for an unknown service: {service_name}')
 
-        return self.services_groups[service_name].get_resource_requirements()
+        return self.services_groups[service_name].resource_requirements

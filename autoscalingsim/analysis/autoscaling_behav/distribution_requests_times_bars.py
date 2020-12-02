@@ -63,7 +63,8 @@ class DistributionRequestsTimesBarchart:
                     agg_proc_time = aggregation_fn(req_type_response_times) - (aggregated_buf_waiting_time_per_req_type[-1] + aggregated_network_time_per_req_type[-1])
                     aggregated_processing_time_per_req_type.append(agg_proc_time)
 
-                    max_response_time = max(max_response_time, max(req_type_response_times))
+                    if len(req_type_response_times) > 0:
+                        max_response_time = max(max_response_time, max(req_type_response_times))
 
                 ax.bar(req_types, aggregated_processing_time_per_req_type,
                        bar_width, label='Processing')
