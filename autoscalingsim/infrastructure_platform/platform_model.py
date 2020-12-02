@@ -254,7 +254,10 @@ class PlatformModel:
         for timestamp_beg, timestamp_end in zip(interval_begins, interval_ends):
             timestamp = timestamp_beg
             deltas_lst = timeline_of_deltas_raw[timestamp]
-            for delta in deltas_lst: cur_state += delta
+            for delta in deltas_lst:
+                cur_state += delta
+                #print(f'timestamp: {timestamp}')
+                #print(f'delta: {delta}')
             node_counts_raw = cur_state.extract_node_counts(in_change)
 
             repeated_data = {}

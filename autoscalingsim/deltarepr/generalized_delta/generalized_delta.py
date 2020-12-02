@@ -2,48 +2,28 @@ import pandas as pd
 
 from autoscalingsim.deltarepr.group_of_services_delta import GroupOfServicesDelta
 from autoscalingsim.deltarepr.node_group_delta import NodeGroupDelta
+from autoscalingsim.utils.timeline import Timeline
 
 class GeneralizedDelta:
 
-    """
-    Binds deltas on different resource abstraction levels such as level of nodes and
-    the level of services.
-    """
+    """ Binds deltas on different resource abstraction levels """
 
-    def __init__(self,
-                 node_group_delta : NodeGroupDelta,
+    def __init__(self, node_group_delta : NodeGroupDelta,
                  services_group_delta : GroupOfServicesDelta):
 
         if not isinstance(node_group_delta, NodeGroupDelta) and not node_group_delta is None:
             raise TypeError(f'The parameter value provided for the initialization of {self.__class__.__name__} is not of {NodeGroupDelta.__name__} type')
 
-        if (not isinstance(services_group_delta, GroupOfServicesDelta)) and (not services_group_delta is None):
+        if not isinstance(services_group_delta, GroupOfServicesDelta) and not services_group_delta is None:
             raise TypeError(f'The parameter value provided for the initialization of {self.__class__.__name__} is not of {GroupOfServicesDelta.__name__} type')
 
-        self.node_group_delta = node_group_delta
-        self.services_group_delta = services_group_delta
-        self.cached_enforcement = {}
+        self.node_group_delta = node_group_delta.copy() if not node_group_delta is None else None
+        self.services_group_delta = services_group_delta.copy() if not services_group_delta is None else None
+        self._cached_enforcement = {}
 
-    @property
-    def is_full_delta(self):
+    def till_full_enforcement(self, scaling_model, delta_timestamp : pd.Timestamp):
 
-        return (not self.node_group_delta is None) and (not self.services_group_delta is None)
-
-    @property
-    def is_node_group_scale_down(self):
-
-        if not self.node_group_delta is None:
-            return False
-
-        return not self.node_group_delta.virtual and self.node_group_delta.is_scale_down
-
-    def till_full_enforcement(self, scaling_model,
-                              delta_timestamp : pd.Timestamp):
-
-        """
-        Computes time required for the enforcement to finish at all levels.
-        Performs the enforcement underneath to not do the computation twice.
-        """
+        """ Computes time required for the enforcement to finish at all the resource abstraction levels """
 
         new_deltas = self.enforce(scaling_model, delta_timestamp)
 
@@ -53,55 +33,94 @@ class GeneralizedDelta:
 
         """
         Forms enforced deltas for both parts of the generalized delta and returns
-        these as timelines. The enforcement takes into account a sequence of the
+        these as timelines. The enforcement takes into account the sequence of
         scaling actions. On scale down, all the services should terminate first.
         On scale up, a node group should boot first.
 
-        In addition, it caches the enforcement on first computation since
-        the preliminary till_full_enforcement method requires it.
+        This method caches the enforcement on first computation since
+        it might get called by the till_full_enforcement method first.
         """
+        result = Timeline()
+        result = self._cached_enforcement.get(delta_timestamp, Timeline())
+        if delta_timestamp in self._cached_enforcement:
+            self._cached_enforcement.pop(delta_timestamp)
 
-        if delta_timestamp in self.cached_enforcement:
-            return self.cached_enforcement[delta_timestamp]
+        if self.node_group_delta.in_change and not self.node_group_delta.virtual:
 
-        self.cached_enforcement = {}
-        new_deltas = {}
-        if self.node_group_delta.in_change and (not self.node_group_delta.virtual):
-            delay_from_nodes = pd.Timedelta(0, unit = 'ms')
-            max_service_delay = pd.Timedelta(0, unit = 'ms')
-            node_group_delta_virtual = None
+            delayed_node_group_delta, delayed_services_groups_deltas = self._delay_deltas(scaling_model)
+            result.merge(self._enforced_node_group_delta_timeline(delta_timestamp, delayed_node_group_delta))
+            result.merge(self._enforced_services_groups_deltas_timeline(delta_timestamp, delayed_node_group_delta, delayed_services_groups_deltas))
+            self._cached_enforcement[delta_timestamp] = result
 
-            node_group_delay, node_group_delta = scaling_model.platform_delay(self.node_group_delta)
-            services_groups_deltas_by_delays = scaling_model.application_delay(self.services_group_delta)
+        return result.to_dict()
 
-            if self.node_group_delta.sign < 0:
-                # Adjusting params for the graceful scale down
-                if len(services_groups_deltas_by_delays) > 0:
-                    max_service_delay = max(list(services_groups_deltas_by_delays.keys()))
-                node_group_delta_virtual = self.node_group_delta.copy()
-            elif self.node_group_delta.sign > 0:
-                # Adjusting params for scale up
-                delay_from_nodes = node_group_delay
-                node_group_delta_virtual = node_group_delta.copy()
+    def _enforced_node_group_delta_timeline(self, delta_timestamp : pd.Timestamp,
+                                            delayed_node_group_delta : dict):
 
-            # Delta for nodes
-            new_timestamp = delta_timestamp + max_service_delay + node_group_delay
-            if not new_timestamp in new_deltas:
-                new_deltas[new_timestamp] = []
-            new_deltas[new_timestamp].append(GeneralizedDelta(node_group_delta, None))
+        result = Timeline()
+        new_timestamp = delta_timestamp + delayed_node_group_delta['delay']
+        result.append_at_timestamp(new_timestamp, GeneralizedDelta(delayed_node_group_delta['delta'], None))
 
-            # Deltas for services -- connecting them to the corresponding nodes
-            for delay, services_group_delta in services_groups_deltas_by_delays.items():
-                new_timestamp = delta_timestamp + delay + delay_from_nodes
-                if not new_timestamp in new_deltas:
-                    new_deltas[new_timestamp] = []
+        return result
 
-                node_group_delta_virtual.virtual = True
-                new_deltas[new_timestamp].append(GeneralizedDelta(node_group_delta_virtual, services_group_delta))
+    def _enforced_services_groups_deltas_timeline(self, delta_timestamp : pd.Timestamp,
+                                                  delayed_node_group_delta : dict,
+                                                  delayed_services_groups_deltas : list):
 
-        self.cached_enforcement[delta_timestamp] = new_deltas
+        node_group_delta_virtual = self._make_virtual(delayed_node_group_delta)
+        result = Timeline()
+        for delayed_services_group_delta in delayed_services_groups_deltas:
+            new_timestamp = delta_timestamp + delayed_services_group_delta['delay']
+            result.append_at_timestamp(new_timestamp,
+                                       GeneralizedDelta(node_group_delta_virtual, delayed_services_group_delta['delta']))
 
-        return new_deltas
+        return result
+
+    def _make_virtual(self, delayed_node_group_delta):
+
+        node_group_delta_virtual = None
+
+        if self.node_group_delta.sign < 0:
+            node_group_delta_virtual = self.node_group_delta.copy()
+        elif self.node_group_delta.sign > 0:
+            node_group_delta_virtual = delayed_node_group_delta['delta'].copy()
+
+        node_group_delta_virtual.virtual = True
+
+        return node_group_delta_virtual
+
+    def _delay_deltas(self, scaling_model):
+
+        node_group_delay, delayed_node_group_delta = scaling_model.platform_delay(self.node_group_delta)
+        services_groups_deltas_by_delays = scaling_model.application_delay(self.services_group_delta)
+
+        max_service_delay = pd.Timedelta(0, unit = 'ms')
+        delay_added_by_nodes_booting = pd.Timedelta(0, unit = 'ms')
+        if self.node_group_delta.sign < 0:
+            if len(services_groups_deltas_by_delays) > 0:
+                max_service_delay = max(list(services_groups_deltas_by_delays.keys()))
+        elif self.node_group_delta.sign > 0:
+            delay_added_by_nodes_booting = node_group_delay
+
+        delayed_node_groups_deltas = { 'delay': max_service_delay + node_group_delay,
+                                       'delta': delayed_node_group_delta }
+        delayed_services_groups_deltas = [ {'delay': delay + delay_added_by_nodes_booting, 'delta': delta} \
+                                            for delay, delta in services_groups_deltas_by_delays.items() ]
+
+        return (delayed_node_groups_deltas, delayed_services_groups_deltas)
+
+    @property
+    def is_full_delta(self):
+
+        return (not self.node_group_delta is None) and (not self.services_group_delta is None)
+
+    @property
+    def is_node_group_scale_down(self):
+
+        if self.node_group_delta is None:
+            return False
+
+        return not self.node_group_delta.virtual and self.node_group_delta.is_scale_down
 
     def __repr__(self):
 

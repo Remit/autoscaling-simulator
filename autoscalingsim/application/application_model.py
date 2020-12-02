@@ -157,8 +157,9 @@ class ApplicationModel:
         # Collect the utilization information from all the services
         for service_name, service in self.services.items():
             self._utilization[service_name] = service.check_out_system_resources_utilization()
-            self._desired_node_count = self.scaling_policy.compute_desired_node_count(simulation_start, simulation_step, simulation_end)
-            self._actual_node_count = self.scaling_policy.compute_desired_node_count(simulation_start, simulation_step, simulation_end)
+
+        self._desired_node_count = self.scaling_policy.compute_desired_node_count(simulation_start, simulation_step, simulation_end)
+        self._actual_node_count = self.scaling_policy.compute_actual_node_count(simulation_start, simulation_step, simulation_end)
 
     @property
     def utilization(self):

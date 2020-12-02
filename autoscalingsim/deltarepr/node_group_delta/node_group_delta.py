@@ -27,6 +27,13 @@ class NodeGroupDelta:
         # The aim of 'virtual' property is to keep the connection between the deltas after the enforcement.
         self.virtual = virtual
 
+    def __repr__(self):
+
+        return f'{self.__class__.__name__}( node_group = {self.node_group}, \
+                                            sign = {self.sign}, \
+                                            in_change = {self.in_change}, \
+                                            virtual = {self.virtual})'
+
     def copy(self):
 
         return self.__class__(self.node_group, self.sign, self.in_change, self.virtual)

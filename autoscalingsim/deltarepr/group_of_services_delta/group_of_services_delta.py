@@ -15,7 +15,7 @@ class GroupOfServicesDelta:
 
         self.deltas = { service_name : ServiceInstancesGroupDelta(service_name, aspects_vals, services_reqs[service_name]) \
                                         if service_name in services_reqs else ServiceInstancesGroupDeltaWildcard(service_name, aspects_vals) \
-                                        for service_name, aspects_vals in aspects_vals_per_entity.items() }
+                                        for service_name, aspects_vals in aspects_vals_per_entity.copy().items() }
 
         # Signifies whether the delta should be considered during the enforcing or not.
         # The aim of 'virtual' property is to keep the connection between the deltas after the enforcement.

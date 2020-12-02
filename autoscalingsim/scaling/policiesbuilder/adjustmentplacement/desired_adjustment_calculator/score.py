@@ -246,8 +246,9 @@ class PriceScore(Score):
     this score is computed by dividing 1 over the price.
     """
 
-    def __init__(self,
-                 price = float('Inf')):
+    def __init__(self, price_in = float('Inf')):
+
+        price = price_in if isinstance(price_in, numbers.Number) else price_in.value
 
         super().__init__(InvertingFunction(lambda price: 1 / price),
                          InvertingFunction(lambda score: 1 / score))

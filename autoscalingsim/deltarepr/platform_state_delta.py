@@ -10,7 +10,7 @@ class PlatformStateDelta:
     @classmethod
     def create_enforced_delta(cls, regional_deltas : dict = {}):
 
-        return cls(regional_deltas, True)
+        return cls(regional_deltas.copy(), True)
 
     def __init__(self, regional_deltas : dict = {}, is_enforced : bool = False):
 
@@ -29,7 +29,7 @@ class PlatformStateDelta:
                     raise TypeError(f'Expected RegionalDelta on initializing {self.__class__.__name__},\
                                     got {regional_delta.__class__.__name__}')
 
-            self.deltas_per_region = regional_deltas
+            self.deltas_per_region = regional_deltas.copy()
 
         else:
             raise TypeError(f'Unknown type of init argument for {self.__class__.__name__}: \
@@ -67,12 +67,6 @@ class PlatformStateDelta:
                 regionalized_ids[entity_name][region_name] = ids_for_removal
 
         return regionalized_ids
-
-    @property
-    def node_groups_ids_for_removal_without_services(self):
-
-        return { region_name : regional_delta.node_groups_ids_for_removal_without_services \
-                    for region_name, regional_delta in self.deltas_per_region.items() }
 
     def __add__(self, other_state_delta : 'PlatformStateDelta'):
 

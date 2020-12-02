@@ -9,7 +9,7 @@ class RegionalDelta:
     def __init__(self, region_name : str, generalized_deltas_lst : list = []):
 
         self.region_name = region_name
-        self.generalized_deltas = generalized_deltas_lst
+        self.generalized_deltas = generalized_deltas_lst.copy()
 
     def enforce(self, scaling_model : ScalingModel, delta_timestamp : pd.Timestamp):
 
@@ -50,17 +50,6 @@ class RegionalDelta:
 
         return ids_for_removal_per_service
 
-    @property # was _flat
-    def node_groups_ids_for_removal_without_services(self):
-
-        """
-        Provides a list of node groups ids that are clean from services,
-        and are scheduled for the scale down.
-        """
-
-        return [ gen_delta.node_group_delta.id for gen_delta in self.generalized_deltas \
-                    if gen_delta.is_node_group_scale_down]
-
     def __add__(self, other : 'RegionalDelta'):
 
         if not isinstance(other, RegionalDelta):
@@ -69,7 +58,7 @@ class RegionalDelta:
         if self.region_name != other.region_name:
             raise ValueError(f'An attempt to add the delta for region {other.region_name} to the delta for region {self.region_name}')
 
-        new_generalized_deltas = self.generalized_deltas
+        new_generalized_deltas = self.generalized_deltas.copy()
         new_generalized_deltas.extend(other.generalized_deltas)
 
         return RegionalDelta(self.region_name, new_generalized_deltas)

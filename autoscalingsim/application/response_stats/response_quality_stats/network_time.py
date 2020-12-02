@@ -2,6 +2,7 @@ import pandas as pd
 
 from autoscalingsim.load.request import Request
 from .response_quality_stats import ResponseQualityStats
+from autoscalingsim.utils.timeline import Timeline
 
 class NetworkTimeStats(ResponseQualityStats):
 

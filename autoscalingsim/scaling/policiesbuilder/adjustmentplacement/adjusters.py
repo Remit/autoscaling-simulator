@@ -146,14 +146,12 @@ class Adjuster(ABC):
 
                 # Comparing and selecting an alternative
                 chosen_state_delta = state_simple_addition_deltas if state_score_simple_addition.collapse() > state_score_substitution.collapse() else state_substitution_deltas
-
                 #for region_name, delta_per_region in chosen_state_delta:
                 #    print(delta_per_region)
                 #    print(region_name)
                 #    for gd in delta_per_region:
                 #        print(f'id: {gd.node_group_delta.node_group.id}')
                 #        print(f'count: {gd.node_group_delta.node_group.nodes_count}')
-
 
                 timeline_of_deltas.add_state_delta(ts_of_unmet_change, chosen_state_delta)
 

@@ -5,36 +5,14 @@ from abc import ABC, abstractmethod
 from autoscalingsim.load.request import Request
 from autoscalingsim.utils.timeline import Timeline
 
-def _mean_val(vals_lst : list):
-
-    return sum(vals_lst) / len(vals_lst) if len(vals_lst) > 0 else 0
-
-def _modify_untimed_stats_on_level(cur_result_level : dict, cur_source_level : dict):
-    for k, val in cur_source_level.items():
-        if isinstance(val, Timeline):
-            cur_result_level[k] = val.get_flattened()
-        else:
-            cur_result_level[k] = {}
-            _modify_untimed_stats_on_level(cur_result_level[k], val)
-
-def _extract_timeline_as_dict(cur_level : dict):
-
-    if isinstance(cur_level, Timeline):
-        return cur_level.to_dict()
-    else:
-        result = {}
-        for k, val in cur_level.items():
-            timeline_as_dict = _extract_timeline_as_dict(val)
-            for timestamp, val in timeline_as_dict.items():
-                if not timestamp in result:
-                    result[timestamp] = []
-                result[timestamp].extend(val)
-
-        return result
-
 class ResponseQualityStats(ABC):
 
     DEFAULT_REQUEST_TYPE = '*'
+
+    @abstractmethod
+    def add_request(self, cur_timestamp : pd.Timestamp, req : Request):
+
+        pass
 
     def __init__(self, requests_types):
 
@@ -45,7 +23,7 @@ class ResponseQualityStats(ABC):
         result = {}
         cur_result_level = result
         cur_source_level = self.metric_by_request
-        _modify_untimed_stats_on_level(cur_result_level, cur_source_level)
+        self._modify_untimed_stats_on_level(cur_result_level, cur_source_level)
 
         return result
 
@@ -58,13 +36,13 @@ class ResponseQualityStats(ABC):
         result_raw = {}
         for request_type in request_types_to_consider:
             cur_level = self.metric_by_request[request_type]
-            result_for_req_type = _extract_timeline_as_dict(cur_level)
+            result_for_req_type = self._extract_timeline_as_dict(cur_level)
             for ts, vals_lst in result_for_req_type.items():
                 if not ts in result_raw:
                     result_raw[ts] = []
                 result_raw[ts].extend(vals_lst)
 
-        result = { ts : _mean_val(vals_lst) for ts, vals_lst in result_raw.items() }
+        result = { ts : self._mean_val(vals_lst) for ts, vals_lst in result_raw.items() }
         return pd.DataFrame({ 'value': list(result.values()) }, index = pd.to_datetime(list(result.keys())))
 
     def _add_request_stats(self, cur_timestamp : pd.Timestamp, value : float, levels : list):
@@ -76,18 +54,39 @@ class ResponseQualityStats(ABC):
         """
 
         cur_level = self.metric_by_request
-        prev_level = None
-        for level in levels:
+        for level in levels[:-1]:
             if not level in cur_level:
                 cur_level[level] = {}
-            prev_level = cur_level
             cur_level = cur_level[level]
 
-        for k in prev_level.keys():
-            prev_level[k] = Timeline()
-            prev_level[k].append_at_timestamp(cur_timestamp, value)
+        if not isinstance(cur_level, Timeline):
+            cur_level[levels[-1]] = Timeline()
+        cur_level[levels[-1]].append_at_timestamp(cur_timestamp, value)
 
-    @abstractmethod
-    def add_request(self, cur_timestamp : pd.Timestamp, req : Request):
+    def _mean_val(self, vals_lst : list):
 
-        pass
+        return sum(vals_lst) / len(vals_lst) if len(vals_lst) > 0 else 0
+
+    def _modify_untimed_stats_on_level(self, cur_result_level : dict, cur_source_level : dict):
+
+        for k, val in cur_source_level.items():
+            if isinstance(val, Timeline):
+                cur_result_level[k] = val.get_flattened()
+            else:
+                cur_result_level[k] = {} if len(val) > 0 else []
+                self._modify_untimed_stats_on_level(cur_result_level[k], val)
+
+    def _extract_timeline_as_dict(self, cur_level : dict):
+
+        if isinstance(cur_level, Timeline):
+            return cur_level.to_dict()
+        else:
+            result = {}
+            for k, val in cur_level.items():
+                timeline_as_dict = self._extract_timeline_as_dict(val)
+                for timestamp, val in timeline_as_dict.items():
+                    if not timestamp in result:
+                        result[timestamp] = []
+                    result[timestamp].extend(val)
+
+            return result

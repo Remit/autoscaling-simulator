@@ -1,7 +1,9 @@
 import pandas as pd
 
 from autoscalingsim.load.request import Request
-from .response_quality_stats import *
+from .response_quality_stats.buffer_time import BufferTimeStats
+from .response_quality_stats.network_time import NetworkTimeStats
+from .response_quality_stats.response_time import ResponseTimeStats
 
 class ResponseStats:
 
@@ -11,10 +13,9 @@ class ResponseStats:
 
     def __init__(self, requests_types):
 
-        self.stats = {}
-        self.stats[self.__class__.KEY_RESPONSE_TIME] = ResponseTimeStats(requests_types)
-        self.stats[self.__class__.KEY_NETWORK_TIME] = NetworkTimeStats(requests_types)
-        self.stats[self.__class__.KEY_BUFFER_TIME] = BufferTimeStats(requests_types)
+        self.stats = { self.__class__.KEY_RESPONSE_TIME : ResponseTimeStats(requests_types),
+                       self.__class__.KEY_NETWORK_TIME : NetworkTimeStats(requests_types),
+                       self.__class__.KEY_BUFFER_TIME : BufferTimeStats(requests_types)}
 
     def add_request(self, cur_timestamp : pd.Timestamp, req : Request):
 
