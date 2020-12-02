@@ -36,7 +36,7 @@ class Timeline:
 
         self.timeline = { ts : vals for ts, vals in self.timeline.items() if ts >= cutting_point }
 
-    def between_beginning_exclusive(self, non_inc_begin : pd.Timestamp, inc_end : pd.Timestamp):
+    def between_with_beginning_excluded(self, non_inc_begin : pd.Timestamp, inc_end : pd.Timestamp):
 
         return { ts : vals for ts, vals in self.timeline.items() if (ts > non_inc_begin) and (ts <= inc_end) }
 
