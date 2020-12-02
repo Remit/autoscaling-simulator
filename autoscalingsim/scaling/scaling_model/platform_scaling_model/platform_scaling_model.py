@@ -27,8 +27,8 @@ class PlatformScalingModel:
         delay = pd.Timedelta(0, unit = 'ms')
         enforced_node_group_delta = None
         if node_group_delta.in_change:
-            provider = node_group_delta.get_provider()
-            node_type = node_group_delta.get_node_type()
+            provider = node_group_delta.provider
+            node_type = node_group_delta.node_type
             delay = self.platform_scaling_infos[provider].termination_duration_for_node(node_type) if node_group_delta.sign < 0 \
                 else self.platform_scaling_infos[provider].booting_duration_for_node(node_type)
             enforced_node_group_delta = node_group_delta.enforce()

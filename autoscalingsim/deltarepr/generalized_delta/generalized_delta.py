@@ -40,6 +40,7 @@ class GeneralizedDelta:
         This method caches the enforcement on first computation since
         it might get called by the till_full_enforcement method first.
         """
+        
         result = Timeline()
         result = self._cached_enforcement.get(delta_timestamp, Timeline())
         if delta_timestamp in self._cached_enforcement:
