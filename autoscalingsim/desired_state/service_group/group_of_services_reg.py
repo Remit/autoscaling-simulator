@@ -143,6 +143,6 @@ class GroupOfServicesRegionalizedDelta:
 
         return self.__class__(self.deltas)
 
-    def get_raw_scaling_aspects_changes(self):
+    def to_raw_scaling_aspects_changes(self):
 
-        return { region_name : region_delta.get_raw_scaling_aspects_changes() for region_name, region_delta in self.deltas.items() }
+        return { region_name : region_delta.to_raw_scaling_aspects_changes() for region_name, region_delta in self.deltas.items() }

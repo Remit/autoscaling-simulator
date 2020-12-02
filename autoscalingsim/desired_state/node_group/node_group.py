@@ -326,7 +326,7 @@ class HomogeneousNodeGroup(NodeGroup):
                 node_group_delta = n_grp_delta.NodeGroupDelta(self.copy(), sign = 1, in_change = False, virtual = True)
 
             # Planning scale down for all the services count change from the solution
-            services_group_delta = gos_delta.GroupOfServicesDelta(services_cnt_change_count, in_change = True, virtual = False,
+            services_group_delta = gos_delta.GroupOfServicesDelta(services_cnt_change_count, in_change = True,
                                                                   services_reqs = scaled_service_instance_requirements_by_service)
 
             gd = g_delta.GeneralizedDelta(node_group_delta, services_group_delta)

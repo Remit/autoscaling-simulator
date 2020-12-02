@@ -27,6 +27,15 @@ class ServiceInstancesGroupDeltaCommon(ABC):
 
         if 'count' in self.aspects_deltas: self.aspects_deltas['count'].sign = sign
 
+    @property
+    def is_empty(self):
+
+        for aspect_name, aspect_delta in self.aspects_deltas.items():
+            if aspect_delta.to_raw_change() != 0:
+                return False
+
+        return True
+
     def to_raw_change(self):
 
         return { aspect_name : aspect_delta.to_raw_change() for aspect_name, aspect_delta in self.aspects_deltas.items() }

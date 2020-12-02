@@ -35,7 +35,7 @@ class ApplicationScalingModel:
                 if not service_name in self.service_scaling_infos:
                     raise ValueError(f'No scaling information for service {service_name} found in {self.__class__.__name__}')
                 change_enforcement_delay = pd.Timedelta(0, unit = 'ms')
-                service_group_delta = services_group_delta.get_delta_for_service(service_name)
+                service_group_delta = services_group_delta.delta_for_service(service_name)
 
                 aspect_sign = service_group_delta.get_aspect_change_sign(self.service_scaling_infos[service_name].scaled_aspect_name)
                 if aspect_sign == -1:

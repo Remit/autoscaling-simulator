@@ -61,7 +61,7 @@ class AdjustmentPolicy:
 
             # Rolling subtraction
             services_state_delta_on_ts = desired_state_regionalized.to_delta() - prev_services_state.to_delta()
-            raw_scaling_aspects_changes = services_state_delta_on_ts.get_raw_scaling_aspects_changes()
+            raw_scaling_aspects_changes = services_state_delta_on_ts.to_raw_scaling_aspects_changes()
 
             for region_name, services_changes in raw_scaling_aspects_changes.items():
                 if not region_name in services_scaling_events:

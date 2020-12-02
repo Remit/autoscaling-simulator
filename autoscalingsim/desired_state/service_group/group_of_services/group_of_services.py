@@ -30,7 +30,7 @@ class GroupOfServices:
         if not isinstance(services_group_delta, GroupOfServicesDelta):
             raise TypeError(f'Unexpected type for coercion: {services_group_delta.__class__.__name__}')
 
-        for service_name, change_val in services_group_delta.to_services_raw_count_change().items():
+        for service_name, change_val in services_group_delta.to_raw_count_change().items():
             if not service_name in self.services_groups: return False
 
         return True
