@@ -122,9 +122,9 @@ class HomogeneousNodeGroup(NodeGroup):
 
         return self.utilization.get(service_name, resource_name, interval)
 
-    def get_processed_for_service(self, service_name : str):
+    def processed_for_service(self, service_name : str):
 
-        return self.shared_processor.get_processed_for_service(service_name)
+        return self.shared_processor.processed_for_service(service_name)
 
     def system_resources_to_take_from_requirements(self, res_reqs : ResourceRequirements):
 
@@ -133,7 +133,7 @@ class HomogeneousNodeGroup(NodeGroup):
     def system_resources_taken_by_requests(self, service_name : str,
                                            request_processing_infos : dict):
 
-        reqs_count_by_type = self.shared_processor.get_in_processing_stat(service_name)
+        reqs_count_by_type = self.shared_processor.in_processing_stat_for_service(service_name)
         sys_resources_usage_by_reqs = SystemResourceUsage(self.node_info, self.nodes_count)
         for request_type, request_count in reqs_count_by_type.items():
             res_usage = self.node_info.system_resources_to_take_from_requirements(request_processing_infos[request_type].resource_requirements) * request_count
@@ -144,7 +144,7 @@ class HomogeneousNodeGroup(NodeGroup):
     def system_resources_taken_by_all_requests(self, request_processing_infos : dict):
 
         joint_sys_resource_usage_by_reqs = SystemResourceUsage(self.node_info, self.nodes_count)
-        for service_name in self.shared_processor.get_services_ever_scheduled():
+        for service_name in self.shared_processor.services_ever_scheduled:
             joint_sys_resource_usage_by_reqs += self.system_resources_taken_by_requests(service_name, request_processing_infos)
 
         return joint_sys_resource_usage_by_reqs
@@ -173,7 +173,7 @@ class HomogeneousNodeGroup(NodeGroup):
 
         if (not system_resources_to_be_taken.is_full()) \
          and (self.services_state.get_service_count(req.processing_service) \
-               > sum( self.shared_processor.get_in_processing_stat(req.processing_service).values() ) ):
+               > sum( self.shared_processor.in_processing_stat_for_service(req.processing_service).values() ) ):
             return True
         else:
             return False

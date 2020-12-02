@@ -84,9 +84,10 @@ class Service(MetricSource):
 
         self.state.step(cur_timestamp, simulation_step)
 
-    def get_processed(self):
+    @property
+    def processed(self):
 
-        return self.state.get_processed()
+        return self.state.processed
 
     def check_out_system_resources_utilization(self):
 

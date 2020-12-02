@@ -48,9 +48,10 @@ class ServiceStateRegionalized:
 
         self.region_states[req.region_name].add_request(req, simulation_step)
 
-    def get_processed(self) -> list:
+    @property
+    def processed(self) -> list:
 
-        return [ req for service_state in self.region_states.values() for req in service_state.get_processed() ]
+        return [ req for service_state in self.region_states.values() for req in service_state.processed ]
 
     def step(self, cur_timestamp : pd.Timestamp, simulation_step : pd.Timedelta):
 

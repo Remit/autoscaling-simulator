@@ -123,9 +123,10 @@ class ServiceState:
 
         self.upstream_buf.put(req, simulation_step) if req.upstream else self.downstream_buf.put(req, simulation_step)
 
-    def get_processed(self):
+    @property
+    def processed(self):
 
-        return [ req for deployment in self.deployments.values() for req in deployment.get_processed_for_service() ]
+        return [ req for deployment in self.deployments.values() for req in deployment.processed_for_service() ]
 
     def step(self, cur_timestamp : pd.Timestamp, simulation_step : pd.Timedelta):
 

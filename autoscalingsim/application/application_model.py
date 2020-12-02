@@ -116,7 +116,7 @@ class ApplicationModel:
             service.step(cur_timestamp, simulation_step)
 
         for service_name, service in self.services.items():
-            processed_requests = service.get_processed()
+            processed_requests = service.processed
 
             while len(processed_requests) > 0:
                 req = processed_requests.pop()

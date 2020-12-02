@@ -48,9 +48,9 @@ class Deployment:
 
         self.node_group.start_processing(req)
 
-    def get_processed_for_service(self):
+    def processed_for_service(self):
 
-        return self.node_group.get_processed_for_service(self.service_name)
+        return self.node_group.processed_for_service(self.service_name)
 
     def system_resources_reserved(self):
 
