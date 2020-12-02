@@ -94,7 +94,7 @@ class ServiceInstancesGroup:
         division_results = []
         for aspect_name, aspect_value in self.scaling_aspects.items():
             if aspect_name in other.scaling_aspects:
-                division_results.append((aspect_value // other.scaling_aspects[aspect_name]).get_value())
+                division_results.append((aspect_value // other.scaling_aspects[aspect_name]).value)
 
         return division_results
 

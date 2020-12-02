@@ -60,9 +60,9 @@ class Count(ScalingAspect):
     def _add(self, other, direction : int):
 
         if isinstance(other, self.__class__):
-            return Count(self.value + direction * other.get_value())
+            return Count(self.value + direction * other.value)
         elif isinstance(other, ScalingAspectDelta):
-            if not isinstance(self, other.get_aspect_type()):
+            if not isinstance(self, other.aspect_type):
                 raise ValueError(f'An attempt to combine different scaling aspects: {self.__class__.__name__} and {other.get_aspect_type().__name__}')
 
             return Count(self.value + direction * other.to_raw_change())

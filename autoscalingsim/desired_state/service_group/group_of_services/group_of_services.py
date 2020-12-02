@@ -42,7 +42,7 @@ class GroupOfServices:
 
     def get_services_counts(self) -> dict:
 
-        return { service_name : group.get_aspect_value('count').get_value() for service_name, group in self.services_groups.items() }
+        return { service_name : group.get_aspect_value('count').value for service_name, group in self.services_groups.items() }
 
     def get_services(self) -> list:
 
@@ -147,7 +147,7 @@ class GroupOfServices:
     # was extract_aspect_value
     def get_raw_aspect_value_for_every_service(self, aspect_name : str):
 
-        return { service_name : service_group.get_aspect_value(aspect_name).get_value() for service_name, service_group in self.services_groups.items() }
+        return { service_name : service_group.get_aspect_value(aspect_name).value for service_name, service_group in self.services_groups.items() }
 
     # was get_aspect_value
     def get_aspect_value_for_service(self, service_name : str, aspect_name : str):
@@ -156,7 +156,7 @@ class GroupOfServices:
 
     def get_service_count(self, service_name : str):
 
-        return self.get_aspect_value_for_service(service_name, 'count').get_value()
+        return self.get_aspect_value_for_service(service_name, 'count').value
 
     def get_service_resource_requirements(self, service_name : str):
 

@@ -325,4 +325,4 @@ class ServiceState:
 
     def _count_service_instances(self):
 
-        return sum([ deployment.get_aspect_value('count').get_value() for deployment in self.deployments.values() ])
+        return sum([ deployment.get_aspect_value('count').value for deployment in self.deployments.values() ])

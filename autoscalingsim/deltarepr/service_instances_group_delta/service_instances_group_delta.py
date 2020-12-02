@@ -98,7 +98,7 @@ class ServiceInstancesGroupDelta(ServiceInstancesGroupDeltaCommon):
             raise TypeError(f'The provided argument is not of ServiceInstancesGroup type: {service_group.__class__.__name__}')
 
         return cls(service_group.service_name,
-                   { aspect_name : sign * aspect_value.get_value() for aspect_name, aspect_value in service_group.scaling_aspects.items() },
+                   { aspect_name : sign * aspect_value.value for aspect_name, aspect_value in service_group.scaling_aspects.items() },
                    service_group.service_resource_reqs)
 
     def __init__(self, service_name : str, aspects_vals : dict, service_resource_reqs : ResourceRequirements):

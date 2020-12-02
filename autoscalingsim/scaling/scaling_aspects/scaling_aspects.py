@@ -53,15 +53,16 @@ class ScalingAspect(ABC):
     def __init__(self, name : str, value : numbers.Number, minval : numbers.Number):
 
         self.name = name
-        self.value = max(value, minval)
+        self._value = max(value, minval)
 
     def copy(self):
 
-        return self.__class__.get(self.name)(self.value)
+        return self.__class__.get(self.name)(self._value)
 
-    def get_value(self):
+    @property
+    def value(self):
 
-        return self.value
+        return self._value
 
     def __gt__(self, other):
 
@@ -91,7 +92,7 @@ class ScalingAspect(ABC):
 
         if isinstance(other, ScalingAspect):
             if self.name == other.name:
-                return comp_op(self.value, other.value)
+                return comp_op(self._value, other.value)
             else:
                 raise ValueError(f'An attempt to compare different scaling aspects: {self.name} and {other.name}')
         elif isinstance(other, numbers.Number):
