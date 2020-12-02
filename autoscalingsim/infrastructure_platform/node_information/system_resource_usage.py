@@ -80,6 +80,7 @@ class SystemResourceUsage:
                         for res_name, res_usage in self.system_resources_usage.items() \
                         if other_res_name == res_name])
 
+    @property
     def is_full(self):
 
         """ Checks whether the system resources are exhausted """
@@ -90,6 +91,7 @@ class SystemResourceUsage:
 
         return False
 
+    @property
     def is_zero(self):
 
         """ Checks whether at least something takes system resources """

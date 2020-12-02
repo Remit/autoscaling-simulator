@@ -76,8 +76,8 @@ class HomogeneousNodeGroup(NodeGroup):
 
         self.node_info = node_info
         self._utilization = NodeGroupUtilization()
-        self.uplink = NodeGroupLink(self.node_info.latency, self.nodes_count, self.node_info.network_bandwidth)
-        self.downlink = NodeGroupLink(self.node_info.latency, self.nodes_count, self.node_info.network_bandwidth)
+        self.uplink = NodeGroupLink(self.node_info, self.nodes_count)
+        self.downlink = NodeGroupLink(self.node_info, self.nodes_count)
         self.shared_processor = RequestsProcessor()
 
         if services_instances_counts is None:
@@ -103,25 +103,17 @@ class HomogeneousNodeGroup(NodeGroup):
 
         self.shared_processor.start_processing(req)
 
-    def shrink(self, other_node_group : NodeGroup):
+    def shrink(self, other : NodeGroup):
 
-        """
-        This scale down operation results in reducing the nodes count
-        in the group and may also affect the services state.
-        """
+        if self.is_compatible_with(other):
 
-        if not isinstance(other_node_group, NodeGroup):
-            raise TypeError(f'An attempt to subtract unrecognized type from the {self.__class__.__name__}: {other_node_group.__class__.__name__}')
-
-        if self.is_compatible_with(other_node_group):
-
-            if not other_node_group.services_state is None:
-                self.services_state -= other_node_group.services_state
+            if not other.services_state is None:
+                self.services_state -= other.services_state
             else:
-                downsizing_coef = other_node_group.nodes_count / self.nodes_count
+                downsizing_coef = other.nodes_count / self.nodes_count
                 self.services_state.downsize_proportionally(downsizing_coef)
 
-            self.nodes_count -= other_node_group.nodes_count
+            self.nodes_count -= other.nodes_count
             _, self.system_resources_usage = self.node_info.services_require_system_resources(self.services_state, self.nodes_count)
             self.uplink.update_bandwidth(self.nodes_count)
             self.downlink.update_bandwidth(self.nodes_count)
@@ -129,8 +121,7 @@ class HomogeneousNodeGroup(NodeGroup):
     def can_schedule_request(self, req : Request, request_processing_infos : dict):
 
         """
-        Checks whether a new request can be scheduled. A new request can be
-        scheduled if 1) there are enough free system resources available in the
+        A new request can be scheduled if 1) there are enough free system resources available in the
         node group, and 2) there is at least one service instances available to
         take on the new request.
         """
@@ -140,12 +131,12 @@ class HomogeneousNodeGroup(NodeGroup):
                                         + self.system_resources_usage \
                                         + system_resources_for_req
 
-        if (not system_resources_to_be_taken.is_full()) \
-         and (self.services_state.instances_count_for_service(req.processing_service) \
-               > sum( self.shared_processor.in_processing_stat_for_service(req.processing_service).values() ) ):
-            return True
-        else:
-            return False
+        return not system_resources_to_be_taken.is_full and self._has_enough_free_service_instances(req)
+
+    def _has_enough_free_service_instances(self, req : Request):
+
+        return self.services_state.instances_count_for_service(req.processing_service) \
+                > sum( self.shared_processor.in_processing_stat_for_service(req.processing_service).values() )
 
     def system_resources_to_take_from_requirements(self, res_reqs : ResourceRequirements):
 
@@ -176,6 +167,10 @@ class HomogeneousNodeGroup(NodeGroup):
 
         self.services_state = gos.GroupOfServices()
         self.system_resources_usage = SystemResourceUsage(self.node_info, self.nodes_count)
+
+    # class NodeGroupSoftAdjuster:
+
+
 
     def compute_soft_adjustment(self,
                                 scaled_service_adjustment_in_aspects : dict,
@@ -257,15 +252,15 @@ class HomogeneousNodeGroup(NodeGroup):
                 if not service_name in services_cnt_change:
                     services_cnt_change[service_name] = 0
 
-                if not node_sys_resource_usage.is_full() and unmet_changes[service_name] > 0:
+                if not node_sys_resource_usage.is_full and unmet_changes[service_name] > 0:
                     #print("********************")
-                    while (unmet_changes[service_name] - services_cnt_change[service_name] > 0) and not node_sys_resource_usage.is_full():
+                    while (unmet_changes[service_name] - services_cnt_change[service_name] > 0) and not node_sys_resource_usage.is_full:
                         #print(f'Before: {node_sys_resource_usage}')
                         node_sys_resource_usage += service_instance_resource_usage
                         #print(f'After: {node_sys_resource_usage}')
                         services_cnt_change[service_name] += 1
 
-                    if node_sys_resource_usage.is_full():
+                    if node_sys_resource_usage.is_full:
                         node_sys_resource_usage -= service_instance_resource_usage
                         services_cnt_change[service_name] -= 1
 

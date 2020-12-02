@@ -1,5 +1,7 @@
 import pandas as pd
 
+from .node_information.node import NodeInfo
+
 from autoscalingsim.load.request import Request
 from autoscalingsim.utils.size import Size
 
@@ -37,12 +39,11 @@ class NodeGroupLink:
     """
 
     def __init__(self,
-                 latency : pd.Timedelta,
-                 count_of_nodes_in_group : int,
-                 single_link_network_bandwidth : Size):
+                 node_info : NodeInfo,
+                 count_of_nodes_in_group : int):
 
-        self.latency = latency
-        self.single_link_network_bandwidth = single_link_network_bandwidth
+        self.latency = node_info.latency
+        self.single_link_network_bandwidth = node_info.network_bandwidth
         self.request_processing_infos = None
 
         self.bandwidth = self.single_link_network_bandwidth * count_of_nodes_in_group

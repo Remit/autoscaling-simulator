@@ -236,11 +236,11 @@ class Placer:
                     service_instances_count = 0
 
                     for service_name_to_consider, system_resources_to_consider in further_node_system_resources_taken.items():
-                        while not cumulative_system_resources.is_full():
+                        while not cumulative_system_resources.is_full:
                             cumulative_system_resources += system_resources_to_consider
                             service_instances_count += 1
 
-                        if cumulative_system_resources.is_full():
+                        if cumulative_system_resources.is_full:
                             cumulative_system_resources -= system_resources_to_consider
                             service_instances_count -= 1
 
@@ -314,11 +314,11 @@ class Placer:
                         cumulative_system_resources = cap_taken
                         service_instances_count = 1
 
-                        while not cumulative_system_resources.is_full():
+                        while not cumulative_system_resources.is_full:
                             cumulative_system_resources += cap_taken
                             service_instances_count += 1
 
-                        if cumulative_system_resources.is_full():
+                        if cumulative_system_resources.is_full:
                             cumulative_system_resources -= cap_taken
                             service_instances_count -= 1
 

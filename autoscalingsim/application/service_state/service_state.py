@@ -147,10 +147,10 @@ class ServiceState:
             for deployment in self.deployments.values():
                 if not deployment.node_group.id in self.unschedulable:
                     time_budget = min(time_budget, deployment.step(time_budget))
-                    deployment_capacity_taken = deployment.system_resources_reserved() \
+                    deployment_resources_taken = deployment.system_resources_reserved() \
                                                  + deployment.system_resources_taken_by_all_requests()
 
-                    if not deployment_capacity_taken.is_full():
+                    if not deployment_resources_taken.is_full:
 
                         while time_budget > pd.Timedelta(0, unit = 'ms'):
                             advancing = True
@@ -198,9 +198,9 @@ class ServiceState:
 
                 # Service instances deployments
                 for deployment in self.deployments.values():
-                    deployment_capacity_taken = deployment.system_resources_reserved() \
+                    deployment_resources_taken = deployment.system_resources_reserved() \
                                                  + deployment.system_resources_taken_by_requests()
-                    deployment.update_utilization(deployment_capacity_taken, cur_timestamp, self.averaging_interval)
+                    deployment.update_utilization(deployment_resources_taken, cur_timestamp, self.averaging_interval)
 
     def prepare_group_for_removal(self, node_group_id : int):
 
