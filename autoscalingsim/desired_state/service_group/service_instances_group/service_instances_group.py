@@ -8,32 +8,21 @@ from autoscalingsim.utils.requirements import ResourceRequirements
 
 class ServiceInstancesGroup:
 
-    """ A primitive that represents a group of instances of the same service  """
-
     def __init__(self, service_name : str, service_resource_reqs : ResourceRequirements,
-                 aspects_vals = {'count': 1}):
+                 aspects_vals : dict = None):
 
         self.service_name = service_name
-        self.scaling_aspects = {}
-
-        if not isinstance(service_resource_reqs, ResourceRequirements):
-            raise TypeError(f'Unexpected type for the service resource requirements: {service_resource_reqs.__class__.__name__}')
         self.service_resource_reqs = service_resource_reqs
+        self.scaling_aspects = collections.defaultdict(ScalingAspect)
 
-        if isinstance(aspects_vals, collections.Mapping):
-            for aspect_name, aspect_value in aspects_vals.items():
-                if isinstance(aspect_value, ScalingAspect):
-                    self.scaling_aspects[aspect_name] = aspect_value
-                elif isinstance(aspect_value, numbers.Number):
-                    self.scaling_aspects[aspect_name] = ScalingAspect.get(aspect_name)(aspect_value)
-                else:
-                    raise TypeError(f'Unexpected type of scaling aspects values to initialize {self.__class__.__name__}')
-        else:
-            raise TypeError(f'Unexpected type of scaling aspects dictionary to initialize {self.__class__.__name__}')
+        aspects_vals_raw = { 'count' : 1 } if aspects_vals is None else aspects_vals
 
-    def downsize_proportionally(self, downsizing_coef : float):
+        for aspect_name, aspect_value in aspects_vals_raw.items():
+            if isinstance(aspect_value, ScalingAspect):
+                self.scaling_aspects[aspect_name] = aspect_value
 
-        self.scaling_aspects['count'] *= (1 - downsizing_coef)
+            elif isinstance(aspect_value, numbers.Number):
+                self.scaling_aspects[aspect_name] = ScalingAspect.get(aspect_name)(aspect_value)
 
     def __add__(self, other):
 
@@ -43,18 +32,15 @@ class ServiceInstancesGroup:
 
         return self._add(other, -1)
 
-    def _add(self, other_group_or_delta, sign : int):
+    def _add(self, other, sign : int):
 
         to_add = None
-        if isinstance(other_group_or_delta, ServiceInstancesGroup):
-            to_add = other_group_or_delta.scaling_aspects
-        elif isinstance(other_group_or_delta, ServiceInstancesGroupDeltaCommon):
-            to_add = other_group_or_delta.aspects_deltas
-        else:
-            raise TypeError(f'Incorrect type of operand to combine with {self.__class__.__name__}: {other_group_or_delta.__class__.__name__}')
 
-        if self.service_name != other_group_or_delta.service_name:
-            raise ValueError(f'Non-matching names of services to combine: {self.service_name} and {other_group_or_delta.service_name}')
+        if isinstance(other, ServiceInstancesGroup):
+            to_add = other.scaling_aspects
+
+        elif isinstance(other, ServiceInstancesGroupDeltaCommon):
+            to_add = other.aspects_deltas
 
         new_group = self.copy()
         for aspect_name in to_add:
@@ -64,8 +50,7 @@ class ServiceInstancesGroup:
                 elif sign == 1:
                     new_group.scaling_aspects[aspect_name] += to_add[aspect_name]
             elif sign == 1:
-                new_group.scaling_aspects[aspect_name] = ScalingAspect.get(aspect_name)()
-                new_group.scaling_aspects[aspect_name] += to_add[aspect_name]
+                new_group.scaling_aspects[aspect_name] = ScalingAspect.get(aspect_name)() + to_add[aspect_name]
 
         return new_group
 
@@ -113,23 +98,26 @@ class ServiceInstancesGroup:
 
         return self.__class__(self.service_name, new_aspects)
 
-    def is_empty(self):
+    def downsize_proportionally(self, downsizing_coef : float):
 
-        return (self.scaling_aspects['count'] == ScalingAspect.get('count')(0))
+        self.scaling_aspects['count'] *= (1 - downsizing_coef)
 
     def update_aspect(self, aspect : ScalingAspect):
-
-        if not aspect.name in self.scaling_aspects:
-            raise ValueError(f'Unexpected aspect for an update: {aspect.name}')
 
         self.scaling_aspects[aspect.name] = aspect
 
     def aspect_value(self, aspect_name : str):
 
-        if not aspect_name in self.scaling_aspects:
-            raise ValueError(f'Unexpected aspect to get: {aspect_name}')
-
         return self.scaling_aspects[aspect_name].copy()
+
+    def to_delta(self, direction = 1):
+
+        return ServiceInstancesGroupDelta.from_group(self, direction)
+
+    @property
+    def is_empty(self):
+
+        return self.scaling_aspects['count'] == ScalingAspect.get('count')(0)
 
     @property
     def resource_requirements(self):
@@ -138,15 +126,10 @@ class ServiceInstancesGroup:
 
     def copy(self):
 
-        return self.__class__(self.service_name, self.service_resource_reqs,
-                              self.scaling_aspects.copy())
+        return self.__class__(self.service_name, self.service_resource_reqs, self.scaling_aspects.copy())
 
     def __repr__(self):
 
         return f'{self.__class__.__name__}(service_name = {self.service_name}, \
                                            service_resource_reqs = {self.service_resource_reqs}, \
                                            aspects_vals = {self.scaling_aspects})'
-
-    def to_delta(self, direction = 1):
-
-        return ServiceInstancesGroupDelta.from_group(self, direction)

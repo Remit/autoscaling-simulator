@@ -238,11 +238,6 @@ class HomogeneousNodeGroup(NodeGroup):
 
         return self.shared_processor.processed_for_service(service_name)
 
-    @property
-    def is_empty(self):
-
-        return self.nodes_count == 0
-
     def add_to_services_state(self, services_group_delta : 'GroupOfServicesDelta'):
 
         self.services_state += services_group_delta
@@ -267,6 +262,11 @@ class HomogeneousNodeGroup(NodeGroup):
     def to_services_placement(self):
 
         return ServicesPlacement(self.node_info, self.nodes_count, self.services_state)
+
+    @property
+    def is_empty(self):
+
+        return self.nodes_count == 0
 
     def copy(self):
 
