@@ -20,12 +20,8 @@ class HomogeneousNodeGroupSet:
 
         if isinstance(node_groups, collections.Mapping):
             self._node_groups = node_groups
-
         else:
-            self._node_groups = dict()
-            if not node_groups is None:
-                for group in node_groups:
-                    self._node_groups[group.id] = group
+            self._node_groups = dict() if node_groups is None else { group.id : group for group in node_groups }
 
         self._in_change_node_groups = dict() if node_groups_in_change is None else node_groups_in_change
         self.removed_node_group_ids = list()
