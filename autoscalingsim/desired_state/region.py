@@ -11,42 +11,21 @@ from autoscalingsim.desired_state.service_group.group_of_services import GroupOf
 
 class Region:
 
-    """
-    Encapsulates node groups belonging to the same region/ availability zone.
-    If there is just a single region, then it should be marked with the 'default' name.
-    """
+    """ Node groups belonging to the same region/ availability zone """
 
     @classmethod
     def from_conf(cls : type, region_name : str, placement : Placement):
 
-        """
-        Alternative Region initialization. Useful for creation of the temporary
-        platform state when computing the rolling adjustments.
-        """
-
         return cls(region_name, HomogeneousNodeGroupSet.from_conf(placement))
 
-    def __init__(self, region_name : str, homogeneous_groups_and_deltas : list = []):
+    def __init__(self, region_name : str, groups : list = None):
 
         self.region_name = region_name
-        if isinstance(homogeneous_groups_and_deltas, HomogeneousNodeGroupSet):
-            self.homogeneous_groups = homogeneous_groups_and_deltas
+
+        if isinstance(groups, HomogeneousNodeGroupSet):
+            self.homogeneous_groups = groups
         else:
-            self.homogeneous_groups = HomogeneousNodeGroupSet()
-
-            for group_or_delta in homogeneous_groups_and_deltas:
-                group_delta = None
-                if isinstance(group_or_delta, HomogeneousNodeGroup):
-                    group_delta = NodeGroupDelta(group)
-                elif isinstance(group_or_delta, NodeGroupDelta):
-                    group_delta = group_or_delta
-                else:
-                    raise TypeError(f'Unexpected type on {group_or_delta.__class__.__name__} initialization')
-
-                if not group_delta is None:
-                    generalized_delta = GeneralizedDelta(group_delta, None)
-                    regional_delta = RegionalDelta(region_name, [generalized_delta])
-                    self.homogeneous_groups += regional_delta
+            self.homogeneous_groups = HomogeneousNodeGroupSet() if groups is None else HomogeneousNodeGroupSet(groups)
 
     def extract_compensating_deltas(self):
 
@@ -210,4 +189,4 @@ class Region:
     def __repr__(self):
 
         return f'{self.__class__.__name__}( region_name = {self.region_name}, \
-                                            homogeneous_groups_and_deltas = {self.homogeneous_groups})'
+                                            groups_and_deltas = {self.homogeneous_groups})'
