@@ -264,6 +264,10 @@ class HomogeneousNodeGroup(NodeGroup):
 
         return g_delta.GeneralizedDelta(node_group_delta, self.services_state.to_delta(direction))
 
+    def to_services_placement(self):
+
+        return ServicesPlacement(self.node_info, self.nodes_count, self.services_state)
+
     def copy(self):
 
         return self.__class__(self.node_info, self.nodes_count, self.services_state)

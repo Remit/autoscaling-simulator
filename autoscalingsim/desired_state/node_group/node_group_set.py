@@ -31,15 +31,14 @@ class HomogeneousNodeGroupSet:
         self.removed_node_group_ids = list()
         self.failures_compensating_deltas = list()
 
-    def to_placement(self):
+    def remove_group_by_id(self, id_to_remove):
 
-        services_placements = []
-        for group in self._node_groups.values():
-            services_placements.append(ServicesPlacement(group.node_info,
-                                                         group.nodes_count,
-                                                         group.services_state))
+        if id_to_remove in self._node_groups:
+            del self._node_groups[id_to_remove]
 
-        return Placement(services_placements)
+    def add_group(self, group_to_add):
+
+        self._node_groups[group_to_add.id] = group_to_add
 
     def __add__(self, regional_delta : RegionalDelta):
 
@@ -150,12 +149,6 @@ class HomogeneousNodeGroupSet:
 
         return self.__class__(self._node_groups.copy(), self._in_change_node_groups.copy())
 
-
-
-    def __iter__(self):
-
-        return HomogeneousNodeGroupSetIterator(self)
-
     def to_deltas(self):
 
         """ Converts owned node groups to their generalized deltas representation """
@@ -169,19 +162,18 @@ class HomogeneousNodeGroupSet:
 
         return generalized_deltas_lst
 
-    def remove_group_by_id(self, id_to_remove):
+    def to_placement(self):
 
-        if id_to_remove in self._node_groups:
-            del self._node_groups[id_to_remove]
-
-    def add_group(self, group_to_add):
-
-        self._node_groups[group_to_add.id] = group_to_add
+        return Placement( [ group.to_services_placement() for group in self._node_groups.values() ] )
 
     @property
     def enforced(self):
 
         return list(self._node_groups.values())
+
+    def __iter__(self):
+
+        return HomogeneousNodeGroupSetIterator(self)
 
     def __repr__(self):
 
