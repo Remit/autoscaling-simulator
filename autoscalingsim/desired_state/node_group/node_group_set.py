@@ -156,10 +156,7 @@ class HomogeneousNodeGroupSet:
 
         return self.__class__(self._homogeneous_groups.copy(), self._in_change_homogeneous_groups.copy())
 
-    def __repr__(self):
 
-        return f'{self.__class__.__name__}(homogeneous_groups = {self._homogeneous_groups},\
-                                           homogeneous_groups_in_change = {self._in_change_homogeneous_groups})'
 
     def __iter__(self):
 
@@ -178,10 +175,6 @@ class HomogeneousNodeGroupSet:
 
         return generalized_deltas_lst
 
-    def get(self):
-
-        return list(self._homogeneous_groups.values())
-
     def remove_group_by_id(self, id_to_remove):
 
         if id_to_remove in self._homogeneous_groups:
@@ -190,6 +183,16 @@ class HomogeneousNodeGroupSet:
     def add_group(self, group_to_add):
 
         self._homogeneous_groups[group_to_add.id] = group_to_add
+
+    @property
+    def enforced(self):
+
+        return list(self._homogeneous_groups.values())
+
+    def __repr__(self):
+
+        return f'{self.__class__.__name__}(homogeneous_groups = {self._homogeneous_groups},\
+                                           homogeneous_groups_in_change = {self._in_change_homogeneous_groups})'
 
 class HomogeneousNodeGroupSetIterator:
 

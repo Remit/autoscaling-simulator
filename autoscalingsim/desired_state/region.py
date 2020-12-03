@@ -114,7 +114,7 @@ class Region:
         # try to remove the services from the groups sorted
         # in the order increasing by capacity used (decomission-fastest)
         new_deltas_per_ts = []
-        cur_groups = self.homogeneous_groups.get()
+        cur_groups = self.homogeneous_groups.enforced
         homogeneous_groups_sorted_increasing = sorted(cur_groups, key = lambda elem: elem.system_resources_usage.collapse())
 
         for group in homogeneous_groups_sorted_increasing:
