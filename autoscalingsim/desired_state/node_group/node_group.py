@@ -14,6 +14,7 @@ from autoscalingsim.infrastructure_platform.link import NodeGroupLink
 from autoscalingsim.infrastructure_platform.node_group_utilization import NodeGroupUtilization
 from autoscalingsim.load.request import Request
 from autoscalingsim.utils.requirements import ResourceRequirements
+from autoscalingsim.desired_state.placement import ServicesPlacement
 
 class NodeGroup(ABC):
 
@@ -66,6 +67,11 @@ class HomogeneousNodeGroup(NodeGroup):
         system_requirements = ErrorChecker.key_check_and_load('system_requirements', group_conf, self.__class__.__name__)
 
         return cls(node_info, nodes_count, services_instances_counts, system_requirements)
+
+    @classmethod
+    def from_services_placement(cls, services_placement : ServicesPlacement):
+
+        return cls(services_placement.node_info, services_placement.nodes_count, services_placement.services_state)
 
     def __init__(self, node_info : NodeInfo, nodes_count : int,
                  services_instances_counts : dict = None,

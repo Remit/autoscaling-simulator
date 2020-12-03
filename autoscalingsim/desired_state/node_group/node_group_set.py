@@ -12,13 +12,7 @@ class HomogeneousNodeGroupSet:
     @classmethod
     def from_conf(cls : type, placement : Placement):
 
-        homogeneous_groups = []
-        for service_placement in placement:
-            homogeneous_groups.append(HomogeneousNodeGroup(service_placement.node_info,
-                                                           service_placement.nodes_count,
-                                                           service_placement.services_state))
-
-        return cls(homogeneous_groups)
+        return cls( [ HomogeneousNodeGroup.from_services_placement(services_placement) for services_placement in placement ] )
 
     def __init__(self,
                  homogeneous_groups = [],
