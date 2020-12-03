@@ -1,38 +1,61 @@
-class Sum:
+from abc import ABC, abstractmethod
 
-    """
-    Produces the sum of the states provided to it.
-    """
+class StatesAggregator(ABC):
 
-    @staticmethod
-    def aggregate(states_list : list,
-                  conf : dict = {}):
+    _Registry = {}
+
+    @classmethod
+    def register(cls, name : str):
+
+        def decorator(states_aggregator_cls):
+            cls._Registry[name] = states_aggregator_cls
+            return states_aggregator_cls
+
+        return decorator
+
+    @classmethod
+    def get(cls, name : str):
+
+        if not name in cls._Registry:
+            raise ValueError(f'An attempt to use a non-existent aggregator class {name}')
+
+        return cls._Registry[name]
+
+    @abstractmethod
+    def aggregate(states_list : list, conf : dict = None):
+
+        pass
+
+@StatesAggregator.register('sum')
+class SumStatesAggregator(StatesAggregator):
+
+    """ Sums the states provided to it """
+
+    def aggregate(self, states_list : list, conf : dict = None):
 
         aggregated_val = None
         if len(states_list) > 0:
-            res_class = states_list[0].__class__
-            aggregated_val = res_class()
+            aggregated_val = states_list[0].__class__()
 
             for state in states_list:
                 aggregated_val += state
 
         return aggregated_val
 
-class Max:
+@StatesAggregator.register('max')
+class MaxStatesAggregator(StatesAggregator):
 
-    """
-    Select the max state.
-    """
+    """ Selects the state with the highest countable representation """
 
-    @staticmethod
-    def aggregate(states_list : list,
-                  conf : dict = {}):
+    def aggregate(self, states_list : list, conf : dict = None):
 
         selected_state = None
-
         last_max_val = 0
+
         for state in states_list:
-            regionalized_repr = state.countable_representation(conf)
+            config_for_counting = {} if conf is None else conf
+            regionalized_repr = state.countable_representation(config_for_counting)
+
             for reg_repr in regionalized_repr.values():
                 repr_val = sum(list(reg_repr.values()))
                 if repr_val > last_max_val:
@@ -41,21 +64,20 @@ class Max:
 
         return selected_state
 
-class Min:
+@StatesAggregator.register('min')
+class MinStatesAggregator(StatesAggregator):
 
-    """
-    Select the max state.
-    """
+    """ Selects the state with the smallest countable representation """
 
-    @staticmethod
-    def aggregate(states_list : list,
-                  conf : dict = {}):
+    def aggregate(self, states_list : list, conf : dict = {}):
 
         selected_state = None
-
         last_min_val = float('Inf')
+
         for state in states_list:
-            regionalized_repr = state.countable_representation(conf)
+            config_for_counting = {} if conf is None else conf
+            regionalized_repr = state.countable_representation(config_for_counting)
+
             for reg_repr in regionalized_repr.values():
                 repr_val = sum(list(reg_repr.values()))
                 if repr_val < last_min_val:
@@ -63,23 +85,3 @@ class Min:
                     selected_state = state
 
         return selected_state
-
-class Registry:
-
-    """
-    Stores the states aggregation rules classes and organizes access to them.
-    """
-
-    registry = {
-        'sum': Sum,
-        'max': Max,
-        'min': Min
-    }
-
-    @staticmethod
-    def get(name : str):
-
-        if not name in Registry.registry:
-            raise ValueError(f'An attempt to use a non-existent aggregation for states {name}')
-
-        return Registry.registry[name]

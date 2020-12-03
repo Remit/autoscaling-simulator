@@ -3,7 +3,7 @@ import numpy as np
 
 from abc import ABC, abstractmethod
 
-from autoscalingsim.desired_state import aggregators
+from autoscalingsim.desired_state.aggregators import StatesAggregator
 
 class ScalingEffectAggregationRule(ABC):
 
@@ -111,7 +111,7 @@ class ParallelScalingEffectAggregationRule(ScalingEffectAggregationRule):
                  aggregation_op_name : str):
 
         super().__init__(metrics_by_priority, scaled_aspect_name)
-        self.aggregation_op = aggregators.Registry.get(aggregation_op_name)
+        self.aggregation_op = StatesAggregator.get(aggregation_op_name)()
 
     def __call__(self):
 
