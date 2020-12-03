@@ -3,18 +3,7 @@ from autoscalingsim.infrastructure_platform.node_information.system_resource_usa
 
 class InNodePlacement:
 
-    """
-    Wraps the working information about the in-node placement. In case of nodes,
-    it will be an in-node placement of services.
-
-    Specifies:
-        node type
-        capacity taken
-        scaled services and their instance counts that can fit into this placement
-    """
-
-    def __init__(self,
-                 node_info : 'NodeInfo',
+    def __init__(self, node_info : 'NodeInfo',
                  system_resource_usage : SystemResourceUsage,
                  placed_services : GroupOfServices):
 
@@ -30,14 +19,9 @@ class InNodePlacement:
 
 class ServicesPlacement:
 
-    """
-    The smallest placement unit. Wraps a final placement representation for
-    a single group of services.
-    """
+    """ The smallest placement unit """
 
-    def __init__(self,
-                 node_info : 'NodeInfo',
-                 nodes_count : int,
+    def __init__(self, node_info : 'NodeInfo', nodes_count : int,
                  services_state : GroupOfServices):
 
         self.node_info = node_info
@@ -52,21 +36,24 @@ class ServicesPlacement:
 
 class Placement:
 
-    """
-    Wraps a final placement representation.
-    """
+    def __init__(self, services_placements : list = None):
 
-    def __init__(self, services_placements : list = []):
-
-        self.services_placements = services_placements
-        self.score = None
+        self.services_placements = list() if services_placements is None else services_placements
+        self._score = None
 
     def add_services_placement(self, other_services_placement : ServicesPlacement):
 
-        if not isinstance(other_services_placement, ServicesPlacement):
-            raise TypeError(f'Wrong type on adding a new services placement: {other_services_placement.__class__.__name__}')
-
         self.services_placements.append(other_services_placement)
+
+    @property
+    def score(self):
+
+        return self._score
+
+    @score.setter
+    def score(self, score_val):
+
+        self._score = score_val
 
     def __iter__(self):
 
