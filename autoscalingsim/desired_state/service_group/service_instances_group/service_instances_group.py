@@ -56,45 +56,25 @@ class ServiceInstancesGroup:
 
     def __mul__(self, multiplier : int):
 
-        if not isinstance(multiplier, int):
-            raise TypeError(f'Incorrect type of mulitiplier for {self.__class__.__name__}: {multiplier.__class__.__name__}')
-
-        new_aspects = self.scaling_aspects.copy()
-        for aspect_name, aspect in self.scaling_aspects.items():
-            new_aspects[aspect_name] *= multiplier
+        new_aspects = { aspect_name : aspect * multiplier for aspect_name, aspect in self.scaling_aspects.items() }
 
         return self.__class__(self.service_name, new_aspects)
 
     def __floordiv__(self, other : 'ServiceInstancesGroup'):
 
         """
-        Returns the list of values. Each value corresponds to a scaling aspect and
+        Each value in the returned list corresponds to a scaling aspect and
         signifies how many times does the scaling aspect of the current group covers
-        the corresponding scaling aspect of the parameter.
+        the corresponding scaling aspect of the argument.
         """
 
-        if not isinstance(other, ServiceInstancesGroup):
-            raise TypeError(f'An attempt to floor-divide by an unknown type {other.__class__.__name__}')
-
-        division_results = []
-        for aspect_name, aspect_value in self.scaling_aspects.items():
-            if aspect_name in other.scaling_aspects:
-                division_results.append((aspect_value // other.scaling_aspects[aspect_name]).value)
-
-        return division_results
+        return [ (aspect_value // other.scaling_aspects[aspect_name]).value for aspect_name, aspect_value in self.scaling_aspects.items() \
+                    if aspect_name in other.scaling_aspects ]
 
     def __mod__(self, other):
 
-        if not isinstance(other, self.__class__):
-            raise TypeError(f'Incorrect type of operand to take modulo of {self.__class__.__name__}: {other.__class__.__name__}')
-
-        if self.service_name != other.service_name:
-            raise ValueError(f'Non-matching names of services to take modulo: {self.service_name} and {other.service_name}')
-
-        new_aspects = self.scaling_aspects.copy()
-        for aspect_name, aspect in self.scaling_aspects.items():
-            if aspect_name in other.scaling_aspects:
-                new_aspects[aspect_name] %= other.scaling_aspects[aspect_name]
+        new_aspects = { aspect_name : aspect % other.scaling_aspects[aspect_name] for aspect_name, aspect in self.scaling_aspects.items() \
+                            if aspect_name in other.scaling_aspects }
 
         return self.__class__(self.service_name, new_aspects)
 
