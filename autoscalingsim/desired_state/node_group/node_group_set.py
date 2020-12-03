@@ -37,60 +37,70 @@ class HomogeneousNodeGroupSet:
 
     def _add_groups(self, generalized_delta : GeneralizedDelta):
 
-        node_group_delta = generalized_delta.node_group_delta
-        groups_to_change = self._in_change_node_groups if node_group_delta.in_change else self._node_groups
+        groups_to_change = self._in_change_node_groups if generalized_delta.node_group_delta.in_change else self._node_groups
 
-        if node_group_delta.virtual:
-
-            services_group_delta = generalized_delta.services_group_delta
-
-            # If the node group delta is virtual, then add/remove
-            # services given in services_group_delta to/from the corresponding
-            # node group
-            if services_group_delta.in_change == node_group_delta.in_change:
-                if node_group_delta.node_group.id in groups_to_change:
-                    groups_to_change[node_group_delta.node_group.id].add_to_services_state(services_group_delta)
-                else:
-                    # attempt to find an appropriate candidate for failing its services
-                    for group in groups_to_change.values():
-                        if group.services_state.is_compatible_with(services_group_delta):
-                            group.add_to_services_state(services_group_delta)
-
-                            compensating_services_group_delta = services_group_delta.copy()
-                            compensating_services_group_delta.set_count_sign(1)
-                            compensating_services_group_delta.in_change = True
-                            compensating_node_group_delta = NodeGroupDelta(group, in_change = False, virtual = True)
-                            self.failures_compensating_deltas.append(GeneralizedDelta(compensating_node_group_delta,
-                                                                                      compensating_services_group_delta))
-
+        if generalized_delta.node_group_delta.virtual:
+            self._modify_services_state(generalized_delta, groups_to_change)
         else:
-            # If the node group delta is not virtual, then add/remove it
-            if node_group_delta.sign > 0:
-                groups_to_change[node_group_delta.node_group.id] = node_group_delta.node_group
-            elif node_group_delta.sign < 0:
-                if node_group_delta.node_group.id in groups_to_change:
-                    self.removed_node_group_ids.append(node_group_delta.node_group.id)
-                    del groups_to_change[node_group_delta.node_group.id]
-                elif node_group_delta.in_change == node_group_delta.in_change:
-                    # attempt to find an appropriate candidate for failing in groups_to_change
-                    self.removed_node_group_ids = []
-                    for group_id, group in groups_to_change.items():
-                        if group.is_compatible_with(node_group_delta.node_group):
-                            group.shrink(node_group_delta.node_group)
-                            if group.nodes_count == 0:
-                                self.removed_node_group_ids.append(group_id)
-                                group.nodes_count = node_group_delta.node_group.nodes_count
-                                node_group_delta.node_group = group
+            self._modify_node_groups_state(generalized_delta, groups_to_change)
 
-                                compensating_node_group_delta = node_group_delta.copy()
-                                compensating_node_group_delta.sign = 1
-                                compensating_node_group_delta.in_change = True
-                                self.failures_compensating_deltas.append(GeneralizedDelta(compensating_node_group_delta,
-                                                                                          group.services_state.to_delta(direction = 1)))
-                            break
+    def _modify_services_state(self, generalized_delta : GeneralizedDelta, groups_to_change : dict):
 
-                    for group_id in self.removed_node_group_ids:
-                        del groups_to_change[group_id]
+        node_group_delta = generalized_delta.node_group_delta
+        services_group_delta = generalized_delta.services_group_delta
+
+        if services_group_delta.in_change == node_group_delta.in_change:
+            if node_group_delta.node_group.id in groups_to_change:
+                groups_to_change[node_group_delta.node_group.id].add_to_services_state(services_group_delta)
+            else:
+                self._issue_service_failure_and_restart_if_possible(services_group_delta, groups_to_change)
+
+    def _issue_service_failure_and_restart_if_possible(self, services_group_delta, groups_to_change : dict):
+
+        for group in groups_to_change.values():
+            if group.services_state.is_compatible_with(services_group_delta):
+                group.add_to_services_state(services_group_delta)
+
+                compensating_services_group_delta = services_group_delta.copy()
+                compensating_services_group_delta.set_count_sign(1)
+                compensating_services_group_delta.in_change = True
+                compensating_node_group_delta = NodeGroupDelta(group, in_change = False, virtual = True)
+                self.failures_compensating_deltas.append(GeneralizedDelta(compensating_node_group_delta,
+                                                                          compensating_services_group_delta))
+
+    def _modify_node_groups_state(self, generalized_delta : GeneralizedDelta, groups_to_change : dict):
+
+        node_group_delta = generalized_delta.node_group_delta
+
+        if node_group_delta.sign > 0:
+            groups_to_change[node_group_delta.node_group.id] = node_group_delta.node_group
+
+        elif node_group_delta.sign < 0:
+            if node_group_delta.node_group.id in groups_to_change:
+                self.removed_node_group_ids.append(node_group_delta.node_group.id)
+                del groups_to_change[node_group_delta.node_group.id]
+            elif node_group_delta.in_change == node_group_delta.in_change:
+                self._issue_node_group_failure_and_restart_if_possible(node_group_delta, groups_to_change)
+
+    def _issue_node_group_failure_and_restart_if_possible(self, node_group_delta, groups_to_change : dict):
+
+        for group_id, group in groups_to_change.items():
+            if group.is_compatible_with(node_group_delta.node_group):
+                group.shrink(node_group_delta.node_group)
+                if group.nodes_count == 0:
+                    self.removed_node_group_ids.append(group_id)
+                    group.nodes_count = node_group_delta.node_group.nodes_count
+                    node_group_delta.node_group = group
+
+                    compensating_node_group_delta = node_group_delta.copy()
+                    compensating_node_group_delta.sign = 1
+                    compensating_node_group_delta.in_change = True
+                    self.failures_compensating_deltas.append(GeneralizedDelta(compensating_node_group_delta,
+                                                                              group.services_state.to_delta(direction = 1)))
+                break
+
+        for group_id in self.removed_node_group_ids:
+            del groups_to_change[group_id]
 
     def extract_compensating_deltas(self):
 
