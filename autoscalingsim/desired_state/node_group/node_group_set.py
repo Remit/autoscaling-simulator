@@ -1,3 +1,5 @@
+import collections
+
 from .node_group import HomogeneousNodeGroup
 
 from autoscalingsim.desired_state.placement import Placement, ServicesPlacement
@@ -14,27 +16,25 @@ class HomogeneousNodeGroupSet:
 
         return cls( [ HomogeneousNodeGroup.from_services_placement(services_placement) for services_placement in placement ] )
 
-    def __init__(self,
-                 homogeneous_groups = [],
-                 homogeneous_groups_in_change = {}):
+    def __init__(self, node_groups : list = None, node_groups_in_change : dict = None):
 
-        if isinstance(homogeneous_groups, dict):
-            self._homogeneous_groups = homogeneous_groups
+        if isinstance(node_groups, collections.Mapping):
+            self._node_groups = node_groups
+
         else:
-            self._homogeneous_groups = {}
-            for group in homogeneous_groups:
-                if not isinstance(group, HomogeneousNodeGroup):
-                    raise TypeError(f'An unknown type {group.__class__.__name__} when initializing {self.__class__.__name__}')
-                self._homogeneous_groups[group.id] = group
+            self._node_groups = dict()
+            if not node_groups is None:
+                for group in node_groups:
+                    self._node_groups[group.id] = group
 
-        self._in_change_homogeneous_groups = homogeneous_groups_in_change
-        self.removed_node_group_ids = []
-        self.failures_compensating_deltas = []
+        self._in_change_node_groups = dict() if node_groups_in_change is None else node_groups_in_change
+        self.removed_node_group_ids = list()
+        self.failures_compensating_deltas = list()
 
     def to_placement(self):
 
         services_placements = []
-        for group in self._homogeneous_groups.values():
+        for group in self._node_groups.values():
             services_placements.append(ServicesPlacement(group.node_info,
                                                          group.nodes_count,
                                                          group.services_state))
@@ -43,14 +43,14 @@ class HomogeneousNodeGroupSet:
 
     def __add__(self, regional_delta : RegionalDelta):
 
-        homogeneous_groups = self.copy()
+        node_groups = self.copy()
         if isinstance(regional_delta, RegionalDelta):
             for generalized_delta in regional_delta:
-                homogeneous_groups._add_groups(generalized_delta)
+                node_groups._add_groups(generalized_delta)
         else:
             raise TypeError(f'An attempt to add an object of type {regional_delta.__class__.__name__} to the {self.__class__.__name__}')
 
-        return homogeneous_groups
+        return node_groups
 
     def _add_groups(self, generalized_delta : GeneralizedDelta):
 
@@ -59,9 +59,9 @@ class HomogeneousNodeGroupSet:
 
         groups_to_change = None
         if in_change:
-            groups_to_change = self._in_change_homogeneous_groups
+            groups_to_change = self._in_change_node_groups
         else:
-            groups_to_change = self._homogeneous_groups
+            groups_to_change = self._node_groups
 
         if node_group_delta.virtual:
 
@@ -129,13 +129,13 @@ class HomogeneousNodeGroupSet:
 
     def extract_node_groups(self, in_change : bool):
 
-        return list(self._in_change_homogeneous_groups.values()) if in_change else list(self._homogeneous_groups.values())
+        return list(self._in_change_node_groups.values()) if in_change else list(self._node_groups.values())
 
     def extract_node_counts(self, in_change : bool):
 
         """ Extracts either desired or the actual nodes count """
 
-        groups_for_extraction = self._in_change_homogeneous_groups if in_change else self._homogeneous_groups
+        groups_for_extraction = self._in_change_node_groups if in_change else self._node_groups
 
         node_counts_per_type = {}
         for node_group in groups_for_extraction.values():
@@ -148,7 +148,7 @@ class HomogeneousNodeGroupSet:
 
     def copy(self):
 
-        return self.__class__(self._homogeneous_groups.copy(), self._in_change_homogeneous_groups.copy())
+        return self.__class__(self._node_groups.copy(), self._in_change_node_groups.copy())
 
 
 
@@ -161,32 +161,32 @@ class HomogeneousNodeGroupSet:
         """ Converts owned node groups to their generalized deltas representation """
 
         generalized_deltas_lst = []
-        for group in self._homogeneous_groups.values():
+        for group in self._node_groups.values():
             generalized_deltas_lst.append(group.to_delta())
 
-        for group in self._in_change_homogeneous_groups.values():
+        for group in self._in_change_node_groups.values():
             generalized_deltas_lst.append(group.to_delta())
 
         return generalized_deltas_lst
 
     def remove_group_by_id(self, id_to_remove):
 
-        if id_to_remove in self._homogeneous_groups:
-            del self._homogeneous_groups[id_to_remove]
+        if id_to_remove in self._node_groups:
+            del self._node_groups[id_to_remove]
 
     def add_group(self, group_to_add):
 
-        self._homogeneous_groups[group_to_add.id] = group_to_add
+        self._node_groups[group_to_add.id] = group_to_add
 
     @property
     def enforced(self):
 
-        return list(self._homogeneous_groups.values())
+        return list(self._node_groups.values())
 
     def __repr__(self):
 
-        return f'{self.__class__.__name__}(homogeneous_groups = {self._homogeneous_groups},\
-                                           homogeneous_groups_in_change = {self._in_change_homogeneous_groups})'
+        return f'{self.__class__.__name__}(node_groups = {self._node_groups},\
+                                           node_groups_in_change = {self._in_change_node_groups})'
 
 class HomogeneousNodeGroupSetIterator:
 
@@ -196,8 +196,8 @@ class HomogeneousNodeGroupSetIterator:
 
     def __next__(self):
 
-        if self._index < len(self._node_group._homogeneous_groups):
-            group = self._node_group._homogeneous_groups[list(self._node_group._homogeneous_groups.keys())[self._index]]
+        if self._index < len(self._node_group._node_groups):
+            group = self._node_group._node_groups[list(self._node_group._node_groups.keys())[self._index]]
             self._index += 1
             return group
 
