@@ -31,36 +31,18 @@ class HomogeneousNodeGroupSet:
         self.removed_node_group_ids = list()
         self.failures_compensating_deltas = list()
 
-    def remove_group_by_id(self, id_to_remove):
-
-        if id_to_remove in self._node_groups:
-            del self._node_groups[id_to_remove]
-
-    def add_group(self, group_to_add):
-
-        self._node_groups[group_to_add.id] = group_to_add
-
     def __add__(self, regional_delta : RegionalDelta):
 
         node_groups = self.copy()
-        if isinstance(regional_delta, RegionalDelta):
-            for generalized_delta in regional_delta:
-                node_groups._add_groups(generalized_delta)
-        else:
-            raise TypeError(f'An attempt to add an object of type {regional_delta.__class__.__name__} to the {self.__class__.__name__}')
+        for generalized_delta in regional_delta:
+            node_groups._add_groups(generalized_delta)
 
         return node_groups
 
     def _add_groups(self, generalized_delta : GeneralizedDelta):
 
         node_group_delta = generalized_delta.node_group_delta
-        in_change = node_group_delta.in_change
-
-        groups_to_change = None
-        if in_change:
-            groups_to_change = self._in_change_node_groups
-        else:
-            groups_to_change = self._node_groups
+        groups_to_change = self._in_change_node_groups if node_group_delta.in_change else self._node_groups
 
         if node_group_delta.virtual:
 
@@ -69,7 +51,7 @@ class HomogeneousNodeGroupSet:
             # If the node group delta is virtual, then add/remove
             # services given in services_group_delta to/from the corresponding
             # node group
-            if services_group_delta.in_change == in_change:
+            if services_group_delta.in_change == node_group_delta.in_change:
                 if node_group_delta.node_group.id in groups_to_change:
                     groups_to_change[node_group_delta.node_group.id].add_to_services_state(services_group_delta)
                 else:
@@ -93,7 +75,7 @@ class HomogeneousNodeGroupSet:
                 if node_group_delta.node_group.id in groups_to_change:
                     self.removed_node_group_ids.append(node_group_delta.node_group.id)
                     del groups_to_change[node_group_delta.node_group.id]
-                elif node_group_delta.in_change == in_change:
+                elif node_group_delta.in_change == node_group_delta.in_change:
                     # attempt to find an appropriate candidate for failing in groups_to_change
                     self.removed_node_group_ids = []
                     for group_id, group in groups_to_change.items():
@@ -117,37 +99,28 @@ class HomogeneousNodeGroupSet:
     def extract_compensating_deltas(self):
 
         compensating_deltas = self.failures_compensating_deltas
-        self.failures_compensating_deltas = []
+        self.failures_compensating_deltas = list()
         return compensating_deltas
 
     def extract_ids_removed_since_last_time(self):
 
         ids_ret = self.removed_node_group_ids
-        self.removed_node_group_ids = []
+        self.removed_node_group_ids = list()
         return ids_ret
 
-    def extract_node_groups(self, in_change : bool):
+    def node_groups_for_change_status(self, in_change : bool):
 
         return list(self._in_change_node_groups.values()) if in_change else list(self._node_groups.values())
 
-    def extract_node_counts(self, in_change : bool):
+    def node_counts_for_change_status(self, in_change : bool):
 
-        """ Extracts either desired or the actual nodes count """
+        selected_node_groups = self._in_change_node_groups if in_change else self._node_groups
 
-        groups_for_extraction = self._in_change_node_groups if in_change else self._node_groups
-
-        node_counts_per_type = {}
-        for node_group in groups_for_extraction.values():
-            node_type = node_group.node_info.node_type
-            if not node_type in node_counts_per_type:
-                node_counts_per_type[node_type] = 0
-            node_counts_per_type[node_type] += node_group.nodes_count
+        node_counts_per_type = collections.defaultdict(int)
+        for node_group in selected_node_groups.values():
+            node_counts_per_type[node_group.node_info.node_type] += node_group.nodes_count
 
         return node_counts_per_type
-
-    def copy(self):
-
-        return self.__class__(self._node_groups.copy(), self._in_change_node_groups.copy())
 
     def to_deltas(self):
 
@@ -166,6 +139,10 @@ class HomogeneousNodeGroupSet:
 
         return Placement( [ group.to_services_placement() for group in self._node_groups.values() ] )
 
+    def copy(self):
+
+        return self.__class__(self._node_groups.copy(), self._in_change_node_groups.copy())
+
     @property
     def enforced(self):
 
@@ -182,14 +159,16 @@ class HomogeneousNodeGroupSet:
 
 class HomogeneousNodeGroupSetIterator:
 
-    def __init__(self, node_group):
+    def __init__(self, node_group_set : 'HomogeneousNodeGroupSet'):
+
         self._index = 0
-        self._node_group = node_group
+        self._node_group_set = node_group_set
+        self._node_group_ids = list(node_group_set._node_groups.keys())
 
     def __next__(self):
 
-        if self._index < len(self._node_group._node_groups):
-            group = self._node_group._node_groups[list(self._node_group._node_groups.keys())[self._index]]
+        if self._index < len(self._node_group_ids):
+            group = self._node_group_set._node_groups[self._node_group_ids[self._index]]
             self._index += 1
             return group
 

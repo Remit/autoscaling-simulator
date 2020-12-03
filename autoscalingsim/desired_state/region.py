@@ -61,13 +61,13 @@ class Region:
 
         return self.homogeneous_groups.to_placement()
 
-    def extract_node_counts(self, in_change : bool):
+    def node_counts_for_change_status(self, in_change : bool):
 
-        return self.homogeneous_groups.extract_node_counts(in_change)
+        return self.homogeneous_groups.node_counts_for_change_status(in_change)
 
-    def extract_node_groups(self, in_change : bool):
+    def node_groups_for_change_status(self, in_change : bool):
 
-        return self.homogeneous_groups.extract_node_groups(in_change)
+        return self.homogeneous_groups.node_groups_for_change_status(in_change)
 
     def to_deltas(self):
 

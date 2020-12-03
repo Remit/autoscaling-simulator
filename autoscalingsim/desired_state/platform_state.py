@@ -65,17 +65,17 @@ class PlatformState:
 
         return modified_state
 
-    def extract_countable_representation(self, conf : dict = {'in-change': True}):
+    def countable_representation(self, conf : dict = {'in-change': True}):
 
-        return self.extract_node_counts(conf['in-change'])
+        return self.node_counts_for_change_status(conf['in-change'])
 
-    def extract_node_counts(self, in_change : bool):
+    def node_counts_for_change_status(self, in_change : bool):
 
-        return { region_name : region.extract_node_counts(in_change) for region_name, region in self.regions.items() }
+        return { region_name : region.node_counts_for_change_status(in_change) for region_name, region in self.regions.items() }
 
-    def extract_node_groups(self, in_change : bool):
+    def node_groups_for_change_status(self, in_change : bool):
 
-        return { region_name : region.extract_node_groups(in_change) for region_name, region in self.regions.items() }
+        return { region_name : region.node_groups_for_change_status(in_change) for region_name, region in self.regions.items() }
 
     def to_deltas(self):
 

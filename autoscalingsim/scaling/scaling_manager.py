@@ -22,7 +22,7 @@ class ScalingManager:
 
     def set_deployments(self, platform_state : PlatformState):
 
-        scaling_infos = platform_state.extract_node_groups(False)
+        scaling_infos = platform_state.node_groups_for_change_status(in_change = False)
         for region_name, regional_node_groups in scaling_infos.items():
             for node_group in regional_node_groups:
                 for service_name in node_group.running_services:

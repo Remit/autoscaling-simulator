@@ -258,7 +258,7 @@ class PlatformModel:
                 cur_state += delta
                 #print(f'timestamp: {timestamp}')
                 #print(f'delta: {delta}')
-            node_counts_raw = cur_state.extract_node_counts(in_change)
+            node_counts_raw = cur_state.node_counts_for_change_status(in_change)
 
             repeated_data = {}
             for region_name, node_count_per_type in node_counts_raw.items():
