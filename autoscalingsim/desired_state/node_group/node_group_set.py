@@ -126,12 +126,8 @@ class HomogeneousNodeGroupSet:
 
         """ Converts owned node groups to their generalized deltas representation """
 
-        generalized_deltas_lst = []
-        for group in self._node_groups.values():
-            generalized_deltas_lst.append(group.to_delta())
-
-        for group in self._in_change_node_groups.values():
-            generalized_deltas_lst.append(group.to_delta())
+        generalized_deltas_lst = [ group.to_delta() for group in self._node_groups.values() ]
+        generalized_deltas_lst.extend( [ group.to_delta() for group in self._in_change_node_groups.values() ] )
 
         return generalized_deltas_lst
 
