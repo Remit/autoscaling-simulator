@@ -172,51 +172,41 @@ class HomogeneousNodeGroup(NodeGroup):
         self.services_state = gos.GroupOfServices()
         self.system_resources_usage = SystemResourceUsage(self.node_info, self.nodes_count)
 
-    def compute_soft_adjustment(self,
-                                scaled_service_adjustment_in_aspects : dict,
-                                scaled_service_instance_requirements_by_service : dict) -> tuple:
+    def compute_soft_adjustment(self, adjustment_in_aspects : dict,
+                                requirements_by_service_instance : dict) -> tuple:
 
         """
-        Derives adjustments to the node group in terms of services added/removed.
-        The computation may result in multiple groups.
-
         Before adding a service instance, it is first checked, whether its
         requirements can be accomodated by the group (spare resources available).
         Similarly, before removing a service instance, it is checked,
         whether there are any instances of the given type at all.
         """
 
-        node_sys_resource_usage_by_service = {}
-        for scaled_service, instance_requirements in scaled_service_instance_requirements_by_service.items():
-            node_sys_resource_usage_by_service[scaled_service] = self.node_info.system_resources_to_take_from_requirements(instance_requirements)
+        res_usage_by_service = { service_name : self.node_info.system_resources_to_take_from_requirements(requirements) \
+                                    for service_name, requirements in requirements_by_service_instance.items()}
 
-        # Sort in decreasing order of consumed system resources:
-        # both allocation and deallocation profit more from first trying to
-        # place or remove the largest services
-        node_sys_resource_usage_by_service_sorted = OrderedDict(reversed(sorted(node_sys_resource_usage_by_service.items(),
-                                                                                key = lambda elem: elem[1])))
+        res_usage_by_service = OrderedDict(reversed(sorted(res_usage_by_service.items(), key = lambda elem: elem[1])))
 
-        unmet_changes_per_aspect = {}
-        for service_name, aspects_change_dict in scaled_service_adjustment_in_aspects.items():
+        unmet_changes_per_aspect = collections.defaultdict(lambda: collections.defaultdict(int))
+        for service_name, aspects_change_dict in adjustment_in_aspects.items():
             for aspect_name, aspect_change_val in aspects_change_dict.items():
-                aspect_dict = unmet_changes_per_aspect.get(aspect_name, {})
-                aspect_dict[service_name] = aspect_change_val
-                unmet_changes_per_aspect[aspect_name] = aspect_dict
+                unmet_changes_per_aspect[aspect_name][service_name] = aspect_change_val
 
-        generalized_deltas = []
-        unmet_changes = {}
+        generalized_deltas = list()
+        unmet_changes = collections.defaultdict(lambda: collections.defaultdict(int))
         for aspect_name, services_changes_dict in unmet_changes_per_aspect.items():
 
+            unmet_changes_to_carry_over = services_changes_dict
             if aspect_name in self.soft_adjusters:
-                aspect_based_generalized_deltas, aspect_based_unmet_changes_res = self.soft_adjusters[aspect_name].compute_soft_adjustment(services_changes_dict,
-                                                                                                                                           scaled_service_instance_requirements_by_service,
-                                                                                                                                           node_sys_resource_usage_by_service_sorted)
+                aspect_based_generalized_deltas, aspect_based_unmet_changes = self.soft_adjusters[aspect_name].compute_soft_adjustment(services_changes_dict,
+                                                                                                                                       requirements_by_service_instance,
+                                                                                                                                       res_usage_by_service)
 
                 generalized_deltas.extend(aspect_based_generalized_deltas)
-                for service_name, change_val in aspect_based_unmet_changes_res.items():
-                    unmet_changes_per_service = unmet_changes.get(service_name, {})
-                    unmet_changes_per_service[aspect_name] = change_val
-                    unmet_changes[service_name] = unmet_changes_per_service
+                unmet_changes_to_carry_over = aspect_based_unmet_changes
+
+            for service_name, change_val in unmet_changes_to_carry_over.items():
+                unmet_changes[service_name][aspect_name] = change_val
 
         return (generalized_deltas, unmet_changes)
 
@@ -230,8 +220,7 @@ class HomogeneousNodeGroup(NodeGroup):
         downlink_utilization = SystemResourceUsage(self.node_info, self.nodes_count,
                                                    system_resources_usage = { 'network_bandwidth': self.downlink.used_bandwidth})
 
-        self._utilization.update_with_system_resources_usage(service_name,
-                                                             timestamp,
+        self._utilization.update_with_system_resources_usage(service_name, timestamp,
                                                              system_resources_usage + uplink_utilization + downlink_utilization,
                                                              averaging_interval)
 
@@ -247,10 +236,6 @@ class HomogeneousNodeGroup(NodeGroup):
     def is_empty(self):
 
         return self.nodes_count == 0
-
-    #def extract_scaling_aspects(self):
-
-    #    return self.services_state.extract_scaling_aspects()
 
     def add_to_services_state(self, services_group_delta : 'GroupOfServicesDelta'):
 

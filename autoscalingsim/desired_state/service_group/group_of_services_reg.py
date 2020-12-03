@@ -56,11 +56,6 @@ class GroupOfServicesRegionalized:
 
         return GroupOfServicesRegionalizedIterator(self)
 
-    # was get_value
-    #def get_value_for_service(self, region_name : str, service_name : str):
-
-    #    return self._services_groups_per_region[region_name].get_value(service_name) if region_name in self._services_groups_per_region else 0
-
     def copy(self):
 
         return GroupOfServicesRegionalized(self._services_groups_per_region.copy())
