@@ -24,16 +24,16 @@ class PlatformScalingInfo:
     def __init__(self, provider : str, node_scaling_infos_raw : list):
 
         self.provider = provider
-        self.node_scaling_infos = {}
+        self.node_scaling_infos = dict()
 
         for node_scaling_info_raw in node_scaling_infos_raw:
             node_type = ErrorChecker.key_check_and_load('type', node_scaling_info_raw)
             self.node_scaling_infos[node_type] = NodeScalingInfo(node_type, node_scaling_info_raw)
 
-    def termination_duration_for_node(self, node_type : str):
+    def termination_duration_for_node_type(self, node_type : str):
 
         return self.node_scaling_infos[node_type].termination_duration
 
-    def booting_duration_for_node(self, node_type : str):
+    def booting_duration_for_node_type(self, node_type : str):
 
         return self.node_scaling_infos[node_type].booting_duration
