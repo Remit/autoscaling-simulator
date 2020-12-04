@@ -143,6 +143,10 @@ class ScalingMetricRegionalized:
                                                                  min_limit_aspect,
                                                                  service_representation_in_metric)
 
+    def compute_desired_state(self):
+
+        return self.__call__()
+        
     def __call__(self):
 
         """

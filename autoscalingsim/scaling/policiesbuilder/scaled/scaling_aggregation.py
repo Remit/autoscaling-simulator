@@ -25,8 +25,8 @@ class ScalingEffectAggregationRule(ABC):
 
     def __init__(self, metrics_by_priority : dict, scaled_aspect_name : str):
 
-        self.metrics_by_priority = metrics_by_priority
-        self.scaled_aspect_name = scaled_aspect_name
+        self._metrics_by_priority = metrics_by_priority
+        self._scaled_aspect_name = scaled_aspect_name
 
     @abstractmethod
     def __call__(self, cur_timestamp : pd.Timestamp):
