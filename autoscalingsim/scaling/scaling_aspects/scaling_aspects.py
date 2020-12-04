@@ -5,8 +5,6 @@ from abc import ABC, abstractmethod
 
 class ScalingAspect(ABC):
 
-    """ Represents a scaling aspect associated with the scaled service """
-
     _Registry = {}
 
     @classmethod
@@ -55,15 +53,6 @@ class ScalingAspect(ABC):
         self.name = name
         self._value = max(value, minval)
 
-    def copy(self):
-
-        return self.__class__.get(self.name)(self._value)
-
-    @property
-    def value(self):
-
-        return self._value
-
     def __gt__(self, other):
 
         return self._comparison(other, operator.gt)
@@ -95,10 +84,19 @@ class ScalingAspect(ABC):
                 return comp_op(self._value, other.value)
             else:
                 raise ValueError(f'An attempt to compare different scaling aspects: {self.name} and {other.name}')
+
         elif isinstance(other, numbers.Number):
             other = self.__class__.get(self.name)(other)
             return self._comparison(other, comp_op)
-        else:
-            raise TypeError(f'An attempt to compare scaling aspect {self.name} to an unsuppported type {other.__class__.__name__}')
+
+    def copy(self):
+
+        return self.__class__.get(self.name)(self._value)
+
+    @property
+    def value(self):
+
+        return self._value
+
 
 from .scaling_aspects_realizations import *

@@ -9,7 +9,7 @@ from autoscalingsim.utils import df_convenience
 @ScalingAspect.register('count')
 class Count(ScalingAspect):
 
-    """ Count of instances of a scaled entity, e.g. service """
+    """ Count of instances of a scaled entity, e.g. of a service """
 
     def __init__(self, value : float):
 
@@ -23,48 +23,47 @@ class Count(ScalingAspect):
 
         return self._add(other, -1)
 
+    def _add(self, other, sign : int):
+
+        if isinstance(other, self.__class__):
+            return Count(self._value + sign * other.value)
+
+        elif isinstance(other, ScalingAspectDelta):
+            return Count(self._value + sign * other.to_raw_change())
+
+        raise NotImplementedError()
+
     def __mul__(self, other):
 
         if isinstance(other, numbers.Number):
-            return Count(int(self.value * other))
+            return Count(int(self._value * other))
+
         elif isinstance(other, pd.DataFrame):
             return df_convenience.convert_to_class(other * self.value, self.__class__)
-        else:
-            raise TypeError(f'An attempt to multiply by non-int of type {other.__class__.__name__}')
+
+        raise NotImplementedError()
 
     def __mod__(self, other):
 
-        if not isinstance(other, self.__class__):
-            raise TypeError(f'An attempt to perform modulo operation on {self.__class__.__name__} with an object of unknown type {other.__class__.__name__}')
+        if isinstance(other, self.__class__):
+            return Count(self._value % other.value)
 
-        return Count(self.value % other.value)
+        raise NotImplementedError()
 
     def __floordiv__(self, other):
 
-        if not isinstance(other, self.__class__):
-            raise TypeError(f'An attempt to perform floor division operation on {self.__class__.__name__} with an object of unknown type {other.__class__.__name__}')
+        if isinstance(other, self.__class__):
+            return Count(self._value // other.value)
 
-        return Count(self.value // other.value)
+        raise NotImplementedError()
 
     def __radd__(self, other):
 
         if isinstance(other, numbers.Number):
-            other = self.__class__(other)
+            return self + self.__class__(other)
 
-        return self + other
+        raise NotImplementedError()
 
     def __repr__(self):
 
         return f'{self.__class__.__name__}( value = {self.value})'
-
-    def _add(self, other, direction : int):
-
-        if isinstance(other, self.__class__):
-            return Count(self.value + direction * other.value)
-        elif isinstance(other, ScalingAspectDelta):
-            if not isinstance(self, other.aspect_type):
-                raise ValueError(f'An attempt to combine different scaling aspects: {self.__class__.__name__} and {other.get_aspect_type().__name__}')
-
-            return Count(self.value + direction * other.to_raw_change())
-        else:
-            raise TypeError(f'An attempt to combine with an object of unknown type {other.__class__.__name__}')
