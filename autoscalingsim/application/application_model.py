@@ -86,7 +86,7 @@ class ApplicationModel:
 
         # Taking correct scaling settings for the service which is derived from a ScaledService
         for service_conf in self.application_model_conf.service_confs:
-            service_scaling_settings = self.scaling_policy.get_service_scaling_settings(service_conf.service_name)
+            service_scaling_settings = self.scaling_policy.scaling_settings_for_service(service_conf.service_name)
             service = service_conf.to_service(self.scaling_policy.service_regions, simulation_conf['starting_time'], service_scaling_settings, state_reader)
             self.services[service_conf.service_name] = service
 
