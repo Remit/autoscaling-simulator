@@ -6,11 +6,7 @@ from autoscalingsim.utils.error_check import ErrorChecker
 @ForecastingModel.register('reactive')
 class Reactive(ForecastingModel):
 
-    """
-    Implements reactive way of 'forecasting' the metric value, i.e. simply
-    repeats the last seen value into the future. Added as a forecasting model
-    to unify the metric processing.
-    """
+    """ Repeats the last observed metric value into the future, used in reactive autoscaling """
 
     def __init__(self, config : dict):
 

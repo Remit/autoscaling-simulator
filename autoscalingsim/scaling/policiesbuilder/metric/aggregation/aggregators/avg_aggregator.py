@@ -6,11 +6,6 @@ from autoscalingsim.utils.error_check import ErrorChecker
 @ValuesAggregator.register('avgAggregator')
 class AvgAggregator(ValuesAggregator):
 
-    """
-    Aggregates the metric time series by computing the average over the
-    time window of desired resolution.
-    """
-
     def __init__(self, config : dict):
 
         resolution_raw = ErrorChecker.key_check_and_load('resolution', config, self.__class__.__name__)

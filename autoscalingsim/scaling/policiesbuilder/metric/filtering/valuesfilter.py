@@ -2,11 +2,6 @@ from abc import ABC, abstractmethod
 
 class ValuesFilter(ABC):
 
-    """
-    An interface for the values filter applied on the preprocessing step
-    to the raw metrics values.
-    """
-
     _Registry = {}
 
     @abstractmethod
@@ -32,7 +27,7 @@ class ValuesFilter(ABC):
     def get(cls, name : str):
 
         if not name in cls._Registry:
-            raise ValueError(f'An attempt to use the non-existent filter {name}')
+            raise ValueError(f'An attempt to use a non-existent {self.__class__.__name__} {name}')
 
         return cls._Registry[name]
 

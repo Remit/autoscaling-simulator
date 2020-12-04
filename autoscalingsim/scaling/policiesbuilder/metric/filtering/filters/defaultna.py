@@ -6,9 +6,7 @@ from autoscalingsim.utils.error_check import ErrorChecker
 @ValuesFilter.register('defaultNA')
 class DefaultNA(ValuesFilter):
 
-    """
-    Substitutes all the NA values for the default value, e.g. 0.
-    """
+    """ Substitutes all the NA values for the default value, e.g. 0 """
 
     def __init__(self, config : dict):
 

@@ -4,11 +4,7 @@ from abc import ABC, abstractmethod
 
 class ValuesAggregator(ABC):
 
-    """
-    An interface to the time window-based aggregator of the metric values.
-    Basically, it recasts the metric to some particular resolution by
-    applying the aggregation in the time window, e.g. taking max or avg.
-    """
+    """ Recasts a metric to a particular resolution by applying the aggregation in the time window """
 
     _Registry = {}
 
@@ -30,7 +26,7 @@ class ValuesAggregator(ABC):
     def get(cls, name : str):
 
         if not name in cls._Registry:
-            raise ValueError(f'An attempt to use the non-existent aggregator {name}')
+            raise ValueError(f'An attempt to use a non-existent {self.__class__.__name__} {name}')
 
         return cls._Registry[name]
 

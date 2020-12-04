@@ -6,11 +6,6 @@ from autoscalingsim.utils.error_check import ErrorChecker
 @Stabilizer.register('maxStabilizer')
 class MaxStabilizer(Stabilizer):
 
-    """
-    Stabilizes the oscillations in the scaled aspect by substituting the values
-    in the time window for the max of the max value encountered in it and of the max
-    value found in the previous time window. Tends to overprovision the capacity.
-    """
     def __init__(self, config : dict):
 
         resolution_raw = ErrorChecker.key_check_and_load('resolution', config, self.__class__.__name__)
