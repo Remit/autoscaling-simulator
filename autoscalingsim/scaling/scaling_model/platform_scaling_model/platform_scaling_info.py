@@ -10,12 +10,22 @@ class NodeScalingInfo:
         booting_duration_raw = ErrorChecker.key_check_and_load('booting_duration', node_scaling_info_raw, 'node type', node_type)
         booting_duration_value = ErrorChecker.key_check_and_load('value', booting_duration_raw, 'node type', node_type)
         booting_duration_unit = ErrorChecker.key_check_and_load('unit', booting_duration_raw, 'node type', node_type)
-        self.booting_duration = pd.Timedelta(booting_duration_value, unit = booting_duration_unit)
+        self._booting_duration = pd.Timedelta(booting_duration_value, unit = booting_duration_unit)
 
         termination_duration_raw = ErrorChecker.key_check_and_load('termination_duration', node_scaling_info_raw, 'node type', node_type)
         termination_duration_value = ErrorChecker.key_check_and_load('value', termination_duration_raw, 'node type', node_type)
         termination_duration_unit = ErrorChecker.key_check_and_load('unit', termination_duration_raw, 'node type', node_type)
-        self.termination_duration = pd.Timedelta(termination_duration_value, unit = termination_duration_unit)
+        self._termination_duration = pd.Timedelta(termination_duration_value, unit = termination_duration_unit)
+
+    @property
+    def booting_duration(self):
+
+        return self._booting_duration
+
+    @property
+    def termination_duration(self):
+
+        return self._termination_duration
 
 class PlatformScalingInfo:
 
