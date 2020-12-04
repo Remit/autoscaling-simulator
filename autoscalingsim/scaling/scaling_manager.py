@@ -1,20 +1,32 @@
+import collections
 import pandas as pd
 
 from .scaling_aspects import ScalingAspect
 
 from autoscalingsim.desired_state.platform_state import PlatformState
 from autoscalingsim.desired_state.node_group.node_group import HomogeneousNodeGroup
+from autoscalingsim.desired_state.service_group.group_of_services_reg import GroupOfServicesRegionalized
 
 class ScalingManager:
 
-    """
-    Intermediary responsible for the centralized scaling aspects modification
-    and issuing the desired state calculation.
-    """
+    """ Responsible for the centralized scaling aspects modification and issuing the desired state calculation """
 
     def __init__(self, services_dict = None):
 
-        self.services = services_dict if not services_dict is None else {}
+        self.services = services_dict if not services_dict is None else dict()
+
+    def compute_desired_state(self):
+
+        joint_timeline_desired = collections.defaultdict(GroupOfServicesRegionalized)
+        for service_name, service_ref in self.services.items():
+            service_timeline = service_ref.reconcile_desired_state()
+            for timestamp, state_regionalized in service_timeline.items():
+                if not timestamp in joint_timeline_desired:
+                    joint_timeline_desired[timestamp] = state_regionalized
+                else:
+                    joint_timeline_desired[timestamp] += state_regionalized
+
+        return joint_timeline_desired
 
     def add_scaled_service(self, service_name : str, service_ref):
 
@@ -28,11 +40,13 @@ class ScalingManager:
                 for service_name in node_group.running_services:
                     self.update_placement(service_name, region_name, node_group)
 
+    def update_placement(self, service_name : str, region_name : str,
+                         node_group : HomogeneousNodeGroup):
+
+        self.services[service_name].update_placement_in_region(region_name, node_group)
+
     def mark_groups_for_removal(self, service_name : str,
                                 node_groups_ids_mark_for_removal_regionalized : dict):
-
-        if not service_name in self.services:
-            raise ValueError(f'An attempt to mark groups for removal for {service_name} that is unknown to {self.__class__.__name__}')
 
         for region_name, node_group_ids in node_groups_ids_mark_for_removal_regionalized.items():
             self.services[service_name].prepare_groups_for_removal_in_region(region_name, node_group_ids)
@@ -41,30 +55,3 @@ class ScalingManager:
 
         for service in self.services.values():
             service.force_remove_groups_in_region(region_name, node_groups_ids)
-
-    def update_placement(self, service_name : str, region_name : str,
-                         node_group : HomogeneousNodeGroup):
-
-        """
-        This method of the Scaling Manager is used by the Enforce step in the
-        scaling policy -- it is used to set the decided upon value of the placement
-        of the services that incorporates the count of nodes and information about them.
-        """
-
-        if not service_name in self.services:
-            raise ValueError(f'An attempt to set the placement of {service_name} that is unknown to {self.__class__.__name__}')
-
-        self.services[service_name].update_placement_in_region(region_name, node_group)
-
-    def compute_desired_state(self):
-
-        joint_timeline_desired_regionalized_services_states = {}
-        for service_name, service_ref in self.services.items():
-            service_timeline = service_ref.reconcile_desired_state()
-            for timestamp, state_regionalized in service_timeline.items():
-                if not timestamp in joint_timeline_desired_regionalized_services_states:
-                    joint_timeline_desired_regionalized_services_states[timestamp] = state_regionalized
-                else:
-                    joint_timeline_desired_regionalized_services_states[timestamp] += state_regionalized
-
-        return joint_timeline_desired_regionalized_services_states
