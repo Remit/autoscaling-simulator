@@ -1,3 +1,4 @@
+import operator
 import pandas as pd
 
 from abc import ABC, abstractmethod
@@ -5,77 +6,50 @@ from abc import ABC, abstractmethod
 from autoscalingsim.scaling.scaling_aspects import ScalingAspect
 
 class Limiter:
+
     """
     Defines hard and soft limits on the value. Hard limits are set on the
     initialization from the configurations and are never changed thereafter.
     Soft limits can be updated at any time, e.g. by the desired scaled aspect
-    values provided by the previous metrics in the chain. Both sets of limits
-    are applied to the values provided to the limiter on call to it.
-
-    If the soft limits represent a time series, then they have to be applied
-    to the values that correspond in their timestamps. No alignment logic is
-    provided -- if the values are somehow misaligned then the min value of
-    the soft max is used instead of the soft max, and the max value of the
-    soft min is used instead of soft min.
+    values provided by the previous metrics in the chain. Both
+    are applied to the values provided.
     """
 
-    def __init__(self,
-                 init_min : ScalingAspect,
-                 init_max : ScalingAspect):
+    def __init__(self, init_min : ScalingAspect, init_max : ScalingAspect):
 
-        self.hard_min = init_min
-        self.hard_max = init_max
-        self.soft_min = init_min
-        self.soft_max = init_max
+        self._hard_min = init_min
+        self._hard_max = init_max
+        self._soft_min = init_min
+        self._soft_max = init_max
 
-    def __call__(self,
-                 values):
+    def __call__(self, values):
 
-        result = self._min_comparison(self.soft_min, values)
-        result = self._max_comparison(self.soft_max, result)
+        result = self._min_comparison(self._soft_min, values)
+        result = self._max_comparison(self._soft_max, result)
 
-        result = self._min_comparison(self.hard_min, result)
-        result = self._max_comparison(self.hard_max, result)
+        result = self._min_comparison(self._hard_min, result)
+        result = self._max_comparison(self._hard_max, result)
 
         return result
 
+    def _min_comparison(self, x_min, values : pd.DataFrame):
 
-    def _min_comparison(self,
-                        x_min,
-                        values : pd.DataFrame):
+        return self._comparison(x_min, values, operator.lt, max)
 
-        result = None
-        if isinstance(x_min, pd.DataFrame):
-            if (x_min.shape[0] != values.shape[0]) or (np.sum(x_min.index == values.index) < values.shape[0]):
-                new_min = x_min.max()[0]
-                result = values[values < new_min].fillna(new_min)
-            elif (x_min.shape[0] == values.shape[0]) and (np.sum(x_min.index == values.index) == values.shape[0]):
-                result = values[values < x_min].fillna(x_min)
-        else:
-            result = values[values < x_min].fillna(x_min)
+    def _max_comparison(self, x_max, values : pd.DataFrame):
 
-        return result
+        return self._comparison(x_max, values, operator.gt, min)
 
-    def _max_comparison(self,
-                        x_max,
-                        values : pd.DataFrame):
+    def _comparison(self, fill_value, values : pd.DataFrame, comparison_op, value_selection_func):
 
-        result = None
-        if isinstance(x_max, pd.DataFrame):
-            if (x_max.shape[0] != values.shape[0]) or (np.sum(x_max.index == values.index) < values.shape[0]):
-                new_max = x_max.min()[0]
-                result = values[values > new_max].fillna(new_max)
-            elif (x_max.shape[0] == values.shape[0]) and (np.sum(x_max.index == values.index) == values.shape[0]):
-                result = values[values > x_max].fillna(x_max)
-        else:
-            result = values[values > x_max].fillna(x_max)
+        fill_value_used = fill_value
+        if isinstance(fill_value, pd.DataFrame):
+            if fill_value.shape[0] != values.shape[0] or np.sum(fill_value.index == values.index) < values.shape[0]:
+                fill_value_used = value_selection_func(fill_value.value)
 
-        return result
+        return values[comparison_op(values, fill_value_used)].fillna(fill_value_used)
 
+    def update_limits(self, new_min : ScalingAspect, new_max : ScalingAspect):
 
-    def update_limits(self,
-                      new_min : ScalingAspect,
-                      new_max : ScalingAspect):
-
-        self.soft_min = new_min
-        self.soft_max = new_max
+        self._soft_min = new_min
+        self._soft_max = new_max
