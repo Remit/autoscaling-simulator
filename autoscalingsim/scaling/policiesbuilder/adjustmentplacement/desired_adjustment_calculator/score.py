@@ -77,7 +77,7 @@ class StateScore:
             scores_lst = list(self.scores_per_region.values())
             joint_score = sum(scores_lst, type(scores_lst[0])(0))
 
-            if (not joint_score.is_sane()) or (joint_score is None):
+            if not joint_score.is_finite or joint_score is None:
                 return type(scores_lst[0])(float('Inf'))
             else:
                 return joint_score
@@ -229,12 +229,10 @@ class Score(ABC):
     def get_original_value(self):
         return self.score_inverter(self.score)
 
-    def is_sane(self):
+    @property
+    def is_finite(self):
 
-        """
-        Checks whether such a score makes sense, i.e. no infinetely appealing
-        scores are allowed.
-        """
+        """ Checks whether such a score makes sense, i.e. no infinetely appealing scores are allowed """
 
         return (not math.isinf(self.score))
 

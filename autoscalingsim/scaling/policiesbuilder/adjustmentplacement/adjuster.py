@@ -1,7 +1,7 @@
 import pandas as pd
 from abc import ABC, abstractmethod
 
-from .desired_adjustment_calculator.score_calculators import ScoreCalculator
+from .desired_adjustment_calculator.score_calculator import ScoreCalculator
 from .desired_adjustment_calculator.desired_calc import DesiredChangeCalculator
 from .desired_adjustment_calculator.scorer import Scorer
 
@@ -91,7 +91,7 @@ class Adjuster(ABC):
 
         state_addition_deltas, state_score_addition = self.desired_change_calculator(unmet_change_state, state_duration)
 
-        state_score_addition += self.scorer.evaluate_placements(in_work_state.to_placements(), StateDuration.from_single_value(state_duration))
+        state_score_addition += self.scorer.score_platform_state(in_work_state, StateDuration.from_single_value(state_duration))
 
         return (state_addition_deltas, state_score_addition)
 
@@ -104,7 +104,7 @@ class Adjuster(ABC):
 
         till_state_substitution = state_substitution_deltas.till_full_enforcement(self.scaling_model, ts_of_unmet_change)
 
-        state_score_substitution += self.scorer.evaluate_placements(in_work_state.to_placements(), till_state_substitution)
+        state_score_substitution += self.scorer.score_platform_state(in_work_state, till_state_substitution)
 
         return (state_substitution_deltas, state_score_substitution)
 

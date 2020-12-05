@@ -2,7 +2,6 @@ import pandas as pd
 
 from .calc_config import DesiredChangeCalculatorConfig
 from .optimizers import Optimizer
-from . import score_calculators
 from .placer import Placer
 from .scorer import Scorer
 from .score import StateScore
@@ -44,7 +43,7 @@ class DesiredChangeCalculator:
             placements_lst = self.placer.compute_nodes_requirements(group_of_services, region_name)
 
             # Score
-            scored_placements_lst = self.scorer(placements_lst, state_duration)
+            scored_placements_lst = self.scorer.score_placements(placements_lst, state_duration)
 
             # Optimize
             selected_placement = self.optimizer(scored_placements_lst)
