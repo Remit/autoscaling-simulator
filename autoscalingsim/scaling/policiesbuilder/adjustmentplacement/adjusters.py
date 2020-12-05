@@ -17,12 +17,24 @@ from autoscalingsim.utils.error_check import ErrorChecker
 
 class Adjuster(ABC):
 
-    """
-    A generic adjuster interface for specific platform adjusters.
-    An adjuster belongs to the platform model. The adjustment action is invoked
-    with the abstract adjust method that should be implemented in the derived
-    specific adjusters.
-    """
+    _Registry = {}
+
+    @classmethod
+    def register(cls, name : str):
+
+        def decorator(adjuster_class):
+            cls._Registry[name] = adjuster_class
+            return adjuster_class
+
+        return decorator
+
+    @classmethod
+    def get(cls, name : str):
+
+        if not name in cls._Registry:
+            raise ValueError(f'An attempt to use a non-existent {self.__class__.__name__} {name}')
+
+        return cls._Registry[name]
 
     def __init__(self,
                  adjustment_horizon : dict,
@@ -158,6 +170,7 @@ class Adjuster(ABC):
 
         return timeline_of_deltas if timeline_of_deltas.updated_at_least_once() else None
 
+@Adjuster.register('cost_minimization')
 class CostMinimizer(Adjuster):
 
     """
@@ -186,6 +199,7 @@ class CostMinimizer(Adjuster):
                          score_calculator_class,
                          state_reader)
 
+@Adjuster.register('performance_maximization')
 class PerformanceMaximizer(Adjuster):
 
     def __init__(self,
@@ -194,6 +208,7 @@ class PerformanceMaximizer(Adjuster):
 
         pass
 
+@Adjuster.register('utilization_maximization')
 class UtilizationMaximizer(Adjuster):
 
     def __init__(self,
@@ -201,23 +216,3 @@ class UtilizationMaximizer(Adjuster):
                  combiner_type = 'windowed'):
 
         pass
-
-class Registry:
-
-    """
-    Stores the adjusters classes and organizes access to them.
-    """
-
-    registry = {
-        'cost_minimization': CostMinimizer,
-        'performance_maximization': PerformanceMaximizer,
-        'utilization_maximization': UtilizationMaximizer
-    }
-
-    @staticmethod
-    def get(name):
-
-        if not name in Registry.registry:
-            raise ValueError(f'An attempt to use the non-existent adjuster {name}')
-
-        return Registry.registry[name]
