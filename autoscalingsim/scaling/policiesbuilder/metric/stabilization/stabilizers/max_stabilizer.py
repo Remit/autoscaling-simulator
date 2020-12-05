@@ -13,6 +13,6 @@ class MaxStabilizer(Stabilizer):
         resolution_unit = ErrorChecker.key_check_and_load('unit', resolution_raw, self.__class__.__name__)
         self.resolution = pd.Timedelta(resolution_value, unit = resolution_unit)
 
-    def __call__(self, values : pd.DataFrame):
+    def stabilize(self, values : pd.DataFrame):
 
         return values.resample(self.resolution).max().bfill()

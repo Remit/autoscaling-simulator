@@ -9,7 +9,7 @@ class ValuesAggregator(ABC):
     _Registry = {}
 
     @abstractmethod
-    def __call__(self, values):
+    def aggregate(self, values):
 
         pass
 

@@ -28,7 +28,6 @@
             "priority": 1,
             "initial_max_limit": 15,
             "initial_min_limit": 1,
-            "initial_service_representation_in_metric": 1,
             "values_filter_conf": {
               "name": "defaultNA",
               "config": {

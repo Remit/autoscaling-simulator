@@ -12,7 +12,7 @@ class Stabilizer(ABC):
         pass
 
     @abstractmethod
-    def __call__(self, values):
+    def stabilize(self, values):
 
         pass
 

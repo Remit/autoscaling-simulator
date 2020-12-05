@@ -4,7 +4,7 @@ import numbers
 import collections
 import pandas as pd
 
-from .metric.scalingmetric import MetricDescription
+from .metric.metric_description import MetricDescription
 from .scaled.scaled_service_settings import ScaledServiceScalingSettings
 
 from autoscalingsim.utils.error_check import ErrorChecker

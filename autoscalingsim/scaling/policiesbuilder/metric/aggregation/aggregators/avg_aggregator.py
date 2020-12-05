@@ -13,6 +13,6 @@ class AvgAggregator(ValuesAggregator):
         resolution_unit = ErrorChecker.key_check_and_load('unit', resolution_raw, self.__class__.__name__)
         self.resolution = pd.Timedelta(resolution_value, unit = resolution_unit)
 
-    def __call__(self, data : pd.DataFrame):
+    def aggregate(self, data : pd.DataFrame):
 
         return data.rolling(self.resolution).mean()

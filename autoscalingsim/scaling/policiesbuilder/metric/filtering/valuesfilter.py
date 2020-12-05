@@ -10,7 +10,7 @@ class ValuesFilter(ABC):
         pass
 
     @abstractmethod
-    def __call__(self, values):
+    def filter(self, values):
 
         pass
 

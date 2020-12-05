@@ -21,7 +21,7 @@ class MetricForecaster:
         self._model = ForecastingModel.get(ErrorChecker.key_check_and_load('name', config))(config)
         self._history_data_buffer = pd.DataFrame(columns=['datetime', 'value']).set_index('datetime')
 
-    def __call__(self, metric_vals : pd.DataFrame):
+    def forecast(self, metric_vals : pd.DataFrame):
 
         self._update_model(metric_vals)
 

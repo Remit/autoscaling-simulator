@@ -22,7 +22,7 @@ class Limiter:
         self._soft_min = init_min
         self._soft_max = init_max
 
-    def __call__(self, values):
+    def cut(self, values):
 
         result = self._min_comparison(self._soft_min, values)
         result = self._max_comparison(self._soft_max, result)

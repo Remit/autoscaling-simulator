@@ -57,7 +57,7 @@ class Service(MetricSource):
                 m_source_name = service_name
 
             if m_service_name == service_name:
-                metrics_by_priority[metric_description.priority] = metric_description.convert_to_metric(service_regions, m_service_name, m_source_name, state_reader)
+                metrics_by_priority[metric_description.priority] = metric_description.to_regionalized_metric(service_regions, m_service_name, m_source_name, state_reader)
 
         self.metrics_by_priority = collections.OrderedDict(sorted(metrics_by_priority.items()))
         self.scaling_effect_aggregation_rule = ScalingEffectAggregationRule.get(scaling_setting_for_service.scaling_effect_aggregation_rule_name)(self.metrics_by_priority,
