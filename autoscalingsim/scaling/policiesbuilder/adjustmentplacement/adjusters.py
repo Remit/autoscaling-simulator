@@ -39,13 +39,10 @@ class Adjuster(ABC):
     def __init__(self,
                  adjustment_horizon : dict,
                  scaling_model : ScalingModel,
-                 node_for_scaled_services_types : dict,
                  scaled_service_instance_requirements_by_service : dict,
-                 optimizer_type : str,
-                 placement_hint : str,
                  combiner_settings : dict,
-                 score_calculator_class : ScoreCalculator,
-                 state_reader : StateReader):
+                 calc_conf : 'DesiredChangeCalculatorConfig',
+                 score_calculator_class : ScoreCalculator):
 
         self.scaling_model = scaling_model
         self.scaled_service_instance_requirements_by_service = scaled_service_instance_requirements_by_service
@@ -59,16 +56,13 @@ class Adjuster(ABC):
         combiner_conf = ErrorChecker.key_check_and_load('conf', combiner_settings, self.__class__.__name__)
         self.combiner = Combiner.get(combiner_type)(combiner_conf)
 
-        self.desired_change_calculator = DesiredChangeCalculator(placement_hint,
-                                                                 self.scorer,
-                                                                 optimizer_type,
-                                                                 node_for_scaled_services_types,
+        self.desired_change_calculator = DesiredChangeCalculator(self.scorer,
                                                                  scaled_service_instance_requirements_by_service,
-                                                                 state_reader)
+                                                                 calc_conf)
 
-    def adjust(self,
-               cur_timestamp : pd.Timestamp,
-               services_scaling_events : dict,
+
+
+    def adjust(self, cur_timestamp : pd.Timestamp, services_scaling_events : dict,
                current_state : PlatformState):
 
         """

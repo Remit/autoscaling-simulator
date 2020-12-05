@@ -1,5 +1,6 @@
 import pandas as pd
 
+from .calc_config import DesiredChangeCalculatorConfig
 from .optimizers import Optimizer
 from . import score_calculators
 from .placer import Placer
@@ -13,34 +14,26 @@ from autoscalingsim.desired_state.service_group.group_of_services_reg import Gro
 
 class DesiredChangeCalculator:
 
-    """
-    Implements PSO (Place-Score-Optimize) process. Provides the desired state
-    of node groups that can further be used to compute deltas.
-    """
+    """ Implements PSO (Place-Score-Optimize) process """
 
     def __init__(self,
-                 placement_hint : str,
                  scorer : Scorer,
-                 optimizer_type : str,
-                 node_for_scaled_services_types : dict,
                  scaled_service_instance_requirements_by_service : dict,
-                 reader : StateReader):
+                 calc_conf : DesiredChangeCalculatorConfig):
 
-        self.placer = Placer(placement_hint,
-                             node_for_scaled_services_types,
+        self.placer = Placer(calc_conf.placement_hint,
+                             calc_conf.node_for_scaled_services_types,
                              scaled_service_instance_requirements_by_service,
-                             reader)
+                             calc_conf.state_reader)
 
         self.scorer = scorer
-        optimizer_class = Optimizer.get(optimizer_type)
+        optimizer_class = Optimizer.get(calc_conf.optimizer_type)
         self.optimizer = optimizer_class()
 
-        self.node_for_scaled_services_types = node_for_scaled_services_types
+        self.node_for_scaled_services_types = calc_conf.node_for_scaled_services_types
         self.scaled_service_instance_requirements_by_service = scaled_service_instance_requirements_by_service
 
-    def __call__(self,
-                 group_of_services_reg : GroupOfServicesRegionalized,
-                 state_duration : pd.Timedelta):
+    def __call__(self, group_of_services_reg : GroupOfServicesRegionalized, state_duration : pd.Timedelta):
 
         # TODO: add logic to check whether empty results are returned
         regions = {}
