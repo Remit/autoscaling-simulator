@@ -14,7 +14,7 @@ class PlatformState:
 
         if isinstance(regions, collections.Mapping):
             self.regions = regions
-            
+
         elif isinstance(regions, list):
             for region_name in regions:
                 self.regions[region_name] = Region(region_name)
@@ -73,10 +73,6 @@ class PlatformState:
 
         return ids_in_regions
 
-    def extract_collective_services_states(self):
-
-        return GroupOfServicesRegionalized({ region_name : region.extract_collective_services_state() for region_name, region in self.regions.items() })
-
     def to_placements(self):
 
         return { region_name : region.to_placement() for region_name, region in self.regions.items()}
@@ -100,6 +96,11 @@ class PlatformState:
     def copy(self):
 
         return self.__class__(self.regions.copy())
+
+    @property
+    def collective_services_states(self):
+
+        return GroupOfServicesRegionalized({ region_name : region.collective_services_state for region_name, region in self.regions.items() })
 
     def __repr__(self):
 

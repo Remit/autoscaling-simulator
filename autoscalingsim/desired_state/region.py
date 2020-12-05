@@ -175,7 +175,8 @@ class Region:
 
         return self.homogeneous_groups.node_groups_for_change_status(in_change)
 
-    def extract_collective_services_state(self):
+    @property
+    def collective_services_state(self):
 
         region_collective_service_state = GroupOfServices()
         for group in self.homogeneous_groups:
