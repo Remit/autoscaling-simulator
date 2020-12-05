@@ -20,15 +20,6 @@ class DeltaTimeline:
         self.timeline = Timeline() if timeline is None else timeline
         self.latest_state_update = pd.Timestamp(0)
 
-    def updated_at_least_once(self):
-
-        return not self.timeline.is_empty
-
-    def to_dict(self):
-
-        return OrderedDict(sorted(self.timeline.to_dict().items(),
-                                  key = lambda elem: elem[0]))
-
     def merge(self, other : 'DeltaTimeline'):
 
         """
@@ -124,6 +115,16 @@ class DeltaTimeline:
         for entity_name, state_delta_ids_for_removal_per_entity in state_delta.node_groups_ids_for_removal.items():
             for region_name, state_delta_ids_for_removal_per_entity_region in state_delta_ids_for_removal_per_entity.items():
                 node_groups_ids_mark_for_removal[entity_name][region_name].extend(state_delta_ids_for_removal_per_entity_region)
+
+    def to_dict(self):
+
+        return OrderedDict(sorted(self.timeline.to_dict().items(),
+                                  key = lambda elem: elem[0]))
+
+    @property
+    def updated_at_least_once(self):
+
+        return not self.timeline.is_empty
 
     def __repr__(self):
 

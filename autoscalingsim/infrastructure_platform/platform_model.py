@@ -201,15 +201,10 @@ class PlatformModel:
 
         return self.providers_configs[provider].get_node_info(node_type)
 
-    def adjust(self, cur_timestamp : pd.Timestamp, desired_states_to_process : dict):
+    def adjust_platform_state(self, cur_timestamp : pd.Timestamp, desired_states_to_process : dict):
 
-        """
-        Adjusts the platform with help of Adjustment Policy.
-        """
-
-        adjusted_timeline_of_deltas = self.adjustment_policy.adjust(cur_timestamp,
-                                                                    desired_states_to_process,
-                                                                    self.state_deltas_timeline.actual_state)
+        adjusted_timeline_of_deltas = self.adjustment_policy.adjust_platform_state(cur_timestamp, desired_states_to_process,
+                                                                                   self.state_deltas_timeline.actual_state)
 
         if not adjusted_timeline_of_deltas is None:
             self.state_deltas_timeline.merge(adjusted_timeline_of_deltas)

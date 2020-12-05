@@ -50,7 +50,7 @@ class ScalingPolicy:
             if len(desired_states_to_process) > 0:
                 # TODO: Combine -> scaling app as a whole to remove bottlenecks
 
-                self.platform_model.adjust(cur_timestamp, desired_states_to_process)
+                self.platform_model.adjust_platform_state(cur_timestamp, desired_states_to_process)
 
             self.last_sync_timestamp = cur_timestamp
 

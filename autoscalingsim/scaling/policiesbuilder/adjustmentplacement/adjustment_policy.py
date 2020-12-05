@@ -3,7 +3,7 @@ import json
 import pandas as pd
 import collections
 
-from .adjusters import Adjuster
+from .adjuster import Adjuster
 from .desired_adjustment_calculator.calc_config import DesiredChangeCalculatorConfig
 
 from autoscalingsim.scaling.scaling_model import ScalingModel
@@ -37,13 +37,13 @@ class AdjustmentPolicy:
             self.adjuster = adjuster_class(adjustment_horizon, self.scaling_model,
                                            service_instance_requirements, combiner_settings, calc_conf)
 
-    def adjust(self, cur_timestamp : pd.Timestamp,
-               desired_states_timeline : dict, platform_state : PlatformState):
+    def adjust_platform_state(self, cur_timestamp : pd.Timestamp,
+                              desired_states_timeline : dict, platform_state : PlatformState):
 
         services_scaling_events = self._convert_desired_services_states_to_scaling_events(platform_state, desired_states_timeline)
         services_scaling_events = self._convert_scaling_events_to_dataframes(services_scaling_events)
 
-        return self.adjuster.adjust(cur_timestamp, services_scaling_events, platform_state)
+        return self.adjuster.adjust_platform_state(cur_timestamp, services_scaling_events, platform_state)
 
     def _convert_desired_services_states_to_scaling_events(self, platform_state : PlatformState, desired_states_timeline : dict):
 

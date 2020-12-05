@@ -49,6 +49,6 @@ class NodeGroupUtilization:
     def get(self, service_name : str, resource_name : str, interval : pd.Timedelta):
 
         if not service_name in self.service_utilizations:
-            raise ValueError(f'Unexpected service name {service_name} when reading {self.__class__.__name__}')
-
-        return self.service_utilizations[service_name].get(resource_name, interval)
+            return None
+        else:
+            return self.service_utilizations[service_name].get(resource_name, interval)

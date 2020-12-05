@@ -1,0 +1,136 @@
+import pandas as pd
+from abc import ABC, abstractmethod
+
+from .desired_adjustment_calculator.score_calculators import ScoreCalculator
+from .desired_adjustment_calculator.desired_calc import DesiredChangeCalculator
+from .desired_adjustment_calculator.scorer import Scorer
+
+from autoscalingsim.deltarepr.timelines.services_changes_timeline import TimelineOfDesiredServicesChanges
+from autoscalingsim.deltarepr.timelines.delta_timeline import DeltaTimeline
+from autoscalingsim.scaling.state_reader import StateReader
+from autoscalingsim.scaling.scaling_model import ScalingModel
+from autoscalingsim.desired_state.platform_state import PlatformState
+from autoscalingsim.desired_state.state_duration import StateDuration
+from autoscalingsim.desired_state.service_group.group_of_services_reg import GroupOfServicesRegionalized
+from autoscalingsim.utils.combiners import Combiner
+from autoscalingsim.utils.error_check import ErrorChecker
+
+class Adjuster(ABC):
+
+    _Registry = {}
+
+    def __init__(self, adjustment_horizon : dict, scaling_model : ScalingModel,
+                 services_resource_requirements : dict, combiner_settings : dict,
+                 calc_conf : 'DesiredChangeCalculatorConfig', score_calculator_class : ScoreCalculator):
+
+        self.scaling_model = scaling_model
+        self.services_resource_requirements = services_resource_requirements
+        self.scorer = Scorer(score_calculator_class())
+
+        adjustment_horizon_value = ErrorChecker.key_check_and_load('value', adjustment_horizon, self.__class__.__name__)
+        adjustment_horizon_unit = ErrorChecker.key_check_and_load('unit', adjustment_horizon, self.__class__.__name__)
+        self.adjustment_horizon = pd.Timedelta(adjustment_horizon_value, unit = adjustment_horizon_unit)
+
+        combiner_type = ErrorChecker.key_check_and_load('type', combiner_settings, self.__class__.__name__)
+        combiner_conf = ErrorChecker.key_check_and_load('conf', combiner_settings, self.__class__.__name__)
+        self.combiner = Combiner.get(combiner_type)(combiner_conf)
+
+        self.desired_change_calculator = DesiredChangeCalculator(self.scorer, services_resource_requirements, calc_conf)
+
+    def adjust_platform_state(self, cur_timestamp : pd.Timestamp, services_scaling_events : dict, current_state : PlatformState):
+
+        timeline_of_deltas = DeltaTimeline(self.scaling_model, current_state)
+
+        timeline_of_unmet_changes = TimelineOfDesiredServicesChanges(self.adjustment_horizon, self.combiner, services_scaling_events, cur_timestamp)
+
+        ts_of_unmet_change, unmet_change = timeline_of_unmet_changes.next()
+        in_work_state = current_state
+
+        while not unmet_change is None:
+
+            unmet_change = self._attempt_to_use_existing_nodes_and_scale_down_if_needed(in_work_state, ts_of_unmet_change, unmet_change, timeline_of_deltas)
+
+            if len(unmet_change) > 0:
+
+                in_work_state, unmet_change_state, state_duration = self._roll_out_enforced_updates_temporarily(in_work_state, ts_of_unmet_change,
+                                                                                                                unmet_change, timeline_of_deltas, timeline_of_unmet_changes)
+
+                state_addition_deltas, state_score_addition = self._evaluate_nodes_addition_option(in_work_state, unmet_change_state, state_duration)
+                state_substitution_deltas, state_score_substitution = self._evaluate_nodes_substitution_option(in_work_state, ts_of_unmet_change, unmet_change_state, state_duration)
+                self._update_timeline_with_best_option(timeline_of_deltas, ts_of_unmet_change,
+                                                       state_addition_deltas, state_score_addition,
+                                                       state_substitution_deltas, state_score_substitution)
+
+            ts_of_unmet_change, unmet_change = timeline_of_unmet_changes.next()
+
+        return timeline_of_deltas if timeline_of_deltas.updated_at_least_once else None
+
+    def _attempt_to_use_existing_nodes_and_scale_down_if_needed(self, in_work_state : PlatformState, ts_of_unmet_change : pd.Timestamp,
+                                                                unmet_change : dict, timeline_of_deltas_ref : DeltaTimeline):
+
+        in_work_state_delta, unmet_change = in_work_state.compute_soft_adjustment(unmet_change, self.services_resource_requirements)
+        timeline_of_deltas_ref.add_state_delta(ts_of_unmet_change, in_work_state_delta)
+
+        return unmet_change
+
+    def _roll_out_enforced_updates_temporarily(self, in_work_state : PlatformState, ts_of_unmet_change : pd.Timestamp, unmet_change : dict,
+                                               timeline_of_deltas_ref : DeltaTimeline, timeline_of_unmet_changes_ref : TimelineOfDesiredServicesChanges):
+
+        new_in_work_state, _, _ = timeline_of_deltas_ref.roll_out_updates(ts_of_unmet_change)
+        if not new_in_work_state is None:
+            in_work_state = new_in_work_state
+
+        ts_next = timeline_of_unmet_changes_ref.peek(ts_of_unmet_change)
+        state_duration = ts_next - ts_of_unmet_change
+        unmet_change_state = GroupOfServicesRegionalized(unmet_change, self.services_resource_requirements)
+
+        return (in_work_state, unmet_change_state, state_duration)
+
+    def _evaluate_nodes_addition_option(self, in_work_state : PlatformState, unmet_change_state : GroupOfServicesRegionalized,
+                                        state_duration : pd.Timedelta):
+
+        state_addition_deltas, state_score_addition = self.desired_change_calculator(unmet_change_state, state_duration)
+
+        state_score_addition += self.scorer.evaluate_placements(in_work_state.to_placements(), StateDuration.from_single_value(state_duration))
+
+        return (state_addition_deltas, state_score_addition)
+
+    def _evaluate_nodes_substitution_option(self, in_work_state : PlatformState, ts_of_unmet_change : pd.Timestamp,
+                                            unmet_change_state : GroupOfServicesRegionalized, state_duration : pd.Timedelta):
+
+        in_work_collective_services_states = in_work_state.collective_services_states
+        in_work_collective_services_states += unmet_change_state
+        state_substitution_deltas, state_score_substitution = self.desired_change_calculator(in_work_collective_services_states, state_duration)
+
+        till_state_substitution = state_substitution_deltas.till_full_enforcement(self.scaling_model, ts_of_unmet_change)
+
+        state_score_substitution += self.scorer.evaluate_placements(in_work_state.to_placements(), till_state_substitution)
+
+        return (state_substitution_deltas, state_score_substitution)
+
+    def _update_timeline_with_best_option(self, timeline_of_deltas_ref : DeltaTimeline, ts_of_unmet_change : pd.Timestamp,
+                                          state_addition_deltas, state_score_addition,
+                                          state_substitution_deltas, state_score_substitution):
+
+        chosen_state_delta = state_addition_deltas if state_score_addition.collapse() > state_score_substitution.collapse() else state_substitution_deltas
+
+        timeline_of_deltas_ref.add_state_delta(ts_of_unmet_change, chosen_state_delta)
+
+    @classmethod
+    def register(cls, name : str):
+
+        def decorator(adjuster_class):
+            cls._Registry[name] = adjuster_class
+            return adjuster_class
+
+        return decorator
+
+    @classmethod
+    def get(cls, name : str):
+
+        if not name in cls._Registry:
+            raise ValueError(f'An attempt to use a non-existent {self.__class__.__name__} {name}')
+
+        return cls._Registry[name]
+
+from .adjusters_impl import *

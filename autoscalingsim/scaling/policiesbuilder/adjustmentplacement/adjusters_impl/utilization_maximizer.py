@@ -1,4 +1,4 @@
-from autoscalingsim.scaling.policiesbuilder.adjustmentplacement.adjusters import Adjuster
+from autoscalingsim.scaling.policiesbuilder.adjustmentplacement.adjuster import Adjuster
 
 @Adjuster.register('utilization_maximization')
 class UtilizationMaximizer(Adjuster):
