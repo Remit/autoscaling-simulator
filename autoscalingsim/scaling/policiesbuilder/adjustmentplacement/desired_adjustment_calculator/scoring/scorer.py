@@ -1,6 +1,6 @@
 import pandas as pd
 
-from .score_calculator import *
+from .score_calculator import ScoreCalculator
 from .score import StateScore
 
 from autoscalingsim.desired_state.platform_state import PlatformState

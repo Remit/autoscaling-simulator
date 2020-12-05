@@ -18,10 +18,9 @@ class ScoreCalculator(ABC):
 
         pass
 
-    @abstractmethod
     def build_init_score(self):
 
-        pass
+        return self.score_class.build_init_score()
 
     @classmethod
     def register(cls, name : str):
@@ -36,7 +35,7 @@ class ScoreCalculator(ABC):
     def get(cls, name : str):
 
         if not name in cls._Registry:
-            raise ValueError(f'An attempt to use a non-existent {self.__class__.__name__} {name}')
+            raise ValueError(f'An attempt to use a non-existent {cls.__name__} {name}')
 
         return cls._Registry[name]
 

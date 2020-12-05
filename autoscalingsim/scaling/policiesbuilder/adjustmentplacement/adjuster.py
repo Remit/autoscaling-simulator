@@ -1,9 +1,9 @@
 import pandas as pd
 from abc import ABC, abstractmethod
 
-from .desired_adjustment_calculator.score_calculator import ScoreCalculator
 from .desired_adjustment_calculator.desired_calc import DesiredChangeCalculator
-from .desired_adjustment_calculator.scorer import Scorer
+from .desired_adjustment_calculator.scoring.score_calculator import ScoreCalculator
+from .desired_adjustment_calculator.scoring.scorer import Scorer
 
 from autoscalingsim.deltarepr.timelines.services_changes_timeline import TimelineOfDesiredServicesChanges
 from autoscalingsim.deltarepr.timelines.delta_timeline import DeltaTimeline
@@ -112,9 +112,13 @@ class Adjuster(ABC):
                                           state_addition_deltas, state_score_addition,
                                           state_substitution_deltas, state_score_substitution):
 
-        chosen_state_delta = state_addition_deltas if state_score_addition.collapse() > state_score_substitution.collapse() else state_substitution_deltas
-
-        timeline_of_deltas_ref.add_state_delta(ts_of_unmet_change, chosen_state_delta)
+        if state_score_addition.is_worst:
+            timeline_of_deltas_ref.add_state_delta(ts_of_unmet_change, state_score_substitution)
+        elif state_score_substitution.is_worst:
+            timeline_of_deltas_ref.add_state_delta(ts_of_unmet_change, state_addition_deltas)
+        else:
+            chosen_state_delta = state_addition_deltas if state_score_addition.joint_score > state_score_substitution.joint_score else state_substitution_deltas
+            timeline_of_deltas_ref.add_state_delta(ts_of_unmet_change, chosen_state_delta)
 
     @classmethod
     def register(cls, name : str):
@@ -129,7 +133,7 @@ class Adjuster(ABC):
     def get(cls, name : str):
 
         if not name in cls._Registry:
-            raise ValueError(f'An attempt to use a non-existent {self.__class__.__name__} {name}')
+            raise ValueError(f'An attempt to use a non-existent {cls.__name__} {name}')
 
         return cls._Registry[name]
 

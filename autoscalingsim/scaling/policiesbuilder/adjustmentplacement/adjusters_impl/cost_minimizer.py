@@ -1,7 +1,7 @@
 from autoscalingsim.scaling.state_reader import StateReader
 from autoscalingsim.scaling.scaling_model import ScalingModel
 from autoscalingsim.scaling.policiesbuilder.adjustmentplacement.adjuster import Adjuster
-from autoscalingsim.scaling.policiesbuilder.adjustmentplacement.desired_adjustment_calculator.score_calculator import ScoreCalculator
+from autoscalingsim.scaling.policiesbuilder.adjustmentplacement.desired_adjustment_calculator.scoring.score_calculator import ScoreCalculator
 
 @Adjuster.register('cost_minimization')
 class CostMinimizer(Adjuster):

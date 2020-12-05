@@ -1,8 +1,8 @@
 import pandas as pd
 
 from autoscalingsim.infrastructure_platform.node_information.node import NodeInfo
-from autoscalingsim.scaling.policiesbuilder.adjustmentplacement.desired_adjustment_calculator.score import Score
-from autoscalingsim.scaling.policiesbuilder.adjustmentplacement.desired_adjustment_calculator.score_calculator import ScoreCalculator
+from autoscalingsim.scaling.policiesbuilder.adjustmentplacement.desired_adjustment_calculator.scoring.score import Score
+from autoscalingsim.scaling.policiesbuilder.adjustmentplacement.desired_adjustment_calculator.scoring.score_calculator import ScoreCalculator
 
 @ScoreCalculator.register('CostMinimizer')
 class PriceScoreCalculator(ScoreCalculator):
@@ -22,7 +22,3 @@ class PriceScoreCalculator(ScoreCalculator):
         score = self.score_class(price)
 
         return (score, price)
-
-    def build_init_score(self):
-
-        return self.score_class(0)

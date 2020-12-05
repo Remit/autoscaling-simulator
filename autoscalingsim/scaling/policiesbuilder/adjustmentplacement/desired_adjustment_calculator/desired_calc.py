@@ -3,8 +3,8 @@ import pandas as pd
 from .calc_config import DesiredChangeCalculatorConfig
 from .optimizers import Optimizer
 from .placer import Placer
-from .scorer import Scorer
-from .score import StateScore
+from .scoring.scorer import Scorer
+from .scoring.score import StateScore
 
 from autoscalingsim.scaling.state_reader import StateReader
 from autoscalingsim.desired_state.region import Region
