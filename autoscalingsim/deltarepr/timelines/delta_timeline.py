@@ -43,9 +43,6 @@ class DeltaTimeline:
 
     def add_state_delta(self, timestamp : pd.Timestamp, state_delta : PlatformStateDelta):
 
-        if not isinstance(state_delta, PlatformStateDelta):
-            raise TypeError(f'An attempt to add an unknown object to {self.__class__.__name__}')
-
         self.timeline.append_at_timestamp(timestamp, state_delta)
 
     def roll_out_updates(self, borderline_ts_for_updates : pd.Timestamp):

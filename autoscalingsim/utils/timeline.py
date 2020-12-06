@@ -1,15 +1,14 @@
+import collections
 import pandas as pd
 
 class Timeline:
 
-    def __init__(self, timeline : dict = {}):
+    def __init__(self):
 
-        self.timeline = timeline.copy()
+        self.timeline = collections.defaultdict(list)
 
     def append_at_timestamp(self, cur_timestamp : pd.Timestamp, value):
 
-        if not cur_timestamp in self.timeline:
-            self.timeline[cur_timestamp] = list()
         self.timeline[cur_timestamp].append(value)
 
     def get_flattened(self):
@@ -22,19 +21,16 @@ class Timeline:
 
     def merge(self, other : 'Timeline'):
 
-        if not isinstance(other, Timeline):
-            raise TypeError(f'Unexpected type {other.__class__.__name__}')
-
         for timestamp, vals_list in other.timeline.items():
-            self.timeline[timestamp] = self.timeline.get(timestamp, list()) + vals_list
+            self.timeline[timestamp].extend(vals_list)
 
     def cut_starting_at(self, cutting_point : pd.Timestamp):
 
-        self.timeline = { ts : vals for ts, vals in self.timeline.items() if ts <= cutting_point }
+        self.timeline = collections.defaultdict(list, { ts : vals for ts, vals in self.timeline.items() if ts <= cutting_point })
 
     def cut_ending_at(self, cutting_point : pd.Timestamp):
 
-        self.timeline = { ts : vals for ts, vals in self.timeline.items() if ts >= cutting_point }
+        self.timeline = collections.defaultdict(list, { ts : vals for ts, vals in self.timeline.items() if ts >= cutting_point })
 
     def between_with_beginning_excluded(self, non_inc_begin : pd.Timestamp, inc_end : pd.Timestamp):
 

@@ -14,9 +14,10 @@ class ResponseQualityStats(ABC):
 
         pass
 
+    @abstractmethod
     def __init__(self, requests_types):
 
-        self.metric_by_request = { req_type : {} for req_type in requests_types }
+        pass
 
     def joint_untimed_stats(self):
 
@@ -54,14 +55,19 @@ class ResponseQualityStats(ABC):
         """
 
         cur_level = self.metric_by_request
-        for level in levels[:-1]:
-            if not level in cur_level:
-                cur_level[level] = {}
+        for level in levels:
             cur_level = cur_level[level]
+        cur_level.append_at_timestamp(cur_timestamp, value)
 
-        if not isinstance(cur_level, Timeline):
-            cur_level[levels[-1]] = Timeline()
-        cur_level[levels[-1]].append_at_timestamp(cur_timestamp, value)
+        #cur_level = self.metric_by_request
+        #for level in levels[:-1]:
+        #    if not level in cur_level:
+        #        cur_level[level] = {}
+        #    cur_level = cur_level[level]
+
+        #if not isinstance(cur_level[levels[-1]], Timeline):
+        #    cur_level[levels[-1]] = Timeline()
+        #cur_level[levels[-1]].append_at_timestamp(cur_timestamp, value)
 
     def _mean_val(self, vals_lst : list):
 

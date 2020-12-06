@@ -78,7 +78,7 @@ class ApplicationModel:
 
         scaling_manager = ScalingManager()
         self.scaling_policy = ScalingPolicy(simulation_conf, state_reader, scaling_manager, self.application_model_conf.service_instance_requirements, configs_contents_table)
-        self.response_stats = ResponseStatsRegionalized(self.scaling_policy.service_regions, self.application_model_conf.reqs_processing_infos.keys())
+        self.response_stats = ResponseStatsRegionalized(self.scaling_policy.service_regions)
         state_reader.add_source('response_stats', self.response_stats)
 
         for service_deployment_conf in self.application_model_conf.service_deployments_confs:
@@ -99,20 +99,15 @@ class ApplicationModel:
         """
         """
 
-        if len(self.new_requests) > 0:
+        for req in self.new_requests:
+            entry_service = self.application_model_conf.get_entry_service(req.request_type)
+            req.processing_time_left = self.application_model_conf.get_upstream_processing_time(req.request_type, entry_service)
+            req.processing_service = entry_service
+            self.services[entry_service].add_request(req, simulation_step)
 
-            for req in self.new_requests:
-                entry_service = self.application_model_conf.get_entry_service(req.request_type)
-                req.processing_time_left = self.application_model_conf.get_upstream_processing_time(req.request_type, entry_service)
-                req.processing_service = entry_service
-                self.services[entry_service].add_request(req, simulation_step)
+        self.new_requests = []
 
-            self.new_requests = []
-
-        # Proceed through the services // fan-in merge and fan-out copying
-        # is done in the app logic since it knows the structure and times
         for service_name, service in self.services.items():
-            # Simulation step in service
             service.step(cur_timestamp, simulation_step)
 
         for service_name, service in self.services.items():
@@ -121,6 +116,7 @@ class ApplicationModel:
             while len(processed_requests) > 0:
                 req = processed_requests.pop()
 
+                # TODO: put below processing in ifs into two functions
                 if req.upstream:
                     next_services_names = self.application_model_conf.get_next_services(service_name)
 
@@ -143,9 +139,8 @@ class ApplicationModel:
                             req.replies_expected = replies_expected
                             self.services[prev_service_name].add_request(req, simulation_step)
                     else:
-                        self.response_stats.add_request(cur_timestamp, req) # Reached the user, updating responses stats
+                        self.response_stats.add_request(cur_timestamp, req)
 
-        # Calling scaling policy that determines the need to scale
         self.scaling_policy.reconcile_state(cur_timestamp)
 
     def enter_requests(self, new_requests : list):
@@ -154,7 +149,6 @@ class ApplicationModel:
 
     def post_process(self, simulation_start : pd.Timestamp, simulation_step : pd.Timedelta, simulation_end : pd.Timestamp):
 
-        # Collect the utilization information from all the services
         for service_name, service in self.services.items():
             self._utilization[service_name] = service.check_out_system_resources_utilization()
 

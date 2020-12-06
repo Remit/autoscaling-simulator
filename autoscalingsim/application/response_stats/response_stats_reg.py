@@ -6,9 +6,9 @@ from .response_stats import ResponseStats
 
 class ResponseStatsRegionalized(MetricSource):
 
-    def __init__(self, regions : list, requests_types : list):
+    def __init__(self, regions : list):
 
-        self.regional_stats = { region_name : ResponseStats(requests_types) for region_name in regions }
+        self.regional_stats = { region_name : ResponseStats() for region_name in regions }
 
     def add_request(self, cur_timestamp : pd.Timestamp, req : Request):
 

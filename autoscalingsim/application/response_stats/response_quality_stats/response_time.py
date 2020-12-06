@@ -1,3 +1,4 @@
+import collections
 import pandas as pd
 
 from autoscalingsim.load.request import Request
@@ -5,6 +6,10 @@ from .response_quality_stats import ResponseQualityStats
 from autoscalingsim.utils.timeline import Timeline
 
 class ResponseTimeStats (ResponseQualityStats):
+
+    def __init__(self):
+
+        self.metric_by_request = collections.defaultdict(Timeline)
 
     def add_request(self, cur_timestamp : pd.Timestamp, req : Request):
 

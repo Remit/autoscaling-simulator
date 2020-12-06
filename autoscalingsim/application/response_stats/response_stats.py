@@ -11,11 +11,11 @@ class ResponseStats:
     KEY_NETWORK_TIME = 'network_time'
     KEY_BUFFER_TIME = 'buffer_time'
 
-    def __init__(self, requests_types):
+    def __init__(self):
 
-        self.stats = { self.__class__.KEY_RESPONSE_TIME : ResponseTimeStats(requests_types),
-                       self.__class__.KEY_NETWORK_TIME : NetworkTimeStats(requests_types),
-                       self.__class__.KEY_BUFFER_TIME : BufferTimeStats(requests_types)}
+        self.stats = { self.__class__.KEY_RESPONSE_TIME : ResponseTimeStats(),
+                       self.__class__.KEY_NETWORK_TIME : NetworkTimeStats(),
+                       self.__class__.KEY_BUFFER_TIME : BufferTimeStats()}
 
     def add_request(self, cur_timestamp : pd.Timestamp, req : Request):
 
