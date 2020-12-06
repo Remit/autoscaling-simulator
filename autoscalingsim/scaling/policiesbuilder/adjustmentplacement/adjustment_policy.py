@@ -4,7 +4,7 @@ import pandas as pd
 import collections
 
 from .adjuster import Adjuster
-from .desired_adjustment_calculator.calc_config import DesiredChangeCalculatorConfig
+from .desired_adjustment_calculator.calc_config import DesiredPlatformAdjustmentCalculatorConfig
 
 from autoscalingsim.scaling.scaling_model import ScalingModel
 from autoscalingsim.scaling.state_reader import StateReader
@@ -32,7 +32,7 @@ class AdjustmentPolicy:
             adjustment_goal = ErrorChecker.key_check_and_load('adjustment_goal', config, self.__class__.__name__)
             adjuster_class = Adjuster.get(adjustment_goal)
 
-            calc_conf = DesiredChangeCalculatorConfig(placement_hint, optimizer_type, node_for_scaled_services_types, state_reader)
+            calc_conf = DesiredPlatformAdjustmentCalculatorConfig(placement_hint, optimizer_type, node_for_scaled_services_types, state_reader)
 
             self.adjuster = adjuster_class(adjustment_horizon, self.scaling_model,
                                            service_instance_requirements, combiner_settings, calc_conf)

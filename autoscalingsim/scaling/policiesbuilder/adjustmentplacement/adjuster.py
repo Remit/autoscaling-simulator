@@ -1,7 +1,7 @@
 import pandas as pd
 from abc import ABC, abstractmethod
 
-from .desired_adjustment_calculator.desired_calc import DesiredChangeCalculator
+from .desired_adjustment_calculator.desired_calc import DesiredPlatformAdjustmentCalculator
 from .desired_adjustment_calculator.scoring.score_calculator import ScoreCalculator
 from .desired_adjustment_calculator.scoring.scorer import Scorer
 
@@ -21,7 +21,7 @@ class Adjuster(ABC):
 
     def __init__(self, adjustment_horizon : dict, scaling_model : ScalingModel,
                  services_resource_requirements : dict, combiner_settings : dict,
-                 calc_conf : 'DesiredChangeCalculatorConfig', score_calculator_class : ScoreCalculator):
+                 calc_conf : 'DesiredPlatformAdjustmentCalculatorConfig', score_calculator_class : ScoreCalculator):
 
         self.scaling_model = scaling_model
         self.services_resource_requirements = services_resource_requirements
@@ -35,7 +35,7 @@ class Adjuster(ABC):
         combiner_conf = ErrorChecker.key_check_and_load('conf', combiner_settings, self.__class__.__name__)
         self.combiner = Combiner.get(combiner_type)(combiner_conf)
 
-        self.desired_change_calculator = DesiredChangeCalculator(self.scorer, services_resource_requirements, calc_conf)
+        self.desired_change_calculator = DesiredPlatformAdjustmentCalculator(self.scorer, services_resource_requirements, calc_conf)
 
     def adjust_platform_state(self, cur_timestamp : pd.Timestamp, services_scaling_events : dict, current_state : PlatformState):
 

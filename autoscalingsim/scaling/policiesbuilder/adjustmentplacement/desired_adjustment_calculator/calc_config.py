@@ -1,6 +1,6 @@
 from autoscalingsim.scaling.state_reader import StateReader
 
-class DesiredChangeCalculatorConfig:
+class DesiredPlatformAdjustmentCalculatorConfig:
 
     def __init__(self, placement_hint : str, optimizer_type : str,
                  node_for_scaled_services_types : dict, state_reader : StateReader):
