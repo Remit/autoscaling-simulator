@@ -50,33 +50,21 @@ class Placer:
 
         return self._complement_placement_options_with_remainders_if_needed(nodes_required, services_state)
 
-    def _produce_placement_options(self,
-                                  services_state,
-                                  region_name : str,
-                                  dynamic_current_placement = None,
-                                  dynamic_performance = None,
-                                  dynamic_resource_utilization = None):
+    def _produce_placement_options(self, services_state, region_name : str,
+                                   dynamic_current_placement = None,
+                                   dynamic_performance = None,
+                                   dynamic_resource_utilization = None):
         """
-        Wraps the placement options computation algorithm.
         The algorithm tries to determine the placement options according to the
         the placement hint given. If the placement according to the given hint
         does not succeed, Placer proceeds to the try more relaxed hints to
-        generate the in-node placement constraints (options). The 'specialized'
-        and the 'sole_instance' options are included whenever any other option
-        is provided since the assumption is that the placement must succeed
-        at all costs, i.e. if there are no ideal solution, at least some
-        placement solution must be given, however bad it is (see 'sole_instance')
-
-        The default last resort for Placer is the 'sole_instance' placement, i.e. single scaled
-        service instance per node for scaled services.
+        generate the in-node placement constraints (options).
         """
 
-        # Using the cached results if no dynamic information is provided
-        if (len(self.cached_placement_options) > 0) and (dynamic_current_placement is None) \
-         and (dynamic_performance is None) and (dynamic_resource_utilization is None):
+        if self._can_cached_result_be_used(dynamic_current_placement, dynamic_performance, dynamic_resource_utilization):
             return self.cached_placement_options
 
-        placement_options = {}
+        placement_options = collections.defaultdict(list)
         consider_other_placement_options = False
         if self.placement_hint == self.__class__.EXISTING_MIXTURE:
             placement_options_raw = self.placement_strategies[self.__class__.EXISTING_MIXTURE].place(self,
@@ -84,8 +72,7 @@ class Placer:
                                                                                                      dynamic_current_placement,
                                                                                                      dynamic_performance,
                                                                                                      dynamic_resource_utilization)
-            placement_options = self._add_placement_options(placement_options,
-                                                            placement_options_raw)
+            self._enrich_placement_options(placement_options, placement_options_raw)
 
             if len(placement_options) == 0:
                 consider_other_placement_options = True
@@ -100,8 +87,7 @@ class Placer:
             if self.placement_hint == self.__class__.BALANCED:
                 placement_options_raw = self.placement_strategies[self.__class__.BALANCED].place(self, placement_options_raw)
 
-            placement_options = self._add_placement_options(placement_options,
-                                                            placement_options_raw)
+            self._enrich_placement_options(placement_options, placement_options_raw)
 
             consider_other_placement_options = True
 
@@ -111,8 +97,7 @@ class Placer:
                                                                                                 region_name,
                                                                                                 dynamic_performance,
                                                                                                 dynamic_resource_utilization)
-            placement_options = self._add_placement_options(placement_options,
-                                                            placement_options_raw)
+            self._enrich_placement_options(placement_options, placement_options_raw)
 
             consider_other_placement_options = True
 
@@ -121,12 +106,21 @@ class Placer:
                                                                                                   region_name,
                                                                                                   dynamic_performance,
                                                                                                   dynamic_resource_utilization)
-            placement_options = self._add_placement_options(placement_options,
-                                                            placement_options_raw)
+            self._enrich_placement_options(placement_options, placement_options_raw)
 
         self.cached_placement_options = placement_options
 
         return placement_options
+
+    def _can_cached_result_be_used(self, dynamic_current_placement, dynamic_performance, dynamic_resource_utilization):
+
+        return len(self.cached_placement_options) > 0 and dynamic_current_placement is None \
+                    and dynamic_performance is None and dynamic_resource_utilization is None
+
+    def _enrich_placement_options(self, placement_options, placement_options_to_add):
+
+        for node_name in placement_options_to_add.keys():
+            placement_options[node_name].extend(placement_options_to_add[node_name])
 
     def _compute_node_count_to_cover_the_placement(self, services_state, placement_options_per_node):
 
@@ -170,17 +164,3 @@ class Placer:
                     placements.append(Placement([placement_option, remainder_placement]))
 
         return placements
-
-    def _add_placement_options(self,
-                               placement_options,
-                               placement_options_to_add):
-
-        """
-        Combines scaled services placement options for nodes. The placement
-        options were likely received by using different placement strategies (hints).
-        """
-
-        for node_name in placement_options_to_add.keys():
-            placement_options[node_name] = placement_options.get(node_name, []) + placement_options_to_add[node_name]
-
-        return placement_options
