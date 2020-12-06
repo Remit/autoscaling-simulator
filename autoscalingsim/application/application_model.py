@@ -111,7 +111,7 @@ class ApplicationModel:
                 if req.upstream:
                     req = self._attempt_to_pass_upstream_request(service_name, req, simulation_step)
 
-                if not req.upstream:
+                if req.downstream:
                     user_reached = self._attempt_to_pass_downstream_request(service_name, req, simulation_step)
                     if user_reached:
                         self.response_stats.add_request(cur_timestamp, req)

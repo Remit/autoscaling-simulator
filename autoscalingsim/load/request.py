@@ -27,9 +27,23 @@ class Request:
         self.buffer_time = {}
 
         self.processing_service = None
-        self.upstream = True
-        self.replies_expected = 1 # to implement the fan-in on the level of service
+        self._upstream = True
+        self.replies_expected = 1
 
     def set_downstream(self):
 
-        self.upstream = False
+        self._upstream = False
+
+    def set_upstream(self):
+
+        self._upstream = True
+
+    @property
+    def upstream(self):
+
+        return self._upstream
+
+    @property
+    def downstream(self):
+
+        return not self._upstream
