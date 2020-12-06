@@ -113,7 +113,7 @@ class SystemResourceUsage:
         else:
             return 0
 
-    def collapse(self):
+    def as_fraction(self):
 
         return sum([res_usage / (self.instance_count * self.instance_max_usage[res_name]) for res_name, res_usage in self.system_resources_usage.items()]) / len(self.system_resources_usage)
 
@@ -124,7 +124,7 @@ class SystemResourceUsage:
         if not isinstance(other_usage, SystemResourceUsage):
             raise TypeError(f'Unexpected type of an operand when comparing with {self.__class__.__name__}: {other_usage.__class__.__name__}')
 
-        return comparison_op(self.collapse(), other_usage.collapse())
+        return comparison_op(self.as_fraction(), other_usage.as_fraction())
 
     def __gt__(self, other_usage : 'SystemResourceUsage'):
 

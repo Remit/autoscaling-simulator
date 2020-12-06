@@ -17,11 +17,11 @@ class BalancedPlacingStrategy(PlacingStrategy):
 
             for single_placement_option in placement_options_per_node:
 
-                if abs(single_placement_option.system_resources_taken.collapse() - 1) <= placer.balancing_threshold:
+                if abs(single_placement_option.system_resources_taken.as_fraction() - 1) <= placer.balancing_threshold:
                     balanced_placement_options_per_node.append(single_placement_option)
 
-                if abs(single_placement_option.system_resources_taken.collapse() - 1) < \
-                 abs(best_placement_option_so_far.system_resources_taken.collapse() - 1):
+                if abs(single_placement_option.system_resources_taken.as_fraction() - 1) < \
+                 abs(best_placement_option_so_far.system_resources_taken.as_fraction() - 1):
                     best_placement_option_so_far = single_placement_option
 
             # Fallback option: taking the best-balanced solution so far, but not within the balancing threshold

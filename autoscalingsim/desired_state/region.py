@@ -96,7 +96,7 @@ class Region:
         non_enforced_scale_down_deltas = []
         new_generalized_deltas = []
         cur_groups = self.homogeneous_groups.enforced
-        homogeneous_groups_sorted_increasing = sorted(cur_groups, key = lambda elem: elem.system_resources_usage.collapse())
+        homogeneous_groups_sorted_increasing = sorted(cur_groups, key = lambda elem: elem.system_resources_usage.as_fraction())
 
         for group in homogeneous_groups_sorted_increasing:
             if len(unmet_reduction) > 0:
@@ -123,7 +123,7 @@ class Region:
 
         new_generalized_deltas = list()
 
-        homogeneous_groups_sorted_decreasing = reversed(sorted(cur_groups, key = lambda elem: elem.system_resources_usage.collapse()))
+        homogeneous_groups_sorted_decreasing = reversed(sorted(cur_groups, key = lambda elem: elem.system_resources_usage.as_fraction()))
 
         for group in homogeneous_groups_sorted_decreasing:
             if len(unmet_increase) > 0:
