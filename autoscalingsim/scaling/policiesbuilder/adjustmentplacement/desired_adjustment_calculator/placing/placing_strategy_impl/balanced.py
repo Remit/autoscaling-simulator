@@ -9,23 +9,35 @@ class BalancedPlacingStrategy(PlacingStrategy):
               dynamic_performance = None,
               dynamic_resource_utilization = None):
 
-        # Select the most balanced options by applying the threshold.
-        balanced_placement_options = {}
-        for node_name, placement_options_per_node in shared_placement_options.items():
-            balanced_placement_options_per_node = []
-            best_placement_option_so_far = None
+        balanced_placements = list()
+        for node_name, placements_per_node in shared_placement_options.items():
 
-            for single_placement_option in placement_options_per_node:
+            best_placement_option_so_far, balanced_placements_per_node = \
+                self._attempt_to_find_balanced_placements_for_node(placer, placements_per_node)
 
-                if abs(single_placement_option.system_resources_taken.as_fraction() - 1) <= placer.balancing_threshold:
-                    balanced_placement_options_per_node.append(single_placement_option)
+            self._enrich_with_fallback_best_solution_found_so_far(balanced_placements_per_node, best_placement_option_so_far)
 
-                if abs(single_placement_option.system_resources_taken.as_fraction() - 1) < \
-                 abs(best_placement_option_so_far.system_resources_taken.as_fraction() - 1):
-                    best_placement_option_so_far = single_placement_option
+            balanced_placements.extend(balanced_placements_per_node)
 
-            # Fallback option: taking the best-balanced solution so far, but not within the balancing threshold
-            if (len(balanced_placement_options_per_node) == 0) and (not best_placement_option_so_far is None):
-                balanced_placement_options_per_node.append(best_placement_option_so_far)
+        return balanced_placements_per_node
 
-        return balanced_placement_options_per_node
+    def _attempt_to_find_balanced_placements_for_node(self, placer, placements_per_node):
+
+        best_placement_option_so_far = None
+        balanced_placements_per_node = list()
+
+        for single_placement_option in placements_per_node:
+
+            if abs(single_placement_option.system_resources_taken.as_fraction() - 1) <= placer.balancing_threshold:
+                balanced_placements_per_node.append(single_placement_option)
+
+            if abs(single_placement_option.system_resources_taken.as_fraction() - 1) < \
+             abs(best_placement_option_so_far.system_resources_taken.as_fraction() - 1):
+                best_placement_option_so_far = single_placement_option
+
+        return (best_placement_option_so_far, balanced_placements_per_node)
+
+    def _enrich_with_fallback_best_solution_found_so_far(self, balanced_placements_per_node, best_placement_option_so_far):
+
+        if len(balanced_placements_per_node) == 0 and not best_placement_option_so_far is None:
+            balanced_placements_per_node.append(best_placement_option_so_far)
