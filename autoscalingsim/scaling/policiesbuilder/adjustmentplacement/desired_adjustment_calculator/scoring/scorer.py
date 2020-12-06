@@ -3,9 +3,6 @@ import pandas as pd
 from .score_calculator import ScoreCalculator
 from .score import StateScore
 
-from autoscalingsim.desired_state.platform_state import PlatformState
-from autoscalingsim.desired_state.state_duration import StateDuration
-
 class Scorer:
 
     def __init__(self, score_calculator : ScoreCalculator):
@@ -27,7 +24,7 @@ class Scorer:
 
         return allowed_placements
 
-    def score_platform_state(self, platform_state : PlatformState, state_duration : StateDuration):
+    def score_platform_state(self, platform_state : 'PlatformState', state_duration : 'StateDuration'):
 
         cumulative_scores_per_region = dict()
         for region_name, region_placement in platform_state.to_placements().items():

@@ -89,7 +89,7 @@ class Adjuster(ABC):
     def _evaluate_nodes_addition_option(self, in_work_state : PlatformState, unmet_change_state : GroupOfServicesRegionalized,
                                         state_duration : pd.Timedelta):
 
-        state_addition_deltas, state_score_addition = self.desired_change_calculator(unmet_change_state, state_duration)
+        state_addition_deltas, state_score_addition = self.desired_change_calculator.compute_adjustment(unmet_change_state, state_duration)
 
         state_score_addition += self.scorer.score_platform_state(in_work_state, StateDuration.from_single_value(state_duration))
 
@@ -100,7 +100,7 @@ class Adjuster(ABC):
 
         in_work_collective_services_states = in_work_state.collective_services_states
         in_work_collective_services_states += unmet_change_state
-        state_substitution_deltas, state_score_substitution = self.desired_change_calculator(in_work_collective_services_states, state_duration)
+        state_substitution_deltas, state_score_substitution = self.desired_change_calculator.compute_adjustment(in_work_collective_services_states, state_duration)
 
         till_state_substitution = state_substitution_deltas.till_full_enforcement(self.scaling_model, ts_of_unmet_change)
 

@@ -1,0 +1,5 @@
+from .balanced import BalancedPlacingStrategy
+from .existing_mixture import ExistingMixturePlacingStrategy
+from .shared import SharedPlacingStrategy
+from .sole_instance import SoleInstancePlacingStrategy
+from .specialized import SpecializedPlacingStrategy

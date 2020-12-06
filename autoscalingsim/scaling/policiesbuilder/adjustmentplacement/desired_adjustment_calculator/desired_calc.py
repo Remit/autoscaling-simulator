@@ -3,10 +3,8 @@ import pandas as pd
 
 from .calc_config import DesiredPlatformAdjustmentCalculatorConfig
 from .optimizing import Optimizer
-from .placer import Placer
-from .scoring.scorer import Scorer
-from .scoring.score import Score
-from .scoring.score import StateScore
+from .placing import Placer
+from .scoring import Scorer, Score, StateScore
 
 from autoscalingsim.scaling.state_reader import StateReader
 from autoscalingsim.desired_state.region import Region
@@ -29,8 +27,8 @@ class DesiredPlatformAdjustmentCalculator:
         self.scorer = scorer
         self.optimizer = Optimizer.get(calc_conf.optimizer_type)()
 
-    def __call__(self, group_of_services_reg : GroupOfServicesRegionalized,
-                 state_duration : pd.Timedelta):
+    def compute_adjustment(self, group_of_services_reg : GroupOfServicesRegionalized,
+                           state_duration : pd.Timedelta):
 
         regions = collections.defaultdict(Region)
         scores_per_region = collections.defaultdict(Score)
