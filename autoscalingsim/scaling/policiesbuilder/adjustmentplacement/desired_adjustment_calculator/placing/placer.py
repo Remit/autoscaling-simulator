@@ -1,4 +1,4 @@
-from collections import OrderedDict
+import collections
 
 from .placing_strategy import PlacingStrategy
 
@@ -9,15 +9,7 @@ from autoscalingsim.scaling.state_reader import StateReader
 
 class Placer:
 
-    """
-    Proposes services placement options for each node type. These proposals
-    are used as constraints by Adjuster, i.e. it can only use the generated
-    proposals to search for a needed platform adjustment sufficing to its goal.
-    TODO: Placer uses both static and dynamic information to form its proposals.
-    In respect to the dynamic information, it can use the runtime utilization and
-    performance information to adjust placement space. For instance, a service
-    may strive for more memory than it is written in its resource requirements.
-    """
+    """ Proposes services placement options for each node type. These proposals are used as constraints. """
 
     EXISTING_MIXTURE = 'existing_mixture'
     BALANCED = 'balanced'
@@ -25,11 +17,8 @@ class Placer:
     SPECIALIZED = 'specialized'
     SOLE_INSTANCE = 'sole_instance'
 
-    def __init__(self,
-                 placement_hint : str,
-                 node_for_scaled_services_types : dict,
-                 scaled_service_instance_requirements_by_service : dict,
-                 reader : StateReader):
+    def __init__(self, placement_hint : str, node_for_scaled_services_types : dict,
+                 scaled_service_instance_requirements_by_service : dict, reader : StateReader):
 
         self.placement_hint = placement_hint
         self.node_for_scaled_services_types = node_for_scaled_services_types
@@ -44,60 +33,24 @@ class Placer:
                                    dynamic_current_placement = None, dynamic_performance = None,
                                    dynamic_resource_utilization = None):
 
-        placement_options = self.compute_placement_options(services_state,
-                                                           region_name,
-                                                           dynamic_current_placement,
-                                                           dynamic_performance,
-                                                           dynamic_resource_utilization)
-        nodes_required = {}
+        placement_options = self._produce_placement_options(services_state,
+                                                            region_name,
+                                                            dynamic_current_placement,
+                                                            dynamic_performance,
+                                                            dynamic_resource_utilization)
+
+        nodes_required = collections.defaultdict(ServicesPlacement)
         for node_name, placement_options_per_node in placement_options.items():
-            node_count_required_per_option = []
-            # Computing how many nodes are required to cover the placement option
-            for placement_option in placement_options_per_node:
 
-                nodes_required_per_placement = services_state / placement_option.placed_services
-                node_count_required_per_option.append(ServicesPlacement(placement_option.node_info,
-                                                                        nodes_required_per_placement,
-                                                                         placement_option.placed_services))
+            node_count_required_per_option = self._compute_node_count_to_cover_the_placement(services_state, placement_options_per_node)
 
-            if len(node_count_required_per_option) > 0:
-                # Selecting the best option for each node
-                selected_services_placement = ServicesPlacement(node_info = None,
-                                                                nodes_count = float('Inf'),
-                                                                services_state = None)
-                for considered_services_placement in node_count_required_per_option:
-                    if (considered_services_placement.nodes_count > 0) \
-                     and (considered_services_placement.nodes_count < selected_services_placement.nodes_count):
+            best_option = self._select_best_option_for_the_node_type(node_count_required_per_option)
+            if not best_option is None:
+                nodes_required[node_name] = best_option
 
-                        selected_services_placement = considered_services_placement
+        return self._complement_placement_options_with_remainders_if_needed(nodes_required, services_state)
 
-                if not selected_services_placement.node_info is None:
-                    nodes_required[node_name] = selected_services_placement
-
-        # Correcting the GroupOfServices for each selected option since not all the
-        # nodes might be filled equally
-        placements = []
-        for node_name, placement_option in nodes_required.items():
-            #leftover_services_state = services_state % placement_option.services_state
-            #remainder_placement = ServicesPlacement(placement_option.node_info,
-            #                                        1,
-            #                                        leftover_services_state)
-            #placement = Placement([remainder_placement])
-            #print(f'placement_option.nodes_count: {placement_option.nodes_count}')
-            #if placement_option.nodes_count > 1:
-            #    placement_option.nodes_count -= 1
-            #    placement.add_services_placement(placement_option)
-
-            placement = Placement()
-            placement.add_services_placement(placement_option)
-            for ep in placement.services_placements:
-                print('ep')
-                print(ep.nodes_count)
-            placements.append(placement)
-
-        return placements
-
-    def compute_placement_options(self,
+    def _produce_placement_options(self,
                                   services_state,
                                   region_name : str,
                                   dynamic_current_placement = None,
@@ -174,6 +127,49 @@ class Placer:
         self.cached_placement_options = placement_options
 
         return placement_options
+
+    def _compute_node_count_to_cover_the_placement(self, services_state, placement_options_per_node):
+
+        result = list()
+        for placement_option in placement_options_per_node:
+
+            nodes_required_per_placement = services_state / placement_option.placed_services
+            result.append(ServicesPlacement(placement_option.node_info,
+                                            nodes_required_per_placement,
+                                            placement_option.placed_services))
+
+        return result
+
+    def _select_best_option_for_the_node_type(self, node_count_required_per_option):
+
+        result = ServicesPlacement(node_info = None, nodes_count = float('Inf'), services_state = None)
+
+        for considered_services_placement in node_count_required_per_option:
+            if (considered_services_placement.nodes_count > 0) \
+             and (considered_services_placement.nodes_count < result.nodes_count):
+
+                result = considered_services_placement
+
+        return result if not result.node_info is None else None
+
+    def _complement_placement_options_with_remainders_if_needed(self, nodes_required, services_state):
+
+        placements = list()
+        for node_name, placement_option in nodes_required.items():
+            leftover_services_state = placement_option.services_that_cannot_be_placed(services_state)
+            if leftover_services_state.is_empty:
+                placements.append(Placement([placement_option]))
+
+            else:
+                remainder_placement = ServicesPlacement(placement_option.node_info, 1, leftover_services_state)
+
+                if placement_option.nodes_count <= 1:
+                    placements.append(Placement([remainder_placement]))
+                else:
+                    placement_option.nodes_count -= 1
+                    placements.append(Placement([placement_option, remainder_placement]))
+
+        return placements
 
     def _add_placement_options(self,
                                placement_options,

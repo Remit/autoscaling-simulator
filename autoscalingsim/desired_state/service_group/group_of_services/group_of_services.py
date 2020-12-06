@@ -1,4 +1,5 @@
 import collections
+import numbers
 
 from autoscalingsim.deltarepr.group_of_services_delta import GroupOfServicesDelta
 from autoscalingsim.scaling.scaling_aspects import ScalingAspect
@@ -20,10 +21,10 @@ class GroupOfServices:
                 service_instances_group = None
 
                 if isinstance(group_or_aspects_dict, sig.ServiceInstancesGroup):
-                    
+
                     service_instances_group = group_or_aspects_dict
 
-                elif isinstance(groups_or_aspects, collections.Mapping):
+                elif isinstance(group_or_aspects_dict, collections.Mapping):
 
                     service_instances_group = sig.ServiceInstancesGroup(service_name,
                                                                         services_resource_reqs[service_name],
@@ -99,8 +100,12 @@ class GroupOfServices:
         some number of argument groups to get the current group of services.
         """
 
-        return self.__class__({ service_name : service_group % other.services_groups[service_name] if service_group in other.services_groups else service_group \
+        return self.__class__({ service_name : service_group % other.services_groups[service_name] if service_name in other.services_groups else service_group \
                                 for service_name, service_group in self.services_groups.items()})
+
+    def scale_all_service_instances_by(self, scale_factor : numbers.Number):
+
+        return self.__class__({ service_name : service_group * scale_factor for service_name, service_group in self.services_groups.items()})
 
     def downsize_proportionally(self, downsizing_coef : float):
 
@@ -156,6 +161,15 @@ class GroupOfServices:
     def services_requirements(self) -> dict:
 
         return { service_name : group.resource_requirements for service_name, group in self.services_groups.items() }
+
+    @property
+    def is_empty(self) -> bool:
+
+        for service_instances_group in self.services_groups.values():
+            if not service_instances_group.is_empty:
+                return False
+
+        return True
 
     def copy(self):
 

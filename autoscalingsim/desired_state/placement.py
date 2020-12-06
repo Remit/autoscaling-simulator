@@ -28,6 +28,11 @@ class ServicesPlacement:
         self.nodes_count = nodes_count
         self.services_state = services_state
 
+    def services_that_cannot_be_placed(self, services_to_consider : GroupOfServices):
+
+        collected_state_of_placed_services = self.services_state.scale_all_service_instances_by(self.nodes_count)
+        return services_to_consider % collected_state_of_placed_services
+
     def __repr__(self):
 
         return f'{self.__class__.__name__}( node_info = {self.node_info},\

@@ -58,7 +58,7 @@ class ServiceInstancesGroup:
 
         new_aspects = { aspect_name : aspect * multiplier for aspect_name, aspect in self.scaling_aspects.items() }
 
-        return self.__class__(self.service_name, new_aspects)
+        return self.__class__(self.service_name, self.service_resource_reqs, new_aspects)
 
     def __floordiv__(self, other : 'ServiceInstancesGroup'):
 
@@ -76,7 +76,7 @@ class ServiceInstancesGroup:
         new_aspects = { aspect_name : aspect % other.scaling_aspects[aspect_name] for aspect_name, aspect in self.scaling_aspects.items() \
                             if aspect_name in other.scaling_aspects }
 
-        return self.__class__(self.service_name, new_aspects)
+        return self.__class__(self.service_name, self.service_resource_reqs, new_aspects)
 
     def downsize_proportionally(self, downsizing_coef : float):
 
