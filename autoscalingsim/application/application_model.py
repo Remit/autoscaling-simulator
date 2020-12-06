@@ -10,6 +10,7 @@ from autoscalingsim.scaling.state_reader import StateReader
 from autoscalingsim.scaling.scaling_manager import ScalingManager
 from autoscalingsim.utils.requirements import ResourceRequirements
 from autoscalingsim.simulator import conf_keys
+from autoscalingsim.load.request import Request
 
 class ApplicationModel:
 
@@ -69,9 +70,9 @@ class ApplicationModel:
 
     def __init__(self, simulation_conf : dict, state_reader : StateReader, configs_contents_table : dict):
 
-        self.services = {}
-        self.new_requests = []
-        self._utilization = {}
+        self.services = dict()
+        self.new_requests = list()
+        self._utilization = dict()
 
         self.application_model_conf = ApplicationModelConfiguration(configs_contents_table[conf_keys.CONF_APPLICATION_MODEL_KEY],
                                                                     simulation_conf['simulation_step'])
@@ -96,16 +97,7 @@ class ApplicationModel:
 
     def step(self, cur_timestamp : pd.Timestamp, simulation_step : pd.Timedelta):
 
-        """
-        """
-
-        for req in self.new_requests:
-            entry_service = self.application_model_conf.get_entry_service(req.request_type)
-            req.processing_time_left = self.application_model_conf.get_upstream_processing_time(req.request_type, entry_service)
-            req.processing_service = entry_service
-            self.services[entry_service].add_request(req, simulation_step)
-
-        self.new_requests = []
+        self._put_incoming_requests_into_entry_service(simulation_step)
 
         for service_name, service in self.services.items():
             service.step(cur_timestamp, simulation_step)
@@ -116,32 +108,58 @@ class ApplicationModel:
             while len(processed_requests) > 0:
                 req = processed_requests.pop()
 
-                # TODO: put below processing in ifs into two functions
                 if req.upstream:
-                    next_services_names = self.application_model_conf.get_next_services(service_name)
-
-                    if len(next_services_names) > 0:
-                        for next_service_name in next_services_names:
-                            req.processing_time_left = self.application_model_conf.get_upstream_processing_time(req.request_type, next_service_name)
-                            req.processing_service = next_service_name
-                            self.services[next_service_name].add_request(req, simulation_step)
-                    else:
-                        req.set_downstream() # Converting the request req into the response
+                    req = self._attempt_to_pass_upstream_request(service_name, req, simulation_step)
 
                 if not req.upstream:
-                    prev_services_names = self.application_model_conf.get_prev_services(service_name)
-
-                    replies_expected = len(prev_services_names)
-                    if replies_expected > 0:
-                        for prev_service_name in prev_services_names:
-                            req.processing_time_left = self.application_model_conf.get_downstream_processing_time(req.request_type, prev_service_name)
-                            req.processing_service = prev_service_name
-                            req.replies_expected = replies_expected
-                            self.services[prev_service_name].add_request(req, simulation_step)
-                    else:
+                    user_reached = self._attempt_to_pass_downstream_request(service_name, req, simulation_step)
+                    if user_reached:
                         self.response_stats.add_request(cur_timestamp, req)
 
         self.scaling_policy.reconcile_state(cur_timestamp)
+
+    def _put_incoming_requests_into_entry_service(self, simulation_step : pd.Timedelta):
+
+        for req in self.new_requests:
+            entry_service = self.application_model_conf.get_entry_service(req.request_type)
+            req.processing_time_left = self.application_model_conf.get_upstream_processing_time(req.request_type, entry_service)
+            req.processing_service = entry_service
+            self.services[entry_service].add_request(req, simulation_step)
+
+        self.new_requests = list()
+
+    def _attempt_to_pass_upstream_request(self, service_name : str, req : Request,
+                                          simulation_step : pd.Timedelta) -> Request:
+
+        next_services_names = self.application_model_conf.get_next_services(service_name)
+
+        if len(next_services_names) > 0:
+            for next_service_name in next_services_names:
+                req.processing_time_left = self.application_model_conf.get_upstream_processing_time(req.request_type, next_service_name)
+                req.processing_service = next_service_name
+                self.services[next_service_name].add_request(req, simulation_step)
+        else:
+            req.set_downstream() # Converting the request req into the response
+
+        return req
+
+    def _attempt_to_pass_downstream_request(self, service_name : str, req : Request,
+                                            simulation_step : pd.Timedelta) -> bool:
+
+        prev_services_names = self.application_model_conf.get_prev_services(service_name)
+
+        replies_expected = len(prev_services_names)
+        if replies_expected > 0:
+            for prev_service_name in prev_services_names:
+                req.processing_time_left = self.application_model_conf.get_downstream_processing_time(req.request_type, prev_service_name)
+                req.processing_service = prev_service_name
+                req.replies_expected = replies_expected
+                self.services[prev_service_name].add_request(req, simulation_step)
+
+            return False
+
+        else:
+            return True
 
     def enter_requests(self, new_requests : list):
 
