@@ -26,12 +26,16 @@ class NodeGroup(ABC):
         self.id = id(self)
         self.services_state = None
 
-    def is_compatible_with(self, node_group : 'NodeGroup'):
+    def can_shrink_with(self, node_group : 'NodeGroup'):
 
-        return ((self.node_type == node_group.node_type) and (self.provider == node_group.provider)) \
-         or ((self.provider == node_group.provider) and (self.node_type == 'any' or node_group.node_type == 'any')) \
-         or (self.provider == 'any' and self.node_type == 'any') \
-         or (node_group.provider == 'any' and node_group.node_type == 'any')
+        is_compatible = ((self.node_type == node_group.node_type) and (self.provider == node_group.provider)) \
+                     or ((self.provider == node_group.provider) and (self.node_type == 'any' or node_group.node_type == 'any')) \
+                     or (self.provider == 'any' and self.node_type == 'any') \
+                     or (node_group.provider == 'any' and node_group.node_type == 'any')
+
+        can_shrink = self.nodes_count >= node_group.nodes_count
+
+        return is_compatible and can_shrink
 
     def aspect_value_of_services_state(self, service_name : str, aspect_name : str):
 
@@ -113,20 +117,27 @@ class HomogeneousNodeGroup(NodeGroup):
 
         self.shared_processor.start_processing(req)
 
-    def shrink(self, other : NodeGroup):
+    def split(self, other : NodeGroup):
 
-        if self.is_compatible_with(other):
+        remaining_node_group_fragment = self.copy()
+        deleted_services_state_fragment = None
 
-            if not other.services_state is None:
-                self.services_state -= other.services_state
-            else:
-                downsizing_coef = other.nodes_count / self.nodes_count
-                self.services_state.downsize_proportionally(downsizing_coef)
+        if not other.services_state is None:
+            remaining_node_group_fragment.services_state -= other.services_state
+            deleted_services_state_fragment = other.services_state
+        else:
+            downsizing_coef = other.nodes_count / remaining_node_group_fragment.nodes_count
+            deleted_services_state_fragment = remaining_node_group_fragment.services_state.downsize_proportionally(downsizing_coef)
 
-            self.nodes_count -= other.nodes_count
-            _, self.system_resources_usage = self.node_info.services_require_system_resources(self.services_state, self.nodes_count)
-            self.uplink.update_bandwidth(self.nodes_count)
-            self.downlink.update_bandwidth(self.nodes_count)
+        remaining_node_group_fragment.nodes_count -= other.nodes_count
+        _, remaining_node_group_fragment.system_resources_usage = remaining_node_group_fragment.node_info.services_require_system_resources(remaining_node_group_fragment.services_state,
+                                                                                                                                            remaining_node_group_fragment.nodes_count)
+        remaining_node_group_fragment.uplink.update_bandwidth(remaining_node_group_fragment.nodes_count)
+        remaining_node_group_fragment.downlink.update_bandwidth(remaining_node_group_fragment.nodes_count)
+
+        deleted_node_group_fragment = HomogeneousNodeGroup(node_info = self.node_info, nodes_count = other.nodes_count)
+
+        return (remaining_node_group_fragment, {'node_group_fragment': deleted_node_group_fragment, 'services_state_fragment': deleted_services_state_fragment})
 
     def can_schedule_request(self, req : Request, request_processing_infos : dict):
 

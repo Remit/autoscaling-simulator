@@ -85,18 +85,20 @@ class HomogeneousNodeGroupSet:
     def _issue_node_group_failure_and_restart_if_possible(self, node_group_delta, groups_to_change : dict):
 
         for group_id, group in groups_to_change.items():
-            if group.is_compatible_with(node_group_delta.node_group):
-                group.shrink(node_group_delta.node_group)
-                if group.nodes_count == 0:
-                    self.removed_node_group_ids.append(group_id)
-                    group.nodes_count = node_group_delta.node_group.nodes_count
-                    node_group_delta.node_group = group
+            if group.can_shrink_with(node_group_delta.node_group):
 
-                    compensating_node_group_delta = node_group_delta.copy()
-                    compensating_node_group_delta.sign = 1
-                    compensating_node_group_delta.in_change = True
-                    self.failures_compensating_deltas.append(GeneralizedDelta(compensating_node_group_delta,
-                                                                              group.services_state.to_delta(direction = 1)))
+                remaining_node_group_fragment, deleted_fragment = group.split(node_group_delta.node_group)
+
+                self.removed_node_group_ids.append(group_id)
+                self._node_groups[remaining_node_group_fragment.id] = remaining_node_group_fragment
+
+                compensating_node_group_delta = NodeGroupDelta(node_group = deleted_fragment['node_group_fragment'], sign = 1, in_change = True)
+                services_compensating_delta = deleted_fragment['services_state_fragment'].to_delta(direction = 1)
+                remaining_node_group_delta = NodeGroupDelta(node_group = remaining_node_group_fragment, sign = 1, in_change = False)
+
+                self.failures_compensating_deltas.append(GeneralizedDelta(compensating_node_group_delta, services_compensating_delta))
+                self.failures_compensating_deltas.append(GeneralizedDelta(remaining_node_group_delta, None))
+
                 break
 
         for group_id in self.removed_node_group_ids:

@@ -37,4 +37,4 @@ class MetricForecaster:
         self._history_data_buffer = self._history_data_buffer.append(metric_vals)
         self._history_data_buffer = self._history_data_buffer.iloc[-self._history_data_buffer_size:,]
         if self._history_data_buffer.shape[0] >= self._history_data_buffer_size:
-            self.model.fit(self._history_data_buffer)
+            self._model.fit(self._history_data_buffer)

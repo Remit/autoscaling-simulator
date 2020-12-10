@@ -80,7 +80,11 @@ class ServiceInstancesGroup:
 
     def downsize_proportionally(self, downsizing_coef : float):
 
+        count_before_downsizing = self.scaling_aspects['count'].copy()
         self.scaling_aspects['count'] *= (1 - downsizing_coef)
+        compensating_count = count_before_downsizing - self.scaling_aspects['count']
+
+        return self.__class__(self.service_name, self.service_resource_reqs, {'count' : compensating_count})
 
     def update_aspect(self, aspect : ScalingAspect):
 

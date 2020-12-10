@@ -1,3 +1,4 @@
+import collections
 import os
 import json
 import pandas as pd
@@ -32,7 +33,7 @@ class FaultModel:
 
         """
 
-        self.failures = {}
+        self.failures = collections.defaultdict(list)
 
         steps_count = simulation_conf['time_to_simulate'] // simulation_conf['simulation_step']
 
@@ -83,12 +84,8 @@ class FaultModel:
         else:
             return None
 
-    def _add_failure(self,
-                     simulation_start : pd.Timestamp,
-                     simulation_step : pd.Timedelta,
-                     steps_count : int,
-                     failure_class : type,
-                     node_failure_conf : dict):
+    def _add_failure(self, simulation_start : pd.Timestamp,  simulation_step : pd.Timedelta,
+                     steps_count : int, failure_class : type, node_failure_conf : dict):
 
         """
         Selects a particular timestamp during the whole simulation to add the failure
@@ -100,6 +97,4 @@ class FaultModel:
         count_of_entities_affected = ErrorChecker.key_check_and_load('count_of_entities_affected', node_failure_conf)
         region_name = ErrorChecker.key_check_and_load('region_name', node_failure_conf)
         failure_type_conf = ErrorChecker.key_check_and_load('failure_type_conf', node_failure_conf)
-        if not failure_ts in self.failures:
-            self.failures[failure_ts] = []
         self.failures[failure_ts].append(failure_class(region_name, count_of_entities_affected, failure_type_conf))

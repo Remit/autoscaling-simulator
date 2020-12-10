@@ -251,8 +251,7 @@ class PlatformModel:
             deltas_lst = timeline_of_deltas_raw[timestamp]
             for delta in deltas_lst:
                 cur_state += delta
-                #print(f'timestamp: {timestamp}')
-                #print(f'delta: {delta}')
+
             node_counts_raw = cur_state.node_counts_for_change_status(in_change)
 
             repeated_data = {}

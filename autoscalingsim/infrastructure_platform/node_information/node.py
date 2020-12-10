@@ -47,7 +47,7 @@ class NodeInfo:
                                            node_type = {self._node_type}, \
                                            vCPU = {self._vCPU}, \
                                            memory = {repr(self._memory)}, \
-                                           disk = {repr(self.disk)}, \
+                                           disk = {repr(self._disk)}, \
                                            network_bandwidth = {repr(self._network_bandwidth)}, \
                                            price_per_unit_time = {self._price_per_unit_time}, \
                                            cpu_credits_per_unit_time = {self._cpu_credits_per_unit_time}, \

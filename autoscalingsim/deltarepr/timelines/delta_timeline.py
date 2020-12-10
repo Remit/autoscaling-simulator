@@ -96,6 +96,7 @@ class DeltaTimeline:
                     compensating_delta = self.actual_state.extract_compensating_deltas()
                     if not compensating_delta is None:
                         self._enforce_state_delta(timestamp, compensating_delta)
+
                     updates_applied = True
 
         return updates_applied

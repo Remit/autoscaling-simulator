@@ -23,8 +23,7 @@ class ServiceFailure(Failure):
     _Registry = {}
 
     @classmethod
-    def register(cls,
-                 name : str):
+    def register(cls, name : str):
 
         def decorator(service_failure_class):
             cls._Registry[name] = service_failure_class
@@ -33,11 +32,10 @@ class ServiceFailure(Failure):
         return decorator
 
     @classmethod
-    def get(cls,
-            name : str):
+    def get(cls, name : str):
 
         if not name in cls._Registry:
-            raise ValueError(f'An attempt to use a non-existent service failure class {name}')
+            raise ValueError(f'An attempt to use a non-existent {cls.__name__} {name}')
 
         return cls._Registry[name]
 

@@ -108,9 +108,8 @@ class GroupOfServices:
         return self.__class__({ service_name : service_group * scale_factor for service_name, service_group in self.services_groups.items()})
 
     def downsize_proportionally(self, downsizing_coef : float):
-
-        for service_group in self.services_groups.values():
-            service_group.downsize_proportionally(downsizing_coef)
+        
+        return self.__class__({ service_group.service_name : service_group.downsize_proportionally(downsizing_coef) for service_group in self.services_groups.values() })
 
     def is_compatible_with(self, services_group_delta : GroupOfServicesDelta) -> bool:
 

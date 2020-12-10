@@ -115,7 +115,10 @@ class SystemResourceUsage:
 
     def as_fraction(self):
 
-        return sum([res_usage / (self.instance_count * self.instance_max_usage[res_name]) for res_name, res_usage in self.system_resources_usage.items()]) / len(self.system_resources_usage)
+        if self.instance_count > 0:
+            return sum([res_usage / (self.instance_count * self.instance_max_usage[res_name]) for res_name, res_usage in self.system_resources_usage.items()]) / len(self.system_resources_usage)
+        else:
+            return 0
 
     def _comp(self, other_usage : 'SystemResourceUsage', comparison_op) -> bool:
 
