@@ -67,6 +67,7 @@ class DeltaTimeline:
 
         updates_applied = enforcement_made or actual_state_updated
         cur_platform_state = self.actual_state if updates_applied else None
+
         self.latest_state_update = borderline_ts_for_updates if updates_applied else self.latest_state_update
 
         return (cur_platform_state, node_groups_ids_mark_for_removal, node_groups_ids_remove)

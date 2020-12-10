@@ -1,12 +1,17 @@
 import numbers
 import math
 
-from abc import ABC
+from abc import ABC, abstractmethod
 from autoscalingsim.scaling.scaling_aspects import ScalingAspect
 from autoscalingsim.deltarepr.scaling_aspect_delta import ScalingAspectDelta
 from autoscalingsim.utils.requirements import ResourceRequirements
 
 class ServiceInstancesGroupDeltaCommon(ABC):
+
+    @abstractmethod
+    def to_concrete_delta(self, service_resource_reqs : ResourceRequirements):
+
+        pass
 
     def __init__(self, service_name : str, aspects_vals : dict):
 
@@ -91,6 +96,10 @@ class ServiceInstancesGroupDeltaWildcard(ServiceInstancesGroupDeltaCommon):
 
         super().__init__(service_name, aspects_vals)
 
+    def to_concrete_delta(self, service_resource_reqs : ResourceRequirements):
+
+        return ServiceInstancesGroupDelta(self.service_name, self.to_raw_change(), service_resource_reqs)
+
     def __repr__(self):
 
         return f'{self.__class__.__name__}({self.service_name}, {repr(self.aspects_deltas)})'
@@ -111,6 +120,10 @@ class ServiceInstancesGroupDelta(ServiceInstancesGroupDeltaCommon):
         super().__init__(service_name, aspects_vals)
 
         self.service_resource_reqs = service_resource_reqs
+
+    def to_concrete_delta(self, service_resource_reqs : ResourceRequirements):
+
+        return self.copy()
 
     def to_service_group(self):
 

@@ -57,13 +57,14 @@ class HomogeneousNodeGroupSet:
 
     def _issue_service_failure_and_restart_if_possible(self, services_group_delta, groups_to_change : dict):
 
+        import autoscalingsim.deltarepr.service_instances_group_delta as sig_delta
+        import autoscalingsim.deltarepr.group_of_services_delta as gos_delta
+
         for group in groups_to_change.values():
             if group.services_state.is_compatible_with(services_group_delta):
-                group.add_to_services_state(services_group_delta)
+                compensating_services_group_delta = services_group_delta.to_concrete_delta(group.services_state.services_requirements, count_sign = 1, in_change = True)
+                group.add_to_services_state(services_group_delta) # TODO: add resource check for nodes in the group.
 
-                compensating_services_group_delta = services_group_delta.copy()
-                compensating_services_group_delta.set_count_sign(1)
-                compensating_services_group_delta.in_change = True
                 compensating_node_group_delta = NodeGroupDelta(group, in_change = False, virtual = True)
                 self.failures_compensating_deltas.append(GeneralizedDelta(compensating_node_group_delta,
                                                                           compensating_services_group_delta))

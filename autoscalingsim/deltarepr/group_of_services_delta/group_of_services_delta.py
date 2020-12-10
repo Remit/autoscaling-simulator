@@ -64,13 +64,6 @@ class GroupOfServicesDelta:
 
         return self.__class__.from_deltas(dict(filter(lambda rec: not rec[1].is_empty, new_deltas.items())), self.in_change)
 
-    #def insert(self, other : ServiceInstancesGroupDelta):
-
-    #    if not isinstance(other, ServiceInstancesGroupDelta):
-    #        raise TypeError(f'An attempt to add an object of unknown type {other.__class__.__name__} to the list of deltas in {self.__class__.__name__}')
-
-    #    self.deltas[other.service_name] = other
-
     def set_count_sign(self, sign : int):
 
         for delta in self.deltas.values():
@@ -91,6 +84,16 @@ class GroupOfServicesDelta:
             raise ValueError(f'No service group delta for the name {service_name} found')
 
         return self.deltas[service_name].copy()
+
+    def to_concrete_delta(self, services_resource_reqs : dict, count_sign : int, in_change : bool = True):
+
+        concretized_deltas = dict()
+        for service_name, delta in self.deltas.items():
+            concretized_delta = delta.to_concrete_delta(services_resource_reqs[service_name])
+            concretized_delta.set_count_sign(count_sign)
+            concretized_deltas[service_name] = concretized_delta
+
+        return self.__class__.from_deltas(concretized_deltas, in_change)
 
     def to_raw_scaling_aspects_changes(self):
 

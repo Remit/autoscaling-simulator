@@ -40,7 +40,7 @@ class GeneralizedDelta:
         This method caches the enforcement on first computation since
         it might get called by the till_full_enforcement method first.
         """
-        
+
         result = Timeline()
         result = self._cached_enforcement.get(delta_timestamp, Timeline())
         if delta_timestamp in self._cached_enforcement:
@@ -52,6 +52,16 @@ class GeneralizedDelta:
             result.merge(self._enforced_node_group_delta_timeline(delta_timestamp, delayed_node_group_delta))
             result.merge(self._enforced_services_groups_deltas_timeline(delta_timestamp, delayed_node_group_delta, delayed_services_groups_deltas))
             self._cached_enforcement[delta_timestamp] = result
+
+        if not self.services_group_delta is None:
+            if self.services_group_delta.in_change and self.node_group_delta.virtual:
+
+                services_groups_deltas_by_delays = scaling_model.application_delay(self.services_group_delta)
+                delayed_services_groups_deltas = [ {'delay': delay , 'delta': delta} for delay, delta in services_groups_deltas_by_delays.items() ]
+                delayed_node_group_delta = {'delay': pd.Timedelta(0, unit = 'ms'), 'delta': self.node_group_delta}
+
+                result.merge(self._enforced_services_groups_deltas_timeline(delta_timestamp, delayed_node_group_delta, delayed_services_groups_deltas))
+                self._cached_enforcement[delta_timestamp] = result
 
         return result.to_dict()
 
@@ -68,12 +78,11 @@ class GeneralizedDelta:
                                                   delayed_node_group_delta : dict,
                                                   delayed_services_groups_deltas : list):
 
-        node_group_delta_virtual = self._make_virtual(delayed_node_group_delta)
+        node_group_delta_virtual = self._make_virtual(delayed_node_group_delta) if not delayed_node_group_delta['delta'].virtual else delayed_node_group_delta['delta']
         result = Timeline()
         for delayed_services_group_delta in delayed_services_groups_deltas:
             new_timestamp = delta_timestamp + delayed_services_group_delta['delay']
-            result.append_at_timestamp(new_timestamp,
-                                       GeneralizedDelta(node_group_delta_virtual, delayed_services_group_delta['delta']))
+            result.append_at_timestamp(new_timestamp, GeneralizedDelta(node_group_delta_virtual, delayed_services_group_delta['delta']))
 
         return result
 

@@ -106,7 +106,7 @@ class ServiceInstancesGroup:
     @property
     def resource_requirements(self):
 
-        return self.service_resource_reqs.copy()
+        return self.service_resource_reqs
 
     def copy(self):
 
