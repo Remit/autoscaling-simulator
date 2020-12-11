@@ -1,4 +1,5 @@
 import os
+import collections
 import pandas as pd
 
 from matplotlib import pyplot as plt
@@ -22,11 +23,9 @@ class UtilizationLineGraph:
         separately for each service-resource pair
         """
 
-        utilization_regionalized = {}
+        utilization_regionalized = collections.defaultdict(lambda: collections.defaultdict(dict))
         for service_name, utilization_per_region in utilization_per_service.items():
             for region_name, utilization_per_resource in utilization_per_region.items():
-                if not region_name in utilization_regionalized:
-                    utilization_regionalized[region_name] = {}
                 utilization_regionalized[region_name][service_name] = utilization_per_resource
 
         for region_name, utilization_per_service in utilization_regionalized.items():
@@ -34,7 +33,7 @@ class UtilizationLineGraph:
                 fig, axs = plt.subplots(nrows = plotting_constants.SYSTEM_RESOURCES_CNT,
                                         ncols = len(utilization_per_service),
                                         figsize = (len(utilization_per_service) * 4, plotting_constants.SYSTEM_RESOURCES_CNT * 4))
-                font = {'color':  'black', 'weight': 'bold', 'size': 12}
+                font = {'color': 'black', 'weight': 'bold', 'size': 12}
                 if not isinstance(axs, Iterable):
                     axs = [axs]
                 if len(utilization_per_service) == 1:
@@ -59,7 +58,7 @@ class UtilizationLineGraph:
                         #axs[j][i].yaxis.set_major_locator(ticker.MaxNLocator(integer=True))
                         axs[j][i].yaxis.set_major_locator(ticker.MultipleLocator(25))
                         axs[j][i].yaxis.set_minor_locator(ticker.MultipleLocator(5))
-                        axs[j][i].set_ylim(0)
+                        axs[j][i].set_ylim(0, 100)
                         plt.setp(axs[j][i].get_xticklabels(), rotation = 70, ha = "right", rotation_mode = "anchor")
 
                         j += 1
