@@ -43,6 +43,11 @@ class NodeGroupDelta:
 
         return self.node_group.id
 
+    @property
+    def is_empty(self):
+
+        return self.node_group.nodes_count == 0
+
     def __repr__(self):
 
         return f'{self.__class__.__name__}( node_group = {self.node_group}, \

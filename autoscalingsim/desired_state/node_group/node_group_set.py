@@ -91,14 +91,15 @@ class HomogeneousNodeGroupSet:
                 remaining_node_group_fragment, deleted_fragment = group.split(node_group_delta.node_group)
 
                 self.removed_node_group_ids.append(group_id)
-                self._node_groups[remaining_node_group_fragment.id] = remaining_node_group_fragment
 
                 compensating_node_group_delta = NodeGroupDelta(node_group = deleted_fragment['node_group_fragment'], sign = 1, in_change = True)
                 services_compensating_delta = deleted_fragment['services_state_fragment'].to_delta(direction = 1)
                 remaining_node_group_delta = NodeGroupDelta(node_group = remaining_node_group_fragment, sign = 1, in_change = False)
 
                 self.failures_compensating_deltas.append(GeneralizedDelta(compensating_node_group_delta, services_compensating_delta))
-                self.failures_compensating_deltas.append(GeneralizedDelta(remaining_node_group_delta, None))
+                if not remaining_node_group_delta.is_empty:
+                    self._node_groups[remaining_node_group_fragment.id] = remaining_node_group_fragment
+                    self.failures_compensating_deltas.append(GeneralizedDelta(remaining_node_group_delta, None))
 
                 break
 

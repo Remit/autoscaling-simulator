@@ -1,5 +1,5 @@
 import pandas as pd
-from collections import OrderedDict
+import collections
 from .service_scaling_info import ServiceScalingInfo
 
 from autoscalingsim.utils.error_check import ErrorChecker
@@ -23,27 +23,23 @@ class ApplicationScalingModel:
         if not services_group_delta is None:
             services_by_change_enforcement_delay = self._group_services_by_change_enforcement_time(services_group_delta)
             return self._enforce_services_of_delta_by_delay(services_group_delta, services_by_change_enforcement_delay)
-            
+
         else:
             return dict()
 
     def _group_services_by_change_enforcement_time(self, services_group_delta : 'GroupOfServicesDelta'):
 
-        services_by_change_enforcement_delay = {}
+        services_by_change_enforcement_delay = collections.defaultdict(list)
         for service_name in services_group_delta.services:
 
             change_enforcement_delay = pd.Timedelta(0, unit = 'ms')
             service_group_delta = services_group_delta.delta_for_service(service_name)
 
             aspect_sign = service_group_delta.sign_for_aspect(self.service_scaling_infos[service_name].scaled_aspect_name)
-            if aspect_sign == -1:
+            if aspect_sign == 1:
                 change_enforcement_delay = self.service_scaling_infos[service_name].booting_duration
-            elif aspect_sign == 1:
+            elif aspect_sign == -1:
                 change_enforcement_delay = self.service_scaling_infos[service_name].termination_duration
-
-
-            if not change_enforcement_delay in services_by_change_enforcement_delay:
-                services_by_change_enforcement_delay[change_enforcement_delay] = []
 
             services_by_change_enforcement_delay[change_enforcement_delay].append(service_name)
 
@@ -55,8 +51,8 @@ class ApplicationScalingModel:
         enforced_deltas_by_delay = dict()
 
         if len(services_by_change_enforcement_delay) > 0:
-            services_by_change_enforcement_delay_sorted = OrderedDict(sorted(services_by_change_enforcement_delay.items(),
-                                                                             key = lambda elem: elem[0]))
+            services_by_change_enforcement_delay_sorted = collections.OrderedDict(sorted(services_by_change_enforcement_delay.items(),
+                                                                                  key = lambda elem: elem[0]))
 
             for change_enforcement_delay, services_lst in services_by_change_enforcement_delay_sorted.items():
 
