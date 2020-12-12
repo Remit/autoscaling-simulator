@@ -62,6 +62,13 @@ class ScalingPolicy:
 
         return self.platform_model.compute_desired_node_count(simulation_start, simulation_step, simulation_end)
 
+    def compute_actual_node_count_and_cost(self, simulation_start : pd.Timestamp,
+                                           simulation_step : pd.Timedelta,
+                                           simulation_end : pd.Timestamp) -> dict:
+
+        return self.platform_model.compute_actual_node_count_and_cost(simulation_start, simulation_step, simulation_end)
+
+
     def compute_actual_node_count(self, simulation_start : pd.Timestamp,
                                   simulation_step : pd.Timedelta,
                                   simulation_end : pd.Timestamp) -> dict:

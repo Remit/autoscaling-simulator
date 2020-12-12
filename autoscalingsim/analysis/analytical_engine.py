@@ -4,6 +4,7 @@ from .autoscaling_quality.response_times_cdf import ResponseTimesCDF
 from .autoscaling_quality.response_times_hist import ResponseTimesHistogram
 from .autoscaling_quality.fulfilled_dropped_bars import FulfilledDroppedBarchart
 from .autoscaling_quality.utilization_line import UtilizationLineGraph
+from .autoscaling_quality.cost_line import CostLineGraph
 
 from .autoscaling_behav.load_line_graph import LoadLineGraph
 from .autoscaling_behav.requests_by_type import GeneratedRequestsByType
@@ -63,16 +64,18 @@ class AnalysisFramework:
         load_regionalized = {}
         buffer_times_regionalized = {}
         network_times_regionalized = {}
-        desired_node_count_regionalized = {}
-        actual_node_count_regionalized = {}
+        desired_node_count_per_provider = {}
+        actual_node_count_per_provider = {}
         utilization_per_service = {}
+        infrastructure_cost_per_provider = {}
         if not simulation is None:
             load_regionalized = simulation.load_model.get_generated_load()
             response_times_regionalized = simulation.application_model.response_stats.get_response_times_by_request()
             buffer_times_regionalized = simulation.application_model.response_stats.get_buffer_times_by_request()
             network_times_regionalized = simulation.application_model.response_stats.get_network_times_by_request()
-            desired_node_count_regionalized = simulation.application_model.desired_node_count
-            actual_node_count_regionalized = simulation.application_model.actual_node_count
+            desired_node_count_per_provider = simulation.application_model.desired_node_count
+            actual_node_count_per_provider = simulation.application_model.actual_node_count
+            infrastructure_cost_per_provider = simulation.application_model.infrastructure_cost
             utilization_per_service = simulation.application_model.utilization
 
         # Building figures with the internal functions
@@ -93,6 +96,10 @@ class AnalysisFramework:
                                   resolution = pd.Timedelta(1, unit = 's'),
                                   figures_dir = figures_dir_in_use)
 
+        CostLineGraph.plot(infrastructure_cost_per_provider,
+                           resolution = pd.Timedelta(1, unit = 's'),
+                           figures_dir = figures_dir_in_use)
+
         # Autoscaling behaviour characterization category
         LoadLineGraph.plot(load_regionalized,
                            resolution = pd.Timedelta(1, unit = 's'),
@@ -101,8 +108,8 @@ class AnalysisFramework:
         GeneratedRequestsByType.plot(load_regionalized,
                                      figures_dir = figures_dir_in_use)
 
-        NodesUsageLineGraph.plot(desired_node_count_regionalized,
-                                 actual_node_count_regionalized,
+        NodesUsageLineGraph.plot(desired_node_count_per_provider,
+                                 actual_node_count_per_provider,
                                  figures_dir = figures_dir_in_use)
 
         WaitingServiceBuffersHistogram.plot(buffer_times_regionalized,

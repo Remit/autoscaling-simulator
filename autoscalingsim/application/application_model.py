@@ -171,7 +171,7 @@ class ApplicationModel:
             self._utilization[service_name] = service.check_out_system_resources_utilization()
 
         self._desired_node_count = self.scaling_policy.compute_desired_node_count(simulation_start, simulation_step, simulation_end)
-        self._actual_node_count = self.scaling_policy.compute_actual_node_count(simulation_start, simulation_step, simulation_end)
+        self._actual_node_count, self._infrastructure_cost = self.scaling_policy.compute_actual_node_count_and_cost(simulation_start, simulation_step, simulation_end)
 
     @property
     def utilization(self):
@@ -187,3 +187,8 @@ class ApplicationModel:
     def actual_node_count(self):
 
         return self._actual_node_count.copy()
+
+    @property
+    def infrastructure_cost(self):
+
+        return self._infrastructure_cost.copy()

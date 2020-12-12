@@ -126,9 +126,9 @@ class HomogeneousNodeGroupSet:
 
         selected_node_groups = self._in_change_node_groups if in_change else self._node_groups
 
-        node_counts_per_type = collections.defaultdict(int)
+        node_counts_per_type = collections.defaultdict(lambda: collections.defaultdict(int))
         for node_group in selected_node_groups.values():
-            node_counts_per_type[node_group.node_info.node_type] += node_group.nodes_count
+            node_counts_per_type[node_group.node_info.provider][node_group.node_info.node_type] += node_group.nodes_count
 
         return node_counts_per_type
 

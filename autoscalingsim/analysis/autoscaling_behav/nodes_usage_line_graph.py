@@ -16,8 +16,8 @@ class NodesUsageLineGraph:
 
     @classmethod
     def plot(cls : type,
-             desired_node_count_regionalized : dict,
-             actual_node_count_regionalized : dict,
+             desired_node_count_per_provider : dict,
+             actual_node_count_per_provider : dict,
              resolution_ms : int = 5000,
              figures_dir = None):
 
@@ -26,56 +26,60 @@ class NodesUsageLineGraph:
         separately for each node type
         """
 
-        for region_name, desired_node_count in desired_node_count_regionalized.items():
-            plt.figure()
-            actual_node_count = actual_node_count_regionalized[region_name]
-            node_types = list(desired_node_count.keys())
-            plots_count = len(node_types)
-            rows_cnt = 1
-            cols_cnt = plots_count
-            if plots_count > plotting_constants.MAX_PLOTS_CNT_ROW:
-                rows_cnt = math.ceil(plots_count / plotting_constants.MAX_PLOTS_CNT_ROW)
-                cols_cnt = plotting_constants.MAX_PLOTS_CNT_ROW
+        for provider_name, desired_node_count_per_region in desired_node_count_per_provider.items():
+            for region_name, desired_node_count in desired_node_count_per_region.items():
+                plt.figure()
+                actual_node_count = list()
+                if provider_name in actual_node_count_per_provider:
+                    if region_name in actual_node_count_per_provider[provider_name]:
+                        actual_node_count = actual_node_count_per_provider[provider_name][region_name]
+                node_types = list(desired_node_count.keys())
+                plots_count = len(node_types)
+                rows_cnt = 1
+                cols_cnt = plots_count
+                if plots_count > plotting_constants.MAX_PLOTS_CNT_ROW:
+                    rows_cnt = math.ceil(plots_count / plotting_constants.MAX_PLOTS_CNT_ROW)
+                    cols_cnt = plotting_constants.MAX_PLOTS_CNT_ROW
 
-            fig, axs = plt.subplots(rows_cnt, cols_cnt, sharey = True, tight_layout = True,
-                                    figsize = (cols_cnt * 4, rows_cnt * 4))
+                fig, axs = plt.subplots(rows_cnt, cols_cnt, sharey = True, tight_layout = True,
+                                        figsize = (cols_cnt * 4, rows_cnt * 4))
 
-            max_desired_count = 1
-            i = 0
-            if not isinstance(axs, Iterable):
-                axs = [axs]
+                max_desired_count = 1
+                i = 0
+                if not isinstance(axs, Iterable):
+                    axs = [axs]
 
-            for ax in axs:
+                for ax in axs:
 
-                node_type = node_types[i]
-                desired_ts = desired_node_count[node_type][PlatformModel.timestamps_key]
-                desired_count = desired_node_count[node_type][PlatformModel.node_count_key]
-                max_desired_count = max(max_desired_count, max(desired_count))
+                    node_type = node_types[i]
+                    desired_ts = desired_node_count[node_type][PlatformModel.timestamps_key]
+                    desired_count = desired_node_count[node_type][PlatformModel.node_count_key]
+                    max_desired_count = max(max_desired_count, max(desired_count))
 
-                actual_ts = []
-                actual_count = []
-                if node_type in actual_node_count:
-                    actual_ts = actual_node_count[node_type][PlatformModel.timestamps_key]
-                    actual_count = actual_node_count[node_type][PlatformModel.node_count_key]
+                    actual_ts = []
+                    actual_count = []
+                    if node_type in actual_node_count:
+                        actual_ts = actual_node_count[node_type][PlatformModel.timestamps_key]
+                        actual_count = actual_node_count[node_type][PlatformModel.node_count_key]
 
-                df_desired = pd.DataFrame(data = {'datetime': desired_ts, 'nodes': desired_count}).set_index('datetime')
-                df_actual = pd.DataFrame(data = {'datetime': actual_ts, 'nodes': actual_count}).set_index('datetime')
+                    df_desired = pd.DataFrame(data = {'datetime': desired_ts, 'nodes': desired_count}).set_index('datetime')
+                    df_actual = pd.DataFrame(data = {'datetime': actual_ts, 'nodes': actual_count}).set_index('datetime')
 
-                ax.plot(df_desired, label = "Desired count")
-                ax.plot(df_actual, label = "Actual count")
+                    ax.plot(df_desired, label = "Desired count")
+                    ax.plot(df_actual, label = "Actual count")
 
-                ax.set_title(f'Node type {node_type}')
-                ax.set_ylabel('Node count')
-                ax.set_ylim(top = math.ceil(1.2 * max_desired_count))
-                ax.yaxis.set_major_locator(MaxNLocator(integer=True))
-                ax.legend(loc = 'upper center', ncol = 2)
-                ax.tick_params('x', labelrotation = 70)
+                    ax.set_title(f'Node type {node_type} ({provider_name})')
+                    ax.set_ylabel('Node count')
+                    ax.set_ylim(top = math.ceil(1.2 * max_desired_count))
+                    ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+                    ax.legend(loc = 'upper center', ncol = 2)
+                    ax.tick_params('x', labelrotation = 70)
 
-                i += 1
+                    i += 1
 
-            if not figures_dir is None:
-                figure_path = os.path.join(figures_dir, plotting_constants.filename_format.format(region_name, cls.FILENAME))
-                plt.savefig(figure_path, dpi = plotting_constants.PUBLISHING_DPI, bbox_inches='tight')
-            else:
-                plt.suptitle(f'Desired and actual number of nodes per node type in region {region_name}', y = 1.05)
-                plt.show()
+                if not figures_dir is None:
+                    figure_path = os.path.join(figures_dir, plotting_constants.filename_format.format(region_name, cls.FILENAME))
+                    plt.savefig(figure_path, dpi = plotting_constants.PUBLISHING_DPI, bbox_inches='tight')
+                else:
+                    plt.suptitle(f'Desired and actual number of nodes per node type in region {region_name}', y = 1.05)
+                    plt.show()
