@@ -21,13 +21,18 @@
             "metric_params": {
               "duration_unit": "ms"
             },
-            "target_value": {
-              "value": 100,
-              "unit": "ms"
-            },
             "priority": 1,
             "initial_max_limit": 15,
             "initial_min_limit": 1,
+            "desired_aspect_value_calculator": {
+              "name": "ratio",
+              "config": {
+                "target_value": {
+                  "value": 100,
+                  "unit": "ms"
+                }
+              }
+            },
             "values_filter_conf": {
               "name": "defaultNA",
               "config": {

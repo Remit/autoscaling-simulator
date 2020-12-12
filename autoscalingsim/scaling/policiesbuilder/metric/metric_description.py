@@ -1,22 +1,23 @@
 import collections
 
 from autoscalingsim.scaling.state_reader import StateReader
-from autoscalingsim.utils.metric_units_registry import MetricUnitsRegistry
 from autoscalingsim.utils.metric_converter import MetricConverter
 from autoscalingsim.utils.error_check import ErrorChecker
+from autoscalingsim.utils.metric_units_registry import MetricUnitsRegistry
 
 from .scalingmetric import ScalingMetricRegionalized
 
 class MetricSettingsPerRegion:
 
-    def __init__(self, metric_converter : MetricConverter, values_filter_conf : dict,
-                 values_aggregator_conf : dict, target_value, stabilizer_conf : dict,
+    def __init__(self, metric_converter : MetricConverter, metric_unit_type, values_filter_conf : dict,
+                 values_aggregator_conf : dict, desired_aspect_value_calculator_conf : dict, stabilizer_conf : dict,
                  forecaster_conf : dict, priority : int, max_limit : float, min_limit : float):
 
         self.metric_converter = metric_converter
+        self.metric_unit_type = metric_unit_type
         self.values_filter_conf = values_filter_conf
         self.values_aggregator_conf = values_aggregator_conf
-        self.target_value = target_value
+        self.desired_aspect_value_calculator_conf = desired_aspect_value_calculator_conf
         self.stabilizer_conf = stabilizer_conf
         self.forecaster_conf = forecaster_conf
         self.priority = priority
@@ -39,19 +40,13 @@ class MetricDescription:
         metric_type = ErrorChecker.key_check_and_load('metric_type', metric_description_conf, service_key, service_name)
         metric_params = ErrorChecker.key_check_and_load('metric_params', metric_description_conf, service_key, service_name, default = {})
         self.metric_converter = MetricConverter.get(metric_type)(metric_params)
+        self.metric_unit_type = MetricUnitsRegistry.get(metric_type)
 
         self.values_filter_conf = ErrorChecker.key_check_and_load('values_filter_conf', metric_description_conf, service_key, service_name)
         self.values_aggregator_conf = ErrorChecker.key_check_and_load('values_aggregator_conf', metric_description_conf, service_key, service_name)
         self.stabilizer_conf = ErrorChecker.key_check_and_load('stabilizer_conf', metric_description_conf, service_key, service_name)
         self.forecaster_conf = ErrorChecker.key_check_and_load('forecaster_conf', metric_description_conf, service_key, service_name)
-
-        target_value = ErrorChecker.key_check_and_load('target_value', metric_description_conf, service_key, service_name)
-        metric_unit_type = MetricUnitsRegistry.get(metric_type)
-        if isinstance(target_value, collections.Mapping):
-            value = ErrorChecker.key_check_and_load('value', target_value, service_key, service_name)
-            unit = ErrorChecker.key_check_and_load('unit', target_value, service_key, service_name)
-            target_value = metric_unit_type(value, unit = unit)
-        self.target_value = target_value
+        self.desired_aspect_value_calculator_conf = ErrorChecker.key_check_and_load('desired_aspect_value_calculator', metric_description_conf, service_key, service_name)
 
         self.priority = ErrorChecker.key_check_and_load('priority', metric_description_conf, service_key, service_name)
         self.initial_max_limit = ErrorChecker.key_check_and_load('initial_max_limit', metric_description_conf, service_key, service_name)
@@ -70,8 +65,8 @@ class MetricDescription:
         if state_reader is None:
             state_reader = self.state_reader
 
-        per_region_settings = MetricSettingsPerRegion( self.metric_converter, self.values_filter_conf,
-                                                       self.values_aggregator_conf, self.target_value,
+        per_region_settings = MetricSettingsPerRegion( self.metric_converter, self.metric_unit_type, self.values_filter_conf,
+                                                       self.values_aggregator_conf, self.desired_aspect_value_calculator_conf,
                                                        self.stabilizer_conf, self.forecaster_conf,
                                                        self.priority, self.initial_max_limit, self.initial_min_limit )
 
