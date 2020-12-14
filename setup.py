@@ -12,7 +12,8 @@ setup(
                         'pandas',
                         'uuid',
                         'matplotlib',
-                        'networkx'
+                        'networkx',
+                        'python-igraph'
                       ],
    scripts = [
                'autoscalingsim-cl.py',
