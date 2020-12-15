@@ -1,0 +1,4 @@
+https://github.com/FudanSELab/train-ticket
+https://github.com/cdelimitrou/DeathStarBench
+https://github.com/microservices-demo/microservices-demo
+https://github.com/parsa-epfl/cloudsuite
