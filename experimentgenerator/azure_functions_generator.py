@@ -84,6 +84,11 @@ class AzureFunctionsExperimentGenerator:
     """
     Generates the basic experiment configuration files based on the
     Azure functions dataset published at ATC'20.
+
+    Scaling latencies from the paper:
+    Liang Wang, Mengyuan Li, Yinqian Zhang, Thomas Ristenpart, & Michael Swift (2018).
+    Peeking Behind the Curtains of Serverless Platforms. In 2018 USENIX Annual Technical Conference
+    (USENIX ATC 18) (pp. 133–146). USENIX Association.
     """
 
     filename_pattern_invocations = 'invocations_per_function_md.anon.d{}.csv'
@@ -353,9 +358,46 @@ class AzureFunctionsExperimentGenerator:
                                                                             'values': invocations_data_per_hour}]},
                                                     'load_configs': load_configs_per_request_type} )
 
-        return (app_config, deployment_confs, load_config)
+
 
         # Generate the scaling model configuration
+        # https://hal.inria.fr/hal-01586932/document - model for booting times of VMs ~10-60 s
+        # also use our own work? AMCS
+        scaling_model_config = { 'platform': [], 'application': {}}
+        vm_booting_durations = { 'aws': {'value': 40, 'unit': 's' },
+                                 'google': {'value': 15, 'unit': 's'},
+                                 'azure': {'value': 150, 'unit': 's'}}
+
+        vm_termination_durations = { 'aws': {'value': 120, 'unit': 's' },
+                                     'google': {'value': 30, 'unit': 's'},
+                                     'azure': {'value': 150, 'unit': 's'}}
+        for provider, provider_config in providers_configs.items():
+            provider_conf = { 'provider': provider, 'nodes': []}
+            for node_type, _ in provider_config:
+                provider_conf['nodes'].append({ 'type': node_type,
+                                                'booting_duration': vm_booting_durations[provider],
+                                                'termination_duration': vm_termination_durations[provider]})
+
+            scaling_model_config['platform'].append(provider_conf)
+
+        # TODO: consider incorporating into the platform model
+        instances_on_platforms_booting_durations = { 'aws': {'value': 250, 'unit': 'ms' },
+                                                     'google': {'value': 110, 'unit': 'ms'},
+                                                     'azure': {'value': 3640, 'unit': 'ms'}}
+
+        booting_to_termination_coef = 0.5
+        instances_on_platforms_termination_durations = { provider : {'value': int(round(conf['value'] * booting_to_termination_coef, -1)), 'unit': conf['unit']} for provider, conf in vm_booting_durations.items()}
+
+        services_scaling_configs = list()
+        for service_id in range(self.services_count):
+            service_scaling_config = { 'name': self._service_name(service_id),
+                                       'booting_duration': instances_on_platforms_booting_durations,
+                                       'termination_duration': instances_on_platforms_termination_durations}
+            services_scaling_configs.append(service_scaling_config)
+
+        scaling_model_config['application']['services'] = services_scaling_configs
+
+        return (app_config, deployment_confs, load_config, scaling_model_config)
 
     def _file_id_to_str(self, file_id : int):
         return '0' + str(file_id) if file_id < 10 else str(file_id)
