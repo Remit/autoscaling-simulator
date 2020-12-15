@@ -41,20 +41,6 @@ class NodeInfo:
         self._requests_acceleration_factor = requests_acceleration_factor
         self._labels = labels
 
-    def __repr__(self):
-
-        return f'{self.__class__.__name__}(provider = {self._provider}, \
-                                           node_type = {self._node_type}, \
-                                           vCPU = {self._vCPU}, \
-                                           memory = {repr(self._memory)}, \
-                                           disk = {repr(self._disk)}, \
-                                           network_bandwidth = {repr(self._network_bandwidth)}, \
-                                           price_per_unit_time = {self._price_per_unit_time}, \
-                                           cpu_credits_per_unit_time = {self._cpu_credits_per_unit_time}, \
-                                           latency = {self._latency}, \
-                                           requests_acceleration_factor = {self._requests_acceleration_factor}, \
-                                           labels = {self._labels})'
-
     def system_resources_to_take_from_requirements(self, res_requirements : ResourceRequirements) -> SystemResourceUsage:
 
         """
@@ -131,3 +117,17 @@ class NodeInfo:
 
         return {'vCPU': self._vCPU, 'memory': self._memory,
                 'disk': self._disk, 'network_bandwidth': self._network_bandwidth}
+
+    def __repr__(self):
+
+        return f'{self.__class__.__name__}(provider = {self._provider}, \
+                                           node_type = {self._node_type}, \
+                                           vCPU = {self._vCPU}, \
+                                           memory = {repr(self._memory)}, \
+                                           disk = {repr(self._disk)}, \
+                                           network_bandwidth = {repr(self._network_bandwidth)}, \
+                                           price_per_unit_time = {self._price_per_unit_time}, \
+                                           cpu_credits_per_unit_time = {self._cpu_credits_per_unit_time}, \
+                                           latency = {self._latency}, \
+                                           requests_acceleration_factor = {self._requests_acceleration_factor}, \
+                                           labels = {self._labels})'

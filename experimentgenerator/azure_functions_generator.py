@@ -1,7 +1,15 @@
 import os
+import math
+import random
+import uuid
 import pickle
 import collections
 import pandas as pd
+
+from autoscalingsim.infrastructure_platform.platform_model_configuration_parser import PlatformModelConfigurationParser
+from autoscalingsim.utils.requirements import ResourceRequirements
+
+from .structure_generator import AppStructureGenerator
 
 class QuantiledCache:
 
@@ -84,6 +92,9 @@ class AzureFunctionsExperimentGenerator:
 
     def __init__(self, data_path : str = 'D:\\@TUM\\PhD\\FINAL\\traces\\azurefunctions\\', file_id_raw = 1):
 
+        self._service_names = dict()
+        self._request_types = dict()
+
         #file_ids = [ self._file_id_to_str(file_id) for file_id in range(1, 2) ] # TODO: 2 -> 12 when done debugging
 
         #invocations_data = pd.DataFrame(columns = ['HashApp', 'HashFunction', 'datetime', 'invocations']).set_index(['HashApp', 'HashFunction', 'datetime'])
@@ -131,5 +142,202 @@ class AzureFunctionsExperimentGenerator:
         #averaged_load_per_minute = invocations_data_selected.groupby(['datetime']).mean().round().astype({'invocations': 'int32'})
         self.services_count = int(invocations_data_selected.reset_index().groupby(['HashApp'])['HashFunction'].nunique().quantile(app_size_quantile))
 
+        memory_data_aggregated = self.memory_data.groupby(['HashApp']).mean()
+        memory_data_selected = memory_data_aggregated.reindex(self.apps_in_diapazone).dropna()
+        self.memory_percentiles = memory_data_selected.mean()[2:] / self.services_count
+
+        # TODO: consider using information about the function? e.g. distribution over the functions
+        # we have to first select a function with its probabilities distribution...
+        duration_data_aggregated = self.duration_data.groupby(['HashApp']).mean()
+        duration_data_selected = duration_data_aggregated.reindex(self.apps_in_diapazone).dropna()
+        self.duration_percentiles = duration_data_selected.mean()[5:]
+
+    def generate_initial_configuration(self,
+                                       request_types_count : int = 1,
+                                       timeout_headroom : float = 0.1,# TODO: make parameter
+                                       system_requirements_diapazones = { # TODO: make object that generates configs
+                                                                           'vCPU': [1, 2],
+                                                                           'memory': {
+                                                                               'value': [1, 2, 3, 4],
+                                                                               'unit': 'GB'
+                                                                           },
+                                                                           'disk': {
+                                                                               'value': [0, 1, 2],
+                                                                               'unit': 'GB'
+                                                                           }
+                                                                       },
+                                        request_configurations_diapazones = {
+                                                                              'request_size': { 'value_min'  : 1, 'value_max' : 100, 'unit': 'KB' },
+                            			                                      'response_size': { 'value_min' : 1, 'value_max' : 1, 'unit': 'KB' },
+                            			                                      'operation_type': { 'r' : 0.9, 'rw' : 0.1}
+                                                                            },
+                                        deployment_configuration = {
+                                            'providers': {'aws': 1.0},
+                                            'regions': {'aws': { 'eu': 1.0 }},
+                                            'init_aspects': { 'count': {'min': 1, 'max': 10} }
+                                        },
+                                        platform_config_file = 'experiments/test/platform.json'):
+
+        # TODO: app generation config as file (put there the arguments of this method)
+
+        # Generate the application configuration
+
+        # TODO: new representation for app structure?? next services - single path
+        #- dropping "prev" clause -- extend the processing in the app model/structure components
+        # {'entry_service': ['appserver']}
+        # {'appserver': ['db', 'logging']}
+
+        # Services
+        next_vertices_by_service_id = AppStructureGenerator.generate(self.services_count)
+
+        services_resource_requirements = dict()
+        app_config = dict() # TODO: as obj? then to json
+        app_config['services'] = list()
+        app_config['requests'] = list()
+        for service_id in range(self.services_count):
+
+            buffers_capacity_by_request_type = [ { 'request_type': self._request_type(req_type_id), 'capacity': 0 } for req_type_id in range(request_types_count) ]
+            buffers_config = { 'discipline': 'FIFO',
+                               'buffer_capacity_by_request_type': buffers_capacity_by_request_type }
+
+            system_requirements = {
+                                        'vCPU': random.choice(system_requirements_diapazones['vCPU']),
+                                        'memory': {
+                                                'value': random.choice(system_requirements_diapazones['memory']['value']),
+                                                'unit': system_requirements_diapazones['memory']['unit']
+                                            },
+                                        'disk': {
+                                                'value': random.choice(system_requirements_diapazones['disk']['value']),
+                                                'unit': system_requirements_diapazones['disk']['unit']
+                                            }
+                                    }
+
+            services_resource_requirements[self._service_name(service_id)] = ResourceRequirements.from_dict(system_requirements)
+
+            service_conf = {
+                'name': self._service_name(service_id),
+                'buffers_config': buffers_config,
+                'system_requirements': system_requirements,
+                'next': [ self._service_name(next_service_id) for next_service_id in next_vertices_by_service_id[service_id] ]
+            }
+
+            app_config['services'].append(service_conf)
+
+        # Requests types
+        duration_percentiles = tuple(zip([0] + list(self.duration_percentiles[:-1]), list(self.duration_percentiles)))
+        memory_percentiles = tuple(zip([0] + list(self.memory_percentiles[:-1]), list(self.memory_percentiles)))
+
+        for request_type_id in range(request_types_count):
+            selected_bin_interval = random.choices(duration_percentiles, weights=(0.01, 0.24, 0.25, 0.25, 0.24, 0.01))[0]
+            processing_duration_by_request = random.uniform(selected_bin_interval[0], selected_bin_interval[1])
+
+            selected_bin_interval = random.choices(memory_percentiles, weights=(0.01, 0.04, 0.20, 0.25, 0.25, 0.20, 0.04, 0.01))[0]
+            memory_usage_by_request = int(random.uniform(selected_bin_interval[0], selected_bin_interval[1]))
+
+            processing_times = {
+                'unit': 'ms',
+                'values': []
+            }
+
+            durations = list()
+            for service_id in range(self.services_count):
+
+                # TODO: make adjustable distribution of time attribuution to up/downstream
+                # TODO: attempt to generalize beyond azure dataset -> azure dataset should only enrich what is provided in
+                # the original configuration
+                upstream_processing_time = int(round(random.uniform(0, 0.9 * (processing_duration_by_request / self.services_count)), -1))
+                durations.append(upstream_processing_time)
+                downstream_processing_time = int(round(random.uniform(0, 0.1 * (processing_duration_by_request / self.services_count)), -1))
+                durations.append(downstream_processing_time)
+
+                processing_times['values'].append({
+                                                     'service': self._service_name(service_id),
+                                                     'upstream': upstream_processing_time,
+                                                     'downstream': downstream_processing_time
+                                                  })
+
+            request_conf = {
+                'request_type': self._request_type(request_type_id),
+                'entry_service': self._service_name(0),
+                'processing_times': processing_times,
+                'timeout': { 'value': int(round((1 + timeout_headroom) * sum(durations), -1)), 'unit': 'ms' },
+    			'request_size': { 'value': int(random.uniform(request_configurations_diapazones['request_size']['value_min'],
+                                                              request_configurations_diapazones['request_size']['value_max'])),
+                                  'unit': request_configurations_diapazones['request_size']['unit'] },
+    			'response_size': { 'value': int(random.uniform(request_configurations_diapazones['response_size']['value_min'],
+                                                               request_configurations_diapazones['response_size']['value_max'])),
+                                   'unit': request_configurations_diapazones['response_size']['unit'] },
+    			'operation_type': random.choices(list(request_configurations_diapazones['operation_type'].keys()),
+                                                 weights = list(request_configurations_diapazones['operation_type'].values()))[0],
+    			'processing_requirements': { 'vCPU': 1,
+    				                         'memory': { 'value': memory_usage_by_request, 'unit': 'MB' },
+    		                                 'disk': { 'value': 0, 'unit': 'B' }
+    			}
+            }
+
+            app_config['requests'].append(request_conf)
+
+        app_config['app_name'] = 'test'
+        app_config['utilization_metrics_conf'] = { 'averaging_interval': { 'value': 100, 'unit': 'ms' },
+                        		                   'sampling_interval': { 'value': 200, 'unit': 'ms' } }
+
+        # Generate the deployment configuration
+        deployment_confs = list()
+        providers_configs = PlatformModelConfigurationParser.parse(platform_config_file)
+
+        for service_id in range(self.services_count):
+            service_deployment_config = { 'service_name': self._service_name(service_id) }
+            deployment_aspects = { name : random.choice(range(limits['min'], limits['max'] + 1)) for name, limits in deployment_configuration['init_aspects'].items() }
+
+            provider = random.choices(list(deployment_configuration['providers'].keys()), weights = list(deployment_configuration['providers'].values()))[0]
+            regions_options = deployment_configuration['regions'][provider]
+            region = random.choices(list(regions_options.keys()), weights = list(regions_options.values()))[0]
+
+            for node_type, node_info in providers_configs[provider]:
+
+                sys_resources_to_occupy = node_info.system_resources_to_take_from_requirements(services_resource_requirements[self._service_name(service_id)])
+                if not sys_resources_to_occupy.is_full:
+
+                    total_resources_occupied_on_node = sys_resources_to_occupy.copy()
+                    accommodated_service_instances_count = 1
+                    while not total_resources_occupied_on_node.is_full:
+                        accommodated_service_instances_count += 1
+                        total_resources_occupied_on_node += sys_resources_to_occupy
+
+                    accommodated_service_instances_count = max(1, accommodated_service_instances_count - 1)
+                    service_instances_count = deployment_aspects['count'] if 'count' in deployment_aspects else 1
+                    node_count = math.ceil(service_instances_count / accommodated_service_instances_count)
+
+                    service_deployment_config['deployment'] = { region: {'init_aspects' : deployment_aspects,
+                                                                         'platform' : {'provider': provider, 'node_type': node_type, 'count': node_count}}}
+
+                    break
+
+            deployment_confs.append(service_deployment_config)
+
+        # Generate the load configuration
+
+        return (app_config, deployment_confs)
+
+        # Generate the scaling model configuration
+
     def _file_id_to_str(self, file_id : int):
         return '0' + str(file_id) if file_id < 10 else str(file_id)
+
+    def _service_name(self, service_id : int):
+
+        if service_id in self._service_names:
+            return self._service_names[service_id]
+        else:
+            service_name = f'service-{uuid.uuid1()}'
+            self._service_names[service_id] = service_name
+            return service_name
+
+    def _request_type(self, request_type_id : int):
+
+        if request_type_id in self._request_types:
+            return self._request_types[request_type_id]
+        else:
+            request_type = f'req-{uuid.uuid1()}'
+            self._request_types[request_type_id] = request_type
+            return request_type

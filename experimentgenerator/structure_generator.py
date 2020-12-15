@@ -1,4 +1,5 @@
 import igraph
+import collections
 
 class AppStructureGenerator:
 
@@ -44,4 +45,18 @@ class AppStructureGenerator:
             if not zero_appeal is None:
                 graph_settings['zero_appeal'] = zero_appeal
 
-        g = igraph.Graph.Barabasi(services_count, **graph_settings)
+        generated_graph = igraph.Graph.Barabasi(services_count, **graph_settings)
+        single_direction_request_path = generated_graph.spanning_tree()
+        
+        cur_vertices = collections.deque([0])
+        next_vertices = dict()
+        visited = list()
+        while len(cur_vertices) > 0:
+            vertex_id = cur_vertices.popleft()
+            if not vertex_id in visited:
+                nb = single_direction_request_path.neighbors(vertex_id)
+                next_vertices[vertex_id] = [ v for v in nb if not v in visited ]
+                cur_vertices.extend(nb)
+                visited.append(vertex_id)
+
+        return next_vertices
