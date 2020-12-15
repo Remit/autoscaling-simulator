@@ -73,7 +73,6 @@
 						"sliced_distribution": {
 							"type": "normal",
 							"params": {
-								"mu": 20,
 								"sigma": 1}
 						}
 
@@ -86,7 +85,6 @@
 						"sliced_distribution": {
 							"type": "normal",
 							"params": {
-								"mu": 1,
 								"sigma": 1}
 						}
 					}

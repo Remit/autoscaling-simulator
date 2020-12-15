@@ -285,6 +285,7 @@ class AzureFunctionsExperimentGenerator:
         deployment_confs = list()
         providers_configs = PlatformModelConfigurationParser.parse(platform_config_file)
 
+        regions = set()
         for service_id in range(self.services_count):
             service_deployment_config = { 'service_name': self._service_name(service_id) }
             deployment_aspects = { name : random.choice(range(limits['min'], limits['max'] + 1)) for name, limits in deployment_configuration['init_aspects'].items() }
@@ -292,6 +293,7 @@ class AzureFunctionsExperimentGenerator:
             provider = random.choices(list(deployment_configuration['providers'].keys()), weights = list(deployment_configuration['providers'].values()))[0]
             regions_options = deployment_configuration['regions'][provider]
             region = random.choices(list(regions_options.keys()), weights = list(regions_options.values()))[0]
+            regions = regions | set([region])
 
             for node_type, node_info in providers_configs[provider]:
 
@@ -316,8 +318,42 @@ class AzureFunctionsExperimentGenerator:
             deployment_confs.append(service_deployment_config)
 
         # Generate the load configuration
+        load_metaconfig = { 'sliced_distributions': [ ('normal', {'sigma': 1}) ] }
 
-        return (app_config, deployment_confs)
+        load_config = {'load_kind': 'seasonal', 'regions_configs': []}
+        load_configs_per_request_type = list()
+        for region in regions:
+
+            invocations_data_per_app = self.invocations_data.groupby(['HashApp', 'datetime']).max()
+            invocations_data_per_hour_per_app = invocations_data_per_app.groupby(['HashApp', pd.Grouper(freq='60T', level='datetime')]).sum().fillna(0).rename(columns = {'invocations': 'Load'})
+            invocations_data_per_hour = list(invocations_data_per_hour_per_app.groupby('datetime').mean().fillna(0)['Load'].astype(int))[:24]
+
+            ratios_percentage = []
+            for request_type_id in list(range(request_types_count))[:-1]:
+                ratio_percentage = random.choice(range(100 - sum(ratios_percentage)))
+                ratios_percentage.append(ratio_percentage)
+                sliced_distr = random.choice(load_metaconfig['sliced_distributions'])
+                request_load_conf = { 'request_type': self._request_type(request_type_id),
+                                      'load_config': {'ratio': round(ratio_percentage / 100, 2),
+                                                      'sliced_distribution': { 'type': sliced_distr[0], 'params': sliced_distr[1]}}}
+
+                load_configs_per_request_type.append(request_load_conf)
+
+            sliced_distr = random.choice(load_metaconfig['sliced_distributions'])
+            request_load_conf = { 'request_type': self._request_type(0),
+                                  'load_config': {'ratio': round((1 - sum(ratios_percentage) / 100), 2),
+                                                  'sliced_distribution': { 'type': sliced_distr[0], 'params': sliced_distr[1]}}}
+
+            load_configs_per_request_type.append(request_load_conf)
+
+            load_config['regions_configs'].append( {'region_name': region,
+                                                    'pattern': {'type': 'values',
+                                                                'params': [{'month': 'all',
+                                                                            'day_of_week': 'all',
+                                                                            'values': invocations_data_per_hour}]},
+                                                    'load_configs': load_configs_per_request_type} )
+
+        return (app_config, deployment_confs, load_config)
 
         # Generate the scaling model configuration
 

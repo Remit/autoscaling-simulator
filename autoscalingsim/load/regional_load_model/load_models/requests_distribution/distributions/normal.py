@@ -11,7 +11,7 @@ class NormalDistribution:
 
     def __init__(self, distribution_params : dict):
 
-        self.mu = ErrorChecker.key_check_and_load('mu', distribution_params, 'distribution_name', self.__class__.__name__)
+        #self.mu = ErrorChecker.key_check_and_load('mu', distribution_params, 'distribution_name', self.__class__.__name__)
         self.sigma = ErrorChecker.key_check_and_load('sigma', distribution_params, 'distribution_name', self.__class__.__name__)
 
     def generate(self, num : int = 1):
