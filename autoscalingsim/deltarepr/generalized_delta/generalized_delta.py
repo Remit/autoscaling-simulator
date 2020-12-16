@@ -56,7 +56,7 @@ class GeneralizedDelta:
         if not self.services_group_delta is None:
             if self.services_group_delta.in_change and self.node_group_delta.virtual:
 
-                services_groups_deltas_by_delays = scaling_model.application_delay(self.services_group_delta)
+                services_groups_deltas_by_delays = scaling_model.application_delay(self.services_group_delta, self.node_group_delta.node_group.provider)
                 delayed_services_groups_deltas = [ {'delay': delay , 'delta': delta} for delay, delta in services_groups_deltas_by_delays.items() ]
                 delayed_node_group_delta = {'delay': pd.Timedelta(0, unit = 'ms'), 'delta': self.node_group_delta}
 
@@ -102,7 +102,7 @@ class GeneralizedDelta:
     def _delay_deltas(self, scaling_model):
 
         node_group_delay, delayed_node_group_delta = scaling_model.platform_delay(self.node_group_delta)
-        services_groups_deltas_by_delays = scaling_model.application_delay(self.services_group_delta)
+        services_groups_deltas_by_delays = scaling_model.application_delay(self.services_group_delta, self.node_group_delta.node_group.provider)
 
         max_service_delay = pd.Timedelta(0, unit = 'ms')
         delay_added_by_nodes_booting = pd.Timedelta(0, unit = 'ms')

@@ -16,18 +16,18 @@ class ApplicationScalingModel:
             scaled_aspect_name = service_conf.scaled_aspect_name if not service_conf is None else 'count'
             self.service_scaling_infos[service_name] = ServiceScalingInfo(service_name, service_scaling_info_raw, scaled_aspect_name)
 
-    def delay(self, services_group_delta : 'GroupOfServicesDelta'):
+    def delay(self, services_group_delta : 'GroupOfServicesDelta', provider : str = None):
 
         """ Returns multiple delayed services deltas indexed by their delays """
 
         if not services_group_delta is None:
-            services_by_change_enforcement_delay = self._group_services_by_change_enforcement_time(services_group_delta)
+            services_by_change_enforcement_delay = self._group_services_by_change_enforcement_time(services_group_delta, provider)
             return self._enforce_services_of_delta_by_delay(services_group_delta, services_by_change_enforcement_delay)
 
         else:
             return dict()
 
-    def _group_services_by_change_enforcement_time(self, services_group_delta : 'GroupOfServicesDelta'):
+    def _group_services_by_change_enforcement_time(self, services_group_delta : 'GroupOfServicesDelta', provider : str):
 
         services_by_change_enforcement_delay = collections.defaultdict(list)
         for service_name in services_group_delta.services:
@@ -37,9 +37,9 @@ class ApplicationScalingModel:
 
             aspect_sign = service_group_delta.sign_for_aspect(self.service_scaling_infos[service_name].scaled_aspect_name)
             if aspect_sign == 1:
-                change_enforcement_delay = self.service_scaling_infos[service_name].booting_duration
+                change_enforcement_delay = self.service_scaling_infos[service_name].get_booting_duration_for_provider(provider)
             elif aspect_sign == -1:
-                change_enforcement_delay = self.service_scaling_infos[service_name].termination_duration
+                change_enforcement_delay = self.service_scaling_infos[service_name].get_termination_duration_for_provider(provider)
 
             services_by_change_enforcement_delay[change_enforcement_delay].append(service_name)
 

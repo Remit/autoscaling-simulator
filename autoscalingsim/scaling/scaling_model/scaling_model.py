@@ -42,6 +42,6 @@ class ScalingModel:
 
         return self.platform_scaling_model.delay(node_group_delta)
 
-    def application_delay(self, services_group_delta : GroupOfServicesDelta):
+    def application_delay(self, services_group_delta : GroupOfServicesDelta, provider : str = None):
 
-        return self.application_scaling_model.delay(services_group_delta)
+        return self.application_scaling_model.delay(services_group_delta, provider)
