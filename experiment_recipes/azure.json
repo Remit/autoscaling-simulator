@@ -14,6 +14,8 @@
     			"unit": "ms"
     		}
     	},
+      "structure_conf": { "parameter_set_name": "tree_with_multiple_centers_c",
+                          "power": 0.05, "zero_appeal": 0.01 },
       "services" : {
         "buffers_config": { "discipline": "FIFO" },
         "system_requirements": {

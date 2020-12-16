@@ -47,7 +47,7 @@ class AppStructureGenerator:
 
         generated_graph = igraph.Graph.Barabasi(services_count, **graph_settings)
         single_direction_request_path = generated_graph.spanning_tree()
-        
+
         cur_vertices = collections.deque([0])
         next_vertices = dict()
         visited = list()

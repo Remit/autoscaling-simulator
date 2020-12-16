@@ -80,12 +80,17 @@ class ExperimentGenerator:
             services_count = experiment_generation_recipe['application_recipe']['services']['services_count']
             request_types_count = experiment_generation_recipe['requests_recipe']['request_types_count']
 
-            next_vertices_by_service_id = AppStructureGenerator.generate(services_count)
+            app_structure_generation_params = ErrorChecker.key_check_and_load('structure_conf',
+                                                                              experiment_generation_recipe['application_recipe'],
+                                                                              default = dict())
+
+            next_vertices_by_service_id = AppStructureGenerator.generate(services_count, **app_structure_generation_params)
 
             services_resource_requirements = dict()
             app_config = experiment_generation_recipe['application_recipe'].copy() # TODO: as obj? then to json
             app_config['services'] = list()
             app_config['requests'] = list()
+            del app_config['structure_conf']
             for service_id in range(services_count):
 
                 buffers_capacity_by_request_type = [ { 'request_type': self._request_type(req_type_id), 'capacity': 0 } for req_type_id in range(request_types_count) ]
@@ -294,8 +299,6 @@ class ExperimentGenerator:
 
             with open(os.path.join(self._generated_configuration_storage_path, f'{conf_keys.CONF}.json'), 'w') as outfile:
                 json.dump(confs, outfile)
-
-            return (app_config, deployment_confs, load_config, scaling_model_config)
 
     def _service_name(self, service_id : int):
 
