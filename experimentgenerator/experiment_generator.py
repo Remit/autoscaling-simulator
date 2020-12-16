@@ -85,7 +85,7 @@ class ExperimentGenerator:
                                                                               experiment_generation_recipe['application_recipe'],
                                                                               default = dict())
 
-            next_vertices_by_service_id = AppStructureGenerator.generate(services_count, **app_structure_generation_params)
+            edges = AppStructureGenerator.generate(services_count, **app_structure_generation_params)
 
             services_resource_requirements = dict()
             app_config = experiment_generation_recipe['application_recipe'].copy() # TODO: as obj? then to json
@@ -115,7 +115,8 @@ class ExperimentGenerator:
                     'name': self._service_name(service_id),
                     'buffers_config': buffers_config,
                     'system_requirements': system_requirements,
-                    'next': [ self._service_name(next_service_id) for next_service_id in next_vertices_by_service_id[service_id] ]
+                    'next': [ self._service_name(edge[1]) for edge in edges if edge[0] == service_id ],
+                    'prev': [ self._service_name(edge[0]) for edge in edges if edge[1] == service_id ]
                 }
 
                 app_config['services'].append(service_conf)

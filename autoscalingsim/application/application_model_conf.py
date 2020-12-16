@@ -192,9 +192,9 @@ class ApplicationModelConfiguration:
                                                                    sampling_interval))
 
                     # Adding the links of the given service to the structure.
-                    next_services = ErrorChecker.key_check_and_load('next', service_config, 'service', service_name)
+                    next_services = ErrorChecker.key_check_and_load('next', service_config, 'service', service_name, default = list())
                     self.structure.add_next_services(service_name, next_services)
-                    prev_services = ErrorChecker.key_check_and_load('prev', service_config, 'service', service_name)
+                    prev_services = ErrorChecker.key_check_and_load('prev', service_config, 'service', service_name, default = list())
                     self.structure.add_prev_services(service_name, prev_services)
 
     def get_entry_service(self, req_type : str) -> str:
