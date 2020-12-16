@@ -3,6 +3,7 @@ import json
 import uuid
 import math
 import random
+import pandas as pd
 import autoscalingsim.conf_keys as conf_keys
 
 from .structure_generator import AppStructureGenerator
@@ -157,11 +158,15 @@ class ExperimentGenerator:
                 req_size_conf = experiment_generation_recipe['requests_recipe']['request_size']
                 resp_size_conf = experiment_generation_recipe['requests_recipe']['response_size']
 
+                timeout_network_adj = pd.Timedelta(2 * 10 * services_count, unit = 'ms')
+                timeout_raw = pd.Timedelta(int(round((1 + experiment_generation_recipe['requests_recipe']['timeout_headroom']) * sum(durations), -1)), requests_processing_durations['unit'])
+                timeout = (timeout_raw + timeout_network_adj) // pd.Timedelta(1, unit = 'ms')
+
                 request_conf = {
                         'request_type': self._request_type(request_type_id),
                         'entry_service': self._service_name(0),
                         'processing_times': processing_times,
-                        'timeout': { 'value': int(round((1 + experiment_generation_recipe['requests_recipe']['timeout_headroom']) * sum(durations), -1)), 'unit': requests_processing_durations['unit'] },
+                        'timeout': { 'value': timeout, 'unit': 'ms' },
             			'request_size': { 'value': self._uniformly_choose_value_from_interval(req_size_conf), 'unit': req_size_conf['unit'] },
             			'response_size': { 'value': self._uniformly_choose_value_from_interval(resp_size_conf), 'unit': resp_size_conf['unit'] },
             			'operation_type': self._randomly_choose_one(list(experiment_generation_recipe['requests_recipe']['operation_type'].keys()),
