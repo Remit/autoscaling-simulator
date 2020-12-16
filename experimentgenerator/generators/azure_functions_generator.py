@@ -1,10 +1,14 @@
 import os
+import glob
 import pandas as pd
+import tarfile
+import urllib.request
 
 from experimentgenerator.experiment_generator import ExperimentGenerator
 from experimentgenerator.quantiled_cache import QuantiledCache
 
 from autoscalingsim.utils.error_check import ErrorChecker
+from autoscalingsim.utils.download_bar import DownloadProgressBar
 
 @ExperimentGenerator.register('azurefunctions')
 class AzureFunctionsExperimentGenerator(ExperimentGenerator):
@@ -30,11 +34,28 @@ class AzureFunctionsExperimentGenerator(ExperimentGenerator):
     def enrich_experiment_generation_recipe(cls, specialized_generator_config : dict, experiment_generation_recipe : dict):
 
         data_path = ErrorChecker.key_check_and_load('data_path', specialized_generator_config)
+
+        download_dataset = True
+        if os.path.exists(data_path):
+            download_dataset = len(glob.glob(data_path + '/*.csv')) == 0
+        else:
+            os.makedirs(data_path)
+
+        if download_dataset:
+            print('Downloading the Azure functions archive...')
+            downloaded_data_archive = os.path.join(data_path, 'azurefunctions-dataset2019.tar.xz')
+            urllib.request.urlretrieve(cls.dataset_link, downloaded_data_archive, DownloadProgressBar())
+
+            print('Unpacking...')
+            with tarfile.open(downloaded_data_archive) as f:
+                f.extractall(data_path)
+
+            print('Removing the archive...')
+            os.remove(downloaded_data_archive)
+
         quantiled_cache = QuantiledCache.load_or_create(data_path)
         file_id_raw = ErrorChecker.key_check_and_load('file_id', specialized_generator_config)
         file_id = cls._file_id_to_str(file_id_raw)
-
-        # TODO: consider downloading files and unpacking if they are not in the folder
 
         # Invocations
         filename_invocations = os.path.join(data_path, cls.filename_pattern_invocations.format(file_id))

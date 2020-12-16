@@ -13,7 +13,10 @@ setup(
                         'uuid',
                         'matplotlib',
                         'networkx',
-                        'python-igraph'
+                        'python-igraph',
+                        'urllib',
+                        'tarfile',
+                        'progressbar'
                       ],
    scripts = [
                'autoscalingsim-cl.py',
