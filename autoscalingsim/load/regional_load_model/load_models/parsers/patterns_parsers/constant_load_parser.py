@@ -17,7 +17,7 @@ class ConstantLoadPatternParser(LoadPatternParser):
     def get(cls, name : str):
 
         if not name in cls._Registry:
-            raise ValueError(f'An attempt to use a non-existent constant load pattern parser {name}')
+            raise ValueError(f'An attempt to use a non-existent {cls.__name__} {name}')
 
         return cls._Registry[name]
 

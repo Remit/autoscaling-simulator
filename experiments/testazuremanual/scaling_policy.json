@@ -1,0 +1,80 @@
+{
+  "policy": {
+    "sync_period": {
+      "value": 30,
+      "unit": "s"
+    }
+  },
+  "application": {
+    "structure": {},
+    "services": [
+      {
+        "service_name": "default",
+        "scaling_effect_aggregation_rule_name": "maxScale",
+        "scaled_aspect_name": "count",
+        "metrics_descriptions": [
+          {
+            "metric_source_name": "response_stats",
+            "metric_name": "buffer_time",
+            "submetric_name": "*",
+            "metric_type": "duration",
+            "metric_params": {
+              "duration_unit": "ms"
+            },
+            "priority": 1,
+            "initial_max_limit": 15,
+            "initial_min_limit": 1,
+            "desired_aspect_value_calculator": {
+              "name": "ratio",
+              "config": {
+                "target_value": {
+                  "value": 100,
+                  "unit": "ms"
+                }
+              }
+            },
+            "values_filter_conf": {
+              "name": "defaultNA",
+              "config": {
+                "default_value": 0.0
+              }
+            },
+            "values_aggregator_conf": {
+              "name": "avgAggregator",
+              "config": {
+                "resolution": {
+                  "value": 400,
+                  "unit": "ms"
+                }
+              }
+            },
+            "stabilizer_conf": {
+              "name": "maxStabilizer",
+              "config": {
+                "resolution": {
+                  "value": 400,
+                  "unit": "ms"
+                }
+              }
+            },
+            "forecaster_conf": {
+              "name": "reactive",
+              "config": {
+                "averaging_interval": {
+                  "value": 100,
+                  "unit": "ms"
+                }
+              },
+              "resolution": {
+                "value": 10,
+                "unit": "ms"
+              },
+              "history_data_buffer_size": 20,
+              "horizon_in_steps": 5
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

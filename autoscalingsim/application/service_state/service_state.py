@@ -101,7 +101,7 @@ class ServiceState:
             request_type = ErrorChecker.key_check_and_load('request_type', buffer_capacity_config, 'service', service_name)
 
             capacity = ErrorChecker.key_check_and_load('capacity', buffer_capacity_config, 'service', service_name)
-            ErrorChecker.value_check('capacity', capacity, operator.gt, 0, [f'request_type {request_type}', f'service {service_name}'])
+            ErrorChecker.value_check('capacity', capacity, operator.ge, 0, [f'request_type {request_type}', f'service {service_name}'])
 
             buffer_capacity_by_request_type[request_type] = capacity
 

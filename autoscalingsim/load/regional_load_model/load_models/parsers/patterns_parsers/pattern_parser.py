@@ -2,8 +2,8 @@ from abc import ABC, abstractmethod
 
 class LoadPatternParser(ABC):
 
-    @staticmethod
+    @classmethod
     @abstractmethod
-    def parse(pattern_conf : dict):
+    def parse(cls, pattern_conf : dict):
 
         pass

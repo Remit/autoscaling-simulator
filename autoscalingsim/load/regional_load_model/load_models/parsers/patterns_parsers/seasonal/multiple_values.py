@@ -6,8 +6,8 @@ from autoscalingsim.utils.error_check import ErrorChecker
 @SeasonalLoadPatternParser.register('values')
 class MultipleValuesSeasonalLoadPatternParser(SeasonalLoadPatternParser):
 
-    @staticmethod
-    def parse(pattern : dict):
+    @classmethod
+    def parse(cls, pattern : dict):
 
         monthly_vals = {}
         for finer_pattern in ErrorChecker.key_check_and_load('params', pattern):
@@ -24,10 +24,16 @@ class MultipleValuesSeasonalLoadPatternParser(SeasonalLoadPatternParser):
             if day_of_week == 'weekday':
                 for day_id in range(5):
                     monthly_vals[month_id][day_id] = ErrorChecker.key_check_and_load('values', finer_pattern)
+                    
             elif day_of_week == 'weekend':
                 for day_id in range(5, 7):
                     monthly_vals[month_id][day_id] = ErrorChecker.key_check_and_load('values', finer_pattern)
+
+            elif day_of_week == 'all':
+                for day_id in range(7):
+                    monthly_vals[month_id][day_id] = ErrorChecker.key_check_and_load('values', finer_pattern)
+
             else:
-                raise ValueError(f'day_of_week value {day_of_week} undefined for {self.__class__.__name__}')
+                raise ValueError(f'day_of_week value {day_of_week} undefined for {cls.__name__}')
 
         return monthly_vals

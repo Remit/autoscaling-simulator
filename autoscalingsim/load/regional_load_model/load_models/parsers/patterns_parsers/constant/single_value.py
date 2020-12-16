@@ -6,8 +6,8 @@ from autoscalingsim.utils.error_check import ErrorChecker
 @ConstantLoadPatternParser.register('single_value')
 class SingleValueConstantLoadPatternParser(ConstantLoadPatternParser):
 
-    @staticmethod
-    def parse(pattern : dict, simulation_step : pd.Timedelta):
+    @classmethod
+    def parse(cls, pattern : dict, simulation_step : pd.Timedelta):
 
         params = ErrorChecker.key_check_and_load('params', pattern)
         requests_count_per_unit_of_time = ErrorChecker.key_check_and_load('value', params)
