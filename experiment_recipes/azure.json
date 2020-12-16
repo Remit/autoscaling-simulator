@@ -1,0 +1,78 @@
+{
+  "recipe_type": "azurefunctions",
+  "general": {
+    "platform_config_file": "experiments/test/platform.json",
+    "application_recipe": {
+      "app_name": "test",
+    	"utilization_metrics_conf": {
+    		"averaging_interval": {
+    			"value": 100,
+    			"unit": "ms"
+    		},
+    		"sampling_interval": {
+    			"value": 200,
+    			"unit": "ms"
+    		}
+    	},
+      "services" : {
+        "buffers_config": { "discipline": "FIFO" },
+        "system_requirements": {
+          "vCPU": [1, 2],
+          "memory": {
+            "value": [1, 2, 3, 4],
+            "unit": "GB"
+          },
+          "disk": {
+            "value": [0, 1, 2],
+            "unit": "GB"
+          }
+        }
+      }
+    },
+    "deployment_recipe": {
+      "providers": {"aws": 1.0},
+      "regions": {"aws": { "eu": 1.0 }},
+      "init_aspects": { "count": {"min": 1, "max": 10} }
+    },
+    "requests_recipe": {
+      "request_types_count": 1,
+      "duration": { },
+      "system_requirements": {
+        "vCPU": 1,
+        "memory": { },
+        "disk": { "value": 0, "unit": "B" }
+      },
+      "timeout_headroom": 0.1,
+      "request_size": { "min"  : 1, "max" : 100, "unit": "KB" },
+      "response_size": { "min" : 1, "max" : 1, "unit": "KB" },
+      "operation_type": { "r" : 0.9, "rw" : 0.1}
+    },
+    "load_recipe": {
+      "load_configs": {"sliced_distributions": [ {"type": "normal", "params": {"sigma": 1}} ]},
+      "load_kind": "seasonal",
+      "pattern": { "type": "values", "params": [ ] }
+    },
+    "scaling_model_recipe": {
+      "platform": {
+        "booting_durations":
+          { "aws": {"value": 40, "unit": "s" },
+            "google": {"value": 15, "unit": "s"},
+            "azure": {"value": 150, "unit": "s"}},
+
+        "termination_durations":
+          { "aws": {"value": 120, "unit": "s" },
+            "google": {"value": 30, "unit": "s"},
+            "azure": {"value": 150, "unit": "s"}}
+      }
+    }
+  },
+  "specific": {
+    "data_path": "D:/@TUM/PhD/FINAL/traces/azurefunctions/",
+    "file_id": 1,
+    "consider_applications_with_invocations_quantiles": {
+      "left_quantile": 0.7,
+      "right_quantile": 0.9
+    },
+    "app_size_quantile_among_selected_based_on_invocations": 0.9
+  }
+}

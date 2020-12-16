@@ -1,0 +1,98 @@
+{
+  "recipe_type": "azurefunctions",
+  "general": {
+    "platform_config_file": "experiments/test/platform.json",
+    "services_recipe": {
+      "services_count": 10,
+      "vCPU": [1, 2],
+      "memory": {
+        "value": [1, 2, 3, 4],
+        "unit": "GB"
+      },
+      "disk": {
+        "value": [0, 1, 2],
+        "unit": "GB"
+      }
+    },
+    "deployments_recipe": {
+      "providers": {"aws": 1.0},
+      "regions": {"aws": { "eu": 1.0 }},
+      "init_aspects": { "count": {"min": 1, "max": 10} }
+    },
+    "requests_recipe": {
+      "request_types_count": 1,
+      "duration": { "percentiles": [],
+                    "probabilities": [0.01, 0.24, 0.25, 0.25, 0.24, 0.01],
+                    "unit": "ms"},
+      "system_requirements": {
+        "vCPU": 1,
+        "memory": { "percentiles": [],
+                    "probabilities": [0.01, 0.04, 0.20, 0.25, 0.25, 0.20, 0.04, 0.01],
+                    "unit": "MB"},
+        "disk": { "value": 0, "unit": "B" }
+      },
+      "timeout_headroom": 0.1,
+      "request_size": { "value_min"  : 1, "value_max" : 100, "unit": "KB" },
+      "response_size": { "value_min" : 1, "value_max" : 1, "unit": "KB" },
+      "operation_type": { "r" : 0.9, "rw" : 0.1}
+    },
+    "scaling_model_recipe": {
+      "platform": {
+        "booting_durations":
+          { "aws": {"value": 40, "unit": "s" },
+            "google": {"value": 15, "unit": "s"},
+            "azure": {"value": 150, "unit": "s"}},
+
+        "termination_durations":
+          { "aws": {"value": 120, "unit": "s" },
+            "google": {"value": 30, "unit": "s"},
+            "azure": {"value": 150, "unit": "s"}}
+      }
+    },
+    "load_recipe": {
+      "load_configs": {"sliced_distributions": [ ("normal", {"sigma": 1}) ]},
+      "load_kind": "seasonal",
+      "regions_configs": {
+                            "pattern": {
+                      				"type": "values",
+                      				"params": [
+                      					{
+                      						"month": "all",
+                      						"day_of_week": "all",
+                      						"values":
+                                      [1800,
+                      							   1405,
+                      							   1005,
+                      							   120,
+                      							   110,
+                      							   205,
+                      							   1840,
+                      							   3705,
+                      							   8030,
+                      							   12350,
+                      							   10080,
+                      							   2460,
+                      							   2230,
+                      							   7605,
+                      							   2005,
+                      							   1055,
+                      							   1100,
+                      							   1305,
+                      							   4050,
+                      							   11020,
+                      							   4060,
+                      							   3005,
+                      							   2055,
+                      							   1905
+                      							  ]
+                                    }
+                                  ]
+                                }
+                              }
+                          }
+  },
+  "specific": {
+    "data_path": "D:/@TUM/PhD/FINAL/traces/azurefunctions/",
+    "file_id": 1
+  }
+}
