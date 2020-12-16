@@ -3,6 +3,7 @@ import json
 import uuid
 import math
 import random
+import autoscalingsim.conf_keys as conf_keys
 
 from .structure_generator import AppStructureGenerator
 
@@ -51,6 +52,11 @@ class ExperimentGenerator:
     instances_on_platforms_termination_durations = { 'aws': {'value': 10, 'unit': 'ms' },
                                                      'google': {'value': 10, 'unit': 'ms'},
                                                      'azure': {'value': 10, 'unit': 'ms'}}
+
+    def __init__(self, generated_configuration_storage_path : str):
+
+        os.makedirs(generated_configuration_storage_path, exist_ok = True)
+        self._generated_configuration_storage_path = generated_configuration_storage_path
 
     def generate_experiment(self, experiment_generation_recipe_path : str):
 
@@ -266,6 +272,28 @@ class ExperimentGenerator:
                 services_scaling_configs.append(service_scaling_config)
 
             scaling_model_config['application']['services'] = services_scaling_configs
+
+            confs = {
+                conf_keys.CONF_LOAD_MODEL_KEY : f'{conf_keys.CONF_LOAD_MODEL_KEY}.json',
+                conf_keys.CONF_APPLICATION_MODEL_KEY : f'{conf_keys.CONF_APPLICATION_MODEL_KEY }.json',
+                conf_keys.CONF_SCALING_MODEL_KEY : f'{conf_keys.CONF_SCALING_MODEL_KEY}.json',
+                conf_keys.CONF_DEPLOYMENT_MODEL_KEY : f'{conf_keys.CONF_DEPLOYMENT_MODEL_KEY}.json'
+            }
+
+            with open(os.path.join(self._generated_configuration_storage_path, confs[conf_keys.CONF_LOAD_MODEL_KEY]), 'w') as outfile:
+                json.dump(load_config, outfile)
+
+            with open(os.path.join(self._generated_configuration_storage_path, confs[conf_keys.CONF_APPLICATION_MODEL_KEY]), 'w') as outfile:
+                json.dump(app_config, outfile)
+
+            with open(os.path.join(self._generated_configuration_storage_path, confs[conf_keys.CONF_SCALING_MODEL_KEY]), 'w') as outfile:
+                json.dump(scaling_model_config, outfile)
+
+            with open(os.path.join(self._generated_configuration_storage_path, confs[conf_keys.CONF_DEPLOYMENT_MODEL_KEY]), 'w') as outfile:
+                json.dump(deployment_confs, outfile)
+
+            with open(os.path.join(self._generated_configuration_storage_path, f'{conf_keys.CONF}.json'), 'w') as outfile:
+                json.dump(confs, outfile)
 
             return (app_config, deployment_confs, load_config, scaling_model_config)
 
