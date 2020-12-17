@@ -25,3 +25,9 @@ class CreditsPerUnitTime:
     def __rmul__(self, other):
 
         return self.__mul__(other)
+
+    def __repr__(self):
+
+        return f'{self.__class__.__name__}(resource_name = {self.resource_name}, \
+                                           value = {self.value}, \
+                                           time_unit = {self.time_unit})'
