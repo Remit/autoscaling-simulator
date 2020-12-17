@@ -98,5 +98,9 @@ class ScalingAspect(ABC):
 
         return self._value
 
+    @property
+    def is_zero(self):
+
+        return self._value == 0
 
 from .scaling_aspects_realizations import *

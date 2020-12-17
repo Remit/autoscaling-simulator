@@ -68,13 +68,21 @@ class ServiceInstancesGroup:
         the corresponding scaling aspect of the argument.
         """
 
-        return [ (aspect_value // other.scaling_aspects[aspect_name]).value for aspect_name, aspect_value in self.scaling_aspects.items() \
-                    if aspect_name in other.scaling_aspects ]
+        result = list()
+        for aspect_name, aspect_value in self.scaling_aspects.items():
+            if aspect_name in other.scaling_aspects:
+                if not other.scaling_aspects[aspect_name].is_zero:
+                    result.append((aspect_value // other.scaling_aspects[aspect_name]).value)
+
+        return result
 
     def __mod__(self, other):
 
-        new_aspects = { aspect_name : aspect % other.scaling_aspects[aspect_name] for aspect_name, aspect in self.scaling_aspects.items() \
-                            if aspect_name in other.scaling_aspects }
+        new_aspects = dict()
+        for aspect_name, aspect in self.scaling_aspects.items():
+            if aspect_name in other.scaling_aspects:
+                if not other.scaling_aspects[aspect_name].is_zero:
+                    new_aspects[aspect_name] = aspect % other.scaling_aspects[aspect_name]
 
         return self.__class__(self.service_name, self.service_resource_reqs, new_aspects)
 
