@@ -1,6 +1,7 @@
 import collections
+from copy import deepcopy
 
-from .node_group import HomogeneousNodeGroup
+from .node_group import HomogeneousNodeGroup, HomogeneousNodeGroupDummy
 
 from autoscalingsim.desired_state.placement import Placement, ServicesPlacement
 from autoscalingsim.deltarepr.node_group_delta import NodeGroupDelta
@@ -29,15 +30,16 @@ class HomogeneousNodeGroupSet:
 
     def __add__(self, regional_delta : RegionalDelta):
 
-        node_groups = self.copy()
+        node_groups = deepcopy(self)
         for generalized_delta in regional_delta:
-            node_groups._add_groups(generalized_delta)
+            node_groups._add_groups(generalized_delta) # TODO: check if regional delta contains all the required generealized deltas
 
         return node_groups
 
     def _add_groups(self, generalized_delta : GeneralizedDelta):
 
         groups_to_change = self._in_change_node_groups if generalized_delta.node_group_delta.in_change else self._node_groups
+
 
         if generalized_delta.node_group_delta.virtual:
             self._modify_services_state(generalized_delta, groups_to_change)
@@ -51,8 +53,8 @@ class HomogeneousNodeGroupSet:
 
         if services_group_delta.in_change == node_group_delta.in_change:
             if node_group_delta.node_group.id in groups_to_change:
-                groups_to_change[node_group_delta.node_group.id].add_to_services_state(services_group_delta)
-            else:
+                groups_to_change[node_group_delta.node_group.id].add_to_services_state(services_group_delta) # TODO: check if it can at all be allocated
+            elif generalized_delta.fault:
                 self._issue_service_failure_and_restart_if_possible(services_group_delta, groups_to_change)
 
     def _issue_service_failure_and_restart_if_possible(self, services_group_delta, groups_to_change : dict):
@@ -80,7 +82,7 @@ class HomogeneousNodeGroupSet:
             if node_group_delta.node_group.id in groups_to_change:
                 self.removed_node_group_ids.append(node_group_delta.node_group.id)
                 del groups_to_change[node_group_delta.node_group.id]
-            elif node_group_delta.in_change == node_group_delta.in_change:
+            elif generalized_delta.fault:
                 self._issue_node_group_failure_and_restart_if_possible(node_group_delta, groups_to_change)
 
     def _issue_node_group_failure_and_restart_if_possible(self, node_group_delta, groups_to_change : dict):
@@ -148,6 +150,19 @@ class HomogeneousNodeGroupSet:
     def copy(self):
 
         return self.__class__(self._node_groups.copy(), self._in_change_node_groups.copy())
+
+    def __deepcopy__(self, memo):
+
+        copied_obj = self.__class__()
+        memo[id(self)] = copied_obj
+
+        for node_group_id, node_group in self._node_groups.items():
+            copied_obj._node_groups[node_group_id] = deepcopy(node_group, memo)
+
+        for node_group_id, node_group in self._in_change_node_groups.items():
+            copied_obj._in_change_node_groups[node_group_id] = deepcopy(node_group, memo)
+
+        return copied_obj
 
     @property
     def enforced(self):

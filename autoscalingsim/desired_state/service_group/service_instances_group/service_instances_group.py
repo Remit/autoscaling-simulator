@@ -17,12 +17,16 @@ class ServiceInstancesGroup:
 
         aspects_vals_raw = { 'count' : 1 } if aspects_vals is None else aspects_vals
 
-        for aspect_name, aspect_value in aspects_vals_raw.items():
-            if isinstance(aspect_value, ScalingAspect):
-                self.scaling_aspects[aspect_name] = aspect_value
+        if len(aspects_vals_raw) == 0:
+            self.scaling_aspects['count'] = ScalingAspect.get('count')(0)
 
-            elif isinstance(aspect_value, numbers.Number):
-                self.scaling_aspects[aspect_name] = ScalingAspect.get(aspect_name)(aspect_value)
+        else:
+            for aspect_name, aspect_value in aspects_vals_raw.items():
+                if isinstance(aspect_value, ScalingAspect):
+                    self.scaling_aspects[aspect_name] = aspect_value
+
+                elif isinstance(aspect_value, numbers.Number):
+                    self.scaling_aspects[aspect_name] = ScalingAspect.get(aspect_name)(aspect_value)
 
     def __add__(self, other):
 
@@ -109,7 +113,7 @@ class ServiceInstancesGroup:
     @property
     def is_empty(self):
 
-        return self.scaling_aspects['count'] == ScalingAspect.get('count')(0)
+        return self.scaling_aspects['count'].is_zero
 
     @property
     def resource_requirements(self):

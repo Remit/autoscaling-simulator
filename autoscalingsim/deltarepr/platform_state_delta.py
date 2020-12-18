@@ -58,10 +58,6 @@ class PlatformStateDelta:
 
     def __add__(self, other_state_delta : 'PlatformStateDelta'):
 
-        if not isinstance(other_state_delta, PlatformStateDelta):
-            raise TypeError(f'An attempt to add an object of type {other_state_delta.__class__.__name__} \
-                            to an object of type {self.__class__.__name__}')
-
         new_regional_deltas = self.deltas_per_region.copy()
         for region_name, regional_delta in other_state_delta:
             if not region_name in new_regional_deltas:

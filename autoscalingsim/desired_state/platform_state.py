@@ -1,4 +1,5 @@
 import collections
+from copy import deepcopy
 
 from .region import Region
 from .service_group.group_of_services_reg import GroupOfServicesRegionalized
@@ -21,7 +22,7 @@ class PlatformState:
 
     def __add__(self, state_delta : PlatformStateDelta):
 
-        modified_state = self.copy()
+        modified_state = deepcopy(self)
 
         for region_name, regional_delta in state_delta:
             if not regional_delta.region_name in modified_state.regions:
@@ -96,6 +97,15 @@ class PlatformState:
     def copy(self):
 
         return self.__class__(self.regions.copy())
+
+    def __deepcopy__(self, memo):
+
+        copied_obj = self.__class__()
+        memo[id(self)] = copied_obj
+        for region_name, region in self.regions.items():
+            copied_obj.regions[region_name] = deepcopy(region, memo)
+
+        return copied_obj
 
     @property
     def collective_services_states(self):

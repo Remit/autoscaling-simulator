@@ -64,6 +64,10 @@ class Placement:
 
         return PlacementIterator(self)
 
+    def __repr__(self):
+
+        return f'{self.__class__.__name__}(services_placements = {self.services_placements})'
+
 class PlacementIterator:
 
     def __init__(self, placement : Placement):

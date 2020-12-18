@@ -20,6 +20,6 @@ class NodeGroupTerminationFailure(NodeGroupFailure):
         node_group_delta = NodeGroupDelta(node_group, sign = -1,
                                           in_change = False, virtual = False)
 
-        gd = GeneralizedDelta(node_group_delta, None)
+        gd = GeneralizedDelta(node_group_delta, None, fault = True)
 
         return RegionalDelta(self.region_name, [gd])

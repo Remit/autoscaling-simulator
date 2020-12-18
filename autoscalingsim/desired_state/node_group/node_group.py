@@ -18,12 +18,12 @@ from autoscalingsim.desired_state.placement import ServicesPlacement
 
 class NodeGroup(ABC):
 
-    def __init__(self, node_type : str, provider : str, nodes_count : int):
+    def __init__(self, node_type : str, provider : str, nodes_count : int, original_id = None):
 
         self.node_type = node_type
         self.provider = provider
         self.nodes_count = nodes_count
-        self.id = id(self)
+        self.id = id(self) if original_id is None else original_id
         self.services_state = None
 
     def can_shrink_with(self, node_group : 'NodeGroup'):
@@ -79,11 +79,11 @@ class HomogeneousNodeGroup(NodeGroup):
 
     def __init__(self, node_info : NodeInfo, nodes_count : int,
                  services_instances_counts : dict = None,
-                 requirements_by_service : dict = None):
+                 requirements_by_service : dict = None, original_id = None):
 
         import autoscalingsim.desired_state.service_group.group_of_services as gos
 
-        super().__init__(node_info.node_type, node_info.provider, nodes_count)
+        super().__init__(node_info.node_type, node_info.provider, nodes_count, original_id)
 
         self.node_info = node_info
         self._utilization = NodeGroupUtilization()
@@ -252,7 +252,10 @@ class HomogeneousNodeGroup(NodeGroup):
     def add_to_services_state(self, services_group_delta : 'GroupOfServicesDelta'):
 
         self.services_state += services_group_delta
-        _, self.system_resources_usage = self.node_info.services_require_system_resources(self.services_state, self.nodes_count)
+
+        fits, self.system_resources_usage = self.node_info.services_require_system_resources(self.services_state, self.nodes_count)
+        if not fits:
+            raise ValueError('An attempt to place services on a node group of insufficient capacity')
 
     def to_delta(self, direction : int = 1):
 
@@ -281,7 +284,7 @@ class HomogeneousNodeGroup(NodeGroup):
 
     def copy(self):
 
-        return self.__class__(self.node_info, self.nodes_count, self.services_state)
+        return self.__class__(self.node_info, self.nodes_count, self.services_state.copy(), original_id = self.id)
 
     def __repr__(self):
 

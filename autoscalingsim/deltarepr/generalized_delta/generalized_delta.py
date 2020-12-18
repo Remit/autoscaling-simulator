@@ -9,7 +9,7 @@ class GeneralizedDelta:
     """ Binds deltas on different resource abstraction levels """
 
     def __init__(self, node_group_delta : NodeGroupDelta,
-                 services_group_delta : GroupOfServicesDelta):
+                 services_group_delta : GroupOfServicesDelta, fault : bool = False):
 
         if not isinstance(node_group_delta, NodeGroupDelta) and not node_group_delta is None:
             raise TypeError(f'The parameter value provided for the initialization of {self.__class__.__name__} is not of {NodeGroupDelta.__name__} type')
@@ -20,6 +20,7 @@ class GeneralizedDelta:
         self.node_group_delta = node_group_delta.copy() if not node_group_delta is None else None
         self.services_group_delta = services_group_delta.copy() if not services_group_delta is None else None
         self._cached_enforcement = {}
+        self.fault = fault
 
     def till_full_enforcement(self, scaling_model, delta_timestamp : pd.Timestamp):
 
@@ -135,4 +136,5 @@ class GeneralizedDelta:
     def __repr__(self):
 
         return f'{self.__class__.__name__}(node_group_delta = {self.node_group_delta}, \
-                                           services_group_delta = {self.services_group_delta})'
+                                           services_group_delta = {self.services_group_delta}, \
+                                           fault = {self.fault})'

@@ -1,5 +1,7 @@
 import math
 
+from copy import deepcopy
+
 from ..node_group_soft_adjuster import NodeGroupSoftAdjuster
 
 @NodeGroupSoftAdjuster.register('count')
@@ -74,12 +76,14 @@ class CountBasedSoftAdjuster(NodeGroupSoftAdjuster):
                 # scale down for nodes
                 new_services_instances_counts = self.node_group_ref.services_state.raw_aspect_value_for_every_service('count')
 
+                # TODO: connect to the id of the current node group and adjust the node group set behavior for sign < 0 / introduce .to_generalized_delta?
                 node_group = n_grp.HomogeneousNodeGroup(self.node_group_ref.node_info, self.node_group_ref.nodes_count - nodes_to_accommodate_res_usage, self.node_group_ref.services_state.copy())# ?self.node_group_ref.services_state.copy()
 
                 # Planning scale down for min_nodes_needed
                 node_group_delta = n_grp_delta.NodeGroupDelta(node_group, sign = -1, in_change = True, virtual = False)
 
             else:
+
                 # scale down/up only for services, nodegroup remains unchanged
                 node_group_delta = n_grp_delta.NodeGroupDelta(self.node_group_ref.copy(), sign = 1, in_change = False, virtual = True)
 

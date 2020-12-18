@@ -1,4 +1,5 @@
 from collections import OrderedDict, defaultdict
+from copy import deepcopy
 import pandas as pd
 
 from autoscalingsim.desired_state.platform_state import PlatformState
@@ -12,13 +13,14 @@ class DeltaTimeline:
     """ Maintains all the generalized deltas as a solid timeline """
 
     def __init__(self, scaling_model : ScalingModel, current_state : PlatformState,
-                 timeline : Timeline = None):
+                 timeline : Timeline = None, latest_state_update : pd.Timestamp = None):
 
         self.scaling_model = scaling_model
         self.actual_state = current_state.copy()
 
         self.timeline = Timeline() if timeline is None else timeline
-        self.latest_state_update = pd.Timestamp(0)
+        self.latest_state_update = pd.Timestamp(0) if latest_state_update is None else latest_state_update
+        self.latest_enforcement = pd.Timestamp(0)
 
     def merge(self, other : 'DeltaTimeline'):
 
@@ -27,15 +29,21 @@ class DeltaTimeline:
         since the deltas before are already irreversably enforced.
         """
 
-        if not isinstance(other, DeltaTimeline):
-            raise TypeError(f'Expected value of type {self.__class__.__name__} when merging, got {other.__class__.__name__}')
-
         # Keeping only already enforced deltas. We also keep the deltas that fall
         # between the timestamp of the last enforcement and the beginning of the update.
+
+        # Challenge:
+        # if the interval of time between when the enforced machine becomes available
+        # and the desired state that induced it is larger than the autoscalling periodicity
+        # then it will indefinitely overwrite the enforced state causing it to never have
+        # the enforced deltas being incorporated into the platform state
+        # todo: find timestamp of the latest enforcement
+        # and cut the merging timeline ending at it so that all the future states are intact
         other_timeline = other.timeline
         if not other_timeline.beginning is None:
-            self.timeline.cut_starting_at(self.latest_state_update)
-            borderline = max(self.latest_state_update, other_timeline.beginning)
+            #self.timeline.cut_starting_at(self.latest_state_update)
+            self.timeline.cut_starting_at(self.latest_enforcement)
+            borderline = max(self.latest_enforcement, other_timeline.beginning)
             other_timeline.cut_ending_at(borderline) #?
             self.timeline.merge(other_timeline)
 
@@ -91,6 +99,12 @@ class DeltaTimeline:
 
         for timestamp, state_deltas in timeline_to_consider.items():
             for state_delta in state_deltas:
+
+                #for reg_name, regional_delta in state_delta:
+                #    for generalized_delta in regional_delta:
+                #        if generalized_delta.node_group_delta.node_group.node_type == 't3.medium' and generalized_delta.node_group_delta.virtual == False:
+                #            print(f'>>> _update_actual_state_using_timeline | {timestamp} | is enforced = {state_delta.is_enforced} | node count = {generalized_delta.node_group_delta.node_group.nodes_count}')
+
                 if state_delta.is_enforced:
                     self.actual_state += state_delta
 
@@ -107,6 +121,15 @@ class DeltaTimeline:
         new_timestamped_state_deltas = state_delta.enforce(self.scaling_model, timestamp)
 
         for new_timestamp, new_state_delta in new_timestamped_state_deltas.items():
+
+            if new_timestamp > self.latest_enforcement:
+                self.latest_enforcement = new_timestamp
+
+            #for reg_name, regional_delta in new_state_delta:
+            #    for generalized_delta in regional_delta:
+            #        if generalized_delta.node_group_delta.node_group.node_type == 't3.medium' and generalized_delta.node_group_delta.virtual == False:
+            #            print(f'>>> _enforce_state_delta | {new_timestamp} | is enforced = {new_state_delta.is_enforced} | node count = {generalized_delta.node_group_delta.node_group.nodes_count}')
+
             self.add_state_delta(new_timestamp, new_state_delta)
 
     def _update_marked_for_removal(self, state_delta : PlatformStateDelta, node_groups_ids_mark_for_removal : dict):
@@ -117,8 +140,14 @@ class DeltaTimeline:
 
     def to_dict(self):
 
-        return OrderedDict(sorted(self.timeline.to_dict().items(),
-                                  key = lambda elem: elem[0]))
+        return OrderedDict(sorted(self.timeline.to_dict().items(), key = lambda elem: elem[0]))
+
+    def __deepcopy__(self, memo):
+
+        copied_obj = self.__class__(self.scaling_model, deepcopy(self.actual_state, memo), deepcopy(self.timeline, memo), self.latest_state_update)
+        memo[id(self)] = copied_obj
+
+        return copied_obj
 
     @property
     def updated_at_least_once(self):

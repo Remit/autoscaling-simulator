@@ -3,9 +3,9 @@ import pandas as pd
 
 class Timeline:
 
-    def __init__(self):
+    def __init__(self, timeline : dict = None):
 
-        self.timeline = collections.defaultdict(list)
+        self.timeline = collections.defaultdict(list) if timeline is None else timeline
 
     def append_at_timestamp(self, cur_timestamp : pd.Timestamp, value):
 
@@ -35,6 +35,10 @@ class Timeline:
     def between_with_beginning_excluded(self, non_inc_begin : pd.Timestamp, inc_end : pd.Timestamp):
 
         return { ts : vals for ts, vals in self.timeline.items() if (ts > non_inc_begin) and (ts <= inc_end) }
+
+    def copy(self):
+
+        return self.__class__(self.timeline.copy())
 
     @property
     def is_empty(self):

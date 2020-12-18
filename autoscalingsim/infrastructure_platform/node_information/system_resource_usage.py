@@ -160,6 +160,6 @@ class SystemResourceUsage:
 
     def __repr__(self):
 
-        return f'{self.__class__.__name__}({repr(self.node_info)}, \
-                 {self.instance_count}, \
-                 {repr(self.system_resources_usage)})'
+        return f'{self.__class__.__name__}( node_info = {repr(self.node_info)}, \
+                                            instance_count = {self.instance_count}, \
+                                            system_resources_usage = {repr(self.system_resources_usage)})'

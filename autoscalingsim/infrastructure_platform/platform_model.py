@@ -1,5 +1,6 @@
 import collections
 import pandas as pd
+from copy import deepcopy
 
 from .node_information.node import NodeInfo
 from .node_information.provider_nodes import ProviderNodes
@@ -136,7 +137,7 @@ class PlatformModel:
     def adjust_platform_state(self, cur_timestamp : pd.Timestamp, desired_states_to_process : dict):
 
         adjusted_timeline_of_deltas = self.adjustment_policy.adjust_platform_state(cur_timestamp, desired_states_to_process,
-                                                                                   self.state_deltas_timeline.actual_state)
+                                                                                   deepcopy(self.state_deltas_timeline.actual_state))
 
         if not adjusted_timeline_of_deltas is None:
             self.state_deltas_timeline.merge(adjusted_timeline_of_deltas)
@@ -192,7 +193,13 @@ class PlatformModel:
 
         interval_begins = list(timeline_of_deltas_raw.keys())
         interval_ends = list(timeline_of_deltas_raw.keys())[1:]
+
+        while max(interval_ends) > simulation_end:
+            interval_begins = interval_begins[:-1]
+            interval_ends = interval_ends[:-1]
+
         interval_ends.append(simulation_end)
+
         for timestamp_beg, timestamp_end in zip(interval_begins, interval_ends):
             timestamp = timestamp_beg
             deltas_lst = timeline_of_deltas_raw[timestamp]

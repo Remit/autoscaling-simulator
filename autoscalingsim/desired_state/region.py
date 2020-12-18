@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from copy import deepcopy
 
 from .placement import Placement
 from .node_group.node_group import HomogeneousNodeGroup
@@ -29,10 +30,13 @@ class Region:
 
     def __add__(self, regional_delta : RegionalDelta):
 
-        homogeneous_groups = self.homogeneous_groups.copy()
-        homogeneous_groups += regional_delta
+        result = deepcopy(self)
+        result.homogeneous_groups += regional_delta
 
-        return Region(self.region_name, homogeneous_groups)
+        #homogeneous_groups = self.homogeneous_groups.copy()
+        #homogeneous_groups += regional_delta
+
+        return result
 
     def extract_compensating_deltas(self):
 
@@ -174,6 +178,17 @@ class Region:
     def node_groups_for_change_status(self, in_change : bool):
 
         return self.homogeneous_groups.node_groups_for_change_status(in_change)
+
+    def copy(self):
+
+        return self.__class__(self.region_name, self.homogeneous_groups.copy())
+
+    def __deepcopy__(self, memo):
+
+        copied_obj = self.__class__(self.region_name, deepcopy(self.homogeneous_groups, memo))
+        memo[id(self)] = copied_obj
+
+        return copied_obj
 
     @property
     def collective_services_state(self):

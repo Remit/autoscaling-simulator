@@ -21,6 +21,6 @@ class ServiceTerminationFailure(ServiceFailure):
         aspects_vals_per_service = {self.service_name : {'count': -self.count_of_services_affected}}
         services_group_delta = GroupOfServicesDelta(aspects_vals_per_service, in_change = False)
 
-        gd = GeneralizedDelta(node_group_delta, services_group_delta)
+        gd = GeneralizedDelta(node_group_delta, services_group_delta, fault = True)
 
         return RegionalDelta(self.region_name, [gd])

@@ -1,4 +1,5 @@
 import pandas as pd
+from copy import deepcopy
 from abc import ABC, abstractmethod
 
 from .desired_adjustment_calculator.desired_calc import DesiredPlatformAdjustmentCalculator
@@ -52,6 +53,7 @@ class Adjuster(ABC):
 
             if len(unmet_change) > 0:
 
+                # TODO: add test that ensures that timeline_of_deltas is unchanged
                 in_work_state, unmet_change_state, state_duration = self._roll_out_enforced_updates_temporarily(in_work_state, ts_of_unmet_change,
                                                                                                                 unmet_change, timeline_of_deltas, timeline_of_unmet_changes)
 
@@ -73,10 +75,12 @@ class Adjuster(ABC):
 
         return unmet_change
 
+    # TODO: logical error! Not quite temporarily
     def _roll_out_enforced_updates_temporarily(self, in_work_state : PlatformState, ts_of_unmet_change : pd.Timestamp, unmet_change : dict,
                                                timeline_of_deltas_ref : DeltaTimeline, timeline_of_unmet_changes_ref : TimelineOfDesiredServicesChanges):
 
-        new_in_work_state, _, _ = timeline_of_deltas_ref.roll_out_updates(ts_of_unmet_change)
+        tmp_timeline_of_deltas = deepcopy(timeline_of_deltas_ref)
+        new_in_work_state, _, _ = tmp_timeline_of_deltas.roll_out_updates(ts_of_unmet_change)
         if not new_in_work_state is None:
             in_work_state = new_in_work_state
 

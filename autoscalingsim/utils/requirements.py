@@ -7,6 +7,8 @@ class ResourceRequirements:
 
     """ Container for the resource requirements, e.g. by a service or a request """
 
+    numeric_requirements = ['vCPU', 'memory', 'disk', 'network_bandwidth']
+
     @classmethod
     def new_empty_resource_requirements(cls):
 
@@ -94,13 +96,23 @@ class ResourceRequirements:
         if not isinstance(factor, numbers.Number):
             raise TypeError(f'An attempt to multiply {self.__class__.__name__} by a non-scalar: {factor.__class__.__name__}')
 
-        new_res_req_dict = self.to_dict()
-        for req_name, req_val in new_res_req_dict.items():
-            if isinstance(req_val, numbers.Number):
-                new_res_req_dict[req_name] *= factor
+        new_res_req_dict = dict()
+        for req_name, req_val in self.to_dict().items():
+            if req_name in self.__class__.numeric_requirements:
+                new_res_req_dict[req_name] = req_val * factor
+            else:
+                new_res_req_dict[req_name] = req_val #correct?
 
         return self.__class__.from_coerced_dict(new_res_req_dict)
 
     def __rmul__(self, factor : numbers.Number):
 
         return self.__mul__(factor)
+
+    def __repr__(self):
+
+        return f'{self.__class__.__name__}(vCPU = {self.vCPU},\
+                                           memory = {self.memory},\
+                                           disk = {self.disk}, \
+                                           network_bandwidth = {self.network_bandwidth},\
+                                           labels = {self.labels})'

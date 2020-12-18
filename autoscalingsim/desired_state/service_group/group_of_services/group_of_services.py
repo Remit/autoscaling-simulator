@@ -87,7 +87,9 @@ class GroupOfServices:
         times_cur_service_group_covers_other = list()
         for service_name, service_group in self.services_groups.items():
             if service_name in other.services_groups:
-                times_cur_service_group_covers_other.append(min(service_group // other.services_groups[service_name]))
+                coverage = service_group // other.services_groups[service_name]
+                min_coverage = min(coverage) if len(coverage) > 0 else 1
+                times_cur_service_group_covers_other.append(min_coverage)
             else:
                 times_cur_service_group_covers_other.append(0)
 
@@ -108,7 +110,7 @@ class GroupOfServices:
         return self.__class__({ service_name : service_group * scale_factor for service_name, service_group in self.services_groups.items()})
 
     def downsize_proportionally(self, downsizing_coef : float):
-        
+
         return self.__class__({ service_group.service_name : service_group.downsize_proportionally(downsizing_coef) for service_group in self.services_groups.values() })
 
     def is_compatible_with(self, services_group_delta : GroupOfServicesDelta) -> bool:

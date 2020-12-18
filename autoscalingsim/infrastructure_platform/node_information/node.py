@@ -69,6 +69,7 @@ class NodeInfo:
         counts_by_service = services_state.services_counts
 
         joint_resource_requirements = ResourceRequirements.new_empty_resource_requirements()
+
         for service_name, requirements in requirements_by_service.items():
             factor = counts_by_service[service_name]
             joint_resource_requirements += factor * requirements
