@@ -86,7 +86,7 @@ class CountBasedSoftAdjuster(NodeGroupSoftAdjuster):
             else:
 
                 # scale down/up only for services, nodegroup remains unchanged
-                node_group_delta = n_grp_delta.NodeGroupDelta(self.node_group_ref.copy(), sign = 1, in_change = False, virtual = True)
+                node_group_delta = n_grp_delta.NodeGroupDelta(deepcopy(self.node_group_ref), sign = 1, in_change = False, virtual = True)
 
             # Planning scale down for all the services count change from the solution
             services_group_delta = gos_delta.GroupOfServicesDelta(services_cnt_change_count, in_change = True,

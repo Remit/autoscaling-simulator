@@ -19,12 +19,12 @@ from autoscalingsim.desired_state.placement import ServicesPlacement
 
 class NodeGroup(ABC):
 
-    def __init__(self, node_type : str, provider : str, nodes_count : int, original_id = None):
+    def __init__(self, node_type : str, provider : str, nodes_count : int):
 
         self.node_type = node_type
         self.provider = provider
         self.nodes_count = nodes_count
-        self.id = id(self) if original_id is None else original_id
+        self.id = id(self)
         self.services_state = None
 
     def can_shrink_with(self, node_group : 'NodeGroup'):
@@ -80,11 +80,11 @@ class HomogeneousNodeGroup(NodeGroup):
 
     def __init__(self, node_info : NodeInfo, nodes_count : int,
                  services_instances_counts : dict = None,
-                 requirements_by_service : dict = None, original_id = None): # TODO: try to get rid of original_id in initialization
+                 requirements_by_service : dict = None):
 
         import autoscalingsim.desired_state.service_group.group_of_services as gos
 
-        super().__init__(node_info.node_type, node_info.provider, nodes_count, original_id)
+        super().__init__(node_info.node_type, node_info.provider, nodes_count)
 
         self.node_info = node_info
         self._utilization = NodeGroupUtilization()
@@ -110,13 +110,6 @@ class HomogeneousNodeGroup(NodeGroup):
         if not fits:
             raise ValueError('An attempt to place services on a node group of insufficient capacity')
 
-    def __deepcopy__(self, memo):
-
-        ng_copy = self.__class__(self.node_info, self.nodes_count, deepcopy(self.services_state, memo))
-        ng_copy.id = self.id
-        memo[id(ng_copy)] = ng_copy
-        return ng_copy
-
     def step(self, time_budget : pd.Timedelta):
 
         return self.shared_processor.step(time_budget)
@@ -124,28 +117,6 @@ class HomogeneousNodeGroup(NodeGroup):
     def start_processing(self, req : Request):
 
         self.shared_processor.start_processing(req)
-
-    def _split_deprecated(self, other : NodeGroup):
-
-        remaining_node_group_fragment = self.copy()
-        deleted_services_state_fragment = None
-
-        if not other.services_state is None:
-            remaining_node_group_fragment.services_state -= other.services_state
-            deleted_services_state_fragment = other.services_state
-        else:
-            downsizing_coef = other.nodes_count / remaining_node_group_fragment.nodes_count
-            deleted_services_state_fragment = remaining_node_group_fragment.services_state.downsize_proportionally(downsizing_coef)
-
-        remaining_node_group_fragment.nodes_count -= other.nodes_count
-        _, remaining_node_group_fragment.system_resources_usage = remaining_node_group_fragment.node_info.services_require_system_resources(remaining_node_group_fragment.services_state,
-                                                                                                                                            remaining_node_group_fragment.nodes_count)
-        remaining_node_group_fragment.uplink.update_bandwidth(remaining_node_group_fragment.nodes_count)
-        remaining_node_group_fragment.downlink.update_bandwidth(remaining_node_group_fragment.nodes_count)
-
-        deleted_node_group_fragment = HomogeneousNodeGroup(node_info = self.node_info, nodes_count = other.nodes_count)
-
-        return (remaining_node_group_fragment, {'node_group_fragment': deleted_node_group_fragment, 'services_state_fragment': deleted_services_state_fragment})
 
     def split(self, other : NodeGroup):
 
@@ -189,21 +160,6 @@ class HomogeneousNodeGroup(NodeGroup):
         node_group_source_of_requests_state.uplink.transfer_requests_to(self.uplink)
         node_group_source_of_requests_state.downlink.transfer_requests_to(self.downlink)
 
-    def _can_schedule_request_deprecated(self, req : Request, request_processing_infos : dict):
-
-        """
-        A new request can be scheduled if 1) there are enough free system resources available in the
-        node group, and 2) there is at least one service instances available to
-        take on the new request.
-        """
-
-        system_resources_for_req = self.node_info.system_resources_to_take_from_requirements(request_processing_infos[req.request_type].resource_requirements)
-        system_resources_to_be_taken = self.system_resources_taken_by_all_requests(request_processing_infos) \
-                                        + self.system_resources_usage \
-                                        + system_resources_for_req
-
-        return not system_resources_to_be_taken.is_full and self._has_enough_free_service_instances(req)
-
     def can_schedule_request(self, req : Request):
 
         """
@@ -225,24 +181,6 @@ class HomogeneousNodeGroup(NodeGroup):
     def system_resources_to_take_from_requirements(self, res_reqs : ResourceRequirements):
 
         return self.node_info.system_resources_to_take_from_requirements(res_reqs)
-
-    def _system_resources_taken_by_requests_deprecated(self, service_name : str, request_processing_infos : dict):
-
-        reqs_count_by_type = self.shared_processor.in_processing_stat_for_service(service_name)
-        sys_resources_usage_by_reqs = SystemResourceUsage(self.node_info, self.nodes_count)
-        for request_type, request_count in reqs_count_by_type.items():
-            res_usage = self.node_info.system_resources_to_take_from_requirements(request_processing_infos[request_type].resource_requirements) * request_count
-            sys_resources_usage_by_reqs += res_usage
-
-        return sys_resources_usage_by_reqs
-
-    def _system_resources_taken_by_all_requests_deprecated(self, request_processing_infos : dict):
-
-        joint_sys_resource_usage_by_reqs = SystemResourceUsage(self.node_info, self.nodes_count)
-        for service_name in self.shared_processor.services_ever_scheduled:
-            joint_sys_resource_usage_by_reqs += self.system_resources_taken_by_requests(service_name, request_processing_infos)
-
-        return joint_sys_resource_usage_by_reqs
 
     def system_resources_taken_by_requests(self, service_name : str):
 
@@ -346,7 +284,7 @@ class HomogeneousNodeGroup(NodeGroup):
         By default: scale up direction.
         """
 
-        node_group = self.copy()
+        node_group = deepcopy(self)
         node_group.nullify_services_state()
         node_group_delta = n_grp_delta.NodeGroupDelta(node_group, sign = direction)
 
@@ -356,14 +294,17 @@ class HomogeneousNodeGroup(NodeGroup):
 
         return ServicesPlacement(self.node_info, self.nodes_count, self.services_state)
 
+    def __deepcopy__(self, memo):
+
+        ng_copy = self.__class__(self.node_info, self.nodes_count, deepcopy(self.services_state, memo))
+        ng_copy.id = self.id
+        memo[id(ng_copy)] = ng_copy
+        return ng_copy
+
     @property
     def is_empty(self):
 
         return self.nodes_count == 0
-
-    def copy(self):
-
-        return self.__class__(self.node_info, self.nodes_count, self.services_state.copy(), original_id = self.id)
 
     def __repr__(self):
 
