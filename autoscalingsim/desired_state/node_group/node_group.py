@@ -120,8 +120,6 @@ class HomogeneousNodeGroup(NodeGroup):
 
     def split(self, other : NodeGroup):
 
-        # TODO: the state of the req processor and of the network links should be transferred corrctly to the remaining node group
-        # since the other part is scheduled for removal.
         remaining_node_group_fragment = deepcopy(self)
         deleted_services_state_fragment = None
 
