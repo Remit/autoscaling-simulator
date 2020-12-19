@@ -13,11 +13,9 @@ class ConstantLoadModel(RegionalLoadModel):
     """ Load model that generates fixed amount of requests over time """
 
     def __init__(self, region_name : str, pattern : dict, load_configs : dict,
-                 simulation_step : pd.Timedelta):
+                 simulation_step : pd.Timedelta, reqs_processing_infos : dict):
 
-        self.region_name = region_name
-        self.simulation_step = simulation_step
-        self.load = {}
+        super().__init__(region_name, simulation_step, reqs_processing_infos)
 
         self.interval_of_time, self.load_distribution_in_steps_buckets = ConstantLoadPatternParser.get(ErrorChecker.key_check_and_load('type', pattern, 'region_name', self.region_name)).parse(pattern, simulation_step)
         self.reqs_types_ratios = RatiosParser.parse(load_configs)
@@ -34,4 +32,4 @@ class ConstantLoadModel(RegionalLoadModel):
         for req_type, reqs_cnt in reqs_cnts_by_type.items():
             self._update_stat(timestamp, req_type, reqs_cnt)
 
-        return [ Request(self.region_name, req_type) for req_type, reqs_cnt in reqs_cnts_by_type.items() for i in range(reqs_cnt) ]
+        return [ Request(self.region_name, req_type, self.reqs_processing_infos[req_type], self.simulation_step) for req_type, reqs_cnt in reqs_cnts_by_type.items() for i in range(reqs_cnt) ]

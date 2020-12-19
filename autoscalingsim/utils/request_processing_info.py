@@ -24,7 +24,6 @@ class RequestProcessingInfo:
 
         self.request_type = request_type
         self.entry_service = entry_service
-        self.processing_times = {}
         self.processing_times = processing_times
         self.timeout = timeout
         self.request_size = request_size

@@ -8,7 +8,6 @@ from . import conf_keys
 from .load.load_model import LoadModel
 from .application.application_model import ApplicationModel
 from .simulation.simulation import Simulation
-from .scaling.state_reader import StateReader
 
 class Simulator:
 
@@ -31,8 +30,7 @@ class Simulator:
         self.simulations = {}
         self.simulations_configs = {}
 
-    def add_simulation(self, configs_dir : str, results_dir : str = None,
-                       stat_updates_every_round : int = 0):
+    def add_simulation(self, configs_dir : str, results_dir : str = None, stat_updates_every_round : int = 0):
 
         simulation_name = ''
         if not os.path.exists(configs_dir):
@@ -57,6 +55,7 @@ class Simulator:
                     raise ValueError('The config listing file misses at least one key model.')
 
                 configs_contents_table = {  conf_keys.CONF_APPLICATION_MODEL_KEY   : os.path.join(configs_dir, config[conf_keys.CONF_APPLICATION_MODEL_KEY]),
+                                            conf_keys.CONF_LOAD_MODEL_KEY          : os.path.join(configs_dir, config[conf_keys.CONF_LOAD_MODEL_KEY]),
                                             conf_keys.CONF_SCALING_POLICY_KEY      : os.path.join(configs_dir, config[conf_keys.CONF_SCALING_POLICY_KEY]),
                                             conf_keys.CONF_PLATFORM_MODEL_KEY      : os.path.join(configs_dir, config[conf_keys.CONF_PLATFORM_MODEL_KEY]),
                                             conf_keys.CONF_SCALING_MODEL_KEY       : os.path.join(configs_dir, config[conf_keys.CONF_SCALING_MODEL_KEY]),
@@ -70,18 +69,9 @@ class Simulator:
                                    'time_to_simulate' : self.time_to_simulate,
                                    'simulation_step'  : self.simulation_step}
 
-                state_reader = StateReader()
+                application_model = ApplicationModel(simulation_conf, configs_contents_table)
 
-                load_model = LoadModel(self.simulation_step, os.path.join(configs_dir, config[conf_keys.CONF_LOAD_MODEL_KEY]))
-                state_reader.add_source('Load', load_model)
-
-                application_model = ApplicationModel(simulation_conf, state_reader, configs_contents_table)
-
-                self.simulations[simulation_name] = Simulation(load_model,
-                                                               application_model,
-                                                               simulation_conf,
-                                                               stat_updates_every_round,
-                                                               results_dir)
+                self.simulations[simulation_name] = Simulation(application_model, simulation_conf, stat_updates_every_round, results_dir)
 
                 self.simulations_configs[simulation_name] = {'configs_dir': configs_dir,
                                                              'results_dir': results_dir,

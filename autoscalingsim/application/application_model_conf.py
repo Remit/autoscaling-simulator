@@ -25,14 +25,12 @@ class ServiceConfiguration:
                  service_name : str,
                  system_requirements : ResourceRequirements,
                  buffers_config : dict,
-                 reqs_processing_infos : dict,
                  averaging_interval : pd.Timedelta,
                  sampling_interval : pd.Timedelta):
 
         self.service_name = service_name
         self.system_requirements = system_requirements
         self.buffers_config = buffers_config
-        self.reqs_processing_infos = reqs_processing_infos
         self.averaging_interval = averaging_interval
         self.sampling_interval = sampling_interval
 
@@ -41,8 +39,7 @@ class ServiceConfiguration:
                    state_reader : StateReader):
 
         return Service(self.service_name, starting_time, service_regions,
-                       self.system_requirements, self.buffers_config,
-                       self.reqs_processing_infos, service_scaling_settings,
+                       self.system_requirements, self.buffers_config, service_scaling_settings,
                        state_reader, self.averaging_interval, self.sampling_interval)
 
 class ApplicationModelConfiguration:
@@ -187,7 +184,6 @@ class ApplicationModelConfiguration:
                     self.service_confs.append(ServiceConfiguration(service_name,
                                                                    system_requirements,
                                                                    buffers_config,
-                                                                   self.reqs_processing_infos,
                                                                    averaging_interval,
                                                                    sampling_interval))
 
@@ -197,13 +193,6 @@ class ApplicationModelConfiguration:
                     prev_services = ErrorChecker.key_check_and_load('prev', service_config, 'service', service_name, default = list())
                     self.structure.add_prev_services(service_name, prev_services)
 
-    def get_entry_service(self, req_type : str) -> str:
-
-        if not req_type in self.reqs_processing_infos:
-            raise ValueError(f'No request processing information found for {req_type} request type')
-
-        return self.reqs_processing_infos[req_type].entry_service
-
     def get_next_services(self, service_name : str) -> list:
 
         return self.structure.get_next_services(service_name)
@@ -211,17 +200,3 @@ class ApplicationModelConfiguration:
     def get_prev_services(self, service_name : str) -> list:
 
         return self.structure.get_prev_services(service_name)
-
-    def get_upstream_processing_time(self, req_type : str, service_name : str):
-
-        if not req_type in self.reqs_processing_infos:
-            raise ValueError(f'No request processing information found for {req_type} request type')
-
-        return self.reqs_processing_infos[req_type].get_upstream_processing_time(service_name)
-
-    def get_downstream_processing_time(self, req_type : str, service_name : str):
-
-        if not req_type in self.reqs_processing_infos:
-            raise ValueError(f'No request processing information found for {req_type} request type')
-
-        return self.reqs_processing_infos[req_type].get_downstream_processing_time(service_name)

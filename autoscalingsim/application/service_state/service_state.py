@@ -76,14 +76,12 @@ class ServiceState:
                  region_name : str,
                  averaging_interval : pd.Timedelta,
                  service_instance_resource_requirements : ResourceRequirements,
-                 request_processing_infos : dict,
                  buffers_config : dict,
                  sampling_interval : pd.Timedelta):
 
         self.service_name = service_name
         self.region_name = region_name
         self.service_instance_resource_requirements = service_instance_resource_requirements
-        self.request_processing_infos = request_processing_infos
         self.averaging_interval = averaging_interval
         self.sampling_interval = sampling_interval
 
@@ -119,9 +117,9 @@ class ServiceState:
             'waiting_requests_count': ServiceMetric(buffer_utilization.waiting_requests_count_metric_name, [self.upstream_buf, self.downstream_buf], SumAggregator())
         }
 
-    def add_request(self, req : Request, simulation_step : pd.Timedelta):
+    def add_request(self, req : Request):
 
-        self.upstream_buf.put(req, simulation_step) if req.upstream else self.downstream_buf.put(req, simulation_step)
+        self.upstream_buf.put(req) if req.upstream else self.downstream_buf.put(req)
 
     @property
     def processed(self):
@@ -141,8 +139,8 @@ class ServiceState:
         time_budget = simulation_step
 
         if len(self.deployments) > 0:
-            self.upstream_buf.step(simulation_step)
-            self.downstream_buf.step(simulation_step)
+            self.upstream_buf.step()
+            self.downstream_buf.step()
 
             for deployment in self.deployments.values():
                 if not deployment.node_group.id in self.unschedulable:
@@ -240,10 +238,7 @@ class ServiceState:
         node group. The node group might be shared among multiple services.
         """
 
-        self.deployments[node_group.id] = Deployment(self.service_name, node_group, self.request_processing_infos)
-
-        node_group.uplink.set_request_processing_infos(self.request_processing_infos)
-        node_group.downlink.set_request_processing_infos(self.request_processing_infos)
+        self.deployments[node_group.id] = Deployment(self.service_name, node_group)
 
         self.upstream_buf.add_link(node_group.id, node_group.uplink)
         self.downstream_buf.add_link(node_group.id, node_group.downlink)

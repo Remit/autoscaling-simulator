@@ -1,7 +1,7 @@
 import uuid
 import pandas as pd
 
-from autoscalingsim.utils.requirements import ResourceRequirements
+from autoscalingsim.utils.request_processing_info import RequestProcessingInfo
 
 class Request:
 
@@ -13,10 +13,12 @@ class Request:
     flag is dropped.
     """
 
-    def __init__(self, region_name : str, request_type : str, request_id = None):
+    def __init__(self, region_name : str, request_type : str, request_processing_info : RequestProcessingInfo, simulation_step : pd.Timedelta, request_id = None):
 
         self.region_name = region_name
-        self.request_type = request_type
+        self.request_type = request_type # TODO: consider removing since this info is in request_requirement
+        self.request_processing_info = request_processing_info
+        self.simulation_step = simulation_step
         self.request_id = uuid.uuid1() if request_id is None else request_id
 
         self.processing_time_left = pd.Timedelta(0, unit = 'ms')
@@ -37,6 +39,39 @@ class Request:
     def set_upstream(self):
 
         self._upstream = True
+
+    def set_downstream_processing_time_for_current_service(self):
+
+        self.processing_time_left = self.request_processing_info.get_downstream_processing_time(self.processing_service)
+
+    def set_upstream_processing_time_for_current_service(self):
+
+        self.processing_time_left = self.request_processing_info.get_upstream_processing_time(self.processing_service)
+
+    @property
+    def entry_service(self):
+
+        return self.request_processing_info.entry_service
+
+    @property
+    def resource_requirements(self):
+
+        return self.request_processing_info.resource_requirements
+
+    @property
+    def request_size(self):
+
+        return self.request_processing_info.request_size
+
+    @property
+    def response_size(self):
+
+        return self.request_processing_info.response_size
+
+    @property
+    def timeout(self):
+
+        return self.request_processing_info.timeout
 
     @property
     def upstream(self):

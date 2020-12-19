@@ -31,14 +31,10 @@ class Deployment:
 
     """
 
-    def __init__(self,
-                 service_name : str,
-                 node_group : HomogeneousNodeGroup,
-                 request_processing_infos : dict):
+    def __init__(self, service_name : str, node_group : HomogeneousNodeGroup):
 
         self.service_name = service_name
         self.node_group = node_group
-        self.request_processing_infos = request_processing_infos
 
     def step(self, time_budget : pd.Timedelta):
 
@@ -64,12 +60,11 @@ class Deployment:
 
     def system_resources_taken_by_requests(self):
 
-        return self.node_group.system_resources_taken_by_requests(self.service_name,
-                                                                  self.request_processing_infos)
+        return self.node_group.system_resources_taken_by_requests(self.service_name)
 
     def system_resources_taken_by_all_requests(self):
 
-        return self.node_group.system_resources_taken_by_all_requests(self.request_processing_infos)
+        return self.node_group.system_resources_taken_by_all_requests()
 
     def system_resources_to_take_from_requirements(self,
                                                    res_reqs : ResourceRequirements):
@@ -98,7 +93,7 @@ class Deployment:
 
     def can_schedule_request(self, req : Request):
 
-        return self.node_group.can_schedule_request(req, self.request_processing_infos)
+        return self.node_group.can_schedule_request(req)
 
     def aspect_value(self, aspect_name : str):
 

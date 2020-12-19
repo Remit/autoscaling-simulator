@@ -69,7 +69,7 @@ class AnalysisFramework:
         utilization_per_service = {}
         infrastructure_cost_per_provider = {}
         if not simulation is None:
-            load_regionalized = simulation.load_model.get_generated_load()
+            load_regionalized = simulation.application_model.load_model.get_generated_load()
             response_times_regionalized = simulation.application_model.response_stats.get_response_times_by_request()
             buffer_times_regionalized = simulation.application_model.response_stats.get_buffer_times_by_request()
             network_times_regionalized = simulation.application_model.response_stats.get_network_times_by_request()

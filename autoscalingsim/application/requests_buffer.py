@@ -26,10 +26,10 @@ class RequestsBuffer:
 
         return self.utilization.get(metric_name, interval)
 
-    def step(self, simulation_step : pd.Timedelta):
+    def step(self):
 
         for link in self.links:
-            ready_reqs = link.step(simulation_step)
+            ready_reqs = link.step()
 
             for req in ready_reqs:
                 if req.request_type in self.capacity_by_request_type:
@@ -54,17 +54,14 @@ class RequestsBuffer:
 
     def update_capacity(self, service_instances_count : int):
 
-        if not isinstance(service_instances_count, int):
-            raise ValueError(f'Cannot change buffer capacity using non-int: {service_instances_count}')
-
         for req_type, init_capacity in self.capacity_by_request_type_base.items():
             self.capacity_by_request_type[req_type] = init_capacity * service_instances_count
 
-    def put(self, req : Request, simulation_step : pd.Timedelta):
+    def put(self, req : Request):
 
         # Request is lost if link was not yet established
         if len(self.links) > 0:
-            self.links[self.last_used_link_id].put(req, simulation_step)
+            self.links[self.last_used_link_id].put(req)
             self.last_used_link_id = self.last_used_link_id + 1 if self.last_used_link_id < len(self.links) - 1 else 0
 
     def add_link(self, node_group_id : int, link : NodeGroupLink):

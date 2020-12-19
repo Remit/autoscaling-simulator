@@ -33,9 +33,6 @@ class Region:
         result = deepcopy(self)
         result.homogeneous_groups += regional_delta
 
-        #homogeneous_groups = self.homogeneous_groups.copy()
-        #homogeneous_groups += regional_delta
-
         return result
 
     def extract_compensating_deltas(self):
@@ -107,15 +104,18 @@ class Region:
                 generalized_deltas_lst, unmet_reduction = group.compute_soft_adjustment(unmet_reduction, scaled_service_instance_requirements_by_service)
 
                 for gd in generalized_deltas_lst:
-                    if gd.node_group_delta.in_change:
+                    if gd.node_group_delta.in_change and not gd.node_group_delta.virtual: # is sign -1
                         non_enforced_scale_down_deltas.append(gd)
-                        group_shrinkage = gd.node_group_delta.node_group.copy()
+                        group_shrinkage = gd.node_group_delta.node_group.copy()# TODO: deepcopy?
                         group_shrinkage.add_to_services_state(gd.services_group_delta.to_services_state())
-                        group.shrink(group_shrinkage)
+                        # TODO: split instead of shrink(remaining_node_group_fragment, {'node_group_fragment': deleted_node_group_fragment, 'services_state_fragment': deleted_services_state_fragment}) .split()
+                        group.shrink(group_shrinkage) # what about the processing state of requests upon issuing a split?
+
 
                     else:
                         new_generalized_deltas.append(gd)
 
+            # Not needed?
             if group.is_empty:
                 del group
 

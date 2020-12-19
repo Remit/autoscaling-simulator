@@ -25,7 +25,6 @@ class ServiceStateRegionalized:
                  service_regions : list,
                  averaging_interval : pd.Timedelta,
                  service_instance_resource_requirements : ResourceRequirements,
-                 request_processing_infos : dict,
                  buffers_config : dict,
                  sampling_interval : pd.Timestamp):
 
@@ -37,16 +36,15 @@ class ServiceStateRegionalized:
                                                            region_name,
                                                            averaging_interval,
                                                            service_instance_resource_requirements,
-                                                           request_processing_infos,
                                                            buffers_config,
                                                            sampling_interval)
 
-    def add_request(self, req : Request, simulation_step : pd.Timedelta):
+    def add_request(self, req : Request):
 
         if not req.region_name in self.region_states:
             raise ValueError(f'Received request with an unknown region name: {req.region_name}')
 
-        self.region_states[req.region_name].add_request(req, simulation_step)
+        self.region_states[req.region_name].add_request(req)
 
     @property
     def processed(self) -> list:

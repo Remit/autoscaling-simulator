@@ -74,6 +74,7 @@ class CountBasedSoftAdjuster(NodeGroupSoftAdjuster):
         if len(services_cnt_change_count) > 0:
             if nodes_to_accommodate_res_usage < self.node_group_ref.nodes_count:
                 # scale down for nodes
+
                 new_services_instances_counts = self.node_group_ref.services_state.raw_aspect_value_for_every_service('count')
 
                 # TODO: connect to the id of the current node group and adjust the node group set behavior for sign < 0 / introduce .to_generalized_delta?

@@ -40,7 +40,6 @@ class HomogeneousNodeGroupSet:
 
         groups_to_change = self._in_change_node_groups if generalized_delta.node_group_delta.in_change else self._node_groups
 
-
         if generalized_delta.node_group_delta.virtual:
             self._modify_services_state(generalized_delta, groups_to_change)
         else:
@@ -65,11 +64,10 @@ class HomogeneousNodeGroupSet:
         for group in groups_to_change.values():
             if group.services_state.is_compatible_with(services_group_delta):
                 compensating_services_group_delta = services_group_delta.to_concrete_delta(group.services_state.services_requirements, count_sign = 1, in_change = True)
-                group.add_to_services_state(services_group_delta) # TODO: add resource check for nodes in the group.
+                group.add_to_services_state(services_group_delta)
 
                 compensating_node_group_delta = NodeGroupDelta(group, in_change = False, virtual = True)
-                self.failures_compensating_deltas.append(GeneralizedDelta(compensating_node_group_delta,
-                                                                          compensating_services_group_delta))
+                self.failures_compensating_deltas.append(GeneralizedDelta(compensating_node_group_delta, compensating_services_group_delta))
 
     def _modify_node_groups_state(self, generalized_delta : GeneralizedDelta, groups_to_change : dict):
 

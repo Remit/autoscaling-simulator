@@ -5,7 +5,6 @@ import pandas as pd
 from tqdm import tqdm
 
 from autoscalingsim.application.application_model import ApplicationModel
-from autoscalingsim.load.load_model import LoadModel
 
 class Simulation:
     """
@@ -65,14 +64,12 @@ class Simulation:
     """
 
     def __init__(self,
-                 load_model : LoadModel,
                  application_model : ApplicationModel,
                  simulation_conf : dict,
                  stat_updates_every_round : int = 0,
                  results_dir : str = None):
 
         # Static state
-        self.load_model = load_model
         self.application_model = application_model
         self.simulation_start = simulation_conf['starting_time']
         self.simulation_end = self.simulation_start + simulation_conf['time_to_simulate']
@@ -112,7 +109,7 @@ class Simulation:
                 os.mkdir(self.results_dir)
                 full_filename = os.path.join(results_dir, filename)
 
-                results_to_store = {'load_regionalized': self.load_model.get_generated_load(),
+                results_to_store = {'load_regionalized': self.application_model.load_model.get_generated_load(),
                                     'response_times_regionalized': self.application_model.load_stats.get_response_times_by_request(),
                                     'buffer_times_regionalized': self.application_model.load_stats.get_buffer_times_by_request(),
                                     'network_times_regionalized': self.application_model.load_stats.get_network_times_by_request(),
@@ -126,7 +123,5 @@ class Simulation:
                     pickle.dump(results_to_store, f)
 
     def _step(self):
-        new_requests = self.load_model.generate_requests(self.cur_simulation_time)
-        self.application_model.enter_requests(new_requests)
-        self.application_model.step(self.cur_simulation_time,
-                                    self.simulation_step)
+
+        self.application_model.step(self.cur_simulation_time, self.simulation_step)

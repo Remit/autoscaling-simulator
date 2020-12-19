@@ -14,22 +14,15 @@ class SeasonalLoadModel(RegionalLoadModel):
 
     SECONDS_IN_DAY = 86_400
 
-    def __init__(self,
-                 region_name : str,
-                 pattern : dict,
-                 load_configs : dict,
-                 simulation_step : pd.Timedelta):
+    def __init__(self, region_name : str, pattern : dict, load_configs : dict,
+                 simulation_step : pd.Timedelta, reqs_processing_infos : dict):
 
-        # Static state
-        self.region_name = region_name
-        self.simulation_step = simulation_step
-        self.load = {}
+        super().__init__(region_name, simulation_step, reqs_processing_infos)
 
         self.monthly_vals = SeasonalLoadPatternParser.get(ErrorChecker.key_check_and_load('type', pattern, 'region_name', self.region_name)).parse(pattern)
         self.reqs_types_ratios = RatiosParser.parse(load_configs)
         self.reqs_generators = DistributionsParser.parse(load_configs)
 
-        # Dynamic state
         self.current_means_split_across_seconds = {}
         self.current_second_leftover_reqs = { req_type : -1 for req_type in self.reqs_types_ratios }
         self.current_req_split_across_simulation_steps = {}
@@ -91,7 +84,7 @@ class SeasonalLoadModel(RegionalLoadModel):
             req_types_reqs_num = self.current_req_split_across_simulation_steps[req_type][ms_bucket_picked]
 
             for i in range(req_types_reqs_num):
-                gen_reqs.append(Request(self.region_name, req_type))
+                gen_reqs.append(Request(self.region_name, req_type, self.reqs_processing_infos[req_type], self.simulation_step))
                 self.current_req_split_across_simulation_steps[req_type][ms_bucket_picked] -= 1
 
             self._update_stat(timestamp, req_type, req_types_reqs_num)

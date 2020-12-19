@@ -10,7 +10,7 @@ class LoadModel(MetricSource):
 
     """ Combines regional workload generation models. Parses the configuration file. """
 
-    def __init__(self, simulation_step : pd.Timedelta, filename : str):
+    def __init__(self, simulation_step : pd.Timedelta, filename : str, reqs_processing_infos : dict):
 
         self.region_models = {}
 
@@ -26,7 +26,7 @@ class LoadModel(MetricSource):
                     region_name = ErrorChecker.key_check_and_load('region_name', region_config)
                     pattern = ErrorChecker.key_check_and_load('pattern', region_config, 'region_name', region_name)
                     load_configs = ErrorChecker.key_check_and_load('load_configs', region_config, 'region_name', region_name)
-                    self.region_models[region_name] = RegionalLoadModel.get(load_kind)(region_name, pattern, load_configs, simulation_step)
+                    self.region_models[region_name] = RegionalLoadModel.get(load_kind)(region_name, pattern, load_configs, simulation_step, reqs_processing_infos)
 
     def generate_requests(self, timestamp : pd.Timestamp):
 
@@ -39,9 +39,6 @@ class LoadModel(MetricSource):
         return { region_name : region_load_model.get_stat() for region_name, region_load_model in self.region_models.items()}
 
     def get_metric_value(self, region_name : str, req_type : str, submetric_name : str):
-
-        if not region_name in self.region_models:
-            raise ValueError(f'A load model for the given region name {region_name} was not found')
 
         return self.region_models[region_name].get_requests_count_per_unit_of_time(req_type)
 

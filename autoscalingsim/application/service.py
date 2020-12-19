@@ -37,7 +37,6 @@ class Service(MetricSource):
                  service_regions : list,
                  resource_requirements : ResourceRequirements,
                  buffers_config : dict,
-                 request_processing_infos : dict,
                  scaling_setting_for_service : ScalingPolicyConfiguration,
                  state_reader : StateReader,
                  averaging_interval : pd.Timedelta,
@@ -68,7 +67,6 @@ class Service(MetricSource):
                                               service_regions,
                                               averaging_interval,
                                               resource_requirements,
-                                              request_processing_infos,
                                               buffers_config,
                                               sampling_interval)
 
@@ -76,9 +74,9 @@ class Service(MetricSource):
 
         return self.scaling_effect_aggregation_rule()
 
-    def add_request(self, req : Request, simulation_step : pd.Timedelta):
+    def add_request(self, req : Request):
 
-        self.state.add_request(req, simulation_step)
+        self.state.add_request(req)
 
     def step(self, cur_timestamp : pd.Timestamp, simulation_step : pd.Timedelta):
 

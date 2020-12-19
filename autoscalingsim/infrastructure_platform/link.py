@@ -38,40 +38,53 @@ class NodeGroupLink:
 
     """
 
-    def __init__(self,
-                 node_info : NodeInfo,
-                 count_of_nodes_in_group : int):
+    def __init__(self, node_info : NodeInfo, count_of_nodes_in_group : int):
 
         self.latency = node_info.latency
         self.single_link_network_bandwidth = node_info.network_bandwidth
-        self.request_processing_infos = None
 
         self.bandwidth = self.single_link_network_bandwidth * count_of_nodes_in_group
         self.requests_in_transfer = []
         self.used_bandwidth = Size(0)
 
-    def step(self, simulation_step : pd.Timedelta):
+    def step(self):
 
         """ Processing requests to bring them from the link into the buffer """
 
         requests_for_buffer = []
         for req in self.requests_in_transfer:
-            req.cumulative_time += simulation_step
-            req.waiting_on_link_left -= simulation_step
-            req.network_time += simulation_step
+            req.cumulative_time += req.simulation_step
+            req.waiting_on_link_left -= req.simulation_step
+            req.network_time += req.simulation_step
 
             if req.waiting_on_link_left <= pd.Timedelta(0):
-                if req.cumulative_time < self.request_processing_infos[req.request_type].timeout:
+                if req.cumulative_time < req.timeout:
                     requests_for_buffer.append(req)
-                    self.used_bandwidth -= self._req_occupied(req, simulation_step)
+                    self.used_bandwidth -= self._req_occupied(req)
 
                 self.requests_in_transfer.remove(req)
 
         return requests_for_buffer
 
-    def put(self, req : Request, simulation_step : pd.Timedelta):
+    def transfer_requests_to(self, target : 'NodeGroupLink'):
 
-        req_size = self._req_occupied(req, simulation_step)
+        for req in self.requests_in_transfer:
+            if not target.can_accept_request(req):
+                break
+
+            target.put(req)
+
+        for req in target.requests_in_transfer:
+            if req in self.requests_in_transfer:
+                self.requests_in_transfer.remove(req)            
+
+    def can_accept_request(self, req : Request):
+
+        return self.bandwidth - self.used_bandwidth >= self._req_occupied(req)
+
+    def put(self, req : Request):
+
+        req_size = self._req_occupied(req)
 
         if self.bandwidth - self.used_bandwidth >= req_size:
 
@@ -79,15 +92,11 @@ class NodeGroupLink:
             req.waiting_on_link_left = self.latency
             self.requests_in_transfer.append(req)
 
-    def set_request_processing_infos(self, request_processing_infos : dict):
-
-        self.request_processing_infos = request_processing_infos
-
     def update_bandwidth(self, new_nodes_count : int):
 
         self.bandwidth = self.single_link_network_bandwidth * new_nodes_count
 
-    def _req_occupied(self, req : Request, simulation_step : pd.Timedelta):
+    def _req_occupied(self, req : Request):
 
-        req_size = self.request_processing_infos[req.request_type].request_size if req.upstream else self.request_processing_infos[req.request_type].response_size
-        return req_size * (self.latency // simulation_step) # taking channel for that many simulation steps * by the taken bandwidth
+        req_size = req.request_size if req.upstream else req.response_size
+        return req_size * (self.latency // req.simulation_step) # taking channel for that many simulation steps * by the taken bandwidth
