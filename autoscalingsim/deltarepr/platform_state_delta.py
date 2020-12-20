@@ -1,5 +1,6 @@
 import pandas as pd
 from collections import defaultdict
+from copy import deepcopy
 
 from .regional_delta import RegionalDelta
 
@@ -16,13 +17,13 @@ class PlatformStateDelta:
     def __init__(self, regional_deltas : dict = {}, is_enforced : bool = False):
 
         self.is_enforced = is_enforced
-        self.deltas_per_region = {}
+        self.deltas_per_region = dict()
         if isinstance(regional_deltas, list):
             for regional_delta in regional_deltas:
                 if not isinstance(regional_delta, RegionalDelta):
                     raise TypeError(f'Expected RegionalDelta on initializing {self.__class__.__name__}, got {regional_delta.__class__.__name__}')
 
-            self.deltas_per_region[regional_delta.region_name] = regional_delta
+                self.deltas_per_region[regional_delta.region_name] = regional_delta
 
         elif isinstance(regional_deltas, dict):
             for regional_delta in regional_deltas.values():
@@ -30,7 +31,7 @@ class PlatformStateDelta:
                     raise TypeError(f'Expected RegionalDelta on initializing {self.__class__.__name__},\
                                     got {regional_delta.__class__.__name__}')
 
-            self.deltas_per_region = regional_deltas.copy()
+            self.deltas_per_region = deepcopy(regional_deltas)
 
         else:
             raise TypeError(f'Unknown type of init argument for {self.__class__.__name__}: \

@@ -37,9 +37,9 @@ class DesiredPlatformAdjustmentCalculator:
 
             placements = self.placer.compute_nodes_requirements(group_of_services, region_name)
             scored_placements = self.scorer.score_placements(placements, state_duration)
-            optimal_placement = self.optimizer.select_best(scored_placements)
-
-            regions[region_name] = Region.from_conf(region_name, optimal_placement)
-            scores_per_region[region_name] = optimal_placement.score
+            if len(scored_placements) > 0:
+                optimal_placement = self.optimizer.select_best(scored_placements)
+                regions[region_name] = Region.from_conf(region_name, optimal_placement)
+                scores_per_region[region_name] = optimal_placement.score
 
         return (PlatformState(regions).to_deltas(), StateScore(scores_per_region))

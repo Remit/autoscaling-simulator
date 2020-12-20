@@ -56,6 +56,8 @@ class Region:
 
         unmet_reduction, unmet_increase = self._split_unmet_cumulative_changes_into_reduction_and_increase(services_deltas_in_scaling_aspects)
 
+        unmet_reduction = {'appserver': {'count': -1}}
+
         unmet_reduction, cur_groups, new_generalized_reduction_deltas, postponed_scaling_events = self._attempt_services_removal(unmet_reduction, scaled_service_instance_requirements_by_service)
         new_generalized_deltas.extend(new_generalized_reduction_deltas)
 
@@ -67,6 +69,8 @@ class Region:
 
         regional_delta = RegionalDelta(self.region_name, new_generalized_deltas) if len(new_generalized_deltas) > 0 else None
         unmet_changes_on_ts = {**unmet_reduction, **unmet_increase}
+
+        print(regional_delta)
 
         return (regional_delta, unmet_changes_on_ts)
 
@@ -105,8 +109,9 @@ class Region:
                 new_generalized_deltas.extend(generalized_deltas_lst)
 
                 if not postponed_scaling_event is None:
+                    new_postponed_scaling_events[group.id] = postponed_scaling_event
+                    
                     if not postponed_scaling_event.remainder is None:
-                        new_postponed_scaling_events[group.id] = postponed_scaling_event
                         new_cur_groups.append(postponed_scaling_event.remainder)
                     else:
                         new_cur_groups.append(group)

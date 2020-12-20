@@ -17,7 +17,7 @@ class Size:
         if not unit in self.__class__.sizes_bytes and not unit.upper() in self.__class__.sizes_bytes:
             raise ValueError(f'Unknown unit {unit}')
 
-        if value < 0: value = 0
+        #if value < 0: value = 0
 
         normalizer = 1 if unit in self.__class__.sizes_bytes else 8 # handles the case of *bit unit
         self._size_in_bytes = (value / normalizer) * self.__class__.sizes_bytes[unit.upper()]

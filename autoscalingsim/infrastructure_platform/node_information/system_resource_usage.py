@@ -1,5 +1,6 @@
 import operator
 import numbers
+from copy import deepcopy
 
 from autoscalingsim.utils.size import Size
 
@@ -32,7 +33,7 @@ class SystemResourceUsage:
         self.instance_max_usage = node_info.max_usage
         self.instance_count = instance_count
 
-        self.system_resources_usage = {}
+        self.system_resources_usage = dict()
         for res_name, cls in self.__class__.system_resources.items():
             self.system_resources_usage[res_name] = system_resources_usage[res_name] if res_name in system_resources_usage else cls(0)
 
@@ -55,7 +56,7 @@ class SystemResourceUsage:
         if not (other_usage.instance_count == 1 or self.instance_count == 1) and self.instance_count != other_usage.instance_count:
             raise ValueError(f'Attempt to combine system resource usages for unmatching cluster sizes')
 
-        system_resource_usage = self.system_resources_usage.copy()
+        system_resource_usage = deepcopy(self.system_resources_usage)
         for res_name, res_usage in other_usage.system_resources_usage.items():
             if res_name in system_resource_usage:
                 system_resource_usage[res_name] += sign * res_usage

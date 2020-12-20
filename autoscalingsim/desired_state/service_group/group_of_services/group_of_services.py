@@ -30,7 +30,8 @@ class GroupOfServices:
                                                                         services_resource_reqs[service_name],
                                                                         group_or_aspects_dict)
 
-                self.services_groups[service_name] = service_instances_group
+                if not service_instances_group.is_empty:
+                    self.services_groups[service_name] = service_instances_group
 
     def __add__(self, other):
 
@@ -102,8 +103,13 @@ class GroupOfServices:
         some number of argument groups to get the current group of services.
         """
 
-        return self.__class__({ service_name : service_group % other.services_groups[service_name] if service_name in other.services_groups else service_group \
-                                for service_name, service_group in self.services_groups.items()})
+        remainder_groups = dict()
+        for service_name, service_group in self.services_groups.items():
+            rem_group = service_group % other.services_groups[service_name] if service_name in other.services_groups else service_group
+            if not rem_group.is_empty:
+                remainder_groups[service_name] = rem_group
+
+        return self.__class__(remainder_groups)
 
     def scale_all_service_instances_by(self, scale_factor : numbers.Number):
 
@@ -111,7 +117,13 @@ class GroupOfServices:
 
     def downsize_proportionally(self, downsizing_coef : float):
 
-        return self.__class__({ service_group.service_name : service_group.downsize_proportionally(downsizing_coef) for service_group in self.services_groups.values() })
+        downsized_service_groups = dict()
+        for service_group in self.services_groups.values():
+            downsized_service_group = service_group.downsize_proportionally(downsizing_coef)
+            if not downsized_service_group.is_empty:
+                downsized_service_groups[service_group.service_name] = downsized_service_group
+
+        return self.__class__(downsized_service_groups)
 
     def is_compatible_with(self, services_group_delta : GroupOfServicesDelta) -> bool:
 
@@ -120,9 +132,9 @@ class GroupOfServices:
 
         return True
 
-    def to_delta(self, direction : int = 1):
+    def to_delta(self, direction : int = 1, in_change : bool = True):
 
-        return GroupOfServicesDelta.from_deltas({ service_name : group.to_delta(direction) for service_name, group in self.services_groups.items() })
+        return GroupOfServicesDelta.from_deltas({ service_name : group.to_delta(direction) for service_name, group in self.services_groups.items() }, in_change)
 
     def scaling_aspects_for_every_service(self):
 
@@ -171,10 +183,6 @@ class GroupOfServices:
                 return False
 
         return True
-
-    def copy(self):
-
-        return self.__class__(self.services_groups.copy())
 
     def __repr__(self):
 
