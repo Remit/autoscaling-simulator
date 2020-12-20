@@ -138,9 +138,11 @@ class HomogeneousNodeGroup(NodeGroup):
         remaining_node_group_fragment.uplink.update_bandwidth(remaining_node_group_fragment.nodes_count)
         remaining_node_group_fragment.downlink.update_bandwidth(remaining_node_group_fragment.nodes_count)
         remaining_node_group_fragment.transfer_requests_from(self)
+        remaining_node_group_fragment._utilization = deepcopy(self._utilization)
 
         deleted_node_group_fragment = HomogeneousNodeGroup(node_info = self.node_info, nodes_count = other.nodes_count)
         deleted_node_group_fragment.transfer_requests_from(self)
+        deleted_node_group_fragment._utilization = deepcopy(self._utilization)
 
         return (remaining_node_group_fragment, {'node_group_fragment': deleted_node_group_fragment, 'services_state_fragment': deleted_services_state_fragment})
 
@@ -225,22 +227,24 @@ class HomogeneousNodeGroup(NodeGroup):
                 unmet_changes_per_aspect[aspect_name][service_name] = aspect_change_val
 
         generalized_deltas = list()
+        selected_postponed_scaling_event = None
         unmet_changes = collections.defaultdict(lambda: collections.defaultdict(int))
         for aspect_name, services_changes_dict in unmet_changes_per_aspect.items():
 
             unmet_changes_to_carry_over = services_changes_dict
             if aspect_name in self.soft_adjusters:
-                aspect_based_generalized_deltas, aspect_based_unmet_changes = self.soft_adjusters[aspect_name].compute_soft_adjustment(services_changes_dict,
-                                                                                                                                       requirements_by_service_instance,
-                                                                                                                                       res_usage_by_service)
-
+                aspect_based_generalized_deltas, aspect_based_postponed_scaling_event, aspect_based_unmet_changes = self.soft_adjusters[aspect_name].compute_soft_adjustment(services_changes_dict,
+                                                                                                                                                                             requirements_by_service_instance,
+                                                                                                                                                                             res_usage_by_service)
+                # TODO: think of multiple soft adjusters case -- how should their results be combined? Some form of selection?
                 generalized_deltas.extend(aspect_based_generalized_deltas)
+                selected_postponed_scaling_event = aspect_based_postponed_scaling_event
                 unmet_changes_to_carry_over = aspect_based_unmet_changes
 
             for service_name, change_val in unmet_changes_to_carry_over.items():
                 unmet_changes[service_name][aspect_name] = change_val
 
-        return (generalized_deltas, unmet_changes)
+        return (generalized_deltas, selected_postponed_scaling_event, unmet_changes)
 
     def update_utilization(self, service_name : str,
                            system_resources_usage : SystemResourceUsage,
@@ -296,6 +300,7 @@ class HomogeneousNodeGroup(NodeGroup):
 
         ng_copy = self.__class__(self.node_info, self.nodes_count, deepcopy(self.services_state, memo))
         ng_copy.id = self.id
+        ng_copy._utilization = deepcopy(self._utilization, memo)
         memo[id(ng_copy)] = ng_copy
         return ng_copy
 

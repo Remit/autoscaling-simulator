@@ -4,6 +4,53 @@ from copy import deepcopy
 
 from ..node_group_soft_adjuster import NodeGroupSoftAdjuster
 
+class HorizontalScaleDown:
+
+    def __init__(self, original_node_group : 'HomogeneousNodeGroup', count_of_nodes_to_remove : int):
+
+        import autoscalingsim.desired_state.node_group as n_grp
+
+        self.original_node_group = original_node_group
+        fragment_to_remove = n_grp.HomogeneousNodeGroup(original_node_group.node_info, count_of_nodes_to_remove)
+
+        self.remaining_node_group_fragment = None
+        self.deleted_node_group_fragment = None
+        self.deleted_services_state_fragment = None
+
+        if original_node_group.can_shrink_with(fragment_to_remove):
+
+            self.remaining_node_group_fragment, deleted_fragment = original_node_group.split(fragment_to_remove)
+            self.deleted_node_group_fragment = deleted_fragment['node_group_fragment']
+            self.deleted_services_state_fragment = deleted_fragment['services_state_fragment']
+
+    @property
+    def remainder(self):
+
+        return self.remaining_node_group_fragment
+
+    @property
+    def deleted(self):
+
+        if not self.deleted_node_group_fragment is None:
+            result = deepcopy(self.deleted_node_group_fragment)
+            result.add_to_services_state(self.deleted_services_state_fragment.to_delta())
+            return result
+        else:
+            return None
+
+    @property
+    def deleted_services(self):
+
+        return self.deleted_services_state_fragment
+
+    def to_scale_down_in_deltas(self):
+
+        pass
+
+    def to_split_in_deltas(self):
+        #succeeded in saving some to-be-deleted nodes
+        pass
+
 @NodeGroupSoftAdjuster.register('count')
 class CountBasedSoftAdjuster(NodeGroupSoftAdjuster):
 
@@ -17,17 +64,14 @@ class CountBasedSoftAdjuster(NodeGroupSoftAdjuster):
         import autoscalingsim.deltarepr.generalized_delta as g_delta
         import autoscalingsim.deltarepr.group_of_services_delta as gos_delta
 
-        #nodes_count_to_consider = self.node_group_ref.nodes_count
-        generalized_deltas = []
+        generalized_deltas = list()
+        postponed_scaling_event = None
 
-        #unmet_changes_prev = {}
-        #while nodes_count_to_consider > 0 and unmet_changes_prev != unmet_changes:
-            #unmet_changes_prev = unmet_changes.copy()
         node_sys_resource_usage = self.node_group_ref.system_resources_usage.copy()
 
         # Starting with the largest service and proceeding to the smallest one in terms of
         # resource usage requirements. This is made to reduce the resource usage fragmentation.
-        services_cnt_change = {}
+        services_cnt_change = dict()
         dynamic_services_instances_count = self.node_group_ref.services_state.raw_aspect_value_for_every_service('count')
 
         for service_name, service_instance_resource_usage in node_sys_resource_usage_by_service_sorted.items():
@@ -38,11 +82,8 @@ class CountBasedSoftAdjuster(NodeGroupSoftAdjuster):
                     services_cnt_change[service_name] = 0
 
                 if not node_sys_resource_usage.is_full and unmet_changes[service_name] > 0:
-                    #print("********************")
                     while (unmet_changes[service_name] - services_cnt_change[service_name] > 0) and not node_sys_resource_usage.is_full:
-                        #print(f'Before: {node_sys_resource_usage}')
                         node_sys_resource_usage += service_instance_resource_usage
-                        #print(f'After: {node_sys_resource_usage}')
                         services_cnt_change[service_name] += 1
 
                     if node_sys_resource_usage.is_full:
@@ -62,40 +103,32 @@ class CountBasedSoftAdjuster(NodeGroupSoftAdjuster):
         nodes_to_accommodate_res_usage = max([math.ceil(res_usage / other_res_usage) \
                                                 for other_res_name, other_res_usage in self.node_group_ref.node_info.max_usage.items() \
                                                 for res_name, res_usage in node_sys_resource_usage.to_dict().items() \
-                                                if other_res_name == res_name and other_res_usage > other_res_usage.__class__(0)])
+                                                if other_res_name == res_name and other_res_usage > other_res_usage.__class__(0)]) # TODO: think of making new abstraction for vcpu resource and adding is_positive to it
 
         for service_name, count_in_solution in services_cnt_change.items():
             unmet_changes[service_name] -= count_in_solution
 
         node_group_delta = None
         services_group_delta = None
-        services_cnt_change_count = { service_name : {'count': change_val} for service_name, change_val in services_cnt_change.items() }
 
-        if len(services_cnt_change_count) > 0:
-            if nodes_to_accommodate_res_usage < self.node_group_ref.nodes_count:
-                # scale down for nodes
+        if nodes_to_accommodate_res_usage < self.node_group_ref.nodes_count:
+            # scale down for nodes
+            postponed_scaling_event = HorizontalScaleDown(self.node_group_ref, self.node_group_ref.nodes_count - nodes_to_accommodate_res_usage)
+            deleted_services = postponed_scaling_event.deleted_services
+            if not deleted_services is None:
+                count_of_deleted_services = deleted_services.raw_aspect_value_for_every_service('count')
+                services_cnt_change = { service_name : min(raw_change + count_of_deleted_services[service_name], 0) for service_name, raw_change in services_cnt_change.items() \
+                                            if service_name in count_of_deleted_services }
 
-                new_services_instances_counts = self.node_group_ref.services_state.raw_aspect_value_for_every_service('count')
+        if len(services_cnt_change) > 0:
 
-                # TODO: connect to the id of the current node group and adjust the node group set behavior for sign < 0 / introduce .to_generalized_delta?
-                node_group = n_grp.HomogeneousNodeGroup(self.node_group_ref.node_info, self.node_group_ref.nodes_count - nodes_to_accommodate_res_usage, self.node_group_ref.services_state.copy())# ?self.node_group_ref.services_state.copy()
-
-                # Planning scale down for min_nodes_needed
-                node_group_delta = n_grp_delta.NodeGroupDelta(node_group, sign = -1, in_change = True, virtual = False)
-
-            else:
-
-                # scale down/up only for services, nodegroup remains unchanged
-                node_group_delta = n_grp_delta.NodeGroupDelta(deepcopy(self.node_group_ref), sign = 1, in_change = False, virtual = True)
-
-            # Planning scale down for all the services count change from the solution
-            services_group_delta = gos_delta.GroupOfServicesDelta(services_cnt_change_count, in_change = True,
-                                                                  services_reqs = scaled_service_instance_requirements_by_service)
-
-            gd = g_delta.GeneralizedDelta(node_group_delta, services_group_delta)
-            generalized_deltas.append(gd)
+            # scale down/up only for services, nodegroup remains unchanged
+            services_cnt_change_count = { service_name : {'count': change_val} for service_name, change_val in services_cnt_change.items() if change_val != 0 }
+            node_group_delta = n_grp_delta.NodeGroupDelta(deepcopy(self.node_group_ref), sign = 1, in_change = False, virtual = True)
+            services_group_delta = gos_delta.GroupOfServicesDelta(services_cnt_change_count, in_change = True, services_reqs = scaled_service_instance_requirements_by_service)
+            generalized_deltas.append(g_delta.GeneralizedDelta(node_group_delta, services_group_delta))
 
         # Returning generalized deltas (enforced and not enforced) and the unmet changes in services counts
         unmet_changes = {service_name: count for service_name, count in unmet_changes.items() if count != 0}
 
-        return (generalized_deltas, unmet_changes)
+        return (generalized_deltas, postponed_scaling_event, unmet_changes)

@@ -10,16 +10,13 @@ class UtilizationMetric:
     a time series format.
     """
 
-    def __init__(self, metric_name : str):
+    def __init__(self, metric_name : str, utilization : dict = None):
 
         self.metric_name = metric_name
-        self.utilization = {'datetime': [], 'value': []}
+        self.utilization = {'datetime': [], 'value': []} if utilization is None else utilization
         self.tmp_state = TempState()
 
-    def update(self,
-               cur_ts : pd.Timestamp,
-               cur_val : float,
-               averaging_interval : pd.Timedelta):
+    def update(self, cur_ts : pd.Timestamp, cur_val : float, averaging_interval : pd.Timedelta):
 
         """
         Updates the utilization metric with help of the temporary state.
@@ -48,18 +45,20 @@ class UtilizationMetric:
 
         return utilization
 
+    def __repr__(self):
+
+        return f'{self.__class__.__name__}(metric_name = {self.metric_name}, utilization = {self.utilization})'
+
 class EntityUtilization(ABC):
 
-    def __init__(self, metrics_names : list):
+    def __init__(self, metrics_names : list = None, utilizations_per_metric : dict = None):
 
-        self.utilizations = {}
-        for metric_name in metrics_names:
-            self.utilizations[metric_name] = UtilizationMetric(metric_name)
+        self.utilizations = dict() if utilizations_per_metric is None else utilizations_per_metric
+        if not metrics_names is None and len(self.utilizations) == 0:
+            for metric_name in metrics_names:
+                self.utilizations[metric_name] = UtilizationMetric(metric_name)
 
     def get(self, metric_name : str, interval : pd.Timedelta):
-
-        if not metric_name in self.utilizations:
-            raise ValueError(f'Unexpected metric name {metric_name} when reading {self.__class__.__name__}')
 
         return self.utilizations[metric_name].get(interval)
 
@@ -69,7 +68,8 @@ class EntityUtilization(ABC):
                value : float,
                averaging_interval : pd.Timedelta):
 
-        if not metric_name in self.utilizations:
-            raise ValueError(f'Unexpected metric name {metric_name} when updating {self.__class__.__name__}')
-
         self.utilizations[metric_name].update(timestamp, value, averaging_interval)
+
+    def __repr__(self):
+
+        return f'{self.__class__.__name__}(utilizations_per_metric = {self.utilizations})'

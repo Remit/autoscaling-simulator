@@ -44,8 +44,7 @@ class Region:
 
         return self.homogeneous_groups.extract_ids_removed_since_last_time()
 
-    def compute_soft_adjustment(self,
-                                services_deltas_in_scaling_aspects : dict,
+    def compute_soft_adjustment(self, services_deltas_in_scaling_aspects : dict,
                                 scaled_service_instance_requirements_by_service : dict) -> tuple:
 
         """
@@ -57,15 +56,14 @@ class Region:
 
         unmet_reduction, unmet_increase = self._split_unmet_cumulative_changes_into_reduction_and_increase(services_deltas_in_scaling_aspects)
 
-        unmet_reduction, cur_groups, new_generalized_reduction_deltas, non_enforced_scale_down_deltas = self._attempt_services_removal(unmet_reduction, scaled_service_instance_requirements_by_service)
+        unmet_reduction, cur_groups, new_generalized_reduction_deltas, postponed_scaling_events = self._attempt_services_removal(unmet_reduction, scaled_service_instance_requirements_by_service)
         new_generalized_deltas.extend(new_generalized_reduction_deltas)
 
         unmet_increase, new_generalized_increase_deltas = self._attempt_services_placement_maximizing_chances_of_scale_down(unmet_increase, cur_groups, scaled_service_instance_requirements_by_service)
         new_generalized_deltas.extend(new_generalized_increase_deltas)
 
-        unmet_increase, new_generalized_returned_deltas, remaining_non_enforced_scale_down_deltas = self._attempt_services_placement_on_to_be_scaled_down_groups(unmet_increase, non_enforced_scale_down_deltas, scaled_service_instance_requirements_by_service)
+        unmet_increase, new_generalized_returned_deltas = self._attempt_services_placement_on_to_be_scaled_down_groups(unmet_increase, postponed_scaling_events, scaled_service_instance_requirements_by_service)
         new_generalized_deltas.extend(new_generalized_returned_deltas)
-        new_generalized_deltas.extend(remaining_non_enforced_scale_down_deltas)
 
         regional_delta = RegionalDelta(self.region_name, new_generalized_deltas) if len(new_generalized_deltas) > 0 else None
         unmet_changes_on_ts = {**unmet_reduction, **unmet_increase}
@@ -94,35 +92,31 @@ class Region:
 
     def _attempt_services_removal(self, unmet_reduction : dict, scaled_service_instance_requirements_by_service : dict) -> tuple:
 
-        non_enforced_scale_down_deltas = []
-        new_generalized_deltas = []
+        new_postponed_scaling_events = dict()
+        new_generalized_deltas = list()
+        new_cur_groups = list()
         cur_groups = self.homogeneous_groups.enforced
         homogeneous_groups_sorted_increasing = sorted(cur_groups, key = lambda elem: elem.system_resources_usage.as_fraction())
 
         for group in homogeneous_groups_sorted_increasing:
+
             if len(unmet_reduction) > 0:
-                generalized_deltas_lst, unmet_reduction = group.compute_soft_adjustment(unmet_reduction, scaled_service_instance_requirements_by_service)
+                generalized_deltas_lst, postponed_scaling_event, unmet_reduction = group.compute_soft_adjustment(unmet_reduction, scaled_service_instance_requirements_by_service)
+                new_generalized_deltas.extend(generalized_deltas_lst)
 
-                for gd in generalized_deltas_lst:
-                    if gd.node_group_delta.in_change and not gd.node_group_delta.virtual: # is sign -1
-                        non_enforced_scale_down_deltas.append(gd)
-                        group_shrinkage = gd.node_group_delta.node_group.copy()# TODO: deepcopy?
-                        group_shrinkage.add_to_services_state(gd.services_group_delta.to_services_state())
-                        # TODO: split instead of shrink(remaining_node_group_fragment, {'node_group_fragment': deleted_node_group_fragment, 'services_state_fragment': deleted_services_state_fragment}) .split()
-                        group.shrink(group_shrinkage) # what about the processing state of requests upon issuing a split?
-
-
+                if not postponed_scaling_event is None:
+                    if not postponed_scaling_event.remainder is None:
+                        new_postponed_scaling_events[group.id] = postponed_scaling_event
+                        new_cur_groups.append(postponed_scaling_event.remainder)
                     else:
-                        new_generalized_deltas.append(gd)
+                        new_cur_groups.append(group)
 
-            # Not needed?
-            if group.is_empty:
-                del group
+            else:
+                new_cur_groups.append(group)
 
-        return (unmet_reduction, cur_groups, new_generalized_deltas, non_enforced_scale_down_deltas)
+        return (unmet_reduction, new_cur_groups, new_generalized_deltas, new_postponed_scaling_events)
 
-    def _attempt_services_placement_maximizing_chances_of_scale_down(self, unmet_increase : dict,
-                                                                     cur_groups : list,
+    def _attempt_services_placement_maximizing_chances_of_scale_down(self, unmet_increase : dict, cur_groups : list,
                                                                      scaled_service_instance_requirements_by_service : dict):
 
         new_generalized_deltas = list()
@@ -131,37 +125,28 @@ class Region:
 
         for group in homogeneous_groups_sorted_decreasing:
             if len(unmet_increase) > 0:
-                generalized_deltas_lst, unmet_increase = group.compute_soft_adjustment(unmet_increase, scaled_service_instance_requirements_by_service)
+                generalized_deltas_lst, _, unmet_increase = group.compute_soft_adjustment(unmet_increase, scaled_service_instance_requirements_by_service)
                 new_generalized_deltas.extend(generalized_deltas_lst)
 
         return (unmet_increase, new_generalized_deltas)
 
-    def _attempt_services_placement_on_to_be_scaled_down_groups(self, unmet_increase : dict,
-                                                                non_enforced_scale_down_deltas : list,
+    def _attempt_services_placement_on_to_be_scaled_down_groups(self, unmet_increase : dict, postponed_scaling_events : dict,
                                                                 scaled_service_instance_requirements_by_service : dict):
 
-        remaining_non_enforced_scale_down_deltas = list()
         new_generalized_deltas = list()
 
         if len(unmet_increase) > 0:
-            for non_enforced_gd in non_enforced_scale_down_deltas:
-                group = non_enforced_gd.node_group_delta.node_group.copy()
-                generalized_deltas_lst, unmet_increase = group.compute_soft_adjustment(unmet_increase, scaled_service_instance_requirements_by_service)
-
-                if len(generalized_deltas_lst) > 0:
-                    # The intended scale down did not happen, hence
-                    # we drop the non-enforced generalized delta and
-                    # add the semi-scale up deltas to the joint list
-                    # for the timestamp.
+            for node_group_id, postponed_scaling_event in postponed_scaling_events.items():
+                if not postponed_scaling_event.deleted is None:
+                    generalized_deltas_lst, new_postponed_scaling_event, unmet_increase = postponed_scaling_event.deleted.compute_soft_adjustment(unmet_increase, scaled_service_instance_requirements_by_service)
                     new_generalized_deltas.extend(generalized_deltas_lst)
+                    new_generalized_deltas.extend(postponed_scaling_event.to_split_in_deltas())
+                    if not new_postponed_scaling_event is None:
+                        new_generalized_deltas.extend(new_postponed_scaling_event.to_scale_down_in_deltas())
                 else:
-                    # No service instances to accommodate on the
-                    # non-enforced scale down node group, hence
-                    # the corresponding generalized delta is added
-                    # to the list for enforcement.
-                    remaining_non_enforced_scale_down_deltas.append(non_enforced_gd)
+                    new_generalized_deltas.extend(postponed_scaling_event.to_scale_down_in_deltas())
 
-        return (unmet_increase, new_generalized_deltas, remaining_non_enforced_scale_down_deltas)
+        return (unmet_increase, new_generalized_deltas)
 
     def to_placement(self):
 

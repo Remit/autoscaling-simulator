@@ -1,4 +1,5 @@
 import pandas as pd
+from copy import deepcopy
 
 from .node_information.system_resource_usage import SystemResourceUsage
 
@@ -29,9 +30,9 @@ class NodeGroupUtilization:
     This system resource utilization information is stored on per-service basis.
     """
 
-    def __init__(self):
+    def __init__(self, service_utilizations : dict = None):
 
-        self.service_utilizations = {}
+        self.service_utilizations = dict() if service_utilizations is None else service_utilizations
 
     def update_with_system_resources_usage(self,
                                            service_name : str,
@@ -52,3 +53,16 @@ class NodeGroupUtilization:
             return None
         else:
             return self.service_utilizations[service_name].get(resource_name, interval)
+
+    def __deepcopy__(self, memo):
+
+        result = self.__class__()
+        memo[id(result)] = result
+        for service_name, service_utilization in self.service_utilizations.items():
+            result.service_utilizations[service_name] = deepcopy(service_utilization, memo)
+
+        return result
+
+    def __repr__(self):
+
+        return f'{self.__class__.__name__}(service_utilizations = {self.service_utilizations})'
