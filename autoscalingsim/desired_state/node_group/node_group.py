@@ -76,7 +76,7 @@ class HomogeneousNodeGroup(NodeGroup):
     @classmethod
     def from_services_placement(cls, services_placement : ServicesPlacement):
 
-        return cls(services_placement.node_info, services_placement.nodes_count, services_placement.services_state)
+        return cls(services_placement.node_info, services_placement.nodes_count, services_placement.single_node_services_state.scale_all_service_instances_by(services_placement.nodes_count))
 
     def __init__(self, node_info : NodeInfo, nodes_count : int,
                  services_instances_counts : dict = None,
@@ -142,7 +142,7 @@ class HomogeneousNodeGroup(NodeGroup):
 
         deleted_node_group_fragment = deepcopy(self) # Same id required to track the initial desired node group correctly (through the enforced state)  #HomogeneousNodeGroup(node_info = self.node_info, nodes_count = other.nodes_count)
         deleted_node_group_fragment.nodes_count = other.nodes_count
-        #deleted_node_group_fragment.services_state = deleted_services_state_fragment
+        deleted_node_group_fragment.services_state = deleted_services_state_fragment
         deleted_node_group_fragment.transfer_requests_from(self)
         deleted_node_group_fragment._utilization = deepcopy(self._utilization)
 
@@ -274,6 +274,7 @@ class HomogeneousNodeGroup(NodeGroup):
 
         self.services_state += services_group_delta
 
+        #print(f'add_to_services_state: {self.services_state}')
         fits, self.system_resources_usage = self.node_info.services_require_system_resources(self.services_state, self.nodes_count)
         if not fits:
             raise ValueError('An attempt to place services on a node group of insufficient capacity')

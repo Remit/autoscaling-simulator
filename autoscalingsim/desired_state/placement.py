@@ -22,22 +22,22 @@ class ServicesPlacement:
     """ The smallest placement unit """
 
     def __init__(self, node_info : 'NodeInfo', nodes_count : int,
-                 services_state : GroupOfServices):
+                 single_node_services_state : GroupOfServices):
 
         self.node_info = node_info
         self.nodes_count = nodes_count
-        self.services_state = services_state
+        self.single_node_services_state = single_node_services_state
 
     def services_that_cannot_be_placed(self, services_to_consider : GroupOfServices):
 
-        collected_state_of_placed_services = self.services_state.scale_all_service_instances_by(self.nodes_count)
+        collected_state_of_placed_services = self.single_node_services_state.scale_all_service_instances_by(self.nodes_count)
         return services_to_consider % collected_state_of_placed_services
 
     def __repr__(self):
 
         return f'{self.__class__.__name__}( node_info = {self.node_info},\
                                             nodes_count = {self.nodes_count},\
-                                            services_state = {self.services_state})'
+                                            services_state = {self.single_node_services_state})'
 
 class Placement:
 

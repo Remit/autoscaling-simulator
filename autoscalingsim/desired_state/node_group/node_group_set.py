@@ -14,7 +14,7 @@ class HomogeneousNodeGroupSet:
 
     @classmethod
     def from_conf(cls : type, placement : Placement):
-
+        
         return cls( [ HomogeneousNodeGroup.from_services_placement(services_placement) for services_placement in placement ] )
 
     def __init__(self, node_groups : list = None, node_groups_in_change : dict = None):
@@ -52,6 +52,8 @@ class HomogeneousNodeGroupSet:
 
         if services_group_delta.in_change == node_group_delta.in_change:
             if node_group_delta.node_group.id in groups_to_change:
+                #print(f'>>> node_group_set._modify_services_state ORIGINAL: {groups_to_change[node_group_delta.node_group.id].services_state}')
+                #print(f'>>> node_group_set._modify_services_state TO ADD: {services_group_delta}')
                 groups_to_change[node_group_delta.node_group.id].add_to_services_state(services_group_delta) # TODO: check if it can at all be allocated
             elif generalized_delta.fault:
                 self._issue_service_failure_and_restart_if_possible(services_group_delta, groups_to_change)

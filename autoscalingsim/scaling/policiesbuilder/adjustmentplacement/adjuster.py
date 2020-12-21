@@ -49,6 +49,7 @@ class Adjuster(ABC):
         # TODO: remove debug stuff below
         #unmet_change = {'eu': {'appserver': {'count': -1}, 'frontend': {'count': 5}}}
         #unmet_change = {'eu': {'appserver': {'count': -1}}}
+        unmet_change = {'eu': {'db': {'count': 14.0}, 'appserver': {'count': -6}}}
         #ts_of_unmet_change = cur_timestamp
         print(ts_of_unmet_change)
         print(unmet_change)
@@ -83,7 +84,6 @@ class Adjuster(ABC):
 
         return unmet_change
 
-    # TODO: logical error! Not quite temporarily
     def _roll_out_enforced_updates_temporarily(self, in_work_state : PlatformState, ts_of_unmet_change : pd.Timestamp, unmet_change : dict,
                                                timeline_of_deltas_ref : DeltaTimeline, timeline_of_unmet_changes_ref : TimelineOfDesiredServicesChanges):
 
@@ -104,6 +104,9 @@ class Adjuster(ABC):
         state_addition_deltas, state_score_addition = self.desired_change_calculator.compute_adjustment(unmet_change_state, state_duration)
 
         state_score_addition += self.scorer.score_platform_state(in_work_state, StateDuration.from_single_value(state_duration))
+
+        #print(unmet_change_state)
+        print(state_addition_deltas)
 
         return (state_addition_deltas, state_score_addition)
 

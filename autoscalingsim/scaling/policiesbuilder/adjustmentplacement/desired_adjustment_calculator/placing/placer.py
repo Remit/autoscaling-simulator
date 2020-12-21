@@ -136,7 +136,7 @@ class Placer:
 
     def _select_best_option_for_the_node_type(self, node_count_required_per_option):
 
-        result = ServicesPlacement(node_info = None, nodes_count = float('Inf'), services_state = None)
+        result = ServicesPlacement(node_info = None, nodes_count = float('Inf'), single_node_services_state = None)
 
         for considered_services_placement in node_count_required_per_option:
             if (considered_services_placement.nodes_count > 0) \
