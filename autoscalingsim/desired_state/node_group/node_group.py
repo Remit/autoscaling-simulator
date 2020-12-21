@@ -140,7 +140,9 @@ class HomogeneousNodeGroup(NodeGroup):
         remaining_node_group_fragment.transfer_requests_from(self)
         remaining_node_group_fragment._utilization = deepcopy(self._utilization)
 
-        deleted_node_group_fragment = HomogeneousNodeGroup(node_info = self.node_info, nodes_count = other.nodes_count)
+        deleted_node_group_fragment = deepcopy(self) # Same id required to track the initial desired node group correctly (through the enforced state)  #HomogeneousNodeGroup(node_info = self.node_info, nodes_count = other.nodes_count)
+        deleted_node_group_fragment.nodes_count = other.nodes_count
+        #deleted_node_group_fragment.services_state = deleted_services_state_fragment
         deleted_node_group_fragment.transfer_requests_from(self)
         deleted_node_group_fragment._utilization = deepcopy(self._utilization)
 

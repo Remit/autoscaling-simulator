@@ -45,6 +45,12 @@ class Adjuster(ABC):
         timeline_of_unmet_changes = TimelineOfDesiredServicesChanges(self.adjustment_horizon, self.combiner, services_scaling_events, cur_timestamp)
 
         ts_of_unmet_change, unmet_change = timeline_of_unmet_changes.next()
+        
+        # TODO: remove debug stuff below
+        #unmet_change = {'eu': {'appserver': {'count': -1}, 'frontend': {'count': 5}}}
+        unmet_change = {'eu': {'appserver': {'count': -1}}}
+        ts_of_unmet_change = cur_timestamp
+
         in_work_state = current_state
 
         while not unmet_change is None:

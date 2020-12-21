@@ -57,7 +57,7 @@ class HorizontalScaleDown:
         result = self.to_split_in_deltas()
         if not self.deleted_node_group_fragment is None:
             services_group_delta = None if self.deleted_services_state_fragment is None else self.deleted_services_state_fragment.to_delta(-1)
-            result.append(g_delta.GeneralizedDelta(n_grp_delta.NodeGroupDelta(deepcopy(self.deleted_node_group_fragment), sign = 1, in_change = True, virtual = False), services_group_delta))
+            result.append(g_delta.GeneralizedDelta(n_grp_delta.NodeGroupDelta(deepcopy(self.deleted_node_group_fragment), sign = -1, in_change = True, virtual = False), services_group_delta))
 
         return result
 
@@ -99,7 +99,7 @@ class CountBasedSoftAdjuster(NodeGroupSoftAdjuster):
         dynamic_services_instances_count = self.node_group_ref.services_state.raw_aspect_value_for_every_service('count')
 
         for service_name, service_instance_resource_usage in node_sys_resource_usage_by_service_sorted.items():
-            if service_name in unmet_changes and service_name in dynamic_services_instances_count:
+            if service_name in unmet_changes:
 
                 # Case of adding services to the existing nodes
                 if not service_name in services_cnt_change:
@@ -115,10 +115,11 @@ class CountBasedSoftAdjuster(NodeGroupSoftAdjuster):
                         services_cnt_change[service_name] -= 1
 
                 # Case of removing services from the existing nodes
-                while (unmet_changes[service_name] - services_cnt_change[service_name] < 0) and (dynamic_services_instances_count[service_name] > 0):
-                    node_sys_resource_usage -= service_instance_resource_usage
-                    dynamic_services_instances_count[service_name] -= 1
-                    services_cnt_change[service_name] -= 1
+                if service_name in dynamic_services_instances_count:
+                    while (unmet_changes[service_name] - services_cnt_change[service_name] < 0) and (dynamic_services_instances_count[service_name] > 0):
+                        node_sys_resource_usage -= service_instance_resource_usage
+                        dynamic_services_instances_count[service_name] -= 1
+                        services_cnt_change[service_name] -= 1
 
         # Trying the same solution temp_accommodation to reduce the amount of iterations by
         # considering whether it can be repeated multiple times
@@ -153,5 +154,5 @@ class CountBasedSoftAdjuster(NodeGroupSoftAdjuster):
 
         # Returning generalized deltas (enforced and not enforced) and the unmet changes in services counts
         unmet_changes = {service_name: count for service_name, count in unmet_changes.items() if count != 0}
-        
+
         return (generalized_deltas, postponed_scaling_event, unmet_changes)

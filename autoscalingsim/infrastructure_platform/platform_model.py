@@ -129,9 +129,6 @@ class PlatformModel:
 
     def get_node_info(self, provider : str, node_type : str) -> NodeInfo:
 
-        if not provider in self.providers_configs:
-            raise ValueError(f'Unknown provider {provider}')
-
         return self.providers_configs[provider].get_node_info(node_type)
 
     def adjust_platform_state(self, cur_timestamp : pd.Timestamp, desired_states_to_process : dict):
@@ -189,6 +186,7 @@ class PlatformModel:
 
         joint_node_count = collections.defaultdict(lambda: collections.defaultdict(lambda: collections.defaultdict(lambda: { self.__class__.timestamps_key: list(), self.__class__.node_count_key: list() })))
         timeline_of_deltas_raw = self.state_deltas_timeline.to_dict()
+
         cur_state = PlatformState()
 
         interval_begins = list(timeline_of_deltas_raw.keys())

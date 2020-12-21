@@ -100,11 +100,6 @@ class DeltaTimeline:
         for timestamp, state_deltas in timeline_to_consider.items():
             for state_delta in state_deltas:
 
-                #for reg_name, regional_delta in state_delta:
-                #    for generalized_delta in regional_delta:
-                #        if generalized_delta.node_group_delta.node_group.node_type == 't3.medium' and generalized_delta.node_group_delta.virtual == False:
-                #            print(f'>>> _update_actual_state_using_timeline | {timestamp} | is enforced = {state_delta.is_enforced} | node count = {generalized_delta.node_group_delta.node_group.nodes_count}')
-
                 if state_delta.is_enforced:
                     self.actual_state += state_delta
 
@@ -124,11 +119,6 @@ class DeltaTimeline:
 
             if new_timestamp > self.latest_enforcement:
                 self.latest_enforcement = new_timestamp
-
-            #for reg_name, regional_delta in new_state_delta:
-            #    for generalized_delta in regional_delta:
-            #        if generalized_delta.node_group_delta.node_group.node_type == 't3.medium' and generalized_delta.node_group_delta.virtual == False:
-            #            print(f'>>> _enforce_state_delta | {new_timestamp} | is enforced = {new_state_delta.is_enforced} | node count = {generalized_delta.node_group_delta.node_group.nodes_count}')
 
             self.add_state_delta(new_timestamp, new_state_delta)
 

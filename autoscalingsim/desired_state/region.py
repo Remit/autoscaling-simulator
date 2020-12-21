@@ -56,8 +56,6 @@ class Region:
 
         unmet_reduction, unmet_increase = self._split_unmet_cumulative_changes_into_reduction_and_increase(services_deltas_in_scaling_aspects)
 
-        unmet_reduction = {'appserver': {'count': -1}}
-
         unmet_reduction, cur_groups, new_generalized_reduction_deltas, postponed_scaling_events = self._attempt_services_removal(unmet_reduction, scaled_service_instance_requirements_by_service)
         new_generalized_deltas.extend(new_generalized_reduction_deltas)
 
@@ -69,8 +67,6 @@ class Region:
 
         regional_delta = RegionalDelta(self.region_name, new_generalized_deltas) if len(new_generalized_deltas) > 0 else None
         unmet_changes_on_ts = {**unmet_reduction, **unmet_increase}
-
-        print(regional_delta)
 
         return (regional_delta, unmet_changes_on_ts)
 
@@ -110,7 +106,7 @@ class Region:
 
                 if not postponed_scaling_event is None:
                     new_postponed_scaling_events[group.id] = postponed_scaling_event
-                    
+
                     if not postponed_scaling_event.remainder is None:
                         new_cur_groups.append(postponed_scaling_event.remainder)
                     else:
@@ -137,19 +133,23 @@ class Region:
 
     def _attempt_services_placement_on_to_be_scaled_down_groups(self, unmet_increase : dict, postponed_scaling_events : dict,
                                                                 scaled_service_instance_requirements_by_service : dict):
-
+        # TODO: check logic of interplay
         new_generalized_deltas = list()
 
-        if len(unmet_increase) > 0:
-            for node_group_id, postponed_scaling_event in postponed_scaling_events.items():
-                if not postponed_scaling_event.deleted is None:
+        for node_group_id, postponed_scaling_event in postponed_scaling_events.items():
+            if not postponed_scaling_event.deleted is None:
+                if len(unmet_increase) > 0:
                     generalized_deltas_lst, new_postponed_scaling_event, unmet_increase = postponed_scaling_event.deleted.compute_soft_adjustment(unmet_increase, scaled_service_instance_requirements_by_service)
                     new_generalized_deltas.extend(generalized_deltas_lst)
                     new_generalized_deltas.extend(postponed_scaling_event.to_split_in_deltas())
                     if not new_postponed_scaling_event is None:
                         new_generalized_deltas.extend(new_postponed_scaling_event.to_scale_down_in_deltas())
+                        
                 else:
                     new_generalized_deltas.extend(postponed_scaling_event.to_scale_down_in_deltas())
+
+            else:
+                new_generalized_deltas.extend(postponed_scaling_event.to_scale_down_in_deltas())
 
         return (unmet_increase, new_generalized_deltas)
 

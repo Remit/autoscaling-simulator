@@ -78,7 +78,8 @@ class HomogeneousNodeGroupSet:
 
         elif node_group_delta.sign < 0:
             if node_group_delta.node_group.id in groups_to_change:
-                self.removed_node_group_ids.append(node_group_delta.node_group.id)
+                if not node_group_delta.in_change:
+                    self.removed_node_group_ids.append(node_group_delta.node_group.id)
                 del groups_to_change[node_group_delta.node_group.id]
             elif generalized_delta.fault:
                 self._issue_node_group_failure_and_restart_if_possible(node_group_delta, groups_to_change)
@@ -104,7 +105,8 @@ class HomogeneousNodeGroupSet:
                 break
 
         for group_id in self.removed_node_group_ids:
-            del groups_to_change[group_id]
+            if group_id in groups_to_change:
+                del groups_to_change[group_id]
 
     def extract_compensating_deltas(self):
 
@@ -159,6 +161,9 @@ class HomogeneousNodeGroupSet:
 
         for node_group_id, node_group in self._in_change_node_groups.items():
             copied_obj._in_change_node_groups[node_group_id] = deepcopy(node_group, memo)
+
+        copied_obj.removed_node_group_ids = deepcopy(self.removed_node_group_ids, memo)
+        copied_obj.failures_compensating_deltas = deepcopy(self.failures_compensating_deltas, memo)
 
         return copied_obj
 

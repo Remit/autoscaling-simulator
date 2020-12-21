@@ -1,4 +1,5 @@
 import pandas as pd
+from copy import deepcopy
 
 from autoscalingsim.deltarepr.group_of_services_delta import GroupOfServicesDelta
 from autoscalingsim.deltarepr.node_group_delta import NodeGroupDelta
@@ -17,8 +18,8 @@ class GeneralizedDelta:
         if not isinstance(services_group_delta, GroupOfServicesDelta) and not services_group_delta is None:
             raise TypeError(f'The parameter value provided for the initialization of {self.__class__.__name__} is not of {GroupOfServicesDelta.__name__} type')
 
-        self.node_group_delta = node_group_delta.copy() if not node_group_delta is None else None
-        self.services_group_delta = services_group_delta.copy() if not services_group_delta is None else None
+        self.node_group_delta = node_group_delta if not node_group_delta is None else None
+        self.services_group_delta = services_group_delta if not services_group_delta is None else None
         self._cached_enforcement = {}
         self.fault = fault
 
@@ -92,9 +93,9 @@ class GeneralizedDelta:
         node_group_delta_virtual = None
 
         if self.node_group_delta.sign < 0:
-            node_group_delta_virtual = self.node_group_delta.copy()
+            node_group_delta_virtual = deepcopy(self.node_group_delta)
         elif self.node_group_delta.sign > 0:
-            node_group_delta_virtual = delayed_node_group_delta['delta'].copy()
+            node_group_delta_virtual = deepcopy(delayed_node_group_delta['delta'])
 
         node_group_delta_virtual.virtual = True
 

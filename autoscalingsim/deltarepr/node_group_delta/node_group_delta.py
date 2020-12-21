@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from autoscalingsim.desired_state.node_group.node_group import NodeGroup, HomogeneousNodeGroup
 
 class NodeGroupDelta:
@@ -12,11 +14,21 @@ class NodeGroupDelta:
 
     def enforce(self):
 
-        return self.__class__(self.node_group, self.sign, False, False)
+        result = deepcopy(self)
+        result.in_change = False
+        result.virtual = False
+
+        return result#self.__class__(deepcopy(self.node_group, self.sign, False, False)
 
     def copy(self):
 
         return self.__class__(self.node_group, self.sign, self.in_change, self.virtual)
+
+    def __deepcopy__(self, memo):
+
+        result = self.__class__(deepcopy(self.node_group, memo), self.sign, self.in_change, self.virtual)
+        memo[id(result)] = result
+        return result
 
     @property
     def provider(self):
