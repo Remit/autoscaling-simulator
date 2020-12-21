@@ -58,6 +58,7 @@ class HorizontalScaleDown:
         if not self.deleted_node_group_fragment is None:
             services_group_delta = None if self.deleted_services_state_fragment is None else self.deleted_services_state_fragment.to_delta(-1)
             result.append(g_delta.GeneralizedDelta(n_grp_delta.NodeGroupDelta(deepcopy(self.deleted_node_group_fragment), sign = -1, in_change = True, virtual = False), services_group_delta))
+            #result.append(g_delta.GeneralizedDelta(n_grp_delta.NodeGroupDelta(deepcopy(self.deleted_node_group_fragment), sign = 1, in_change = False, virtual = False), None))
 
         return result
 

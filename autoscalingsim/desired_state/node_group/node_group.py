@@ -142,7 +142,8 @@ class HomogeneousNodeGroup(NodeGroup):
 
         deleted_node_group_fragment = deepcopy(self) # Same id required to track the initial desired node group correctly (through the enforced state)  #HomogeneousNodeGroup(node_info = self.node_info, nodes_count = other.nodes_count)
         deleted_node_group_fragment.nodes_count = other.nodes_count
-        deleted_node_group_fragment.services_state = deleted_services_state_fragment
+        deleted_node_group_fragment.services_state = None
+        #deleted_node_group_fragment.services_state = deleted_services_state_fragment
         deleted_node_group_fragment.transfer_requests_from(self)
         deleted_node_group_fragment._utilization = deepcopy(self._utilization)
 
@@ -274,7 +275,6 @@ class HomogeneousNodeGroup(NodeGroup):
 
         self.services_state += services_group_delta
 
-        #print(f'add_to_services_state: {self.services_state}')
         fits, self.system_resources_usage = self.node_info.services_require_system_resources(self.services_state, self.nodes_count)
         if not fits:
             raise ValueError('An attempt to place services on a node group of insufficient capacity')
@@ -314,7 +314,10 @@ class HomogeneousNodeGroup(NodeGroup):
 
     def __repr__(self):
 
-        return f'{self.__class__.__name__}( node_info = {self.node_info}, \
-                                            nodes_count = {self.nodes_count}, \
-                                            services_instances_counts = {self.services_state.services_counts}, \
-                                            requirements_by_service = {self.services_state.services_requirements})'
+        base_part = f'node_group = {self.__class__.__name__}( node_info = {self.node_info}, \
+                                                              nodes_count = {self.nodes_count}, \
+                                                              services_instances_counts = {self.services_state.services_counts}, \
+                                                              requirements_by_service = {self.services_state.services_requirements})'
+        id_part = f'node_group.id = {self.id}'
+
+        return base_part + '\n' + id_part

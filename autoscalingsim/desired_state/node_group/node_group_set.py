@@ -14,7 +14,7 @@ class HomogeneousNodeGroupSet:
 
     @classmethod
     def from_conf(cls : type, placement : Placement):
-        
+
         return cls( [ HomogeneousNodeGroup.from_services_placement(services_placement) for services_placement in placement ] )
 
     def __init__(self, node_groups : list = None, node_groups_in_change : dict = None):
@@ -52,8 +52,6 @@ class HomogeneousNodeGroupSet:
 
         if services_group_delta.in_change == node_group_delta.in_change:
             if node_group_delta.node_group.id in groups_to_change:
-                #print(f'>>> node_group_set._modify_services_state ORIGINAL: {groups_to_change[node_group_delta.node_group.id].services_state}')
-                #print(f'>>> node_group_set._modify_services_state TO ADD: {services_group_delta}')
                 groups_to_change[node_group_delta.node_group.id].add_to_services_state(services_group_delta) # TODO: check if it can at all be allocated
             elif generalized_delta.fault:
                 self._issue_service_failure_and_restart_if_possible(services_group_delta, groups_to_change)
@@ -82,33 +80,46 @@ class HomogeneousNodeGroupSet:
             if node_group_delta.node_group.id in groups_to_change:
                 if not node_group_delta.in_change:
                     self.removed_node_group_ids.append(node_group_delta.node_group.id)
-                del groups_to_change[node_group_delta.node_group.id]
+
+                #del groups_to_change[node_group_delta.node_group.id]
+                remaining_node_group_fragment, deleted_node_group_and_services_state = groups_to_change[node_group_delta.node_group.id].split(node_group_delta.node_group)
+                if remaining_node_group_fragment.is_empty:
+                    del groups_to_change[node_group_delta.node_group.id]
+                else:
+                    groups_to_change[node_group_delta.node_group.id] = deleted_node_group_and_services_state['node_group_fragment']
+
             elif generalized_delta.fault:
                 self._issue_node_group_failure_and_restart_if_possible(node_group_delta, groups_to_change)
 
     def _issue_node_group_failure_and_restart_if_possible(self, node_group_delta, groups_to_change : dict):
 
+        tmp_removed_node_group_ids = list()
+
         for group_id, group in groups_to_change.items():
-            if group.can_shrink_with(node_group_delta.node_group):
+            if not group_id in self.removed_node_group_ids:
+                if group.can_shrink_with(node_group_delta.node_group):
 
-                self.removed_node_group_ids.append(group_id)
+                    tmp_removed_node_group_ids.append(group_id)
 
-                remaining_node_group_fragment, deleted_fragment = group.split(node_group_delta.node_group)
+                    remaining_node_group_fragment, deleted_fragment = group.split(node_group_delta.node_group)
 
-                compensating_node_group_delta = NodeGroupDelta(node_group = deleted_fragment['node_group_fragment'], sign = 1, in_change = True)
-                services_compensating_delta = deleted_fragment['services_state_fragment'].to_delta(direction = 1)
-                self.failures_compensating_deltas.append(GeneralizedDelta(compensating_node_group_delta, services_compensating_delta))
+                    compensating_node_group_delta = NodeGroupDelta(node_group = deleted_fragment['node_group_fragment'], sign = 1, in_change = True)
+                    services_compensating_delta = deleted_fragment['services_state_fragment'].to_delta(direction = 1)
+                    self.failures_compensating_deltas.append(GeneralizedDelta(compensating_node_group_delta, services_compensating_delta))
 
-                if not remaining_node_group_fragment.is_empty:
-                    remaining_node_group_delta = NodeGroupDelta(node_group = remaining_node_group_fragment, sign = 1, in_change = False)
-                    self._node_groups[remaining_node_group_fragment.id] = remaining_node_group_fragment
-                    self.failures_compensating_deltas.append(GeneralizedDelta(remaining_node_group_delta, None))
+                    if not remaining_node_group_fragment.is_empty:
+                        remaining_node_group_delta = NodeGroupDelta(node_group = remaining_node_group_fragment, sign = 1, in_change = False)
+                        self._node_groups[remaining_node_group_fragment.id] = remaining_node_group_fragment
+                        self.failures_compensating_deltas.append(GeneralizedDelta(remaining_node_group_delta, None))
 
-                break
+                    break
 
-        for group_id in self.removed_node_group_ids:
+        for group_if in tmp_removed_node_group_ids:
             if group_id in groups_to_change:
                 del groups_to_change[group_id]
+
+        self.removed_node_group_ids.extend(tmp_removed_node_group_ids)
+
 
     def extract_compensating_deltas(self):
 

@@ -107,10 +107,12 @@ class Region:
                 if not postponed_scaling_event is None:
                     new_postponed_scaling_events[group.id] = postponed_scaling_event
 
+                    # TODO: something wrong here
                     if not postponed_scaling_event.remainder is None:
                         new_cur_groups.append(postponed_scaling_event.remainder)
-                    else:
-                        new_cur_groups.append(group)
+
+                else:
+                    new_cur_groups.append(group)
 
             else:
                 new_cur_groups.append(group)
@@ -142,9 +144,10 @@ class Region:
                     generalized_deltas_lst, new_postponed_scaling_event, unmet_increase = postponed_scaling_event.deleted.compute_soft_adjustment(unmet_increase, scaled_service_instance_requirements_by_service)
                     new_generalized_deltas.extend(generalized_deltas_lst)
                     new_generalized_deltas.extend(postponed_scaling_event.to_split_in_deltas())
+
                     if not new_postponed_scaling_event is None:
                         new_generalized_deltas.extend(new_postponed_scaling_event.to_scale_down_in_deltas())
-                        
+
                 else:
                     new_generalized_deltas.extend(postponed_scaling_event.to_scale_down_in_deltas())
 

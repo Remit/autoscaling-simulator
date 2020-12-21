@@ -49,10 +49,9 @@ class Adjuster(ABC):
         # TODO: remove debug stuff below
         #unmet_change = {'eu': {'appserver': {'count': -1}, 'frontend': {'count': 5}}}
         #unmet_change = {'eu': {'appserver': {'count': -1}}}
-        unmet_change = {'eu': {'db': {'count': 14.0}, 'appserver': {'count': -6}}}
+        #unmet_change = {'eu': {'db': {'count': 14.0}, 'appserver': {'count': -6}}}
+        #unmet_change = {'eu': {'db': {'count': 14.0}, 'appserver': {'count': -6}}}
         #ts_of_unmet_change = cur_timestamp
-        print(ts_of_unmet_change)
-        print(unmet_change)
 
         in_work_state = current_state
 
@@ -68,6 +67,7 @@ class Adjuster(ABC):
 
                 state_addition_deltas, state_score_addition = self._evaluate_nodes_addition_option(in_work_state, unmet_change_state, state_duration)
                 state_substitution_deltas, state_score_substitution = self._evaluate_nodes_substitution_option(in_work_state, ts_of_unmet_change, unmet_change_state, state_duration)
+
                 self._update_timeline_with_best_option(timeline_of_deltas, ts_of_unmet_change,
                                                        state_addition_deltas, state_score_addition,
                                                        state_substitution_deltas, state_score_substitution)
@@ -104,9 +104,6 @@ class Adjuster(ABC):
         state_addition_deltas, state_score_addition = self.desired_change_calculator.compute_adjustment(unmet_change_state, state_duration)
 
         state_score_addition += self.scorer.score_platform_state(in_work_state, StateDuration.from_single_value(state_duration))
-
-        #print(unmet_change_state)
-        print(state_addition_deltas)
 
         return (state_addition_deltas, state_score_addition)
 

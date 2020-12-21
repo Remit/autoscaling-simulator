@@ -76,6 +76,9 @@ class GroupOfServices:
         elif sign == 1:
             new_service_group = service_delta.to_service_group()
 
+        if new_service_group is None:
+            return None
+
         return None if new_service_group.is_empty else new_service_group
 
     def __truediv__(self, other : 'GroupOfServices'):
