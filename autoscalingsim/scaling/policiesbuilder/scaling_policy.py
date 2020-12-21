@@ -45,7 +45,7 @@ class ScalingPolicy:
 
         if cur_timestamp - self.last_sync_timestamp > self.scaling_settings.sync_period:
 
-            desired_states_to_process = self.scaling_manager.compute_desired_state()
+            desired_states_to_process = self.scaling_manager.compute_desired_state(cur_timestamp)
 
             if len(desired_states_to_process) > 0:
                 # TODO: Combine -> scaling app as a whole to remove bottlenecks

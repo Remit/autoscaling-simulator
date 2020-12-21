@@ -24,9 +24,9 @@ class SimpleAverage(ForecastingModel):
 
         self._averaged_value = data[data.index >= data.index.max() - self._averaging_interval].value.mean()
 
-    def predict(self, metric_vals : pd.DataFrame, horizon_in_steps : int, resolution : pd.Timedelta):
+    def predict(self, metric_vals : pd.DataFrame, cur_timestamp : pd.Timestamp, horizon_in_steps : int, resolution : pd.Timedelta):
 
-        forecast_interval = self._construct_future_interval(metric_vals, horizon_in_steps, resolution)
+        forecast_interval = self._construct_future_interval(cur_timestamp, horizon_in_steps, resolution)
 
         return pd.DataFrame({ metric_vals.index.name : forecast_interval,
                               'value': [self._averaged_value] * len(forecast_interval)} ).set_index(metric_vals.index.name)

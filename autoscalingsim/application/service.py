@@ -70,9 +70,9 @@ class Service(MetricSource):
                                               buffers_config,
                                               sampling_interval)
 
-    def reconcile_desired_state(self):
+    def reconcile_desired_state(self, cur_timestamp : pd.Timedelta):
 
-        return self.scaling_effect_aggregation_rule()
+        return self.scaling_effect_aggregation_rule(cur_timestamp)
 
     def add_request(self, req : Request):
 

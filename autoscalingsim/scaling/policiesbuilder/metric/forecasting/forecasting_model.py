@@ -21,10 +21,9 @@ class ForecastingModel(ABC):
 
         pass
 
-    def _construct_future_interval(self, metric_vals : pd.DataFrame,
-                                   fhorizon_in_steps : int, resolution : pd.Timedelta):
+    def _construct_future_interval(self, interval_start : pd.Timestamp, fhorizon_in_steps : int, resolution : pd.Timedelta):
 
-        forecasting_interval_start = max(metric_vals.index) + resolution
+        forecasting_interval_start = interval_start + resolution
         forecasting_interval_end = forecasting_interval_start + fhorizon_in_steps * resolution
 
         return pd.date_range(forecasting_interval_start, forecasting_interval_end, resolution.microseconds // 1000)

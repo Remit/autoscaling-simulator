@@ -14,9 +14,9 @@ class ParallelScalingEffectAggregationRule(ScalingEffectAggregationRule):
 
         self._aggregation_op = StatesAggregator.get(aggregation_op_name)()
 
-    def __call__(self):
+    def __call__(self, cur_timestamp : pd.Timestamp):
 
-        timelines_by_metric = { reg_metric.metric_name : reg_metric.compute_desired_state() for reg_metric in self._metrics_by_priority.values() }
+        timelines_by_metric = { reg_metric.metric_name : reg_metric.compute_desired_state(cur_timestamp) for reg_metric in self._metrics_by_priority.values() }
 
         finest_time_resolution = self._find_finest_time_resolution(timelines_by_metric)
         timestamp_of_last_state = self._find_max_state_timestamp_among_all_timelines(timelines_by_metric)

@@ -28,7 +28,7 @@ class ScalingMetricRegionalized:
 
         self.metrics_per_region = { region_name : ScalingMetric(region_name, aspect_name, per_region_settings) for region_name in regions }
 
-    def compute_desired_state(self):
+    def compute_desired_state(self, cur_timestamp : pd.Timestamp):
 
         regionalized_desired_ts_raw = collections.defaultdict(lambda: collections.defaultdict(lambda: collections.defaultdict(dict)))
         for region_name, metric in self.metrics_per_region.items():
@@ -40,7 +40,7 @@ class ScalingMetricRegionalized:
 
             service_res_reqs = self.state_reader.get_resource_requirements(self.service_name, region_name)
 
-            desired_scaling_aspect_val_pr = metric.compute_desired_state(metric_vals, cur_aspect_val)
+            desired_scaling_aspect_val_pr = metric.compute_desired_state(metric_vals, cur_aspect_val, cur_timestamp)
 
             for timestamp, row_val in desired_scaling_aspect_val_pr.iterrows():
                 for aspect in row_val:
@@ -78,11 +78,11 @@ class ScalingMetric:
         min_limit_aspect = ScalingAspect.get(aspect_name)(per_region_settings.min_limit)
         self.limiter = Limiter(min_limit_aspect, max_limit_aspect)
 
-    def compute_desired_state(self, cur_metric_vals : pd.DataFrame, cur_aspect_val : ScalingAspect):
+    def compute_desired_state(self, cur_metric_vals : pd.DataFrame, cur_aspect_val : ScalingAspect, cur_timestamp : pd.Timestamp):
 
         if cur_metric_vals.shape[0] > 0:
 
-            metric_vals = self.forecaster.forecast(cur_metric_vals)
+            metric_vals = self.forecaster.forecast(cur_metric_vals, cur_timestamp)
             filtered_metric_vals = self.values_filter.filter(metric_vals)
             aggregated_metric_vals = self.values_aggregator.aggregate(filtered_metric_vals)
             converted_metric_vals = self.metric_converter.convert_df(aggregated_metric_vals)
