@@ -82,9 +82,9 @@ class ScalingMetric:
 
         if cur_metric_vals.shape[0] > 0:
 
-            metric_vals = self.forecaster.forecast(cur_metric_vals, cur_timestamp)
-            filtered_metric_vals = self.values_filter.filter(metric_vals)
-            aggregated_metric_vals = self.values_aggregator.aggregate(filtered_metric_vals)
+            filtered_metric_vals = self.values_filter.filter(cur_metric_vals)
+            forecasted_metric_vals = self.forecaster.forecast(filtered_metric_vals, cur_timestamp)
+            aggregated_metric_vals = self.values_aggregator.aggregate(forecasted_metric_vals)
             converted_metric_vals = self.metric_converter.convert_df(aggregated_metric_vals)
             desired_scaling_aspect = self.desired_aspect_value_calculator.compute(cur_aspect_val, converted_metric_vals)
             desired_scaling_aspect_stabilized = self.stabilizer.stabilize(desired_scaling_aspect)
