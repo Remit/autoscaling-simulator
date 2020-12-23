@@ -29,7 +29,7 @@ class MetricDescription:
 
     """ Stores all the necessary information to create a scaling metric """
 
-    def __init__(self, service_name : str, aspect_name : str, metric_description_conf : dict, related_service_to_consider : str):
+    def __init__(self, service_name : str, aspect_name : str, metric_description_conf : dict):
 
         self.service_name = service_name
         self.aspect_name = aspect_name
@@ -42,6 +42,8 @@ class MetricDescription:
         metric_params = ErrorChecker.key_check_and_load('metric_params', metric_description_conf, service_key, service_name, default = {})
         self.metric_converter = MetricConverter.get(metric_type)(metric_params)
         self.metric_unit_type = MetricUnitsRegistry.get(metric_type)
+        related_service_to_consider = ErrorChecker.key_check_and_load('related_service_to_consider', metric_description_conf, service_key, service_name, default = '')
+        self.accessor_to_related_service_class = AccessorToOtherService.get(related_service_to_consider) if len(related_service_to_consider) > 0 else None
 
         self.values_filter_conf = ErrorChecker.key_check_and_load('values_filter_conf', metric_description_conf, service_key, service_name)
         self.values_aggregator_conf = ErrorChecker.key_check_and_load('values_aggregator_conf', metric_description_conf, service_key, service_name)
@@ -53,7 +55,6 @@ class MetricDescription:
         self.initial_max_limit = ErrorChecker.key_check_and_load('initial_max_limit', metric_description_conf, service_key, service_name)
         self.initial_min_limit = ErrorChecker.key_check_and_load('initial_min_limit', metric_description_conf, service_key, service_name)
 
-        self.accessor_to_related_service_class = AccessorToOtherService.get(related_service_to_consider) if not related_service_to_consider is None else None
         self.state_reader = None
 
     def to_regionalized_metric(self, regions : list, service_name : str = None,

@@ -30,6 +30,7 @@ class Service(MetricSource):
     """
 
     SERVICE_NAME_WILDCARD = 'default'
+    SERVICE_SOURCE_WILDCARD = 'Service'
 
     def __init__(self,
                  service_name : str,
@@ -52,7 +53,7 @@ class Service(MetricSource):
             if m_service_name == self.__class__.SERVICE_NAME_WILDCARD:
                 m_service_name = service_name
 
-            if m_source_name == self.__class__.SERVICE_NAME_WILDCARD:
+            if m_source_name == self.__class__.SERVICE_SOURCE_WILDCARD:
                 m_source_name = service_name
 
             if m_service_name == service_name:
@@ -95,7 +96,7 @@ class Service(MetricSource):
 
         return self.state.get_aspect_value(region_name, aspect_name)
 
-    def get_metric_value(self, region_name : str, metric_name : str, submetric_name : str):
+    def get_metric_value(self, region_name : str, metric_name : str, submetric_name : str = None):
 
         return self.state.get_metric_value(region_name, metric_name)
 

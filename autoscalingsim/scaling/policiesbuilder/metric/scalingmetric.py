@@ -25,7 +25,7 @@ class ScalingMetricRegionalized:
         self.metric_name = metric_name
         self.submetric_name = submetric_name
         self.state_reader = state_reader
-        self.accessor_to_related_service = accessor_to_related_service_class(self.state_reader) if not accessor_to_related_service_class is None else None
+        self.accessor_to_related_service = accessor_to_related_service_class(self.state_reader, self.service_name, self.metric_name, self.submetric_name) if not accessor_to_related_service_class is None else None
 
         self.metrics_per_region = { region_name : ScalingMetric(region_name, aspect_name, per_region_settings) for region_name in regions }
 
@@ -34,14 +34,15 @@ class ScalingMetricRegionalized:
         regionalized_desired_ts_raw = collections.defaultdict(lambda: collections.defaultdict(lambda: collections.defaultdict(dict)))
         for region_name, metric in self.metrics_per_region.items():
 
-            metric_vals = self.state_reader.get_metric_value(self.metric_source_name, region_name,
-                                                             self.metric_name, self.submetric_name)
+            metric_vals = self.state_reader.get_metric_value(self.metric_source_name, region_name, self.metric_name, self.submetric_name)
+
+            related_service_metric_vals = self.accessor_to_related_service.get_metric_value(region_name) if not self.accessor_to_related_service is None else dict()
 
             cur_aspect_val = self.state_reader.get_aspect_value(self.service_name, region_name, self.aspect_name)
 
             service_res_reqs = self.state_reader.get_resource_requirements(self.service_name, region_name)
 
-            desired_scaling_aspect_val_pr = metric.compute_desired_state(metric_vals, cur_aspect_val, cur_timestamp)
+            desired_scaling_aspect_val_pr = metric.compute_desired_state(metric_vals, cur_aspect_val, cur_timestamp, related_service_metric_vals)
 
             for timestamp, row_val in desired_scaling_aspect_val_pr.iterrows():
                 for aspect in row_val:
@@ -79,7 +80,7 @@ class ScalingMetric:
         min_limit_aspect = ScalingAspect.get(aspect_name)(per_region_settings.min_limit)
         self.limiter = Limiter(min_limit_aspect, max_limit_aspect)
 
-    def compute_desired_state(self, cur_metric_vals : pd.DataFrame, cur_aspect_val : ScalingAspect, cur_timestamp : pd.Timestamp):
+    def compute_desired_state(self, cur_metric_vals : pd.DataFrame, cur_aspect_val : ScalingAspect, cur_timestamp : pd.Timestamp, related_service_metric_vals : dict):
 
         if cur_metric_vals.shape[0] > 0:
 

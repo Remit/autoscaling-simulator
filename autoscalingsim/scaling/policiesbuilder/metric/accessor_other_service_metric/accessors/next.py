@@ -3,6 +3,6 @@ from autoscalingsim.scaling.policiesbuilder.metric.accessor_other_service_metric
 @AccessorToOtherService.register('next')
 class AccessorToNextService(AccessorToOtherService):
 
-    def get_metric_value(self, service_name : str, region_name : str, metric_name : str, submetric_name : str):
+    def get_metric_value(self, region_name : str):
 
-        return self.state_reader.get_metric_value_for_next_services(service_name, region_name, metric_name, submetric_name)
+        return self.state_reader.get_metric_value_for_next_services(self.service_name, region_name, self.metric_name, self.submetric_name)

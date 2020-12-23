@@ -13,8 +13,9 @@
         "scaled_aspect_name": "count",
         "metrics_descriptions": [
           {
-            "metric_source_name": "Service",
-            "metric_name": "waiting_time",
+            "metric_source_name": "response_stats",
+            "metric_name": "buffer_time",
+            "submetric_name": "*",
             "metric_type": "duration",
             "metric_params": {
               "duration_unit": "ms"
@@ -22,7 +23,6 @@
             "priority": 1,
             "initial_max_limit": 15,
             "initial_min_limit": 1,
-            "related_service_to_consider": "previous",
             "desired_aspect_value_calculator": {
               "name": "ratio",
               "config": {
