@@ -1,6 +1,7 @@
 import pandas as pd
 import collections
 
+from .correlator.correlator import Correlator
 from .filtering.valuesfilter import ValuesFilter
 from .aggregation.valuesaggregator import ValuesAggregator
 from .stabilization.stabilizer import Stabilizer
@@ -60,6 +61,13 @@ class ScalingMetric:
         self.priority = per_region_settings.priority
         self.forecaster = MetricForecaster(per_region_settings.forecaster_conf)
 
+        if len(per_region_settings.correlator_conf) > 0:
+            correlator_name = ErrorChecker.key_check_and_load('name', per_region_settings.correlator_conf, 'region', region_name)
+            correlator_conf = ErrorChecker.key_check_and_load('config', per_region_settings.correlator_conf, 'region', region_name)
+            self.correlator = Correlator.get(correlator_name)(correlator_conf)
+        else:
+            self.correlator = None
+
         vf_name = ErrorChecker.key_check_and_load('name', per_region_settings.values_filter_conf, 'region', region_name)
         vf_conf = ErrorChecker.key_check_and_load('config', per_region_settings.values_filter_conf, 'region', region_name)
         self.values_filter = ValuesFilter.get(vf_name)(vf_conf)
@@ -85,6 +93,11 @@ class ScalingMetric:
         if cur_metric_vals.shape[0] > 0:
 
             filtered_metric_vals = self.values_filter.filter(cur_metric_vals)
+            filtered_related_service_metric_vals = { service_name : self.values_filter.filter(metric_vals) for service_name, metric_vals in related_service_metric_vals.items() }
+            if not self.correlator is None:
+                lags_per_service = self.correlator.get_lag(filtered_metric_vals, filtered_related_service_metric_vals)
+                # TODO: use it!
+
             forecasted_metric_vals = self.forecaster.forecast(filtered_metric_vals, cur_timestamp)
             aggregated_metric_vals = self.values_aggregator.aggregate(forecasted_metric_vals)
             converted_metric_vals = self.metric_converter.convert_df(aggregated_metric_vals)

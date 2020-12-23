@@ -14,7 +14,11 @@
         "metrics_descriptions": [
           {
             "metric_source_name": "Service",
-            "metric_name": "vCPU",
+            "metric_name": "waiting_time",
+            "metric_type": "duration",
+            "metric_params": {
+              "duration_unit": "ms"
+            },
             "priority": 1,
             "initial_max_limit": 15,
             "initial_min_limit": 1,
@@ -35,7 +39,10 @@
             "desired_aspect_value_calculator_conf": {
               "name": "ratio",
               "config": {
-                "target_value": 0.05
+                "target_value": {
+                  "value": 100,
+                  "unit": "ms"
+                }
               }
             },
             "values_filter_conf": {
