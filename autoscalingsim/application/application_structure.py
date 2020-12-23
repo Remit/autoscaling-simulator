@@ -23,10 +23,7 @@ class ApplicationStructure:
 
     def _get_services(self, service_name : str, direction : str):
 
-        if not service_name in self.app_graph.adj:
-            raise ValueError(f'Service {service_name} not found in the application graph')
-
-        services_names_to_return = []
+        services_names_to_return = list()
         for nbr_service_name, edge_attrs in self.app_graph.adj[service_name].items():
             if edge_attrs[self.__class__.direction_key] == direction:
                 services_names_to_return.append(nbr_service_name)
@@ -41,12 +38,9 @@ class ApplicationStructure:
 
         self._add_services(source_service_name, dest_services, 'downstream')
 
-    def _add_services(self,
-                      source_service_name : str,
-                      dest_services : list,
-                      direction : str):
+    def _add_services(self, source_service_name : str, dest_services : list, direction : str):
 
-        edges_to_add = []
+        edges_to_add = list()
         for dest_service_name in dest_services:
             edges_to_add.append((source_service_name,
                                 dest_service_name,

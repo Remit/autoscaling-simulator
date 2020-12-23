@@ -11,3 +11,4 @@ Structure-awareness ideas/links:
 
 also forecasting:
 ssa: https://www.kaggle.com/jdarcy/introducing-ssa-for-time-series-decomposition
+arima: https://towardsdatascience.com/machine-learning-part-19-time-series-and-autoregressive-integrated-moving-average-model-arima-c1005347b0d7

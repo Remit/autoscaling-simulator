@@ -73,9 +73,8 @@ class ApplicationModel:
 
         self.services = dict()
         self._utilization = dict()
-        self.state_reader = StateReader()
-
         self.application_model_conf = ApplicationModelConfiguration(configs_contents_table[conf_keys.CONF_APPLICATION_MODEL_KEY], simulation_conf['simulation_step'])
+        self.state_reader = StateReader(application_structure = self.application_model_conf.structure)
 
         self.load_model = LoadModel(simulation_conf['simulation_step'], configs_contents_table[conf_keys.CONF_LOAD_MODEL_KEY], self.application_model_conf.reqs_processing_infos)
         self.state_reader.add_source('Load', self.load_model)
