@@ -35,9 +35,11 @@ class ScalingPolicyConfiguration:
             self._sync_period = pd.Timedelta(sync_period_value, sync_period_unit)
 
             structure_config = ErrorChecker.key_check_and_load('structure', app_config, self.__class__.__name__)
-            services_config = ErrorChecker.key_check_and_load('services', app_config, self.__class__.__name__)
+            related_service_to_consider = None
+            if len(structure_config) > 0:
+                related_service_to_consider = ErrorChecker.key_check_and_load('related_service_to_consider', structure_config, self.__class__.__name__)
 
-            # TODO: structure_config processing
+            services_config = ErrorChecker.key_check_and_load('services', app_config, self.__class__.__name__)
 
             # Services settings
             for service_config in services_config:
@@ -45,7 +47,7 @@ class ScalingPolicyConfiguration:
                 service_name = ErrorChecker.key_check_and_load('service_name', service_config, self.__class__.__name__)
                 scaled_aspect_name = ErrorChecker.key_check_and_load('scaled_aspect_name', service_config, 'service', service_name)
                 metric_descriptions = ErrorChecker.key_check_and_load('metrics_descriptions', service_config, 'service', service_name)
-                metrics_descriptions = [ MetricDescription(service_name, scaled_aspect_name, md_conf) for md_conf in metric_descriptions ]
+                metrics_descriptions = [ MetricDescription(service_name, scaled_aspect_name, md_conf, related_service_to_consider) for md_conf in metric_descriptions ]
 
                 self._services_scaling_config[service_name] = ScaledServiceScalingSettings(metrics_descriptions,
                                                                                            ErrorChecker.key_check_and_load('scaling_effect_aggregation_rule_name', service_config, 'service', service_name),

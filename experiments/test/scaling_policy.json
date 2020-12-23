@@ -6,7 +6,9 @@
     }
   },
   "application": {
-    "structure": {},
+    "structure": {
+      "related_service_to_consider": "previous"
+    },
     "services": [
       {
         "service_name": "default",

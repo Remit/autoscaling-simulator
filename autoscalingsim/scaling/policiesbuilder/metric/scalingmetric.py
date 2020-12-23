@@ -17,7 +17,7 @@ class ScalingMetricRegionalized:
 
     def __init__(self, regions : list, service_name : str, aspect_name : str,
                  metric_source_name : str, metric_name : str, submetric_name : str,
-                 per_region_settings : dict, state_reader : StateReader):
+                 per_region_settings : dict, state_reader : StateReader, accessor_to_related_service_class : type):
 
         self.service_name = service_name
         self.aspect_name = aspect_name
@@ -25,6 +25,7 @@ class ScalingMetricRegionalized:
         self.metric_name = metric_name
         self.submetric_name = submetric_name
         self.state_reader = state_reader
+        self.accessor_to_related_service = accessor_to_related_service_class(self.state_reader) if not accessor_to_related_service_class is None else None
 
         self.metrics_per_region = { region_name : ScalingMetric(region_name, aspect_name, per_region_settings) for region_name in regions }
 

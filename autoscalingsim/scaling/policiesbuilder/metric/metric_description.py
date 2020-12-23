@@ -6,6 +6,7 @@ from autoscalingsim.utils.error_check import ErrorChecker
 from autoscalingsim.utils.metric_units_registry import MetricUnitsRegistry
 
 from .scalingmetric import ScalingMetricRegionalized
+from .accessor_other_service_metric.accessor import AccessorToOtherService
 
 class MetricSettingsPerRegion:
 
@@ -28,7 +29,7 @@ class MetricDescription:
 
     """ Stores all the necessary information to create a scaling metric """
 
-    def __init__(self, service_name : str, aspect_name : str, metric_description_conf : dict):
+    def __init__(self, service_name : str, aspect_name : str, metric_description_conf : dict, related_service_to_consider : str):
 
         self.service_name = service_name
         self.aspect_name = aspect_name
@@ -51,6 +52,8 @@ class MetricDescription:
         self.priority = ErrorChecker.key_check_and_load('priority', metric_description_conf, service_key, service_name)
         self.initial_max_limit = ErrorChecker.key_check_and_load('initial_max_limit', metric_description_conf, service_key, service_name)
         self.initial_min_limit = ErrorChecker.key_check_and_load('initial_min_limit', metric_description_conf, service_key, service_name)
+
+        self.accessor_to_related_service_class = AccessorToOtherService.get(related_service_to_consider) if not related_service_to_consider is None else None
         self.state_reader = None
 
     def to_regionalized_metric(self, regions : list, service_name : str = None,
@@ -72,4 +75,4 @@ class MetricDescription:
 
         return ScalingMetricRegionalized(regions, service_name, self.aspect_name,
                                          metric_source_name, self.metric_name, self.submetric_name,
-                                         per_region_settings, state_reader)
+                                         per_region_settings, state_reader, self.accessor_to_related_service_class)
