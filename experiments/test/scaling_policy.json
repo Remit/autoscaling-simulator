@@ -63,7 +63,7 @@
               }
             },
             "forecaster_conf": {
-              "name": "reactive",
+              "name": "simpleAvg",
               "config": {
                 "averaging_interval": {
                   "value": 100,

@@ -24,7 +24,7 @@ class LinearCorrelator(Correlator):
         max_time_lag_unit = ErrorChecker.key_check_and_load('unit', max_time_lag_raw, self.__class__.__name__)
         self.max_time_lag = pd.Timedelta(max_time_lag_value, unit = max_time_lag_unit)
 
-    def get_lag(self, associated_service_metric_vals : pd.DataFrame, other_service_metric_vals : pd.DataFrame) -> dict:
+    def get_lagged_correlation(self, associated_service_metric_vals : pd.DataFrame, other_service_metric_vals : pd.DataFrame) -> dict:
 
         self._update_data(associated_service_metric_vals, other_service_metric_vals)
         min_resolution = self._get_minimal_resolution()
@@ -38,10 +38,10 @@ class LinearCorrelator(Correlator):
 
             corr_raw = { lag : linear_correlation(associated_service_metric_vals_resampled['value'], other_service_metric_vals_resampled['value'], lag) for lag in lags_range }
             corr_pruned = { lag : corr for lag, corr in corr_raw.items() if not corr is None}
-            linear_correlation_df = pd.DataFrame({'lags': list(corr_pruned.keys()), 'correlation': list(corr_pruned.values())}).set_index('lags')
 
-            if len(linear_correlation_df) > 0:
-                lags_per_service[service_name] = linear_correlation_df.idxmax() * min_resolution
+            if len(corr_pruned) > 0:
+                linear_correlation_df = pd.DataFrame({'lags': list(corr_pruned.keys()), 'correlation': list(corr_pruned.values())}).set_index('lags')
+                lags_per_service[service_name] = { 'lag': int(linear_correlation_df.correlation.idxmax()) * min_resolution, 'correlation': linear_correlation_df.correlation.max() }
 
         return lags_per_service
 

@@ -34,7 +34,7 @@ class Correlator(ABC):
             self.other_service_metric_vals[service_name] = self.other_service_metric_vals[service_name][self.other_service_metric_vals[service_name].index >= max(self.other_service_metric_vals[service_name].index) - self.history_buffer_size]
 
     @abstractmethod
-    def get_lag(self, associated_service_metric_vals : pd.DataFrame, other_service_metric_vals : pd.DataFrame):
+    def get_lagged_correlation(self, associated_service_metric_vals : pd.DataFrame, other_service_metric_vals : pd.DataFrame):
 
         pass
 
