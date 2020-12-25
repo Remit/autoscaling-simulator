@@ -16,7 +16,8 @@ setup(
                         'python-igraph',
                         'urllib',
                         'tarfile',
-                        'progressbar'
+                        'progressbar',
+                        'statsmodels'
                       ],
    scripts = [
                'autoscalingsim-cl.py',
