@@ -17,7 +17,7 @@ class ForecastingModel(ABC):
         pass
 
     @abstractmethod
-    def predict(self, metric_vals : pd.DataFrame, fhorizon_in_steps : int, resolution : pd.Timedelta):
+    def predict(self, metric_vals : pd.DataFrame, fhorizon_in_steps : int, resolution : pd.Timedelta, future_adjustment_from_others : pd.DataFrame = None):
 
         pass
 

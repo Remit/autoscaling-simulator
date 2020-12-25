@@ -39,7 +39,7 @@
               }
             },
             "values_filter_conf": {
-              "name": "simple_exponential_smoother"
+              "name": "outliers_remover"
             },
             "values_aggregator_conf": {
               "name": "avgAggregator",
@@ -60,7 +60,7 @@
               }
             },
             "forecaster_conf": {
-              "name": "simpleAvg",
+              "name": "reactive",
               "config": {
                 "averaging_interval": {
                   "value": 100,
