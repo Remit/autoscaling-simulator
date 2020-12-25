@@ -69,19 +69,19 @@ class ScalingMetric:
             self.correlator = None
 
         vf_name = ErrorChecker.key_check_and_load('name', per_region_settings.values_filter_conf, 'region', region_name)
-        vf_conf = ErrorChecker.key_check_and_load('config', per_region_settings.values_filter_conf, 'region', region_name)
+        vf_conf = ErrorChecker.key_check_and_load('config', per_region_settings.values_filter_conf, 'region', region_name, default = dict())
         self.values_filter = ValuesFilter.get(vf_name)(vf_conf)
 
         va_name = ErrorChecker.key_check_and_load('name', per_region_settings.values_aggregator_conf, 'region', region_name)
-        va_conf = ErrorChecker.key_check_and_load('config', per_region_settings.values_aggregator_conf, 'region', region_name)
+        va_conf = ErrorChecker.key_check_and_load('config', per_region_settings.values_aggregator_conf, 'region', region_name, default = dict())
         self.values_aggregator = ValuesAggregator.get(va_name)(va_conf)
 
         dav_calculator_name = ErrorChecker.key_check_and_load('name', per_region_settings.desired_aspect_value_calculator_conf, 'region', region_name)
-        dav_calculator_conf = ErrorChecker.key_check_and_load('config', per_region_settings.desired_aspect_value_calculator_conf, 'region', region_name)
+        dav_calculator_conf = ErrorChecker.key_check_and_load('config', per_region_settings.desired_aspect_value_calculator_conf, 'region', region_name, default = dict())
         self.desired_aspect_value_calculator = DesiredAspectValueCalculator.get(dav_calculator_name)(dav_calculator_conf, per_region_settings.metric_unit_type)
 
         stab_name = ErrorChecker.key_check_and_load('name', per_region_settings.stabilizer_conf, 'region', region_name)
-        stab_conf = ErrorChecker.key_check_and_load('config', per_region_settings.stabilizer_conf, 'region', region_name)
+        stab_conf = ErrorChecker.key_check_and_load('config', per_region_settings.stabilizer_conf, 'region', region_name, default = dict())
         self.stabilizer = Stabilizer.get(stab_name)(stab_conf)
 
         max_limit_aspect = ScalingAspect.get(aspect_name)(per_region_settings.max_limit)

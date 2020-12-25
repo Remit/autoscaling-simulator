@@ -39,10 +39,7 @@
               }
             },
             "values_filter_conf": {
-              "name": "defaultNA",
-              "config": {
-                "default_value": 0.0
-              }
+              "name": "outliers_remover"
             },
             "values_aggregator_conf": {
               "name": "avgAggregator",
