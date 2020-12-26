@@ -60,13 +60,10 @@
               }
             },
             "forecaster_conf": {
-              "name": "sarima",
+              "name": "holt_winters",
               "config": {
-                "trend": "c",
-                "P": [1, 2, 3],
-                "Q": 5,
-                "D": 1,
-                "s": 5
+                "smoothing_level": 0.2,
+                "trend": "add"
               },
               "forecast_frequency": "500ms",
               "history_data_buffer_size": 20,
