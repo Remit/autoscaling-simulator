@@ -39,7 +39,7 @@
               }
             },
             "values_filter_conf": {
-              "name": "simple_exponential_smoother"
+              "name": "holt_smoother"
             },
             "values_aggregator_conf": {
               "name": "avgAggregator",

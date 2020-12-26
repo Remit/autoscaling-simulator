@@ -21,7 +21,8 @@ class HoltWintersSmoother(ValuesFilter):
 
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
-            optimized = False if (not self.smoothing_level is None) or (not self.smoothing_trend is None) else True
+            optimized = False if (not self.smoothing_level is None) or (not self.smoothing_trend is None) \
+                              or (not self.smoothing_seasonal is None) or (not self.damping_trend is None) else True
             if values.shape[0] > 0:
                 values.value = ExponentialSmoothing(values.interpolate().fillna(method = 'backfill')).fit(smoothing_level = self.smoothing_level,
                                                                                                           smoothing_trend = self.smoothing_trend,
