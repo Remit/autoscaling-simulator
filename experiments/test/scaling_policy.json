@@ -60,10 +60,12 @@
               }
             },
             "forecaster_conf": {
-              "name": "moving_average",
+              "name": "arima",
               "config": {
                 "trend": "c",
-                "lags": [1, 2, 3]
+                "p": [1, 2, 3],
+                "d": 1,
+                "q": 5
               },
               "forecast_frequency": "500ms",
               "history_data_buffer_size": 20,

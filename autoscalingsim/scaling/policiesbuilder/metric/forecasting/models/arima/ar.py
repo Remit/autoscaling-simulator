@@ -1,4 +1,5 @@
 import warnings
+import numbers
 import pandas as pd
 from statsmodels.tsa.ar_model import AutoReg
 from numpy.linalg import LinAlgError
@@ -17,7 +18,8 @@ class Autoregressive(ArimaBase):
 
         super().__init__(config, fhorizon_in_steps, forecast_frequency)
         forecasting_model_params = ErrorChecker.key_check_and_load('config', config)
-        self.lags = ErrorChecker.key_check_and_load('lags', forecasting_model_params, [0])
+        lags = ErrorChecker.key_check_and_load('lags', forecasting_model_params, default = [0])
+        self.lags = [lags] if isinstance(lags, numbers.Number) else lags
 
     def fit(self, data : pd.DataFrame):
 
