@@ -60,11 +60,10 @@
               }
             },
             "forecaster_conf": {
-              "name": "arima",
+              "name": "arma",
               "config": {
                 "trend": "c",
                 "p": [1, 2, 3],
-                "d": 1,
                 "q": 5
               },
               "forecast_frequency": "500ms",
