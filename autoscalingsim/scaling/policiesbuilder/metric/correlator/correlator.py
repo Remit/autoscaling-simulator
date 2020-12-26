@@ -24,14 +24,16 @@ class Correlator(ABC):
             self.associated_service_metric_vals = self.associated_service_metric_vals.append(associated_service_metric_vals[associated_service_metric_vals.index > max(self.associated_service_metric_vals.index)])
         else:
             self.associated_service_metric_vals = self.associated_service_metric_vals.append(associated_service_metric_vals)
-        self.associated_service_metric_vals = self.associated_service_metric_vals[self.associated_service_metric_vals.index >= max(self.associated_service_metric_vals.index) - self.history_buffer_size]
+        if self.associated_service_metric_vals.shape[0] > 0:
+            self.associated_service_metric_vals = self.associated_service_metric_vals[self.associated_service_metric_vals.index >= max(self.associated_service_metric_vals.index) - self.history_buffer_size]
 
         for service_name, metric_vals in other_service_metric_vals.items():
             if len(self.other_service_metric_vals[service_name].index) > 0:
                 self.other_service_metric_vals[service_name] = self.other_service_metric_vals[service_name].append(metric_vals[metric_vals.index > max(self.other_service_metric_vals[service_name].index)])
             else:
                 self.other_service_metric_vals[service_name] = self.other_service_metric_vals[service_name].append(metric_vals)
-            self.other_service_metric_vals[service_name] = self.other_service_metric_vals[service_name][self.other_service_metric_vals[service_name].index >= max(self.other_service_metric_vals[service_name].index) - self.history_buffer_size]
+            if self.other_service_metric_vals[service_name].shape[0] > 0:
+                self.other_service_metric_vals[service_name] = self.other_service_metric_vals[service_name][self.other_service_metric_vals[service_name].index >= max(self.other_service_metric_vals[service_name].index) - self.history_buffer_size]
 
     @abstractmethod
     def get_lagged_correlation(self, associated_service_metric_vals : pd.DataFrame, other_service_metric_vals : pd.DataFrame):

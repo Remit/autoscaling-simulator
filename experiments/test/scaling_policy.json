@@ -42,7 +42,7 @@
               "name": "christiano_fitzgerald"
             },
             "values_aggregator_conf": {
-              "name": "avgAggregator",
+              "name": "medianAggregator",
               "config": {
                 "resolution": {
                   "value": 400,
