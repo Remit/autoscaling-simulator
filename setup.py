@@ -17,7 +17,7 @@ setup(
                         'urllib',
                         'tarfile',
                         'progressbar',
-                        'statsmodels'
+                        'statsmodels>=0.12.1'
                       ],
    scripts = [
                'autoscalingsim-cl.py',
