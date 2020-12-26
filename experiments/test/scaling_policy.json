@@ -60,7 +60,7 @@
               }
             },
             "forecaster_conf": {
-              "name": "autoregressive",
+              "name": "moving_average",
               "config": {
                 "trend": "c",
                 "lags": [1, 2, 3]
