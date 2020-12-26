@@ -5,8 +5,8 @@ from statsmodels.tsa.holtwinters import ExponentialSmoothing
 from autoscalingsim.scaling.policiesbuilder.metric.filtering.valuesfilter import ValuesFilter
 from autoscalingsim.utils.error_check import ErrorChecker
 
-@ValuesFilter.register('holt_winters_smoother')
-class HoltWintersSmoother(ValuesFilter):
+@ValuesFilter.register('holt_winters')
+class HoltWinters(ValuesFilter):
 
     """ Holt-Winters smoothing of the time series """
 

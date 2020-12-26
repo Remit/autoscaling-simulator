@@ -1,12 +1,12 @@
 import warnings
 import pandas as pd
-from statsmodels.tsa.holtwinters import Holt
+import statsmodels.tsa.holtwinters as hw
 
 from autoscalingsim.scaling.policiesbuilder.metric.filtering.valuesfilter import ValuesFilter
 from autoscalingsim.utils.error_check import ErrorChecker
 
-@ValuesFilter.register('holt_smoother')
-class HoltSmoother(ValuesFilter):
+@ValuesFilter.register('holt')
+class Holt(ValuesFilter):
 
     """ Holt smoothing of the time series """
 
@@ -22,9 +22,9 @@ class HoltSmoother(ValuesFilter):
             warnings.simplefilter('ignore')
             optimized = False if (not self.smoothing_level is None) or (not self.smoothing_trend is None) or (not self.damping_trend is None) else True
             if values.shape[0] > 0:
-                values.value = Holt(values.interpolate().fillna(method = 'backfill')).fit(smoothing_level = self.smoothing_level,
-                                                                                          smoothing_trend = self.smoothing_trend,
-                                                                                          damping_trend = self.damping_trend,
-                                                                                          optimized = optimized).fittedvalues
+                values.value = hw.Holt(values.interpolate().fillna(method = 'backfill')).fit(smoothing_level = self.smoothing_level,
+                                                                                             smoothing_trend = self.smoothing_trend,
+                                                                                             damping_trend = self.damping_trend,
+                                                                                             optimized = optimized).fittedvalues
 
         return values

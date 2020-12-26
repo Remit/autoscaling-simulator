@@ -39,7 +39,7 @@
               }
             },
             "values_filter_conf": {
-              "name": "holt_smoother"
+              "name": "holt"
             },
             "values_aggregator_conf": {
               "name": "avgAggregator",
