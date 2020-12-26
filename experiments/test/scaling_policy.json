@@ -39,7 +39,7 @@
               }
             },
             "values_filter_conf": {
-              "name": "outliers_remover"
+              "name": "simple_exponential_smoother"
             },
             "values_aggregator_conf": {
               "name": "avgAggregator",

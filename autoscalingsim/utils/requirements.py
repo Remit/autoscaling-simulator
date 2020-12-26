@@ -40,7 +40,7 @@ class ResourceRequirements:
             network_bandwidth_value = ErrorChecker.key_check_and_load('value', network_bandwidth_raw)
             network_bandwidth_unit = ErrorChecker.key_check_and_load('unit', network_bandwidth_raw)
             network_bandwidth = Size(network_bandwidth_value, network_bandwidth_unit)
-        except ValueError:
+        except AttributeError:
             network_bandwidth = Size(0)
 
         try:
@@ -53,11 +53,11 @@ class ResourceRequirements:
     def __init__(self, vCPU : int, memory : Size, disk : Size,
                  network_bandwidth : Size, labels : list):
 
-        self.vCPU = vCPU
-        self.memory = memory
-        self.disk = disk
-        self.network_bandwidth = network_bandwidth
-        self.labels = labels
+        self.vCPU = vCPU if not vCPU is None else 0
+        self.memory = memory if not memory is None else Size(0)
+        self.disk = disk if not disk is None else Size(0)
+        self.network_bandwidth = network_bandwidth if not network_bandwidth is None else Size(0)
+        self.labels = labels if not labels is None else list()
 
     def copy(self):
 
@@ -75,9 +75,6 @@ class ResourceRequirements:
 
     def __add__(self, other_res_req : 'ResourceRequirements'):
 
-        if not isinstance(other_res_req, ResourceRequirements):
-            raise TypeError(f'Unrecognized type to add to the {self.__class__.__name__}: {other_res_req.__class__.__name__}')
-
         sum_res_req_dict = self.to_dict()
         for req_name, req_val in other_res_req.to_dict().items():
             if not req_name in sum_res_req_dict:
@@ -92,9 +89,6 @@ class ResourceRequirements:
         return self.__add__(other_res_req)
 
     def __mul__(self, factor : numbers.Number):
-
-        if not isinstance(factor, numbers.Number):
-            raise TypeError(f'An attempt to multiply {self.__class__.__name__} by a non-scalar: {factor.__class__.__name__}')
 
         new_res_req_dict = dict()
         for req_name, req_val in self.to_dict().items():

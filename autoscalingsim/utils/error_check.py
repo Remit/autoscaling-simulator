@@ -16,15 +16,8 @@ class ErrorChecker:
                            obj_name = None,
                            default = None):
 
-        if not key in structure and default is None:
-
-            error_msg = f'No {key} specified'
-            if not obj_type is None:
-                error_msg += f' for the configuration of the {obj_type}'
-            if not obj_name is None:
-                error_msg += f' {obj_name}'
-
-            raise ValueError(error_msg)
+        if structure is None:
+            return default
 
         return structure[key] if key in structure else default
 
