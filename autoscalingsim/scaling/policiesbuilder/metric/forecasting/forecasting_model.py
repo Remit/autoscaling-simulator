@@ -6,10 +6,10 @@ class ForecastingModel(ABC):
 
     _Registry = {}
 
-    @abstractmethod
-    def __init__(self, forecasting_model_params : dict):
+    def __init__(self, fhorizon_in_steps : int, forecast_frequency : str):
 
-        pass
+        self.fhorizon_in_steps = fhorizon_in_steps
+        self.forecast_frequency = forecast_frequency
 
     @abstractmethod
     def fit(self, data : pd.DataFrame):
@@ -17,16 +17,24 @@ class ForecastingModel(ABC):
         pass
 
     @abstractmethod
-    def predict(self, metric_vals : pd.DataFrame, fhorizon_in_steps : int, resolution : pd.Timedelta, future_adjustment_from_others : pd.DataFrame = None):
+    def predict(self, metric_vals : pd.DataFrame, cur_timestamp : pd.Timestamp, future_adjustment_from_others : pd.DataFrame = None):
 
         pass
 
-    def _construct_future_interval(self, interval_start : pd.Timestamp, fhorizon_in_steps : int, resolution : pd.Timedelta):
+    def _construct_future_interval(self, interval_start : pd.Timestamp):
 
-        forecasting_interval_start = interval_start + resolution
-        forecasting_interval_end = forecasting_interval_start + fhorizon_in_steps * resolution
+        forecasting_interval_start = interval_start + pd.Timedelta(self.forecast_frequency)
 
-        return pd.date_range(forecasting_interval_start, forecasting_interval_end, resolution.microseconds // 1000)
+        return pd.date_range(forecasting_interval_start, periods = self.fhorizon_in_steps, freq = self.forecast_frequency)
+
+    def _resample_data(self, time_series_data : pd.DataFrame, holes_filling_method : str = 'ffill'):
+
+        return time_series_data.asfreq(self.forecast_frequency, holes_filling_method)
+
+    def _sanity_filter(self, forecast : pd.DataFrame):
+
+        forecast[forecast < 0] = 0
+        return forecast
 
     @classmethod
     def register(cls, name : str):

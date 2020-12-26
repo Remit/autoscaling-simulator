@@ -10,15 +10,11 @@ class MetricForecaster:
 
     def __init__(self, config : dict):
 
-        self._fhorizon_in_steps = ErrorChecker.key_check_and_load('horizon_in_steps', config)
+        fhorizon_in_steps = ErrorChecker.key_check_and_load('horizon_in_steps', config, default = 60)
+        forecast_frequency = ErrorChecker.key_check_and_load('forecast_frequency', config, default = '1s')
+        self._model = ForecastingModel.get(ErrorChecker.key_check_and_load('name', config))(config, fhorizon_in_steps, forecast_frequency)
+
         self._history_data_buffer_size = int(ErrorChecker.key_check_and_load('history_data_buffer_size', config))
-
-        resolution_raw = ErrorChecker.key_check_and_load('resolution', config, self.__class__.__name__)
-        resolution_value = ErrorChecker.key_check_and_load('value', resolution_raw, self.__class__.__name__)
-        resolution_unit = ErrorChecker.key_check_and_load('unit', resolution_raw, self.__class__.__name__)
-        self._resolution = pd.Timedelta(resolution_value, unit = resolution_unit)
-
-        self._model = ForecastingModel.get(ErrorChecker.key_check_and_load('name', config))(config)
         self._history_data_buffer = pd.DataFrame(columns=['datetime', 'value']).set_index('datetime')
 
     def forecast(self, metric_vals : pd.DataFrame, cur_timestamp : pd.Timestamp, lagged_correlation_per_service : dict, related_service_metric_vals : dict):
@@ -33,7 +29,7 @@ class MetricForecaster:
 
         future_adjustment_from_others = sum(related_service_metric_vals.values()) / len(related_service_metric_vals) if len(related_service_metric_vals) > 0 else None
 
-        return self._model.predict(metric_vals, cur_timestamp, self._fhorizon_in_steps, self._resolution, future_adjustment_from_others)
+        return self._model.predict(metric_vals, cur_timestamp, future_adjustment_from_others)
 
     def _update_model(self, metric_vals : pd.DataFrame):
 

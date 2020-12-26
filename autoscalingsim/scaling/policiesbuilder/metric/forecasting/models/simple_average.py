@@ -11,7 +11,9 @@ class SimpleAverage(ForecastingModel):
     and uses the resulting value as the forecast.
     """
 
-    def __init__(self, config : dict):
+    def __init__(self, config : dict, fhorizon_in_steps : int, forecast_frequency : str):
+
+        super().__init__(fhorizon_in_steps, forecast_frequency)
 
         forecasting_model_params = ErrorChecker.key_check_and_load('config', config)
         averaging_interval_raw = ErrorChecker.key_check_and_load('averaging_interval', forecasting_model_params)
@@ -24,7 +26,7 @@ class SimpleAverage(ForecastingModel):
 
         self._averaged_value = data[data.index >= data.index.max() - self._averaging_interval].value.mean()
 
-    def predict(self, metric_vals : pd.DataFrame, cur_timestamp : pd.Timestamp, horizon_in_steps : int, resolution : pd.Timedelta, future_adjustment_from_others : pd.DataFrame = None):
+    def predict(self, metric_vals : pd.DataFrame, cur_timestamp : pd.Timestamp, future_adjustment_from_others : pd.DataFrame = None):
 
         if not future_adjustment_from_others is None:
             metric_vals = metric_vals.append(future_adjustment_from_others)
@@ -33,7 +35,7 @@ class SimpleAverage(ForecastingModel):
         future_metrics = correlated_metrics_vals.to_dict()
 
         latest_timestamp_with_available_metrics = max(cur_timestamp, max(metric_vals.index))
-        forecast_interval = self._construct_future_interval(latest_timestamp_with_available_metrics, horizon_in_steps, resolution)
+        forecast_interval = self._construct_future_interval(latest_timestamp_with_available_metrics)
         future_metrics['value'].update(zip(forecast_interval, [self._averaged_value] * len(forecast_interval)))
 
         return pd.DataFrame(future_metrics)

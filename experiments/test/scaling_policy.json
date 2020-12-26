@@ -60,17 +60,12 @@
               }
             },
             "forecaster_conf": {
-              "name": "reactive",
+              "name": "autoregressive",
               "config": {
-                "averaging_interval": {
-                  "value": 100,
-                  "unit": "ms"
-                }
+                "trend": "c",
+                "lags": [1, 2, 3]
               },
-              "resolution": {
-                "value": 10,
-                "unit": "ms"
-              },
+              "forecast_frequency": "500ms",
               "history_data_buffer_size": 20,
               "horizon_in_steps": 5
             }
