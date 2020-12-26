@@ -60,11 +60,13 @@
               }
             },
             "forecaster_conf": {
-              "name": "arma",
+              "name": "sarima",
               "config": {
                 "trend": "c",
-                "p": [1, 2, 3],
-                "q": 5
+                "P": [1, 2, 3],
+                "Q": 5,
+                "D": 1,
+                "s": 5
               },
               "forecast_frequency": "500ms",
               "history_data_buffer_size": 20,
