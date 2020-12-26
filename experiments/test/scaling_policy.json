@@ -39,7 +39,7 @@
               }
             },
             "values_filter_conf": {
-              "name": "holt"
+              "name": "christiano_fitzgerald"
             },
             "values_aggregator_conf": {
               "name": "avgAggregator",
