@@ -11,7 +11,7 @@ from autoscalingsim.utils.error_check import ErrorChecker
 @ForecastingModel.register('moving_average')
 class MovingAverage(ArimaBase):
 
-    """ Forecasts using AR([p1, p2, ...]) autoregressive model """
+    """ Forecasts using MA([q1, q2, ...]) moving average model """
 
     def __init__(self, config : dict, fhorizon_in_steps : int, forecast_frequency : str):
 
