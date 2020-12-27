@@ -1,4 +1,7 @@
 from abc import ABC, abstractmethod
+import pandas as pd
+
+from autoscalingsim.utils.error_check import ErrorChecker
 
 class Stabilizer(ABC):
 
@@ -6,10 +9,12 @@ class Stabilizer(ABC):
 
     _Registry = {}
 
-    @abstractmethod
-    def __init__(self, config):
+    def __init__(self, config : dict):
 
-        pass
+        resolution_raw = ErrorChecker.key_check_and_load('resolution', config, self.__class__.__name__)
+        resolution_value = ErrorChecker.key_check_and_load('value', resolution_raw, self.__class__.__name__)
+        resolution_unit = ErrorChecker.key_check_and_load('unit', resolution_raw, self.__class__.__name__)
+        self.resolution = pd.Timedelta(resolution_value, unit = resolution_unit)
 
     @abstractmethod
     def stabilize(self, values):

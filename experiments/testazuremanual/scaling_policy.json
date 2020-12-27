@@ -49,7 +49,7 @@
               }
             },
             "stabilizer_conf": {
-              "name": "maxStabilizer",
+              "name": "minStabilizer",
               "config": {
                 "resolution": {
                   "value": 400,

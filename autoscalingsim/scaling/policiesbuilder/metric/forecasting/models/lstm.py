@@ -1,10 +1,8 @@
-from sklearn.preprocessing import MinMaxScaler
+import warnings
 import tensorflow as tf
 import numpy as np
-
-import warnings
 import pandas as pd
-from statsmodels.tsa.holtwinters import ExponentialSmoothing
+from sklearn.preprocessing import MinMaxScaler
 
 from autoscalingsim.scaling.policiesbuilder.metric.forecasting.forecasting_model import ForecastingModel
 from autoscalingsim.utils.error_check import ErrorChecker
