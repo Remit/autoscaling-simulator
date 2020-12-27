@@ -14,15 +14,16 @@ class HoltWinters(ForecastingModel):
 
         super().__init__(fhorizon_in_steps, forecast_frequency)
 
-        self.init_conf = { 'trend' : ErrorChecker.key_check_and_load('trend', config, self.__class__.__name__),
-                           'damped_trend' : ErrorChecker.key_check_and_load('trend', config, self.__class__.__name__, default = False),
-                           'seasonal' : ErrorChecker.key_check_and_load('seasonal', config, self.__class__.__name__),
-                           'seasonal_periods' : ErrorChecker.key_check_and_load('seasonal', config, self.__class__.__name__, default = 0) }
+        forecasting_model_params = ErrorChecker.key_check_and_load('config', config)
+        self.init_conf = { 'trend' : ErrorChecker.key_check_and_load('trend', forecasting_model_params, self.__class__.__name__),
+                           'damped_trend' : ErrorChecker.key_check_and_load('trend', forecasting_model_params, self.__class__.__name__, default = False),
+                           'seasonal' : ErrorChecker.key_check_and_load('seasonal', forecasting_model_params, self.__class__.__name__),
+                           'seasonal_periods' : ErrorChecker.key_check_and_load('seasonal', forecasting_model_params, self.__class__.__name__, default = 0) }
 
-        self.smoothing_level = ErrorChecker.key_check_and_load('smoothing_level', config, self.__class__.__name__)
-        self.smoothing_trend = ErrorChecker.key_check_and_load('smoothing_trend', config, self.__class__.__name__)
-        self.smoothing_seasonal = ErrorChecker.key_check_and_load('smoothing_seasonal', config, self.__class__.__name__)
-        self.damping_trend = ErrorChecker.key_check_and_load('damping_trend', config, self.__class__.__name__)
+        self.smoothing_level = ErrorChecker.key_check_and_load('smoothing_level', forecasting_model_params, self.__class__.__name__)
+        self.smoothing_trend = ErrorChecker.key_check_and_load('smoothing_trend', forecasting_model_params, self.__class__.__name__)
+        self.smoothing_seasonal = ErrorChecker.key_check_and_load('smoothing_seasonal', forecasting_model_params, self.__class__.__name__)
+        self.damping_trend = ErrorChecker.key_check_and_load('damping_trend', forecasting_model_params, self.__class__.__name__)
 
         self._model_fitted = None
 
