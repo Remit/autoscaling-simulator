@@ -17,7 +17,9 @@ setup(
                         'urllib',
                         'tarfile',
                         'progressbar',
-                        'statsmodels>=0.12.1'
+                        'statsmodels>=0.12.1',
+                        'https://github.com/kieferk/pymssa/tarball/master ; sys_platform == linux'
+                        'https://github.com/Remit/pymssa/tarball/master ; sys_platform == windows'
                       ],
    scripts = [
                'autoscalingsim-cl.py',

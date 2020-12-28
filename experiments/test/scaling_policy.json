@@ -60,12 +60,9 @@
               }
             },
             "forecaster_conf": {
-              "name": "lstm",
+              "name": "ssa",
               "config": {
-                "lags": 1,
-                "neurons_count": 20,
-                "n_epochs": 20,
-                "differencing_order": 1
+                "n_components": 10
               },
               "forecast_frequency": "500ms",
               "history_data_buffer_size": 20,

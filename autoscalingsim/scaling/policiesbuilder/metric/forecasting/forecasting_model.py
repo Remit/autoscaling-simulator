@@ -33,8 +33,12 @@ class ForecastingModel(ABC):
 
     def _sanity_filter(self, forecast : pd.DataFrame):
 
-        forecast[forecast < 0] = 0
-        return forecast
+        if isinstance(forecast, pd.DataFrame):
+            forecast[forecast < 0] = 0
+            return forecast
+
+        elif isinstance(forecast, list):
+            return [fc if fc >= 0 else 0 for fc in forecast]
 
     @classmethod
     def register(cls, name : str):
