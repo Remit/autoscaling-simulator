@@ -18,6 +18,8 @@ setup(
                         'tarfile',
                         'progressbar',
                         'statsmodels>=0.12.1',
+                        'scipy',
+                        'sklearn',
                         'https://github.com/kieferk/pymssa/tarball/master ; sys_platform == linux'
                         'https://github.com/Remit/pymssa/tarball/master ; sys_platform == windows'
                       ],

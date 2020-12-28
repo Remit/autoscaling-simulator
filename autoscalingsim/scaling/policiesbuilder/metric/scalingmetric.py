@@ -39,11 +39,14 @@ class ScalingMetricRegionalized:
 
             related_service_metric_vals = self.accessor_to_related_service.get_metric_value(region_name) if not self.accessor_to_related_service is None else dict()
 
+            current_performance_metric_val = None # TODO:
+
             cur_aspect_val = self.state_reader.get_aspect_value(self.service_name, region_name, self.aspect_name)
 
             service_res_reqs = self.state_reader.get_resource_requirements(self.service_name, region_name)
 
-            desired_scaling_aspect_val_pr = metric.compute_desired_state(metric_vals, cur_aspect_val, cur_timestamp, related_service_metric_vals)
+            desired_scaling_aspect_val_pr = metric.compute_desired_state(metric_vals, cur_aspect_val, cur_timestamp,
+                                                                         related_service_metric_vals, current_performance_metric_val)
 
             for timestamp, row_val in desired_scaling_aspect_val_pr.iterrows():
                 for aspect in row_val:
@@ -76,9 +79,11 @@ class ScalingMetric:
         va_conf = ErrorChecker.key_check_and_load('config', per_region_settings.values_aggregator_conf, 'region', region_name, default = dict())
         self.values_aggregator = ValuesAggregator.get(va_name)(va_conf)
 
+        dav_calculator_category = ErrorChecker.key_check_and_load('category', per_region_settings.desired_aspect_value_calculator_conf, 'region', region_name)
         dav_calculator_name = ErrorChecker.key_check_and_load('name', per_region_settings.desired_aspect_value_calculator_conf, 'region', region_name)
         dav_calculator_conf = ErrorChecker.key_check_and_load('config', per_region_settings.desired_aspect_value_calculator_conf, 'region', region_name, default = dict())
-        self.desired_aspect_value_calculator = DesiredAspectValueCalculator.get(dav_calculator_name)(dav_calculator_conf, per_region_settings.metric_unit_type)
+        dav_calculator_conf['metric_unit_type'] = per_region_settings.metric_unit_type
+        self.desired_aspect_value_calculator = DesiredAspectValueCalculator.get(dav_calculator_category, dav_calculator_name)(dav_calculator_conf)
 
         stab_name = ErrorChecker.key_check_and_load('name', per_region_settings.stabilizer_conf, 'region', region_name)
         stab_conf = ErrorChecker.key_check_and_load('config', per_region_settings.stabilizer_conf, 'region', region_name, default = dict())
@@ -88,7 +93,8 @@ class ScalingMetric:
         min_limit_aspect = ScalingAspect.get(aspect_name)(per_region_settings.min_limit)
         self.limiter = Limiter(min_limit_aspect, max_limit_aspect)
 
-    def compute_desired_state(self, cur_metric_vals : pd.DataFrame, cur_aspect_val : ScalingAspect, cur_timestamp : pd.Timestamp, related_service_metric_vals : dict):
+    def compute_desired_state(self, cur_metric_vals : pd.DataFrame, cur_aspect_val : ScalingAspect, cur_timestamp : pd.Timestamp,
+                              related_service_metric_vals : dict, current_performance_metric_val):
 
         if cur_metric_vals.shape[0] > 0:
 
@@ -98,7 +104,7 @@ class ScalingMetric:
             forecasted_metric_vals = self.forecaster.forecast(filtered_metric_vals, cur_timestamp, lagged_correlation_per_service, filtered_related_service_metric_vals)
             aggregated_metric_vals = self.values_aggregator.aggregate(forecasted_metric_vals)
             converted_metric_vals = self.metric_converter.convert_df(aggregated_metric_vals)
-            desired_scaling_aspect = self.desired_aspect_value_calculator.compute(cur_aspect_val, converted_metric_vals)
+            desired_scaling_aspect = self.desired_aspect_value_calculator.compute(cur_aspect_val, converted_metric_vals, cur_metric_vals.value[-1], current_performance_metric_val)
             desired_scaling_aspect_stabilized = self.stabilizer.stabilize(desired_scaling_aspect)
             desired_scaling_aspect_stabilized_limited = self.limiter.cut(desired_scaling_aspect_stabilized) # TODO: check with scaling aspects
 

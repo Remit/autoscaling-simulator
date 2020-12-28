@@ -33,14 +33,15 @@
               }
             },
             "desired_aspect_value_calculator_conf": {
-              "name": "ratio",
-              "config": {
-                "target_value": 0.05,
-                "adjustment_heuristic_conf": {
-                  "name": "rescale",
-                  "scaling_factor": 1.15
-                }
-              }
+                  "category": "rule",
+                  "name": "ratio",
+                  "config": {
+                      "target_value": 0.05,
+                      "adjustment_heuristic_conf": {
+                        "name": "rescale",
+                        "scaling_factor": 1.15
+                      }
+                  }
             },
             "values_filter_conf": {
               "name": "christiano_fitzgerald"
