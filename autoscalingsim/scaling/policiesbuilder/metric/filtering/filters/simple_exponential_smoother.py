@@ -14,7 +14,7 @@ class SimpleExponentialSmoother(ValuesFilter):
 
         self.smoothing_level = ErrorChecker.key_check_and_load('smoothing_level', config, self.__class__.__name__)
 
-    def filter(self, values : pd.DataFrame):
+    def _internal_filter(self, values : pd.DataFrame):
 
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')

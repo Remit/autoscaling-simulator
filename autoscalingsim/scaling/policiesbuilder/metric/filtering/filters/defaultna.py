@@ -12,6 +12,6 @@ class DefaultNA(ValuesFilter):
 
         self.default_value = ErrorChecker.key_check_and_load('default_value', config, self.__class__.__name__)
 
-    def filter(self, values : pd.DataFrame):
+    def _internal_filter(self, values : pd.DataFrame):
 
         return values.fillna(self.default_value)

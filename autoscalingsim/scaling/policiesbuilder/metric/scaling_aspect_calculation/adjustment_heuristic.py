@@ -1,7 +1,9 @@
+import collections
 from abc import ABC, abstractmethod
-import numpy as np
 
-class ValuesFilter(ABC):
+from autoscalingsim.utils.error_check import ErrorChecker
+
+class AdjustmentHeuristic(ABC):
 
     _Registry = {}
 
@@ -11,23 +13,16 @@ class ValuesFilter(ABC):
         pass
 
     @abstractmethod
-    def _internal_filter(self, values):
+    def adjust(self, aspect_val):
 
         pass
-
-    def filter(self, values):
-
-        filtered_values = self._internal_filter(values)
-        filtered_values.replace([np.inf, -np.inf, np.nan], 0)
-
-        return filtered_values
 
     @classmethod
     def register(cls, name : str):
 
-        def decorator(values_filter_class):
-            cls._Registry[name] = values_filter_class
-            return values_filter_class
+        def decorator(adjustment_heuristic_class):
+            cls._Registry[name] = adjustment_heuristic_class
+            return adjustment_heuristic_class
 
         return decorator
 
@@ -39,4 +34,4 @@ class ValuesFilter(ABC):
 
         return cls._Registry[name]
 
-from .filters import *
+from .adjustment_heuristics import *

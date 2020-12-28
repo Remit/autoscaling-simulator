@@ -13,7 +13,7 @@ class OutliersRemover(ValuesFilter):
         self.upper_percentile = ErrorChecker.key_check_and_load('upper_percentile', config, self.__class__.__name__, default = 0.75)
         self.lower_percentile = ErrorChecker.key_check_and_load('lower_percentile', config, self.__class__.__name__, default = 0.25)
 
-    def filter(self, values : pd.DataFrame):
+    def _internal_filter(self, values : pd.DataFrame):
 
         upper_quantile = values.value.quantile(self.upper_percentile)
 

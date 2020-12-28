@@ -15,7 +15,7 @@ class HodrickPrescott(ValuesFilter):
         self.lambda_param = ErrorChecker.key_check_and_load('lambda', config, self.__class__.__name__)
         self.component_to_use = ErrorChecker.key_check_and_load('component', config, self.__class__.__name__, default = 'trend')
 
-    def filter(self, values : pd.DataFrame):
+    def _internal_filter(self, values : pd.DataFrame):
 
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')

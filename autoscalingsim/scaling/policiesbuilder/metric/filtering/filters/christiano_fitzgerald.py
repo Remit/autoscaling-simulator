@@ -16,7 +16,7 @@ class ChristianoFitzgerald(ValuesFilter):
         self.max_oscillations_period = ErrorChecker.key_check_and_load('max_oscillations_period', config, self.__class__.__name__)
         self.component_to_use = ErrorChecker.key_check_and_load('component', config, self.__class__.__name__, default = 'trend')
 
-    def filter(self, values : pd.DataFrame):
+    def _internal_filter(self, values : pd.DataFrame):
 
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
