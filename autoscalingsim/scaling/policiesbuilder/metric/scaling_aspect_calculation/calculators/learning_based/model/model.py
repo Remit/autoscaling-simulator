@@ -1,4 +1,5 @@
 import warnings
+import numpy as np
 # https://scikit-learn.org/stable/modules/classes.html#classical-linear-regressors
 
 # https://scikit-learn.org/stable/auto_examples/linear_model/plot_sgd_comparison.html#sphx-glr-auto-examples-linear-model-plot-sgd-comparison-py
@@ -21,16 +22,17 @@ class Model(ABC):
 
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
-            return self._model.predict(model_input)
+            return self._internal_predict(model_input)
 
+    @abstractmethod
+    def _internal_predict(self, model_input):
+
+        pass
+
+    @abstractmethod
     def fit(self, model_input, model_output):
 
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
-            if self.kind == 'offline':
-                self._model.fit(model_input, model_output)
-            elif self.kind == 'online':
-                self._model.partial_fit(model_input, model_output)
+        pass
 
     @classmethod
     def register(cls, category : str):
