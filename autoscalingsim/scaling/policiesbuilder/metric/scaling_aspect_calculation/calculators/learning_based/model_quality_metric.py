@@ -8,7 +8,6 @@ from sklearn.metrics import max_error
 from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import mean_squared_log_error
-#from sklearn.metrics import mean_absolute_percentage_error
 from sklearn.metrics import median_absolute_error
 from sklearn.metrics import r2_score
 from sklearn.metrics import mean_tweedie_deviance
@@ -21,7 +20,6 @@ class ModelQualityMetric(ABC):
         'mean_absolute_error': mean_absolute_error,
         'mean_squared_error': mean_squared_error,
         'mean_squared_log_error': mean_squared_log_error,
-        #'mean_absolute_percentage_error': mean_absolute_percentage_error,
         'median_absolute_error': median_absolute_error,
         'r2_score': r2_score,
         'mean_tweedie_deviance': mean_tweedie_deviance

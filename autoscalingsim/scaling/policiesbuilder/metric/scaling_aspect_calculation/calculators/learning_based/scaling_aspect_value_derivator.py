@@ -1,3 +1,4 @@
+import warnings
 import scipy.optimize as opt
 import numpy as np
 
@@ -28,8 +29,7 @@ def nonlinearConstraintBuilder(model, min_scaling_aspect_val, max_scaling_aspect
 
     cons_f = nonlinearConstraintFunctionBuilder(model, forecasted_metric_val, compose_model_input)
 
-    return opt.NonlinearConstraint(cons_f,
-                                   min_scaling_aspect_val, max_scaling_aspect_val,
+    return opt.NonlinearConstraint(cons_f, min_scaling_aspect_val, max_scaling_aspect_val,
                                    jac = jacobian, hess = hessian)
 
 class ScalingAspectValueDerivator:
@@ -51,7 +51,7 @@ class ScalingAspectValueDerivator:
             'options' : {
                 'verbose' : ErrorChecker.key_check_and_load('verbose', config, default = 0),
                 'maxiter' : ErrorChecker.key_check_and_load('maxiter', config, default = 100),
-                'xtolArg' : ErrorChecker.key_check_and_load('xtolArg', config, default = 0.1),
+                'xtol' : ErrorChecker.key_check_and_load('xtol', config, default = 0.1),
                 'initial_tr_radius' : ErrorChecker.key_check_and_load('initial_tr_radius', config, default = 10)
             },
             'bounds': opt.Bounds(lb = [0], ub = [np.inf]) # TODO: min val may depend on the scaling aspect!
@@ -63,11 +63,13 @@ class ScalingAspectValueDerivator:
     def solve(self, model, cur_aspect_val, forecasted_metric_val):
 
         current_config = self._enrich_config_with_constraints(model, forecasted_metric_val)
-        solution = opt.minimize(compute_discrepancy, cur_aspect_val,
-                                args = (model, forecasted_metric_val, self.performance_metric_threshold, self.compose_model_input),
-                                **current_config)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            solution = opt.minimize(compute_discrepancy, cur_aspect_val.value,
+                                    args = (model, forecasted_metric_val, self.performance_metric_threshold, self.compose_model_input),
+                                    **current_config)
 
-        return solution.x
+            return cur_aspect_val.__class__(solution.x)
 
     def _enrich_config_with_constraints(self, model, forecasted_metric_val):
 

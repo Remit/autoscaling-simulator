@@ -1,15 +1,15 @@
-from autoscalingsim.scaling.policiesbuilder.metric.scaling_aspect_calculation.calculators.rule_based.rule_based_calculator import RuleBasedCalculator
+from autoscalingsim.scaling.policiesbuilder.metric.scaling_aspect_calculation.calculators.rule_based.rule.rule import Rule
 
-@RuleBasedCalculator.register('ratio')
-class RatioBasedDesiredAspectValueCalculator(RuleBasedCalculator):
+@Rule.register('ratio')
+class RatioRule(Rule):
 
     """
     Example configuration:
 
     "desired_aspect_value_calculator_conf": {
         "category": "rule",
-        "name": "ratio",
         "config": {
+            "name": "ratio",
             "target_value": 0.05,
             "adjustment_heuristic_conf": {
               "name": "rescale",
@@ -19,7 +19,7 @@ class RatioBasedDesiredAspectValueCalculator(RuleBasedCalculator):
     }
     """
 
-    def _compute_internal(self, cur_aspect_val, metric_vals, current_metric_val = None, current_performance_metric_val = None):
+    def compute_desired(self, cur_aspect_val, metric_vals):
 
         metric_ratio = metric_vals / self.target_value
         return cur_aspect_val * metric_ratio
