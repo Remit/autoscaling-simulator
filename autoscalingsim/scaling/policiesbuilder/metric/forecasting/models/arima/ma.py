@@ -21,7 +21,7 @@ class MovingAverage(ArimaBase):
         lags = ErrorChecker.key_check_and_load('lags', forecasting_model_params, default = [0])
         self.lags = [lags] if isinstance(lags, numbers.Number) else lags
 
-    def fit(self, data : pd.DataFrame):
+    def _internal_fit(self, data : pd.DataFrame):
 
         try:
             with warnings.catch_warnings():

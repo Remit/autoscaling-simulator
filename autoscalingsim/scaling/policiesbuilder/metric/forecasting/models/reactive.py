@@ -12,7 +12,9 @@ class Reactive(ForecastingModel):
 
         super().__init__(fhorizon_in_steps, forecast_frequency)
 
-    def fit(self, data : pd.DataFrame):
+        self.fitted = True
+
+    def _internal_fit(self, data : pd.DataFrame):
 
         pass
 

@@ -13,6 +13,7 @@ class MetricForecaster:
         fhorizon_in_steps = ErrorChecker.key_check_and_load('horizon_in_steps', config, default = 60)
         forecast_frequency = ErrorChecker.key_check_and_load('forecast_frequency', config, default = '1s')
         self._model = ForecastingModel.get(ErrorChecker.key_check_and_load('name', config))(config, fhorizon_in_steps, forecast_frequency)
+        self._fallback_model = ForecastingModel.get(ForecastingModel.FALLBACK_MODEL_NAME)(config, fhorizon_in_steps, forecast_frequency)
 
         self._history_data_buffer_size = int(ErrorChecker.key_check_and_load('history_data_buffer_size', config))
         self._history_data_buffer = pd.DataFrame(columns=['datetime', 'value']).set_index('datetime')
@@ -29,7 +30,10 @@ class MetricForecaster:
 
         future_adjustment_from_others = sum(related_service_metric_vals.values()) / len(related_service_metric_vals) if len(related_service_metric_vals) > 0 else None
 
-        return self._model.predict(metric_vals, cur_timestamp, future_adjustment_from_others)
+        if self._model.fitted:
+            return self._model.predict(metric_vals, cur_timestamp, future_adjustment_from_others)
+        else:
+            return self._fallback_model.predict(metric_vals, cur_timestamp, future_adjustment_from_others)
 
     def _update_model(self, metric_vals : pd.DataFrame):
 

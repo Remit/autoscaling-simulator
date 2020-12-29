@@ -22,7 +22,7 @@ class SimpleAverage(ForecastingModel):
         self._averaging_interval = pd.Timedelta(value, unit = unit)
         self._averaged_value = None
 
-    def fit(self, data : pd.DataFrame):
+    def _internal_fit(self, data : pd.DataFrame):
 
         self._averaged_value = data[data.index >= data.index.max() - self._averaging_interval].value.mean()
 

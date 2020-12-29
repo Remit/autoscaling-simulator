@@ -20,7 +20,7 @@ class SingularSpectrumAnalysis(ForecastingModel):
 
         self._model_fitted = pymssa.MSSA(n_components = n_components, window_size = window_size, verbose = False)
 
-    def fit(self, data : pd.DataFrame):
+    def _internal_fit(self, data : pd.DataFrame):
 
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')

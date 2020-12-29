@@ -4,3 +4,4 @@ from . import holt_winters
 from . import arima
 from . import lstm
 from . import ssa
+from . import svr

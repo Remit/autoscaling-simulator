@@ -6,13 +6,16 @@ class ForecastingModel(ABC):
 
     _Registry = {}
 
+    FALLBACK_MODEL_NAME = 'reactive'
+
     def __init__(self, fhorizon_in_steps : int, forecast_frequency : str):
 
         self.fhorizon_in_steps = fhorizon_in_steps
         self.forecast_frequency = forecast_frequency
+        self.fitted = False
 
     @abstractmethod
-    def fit(self, data : pd.DataFrame):
+    def _internal_fit(self, data : pd.DataFrame):
 
         pass
 
@@ -20,6 +23,11 @@ class ForecastingModel(ABC):
     def predict(self, metric_vals : pd.DataFrame, cur_timestamp : pd.Timestamp, future_adjustment_from_others : pd.DataFrame = None):
 
         pass
+
+    def fit(self, data : pd.DataFrame):
+
+        self.fitted = True
+        self._internal_fit(data)
 
     def _construct_future_interval(self, interval_start : pd.Timestamp):
 

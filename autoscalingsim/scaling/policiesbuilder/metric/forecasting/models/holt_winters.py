@@ -27,7 +27,7 @@ class HoltWinters(ForecastingModel):
 
         self._model_fitted = None
 
-    def fit(self, data : pd.DataFrame):
+    def _internal_fit(self, data : pd.DataFrame):
 
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')

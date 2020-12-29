@@ -25,7 +25,7 @@ class SARIMA(ArimaBase):
         self.D = ErrorChecker.key_check_and_load('D', forecasting_model_params, default = 0)
         self.s = ErrorChecker.key_check_and_load('s', forecasting_model_params, default = 12)
 
-    def fit(self, data : pd.DataFrame):
+    def _internal_fit(self, data : pd.DataFrame):
 
         try:
             with warnings.catch_warnings():

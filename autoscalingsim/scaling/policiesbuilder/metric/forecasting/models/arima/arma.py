@@ -24,7 +24,7 @@ class ARMA(ArimaBase):
         self.ma_lags = [ma_lags] if isinstance(ma_lags, numbers.Number) else ma_lags
         self.d = 0
 
-    def fit(self, data : pd.DataFrame):
+    def _internal_fit(self, data : pd.DataFrame):
 
         try:
             with warnings.catch_warnings():

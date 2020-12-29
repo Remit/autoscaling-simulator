@@ -2,7 +2,7 @@ import warnings
 import tensorflow as tf
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import StandardScaler
 
 from autoscalingsim.scaling.policiesbuilder.metric.forecasting.forecasting_model import ForecastingModel
 from autoscalingsim.utils.error_check import ErrorChecker
@@ -25,7 +25,7 @@ class LSTM(ForecastingModel):
         loss_function = ErrorChecker.key_check_and_load('loss_function', forecasting_model_params, self.__class__.__name__, default = 'mean_squared_error')
         optimizer = ErrorChecker.key_check_and_load('optimizer', forecasting_model_params, self.__class__.__name__, default = 'adam')
 
-        self.scaler = MinMaxScaler(feature_range = (-1, 1))
+        self.scaler = StandardScaler()
 
         self._model_fitted = tf.keras.models.Sequential([
             tf.keras.layers.LSTM(neurons_count, batch_input_shape = (1, 1, self.lags), stateful = True),
@@ -33,7 +33,7 @@ class LSTM(ForecastingModel):
         ])
         self._model_fitted.compile(loss = loss_function, optimizer = optimizer)
 
-    def fit(self, data : pd.DataFrame):
+    def _internal_fit(self, data : pd.DataFrame):
 
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
@@ -80,9 +80,7 @@ class LSTM(ForecastingModel):
 
     def _scale(self, data : pd.DataFrame):
 
-        self.scaler.fit(data)
-
-        return self._restore_df(self.scaler.transform(data), data)
+        return self._restore_df(self.scaler.fit_transform(data), data)
 
     def _unscale(self, value : float):
 
