@@ -13,10 +13,9 @@ class Model(ABC):
 
     _Registry = {}
 
-    @abstractmethod
     def __init__(self, config):
 
-        pass
+        self.kind = ErrorChecker.key_check_and_load('kind', config, default = 'offline')
 
     def predict(self, model_input):
 
@@ -28,7 +27,10 @@ class Model(ABC):
 
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
-            self._model.fit(model_input, model_output)
+            if self.kind == 'offline':
+                self._model.fit(model_input, model_output)
+            elif self.kind == 'online':
+                self._model.partial_fit(model_input, model_output)
 
     @classmethod
     def register(cls, category : str):

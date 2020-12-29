@@ -28,9 +28,9 @@ class PassiveAggressiveRegressionModel(Model):
             },
             "model": {
                 "name": "passive_aggressive",
+                "kind": "online",
                 "model_params": {
                     "C": 1,
-                    "max_iter": 1000,
                     "tol": 0.001,
                     "validation_fraction": 0.1,
                     "n_iter_no_change": 5,
@@ -67,6 +67,8 @@ class PassiveAggressiveRegressionModel(Model):
     """
 
     def __init__(self, config):
+
+        super().__init__(config)
 
         model_params = ErrorChecker.key_check_and_load('model_params', config, default = dict())
         model_config = { 'C': ErrorChecker.key_check_and_load('C', model_params, default = 1.0),

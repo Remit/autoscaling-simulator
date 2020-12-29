@@ -28,12 +28,12 @@ class SGDRegressionModel(Model):
             },
             "model": {
                 "name": "stochastic_gradient_descent",
+                "kind": "online",
                 "model_params": {
                     "loss": "squared_loss",
                     "penalty": "l2",
                     "alpha": 0.0001,
                     "l1_ratio": 0.15,
-                    "max_iter": 1000,
                     "tol": 0.001,
                     "validation_fraction": 0.1,
                     "n_iter_no_change": 5,
@@ -70,12 +70,13 @@ class SGDRegressionModel(Model):
 
     def __init__(self, config):
 
+        super().__init__(config)
+
         model_params = ErrorChecker.key_check_and_load('model_params', config, default = dict())
         model_config = { 'loss': ErrorChecker.key_check_and_load('loss', model_params, default = 'squared_loss'),
                          'penalty': ErrorChecker.key_check_and_load('penalty', model_params, default = 'l2'),
                          'alpha': ErrorChecker.key_check_and_load('alpha', model_params, default = 0.0001),
                          'l1_ratio': ErrorChecker.key_check_and_load('l1_ratio', model_params, default = 0.15),
-                         'max_iter' : ErrorChecker.key_check_and_load('max_iter', model_params, default = 1000),
                          'tol' : ErrorChecker.key_check_and_load('tol', model_params, default = 0.001),
                          'validation_fraction' : ErrorChecker.key_check_and_load('validation_fraction', model_params, default = 0.1),
                          'n_iter_no_change' : ErrorChecker.key_check_and_load('n_iter_no_change', model_params, default = 5),

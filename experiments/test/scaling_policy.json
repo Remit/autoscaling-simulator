@@ -48,6 +48,7 @@
                       },
                       "model": {
                                 "name": "stochastic_gradient_descent",
+                                "kind": "online",
                                 "model_params": {
                                     "loss": "squared_loss",
                                     "penalty": "l2",

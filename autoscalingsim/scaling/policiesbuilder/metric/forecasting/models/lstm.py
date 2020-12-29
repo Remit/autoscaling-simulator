@@ -23,7 +23,7 @@ class LSTM(ForecastingModel):
 
         neurons_count = ErrorChecker.key_check_and_load('neurons_count', forecasting_model_params, self.__class__.__name__)
         loss_function = ErrorChecker.key_check_and_load('loss_function', forecasting_model_params, self.__class__.__name__, default = 'mean_squared_error')
-        optimizer = ErrorChecker.key_check_and_load('loss_function', forecasting_model_params, self.__class__.__name__, default = 'adam')
+        optimizer = ErrorChecker.key_check_and_load('optimizer', forecasting_model_params, self.__class__.__name__, default = 'adam')
 
         self.scaler = MinMaxScaler(feature_range = (-1, 1))
 
