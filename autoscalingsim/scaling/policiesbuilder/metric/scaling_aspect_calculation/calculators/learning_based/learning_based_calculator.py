@@ -20,6 +20,10 @@ def compose_model_input(cur_aspect_val, current_metric_val):
 @DesiredAspectValueCalculator.register('learning')
 class LearningBasedCalculator(DesiredAspectValueCalculator):
 
+    # from sklearn.pipeline import make_pipeline
+    # from sklearn.preprocessing import StandardScaler
+    # consider pipeline reg = make_pipeline(StandardScaler(), SGDRegressor(max_iter=1000, tol=1e-3))
+
     _Registry = {}
 
     def __init__(self, config):

@@ -1,6 +1,6 @@
+import warnings
 # https://scikit-learn.org/stable/modules/classes.html#classical-linear-regressors
-# https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.PassiveAggressiveRegressor.html#sklearn.linear_model.PassiveAggressiveRegressor
-# https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDRegressor.html#sklearn.linear_model.SGDRegressor
+
 # https://scikit-learn.org/stable/auto_examples/linear_model/plot_sgd_comparison.html#sphx-glr-auto-examples-linear-model-plot-sgd-comparison-py
 # https://www.jstor.org/stable/24305577?seq=1
 # https://stackoverflow.com/questions/52070293/efficient-online-linear-regression-algorithm-in-python
@@ -20,11 +20,15 @@ class Model(ABC):
 
     def predict(self, model_input):
 
-        return self._model.predict(model_input)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            return self._model.predict(model_input)
 
     def fit(self, model_input, model_output):
 
-        self._model.fit(model_input, model_output)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            self._model.fit(model_input, model_output)
 
     @classmethod
     def register(cls, category : str):

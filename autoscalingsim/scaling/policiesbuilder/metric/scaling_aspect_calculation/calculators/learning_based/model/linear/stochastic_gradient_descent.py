@@ -1,14 +1,14 @@
-from sklearn.linear_model import PassiveAggressiveRegressor
+from sklearn.linear_model import SGDRegressor
 
 from autoscalingsim.scaling.policiesbuilder.metric.scaling_aspect_calculation.calculators.learning_based.model.model import Model
 from autoscalingsim.utils.error_check import ErrorChecker
 
-@Model.register('passive_aggressive')
-class PassiveAggressiveRegressionModel(Model):
+@Model.register('stochastic_gradient_descent')
+class SGDRegressionModel(Model):
 
     """
 
-    Reference: https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.PassiveAggressiveRegressor.html#sklearn.linear_model.PassiveAggressiveRegressor
+    Reference: https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDRegressor.html#sklearn.linear_model.SGDRegressor
 
     Configuration example:
 
@@ -27,14 +27,16 @@ class PassiveAggressiveRegressionModel(Model):
                 }
             },
             "model": {
-                "name": "passive_aggressive",
+                "name": "stochastic_gradient_descent",
                 "model_params": {
-                    "C": 1,
+                    "loss": "squared_loss",
+                    "penalty": "l2",
+                    "alpha": 0.0001,
+                    "l1_ratio": 0.15,
                     "max_iter": 1000,
                     "tol": 0.001,
                     "validation_fraction": 0.1,
                     "n_iter_no_change": 5,
-                    "loss": "epsilon_insensitive",
                     "epsilon": 0.1
                 }
             },
@@ -69,7 +71,10 @@ class PassiveAggressiveRegressionModel(Model):
     def __init__(self, config):
 
         model_params = ErrorChecker.key_check_and_load('model_params', config, default = dict())
-        model_config = { 'C': ErrorChecker.key_check_and_load('C', model_params, default = 1.0),
+        model_config = { 'loss': ErrorChecker.key_check_and_load('loss', model_params, default = 'squared_loss'),
+                         'penalty': ErrorChecker.key_check_and_load('penalty', model_params, default = 'l2'),
+                         'alpha': ErrorChecker.key_check_and_load('alpha', model_params, default = 0.0001),
+                         'l1_ratio': ErrorChecker.key_check_and_load('l1_ratio', model_params, default = 0.15),
                          'max_iter' : ErrorChecker.key_check_and_load('max_iter', model_params, default = 1000),
                          'tol' : ErrorChecker.key_check_and_load('tol', model_params, default = 0.001),
                          'validation_fraction' : ErrorChecker.key_check_and_load('validation_fraction', model_params, default = 0.1),
@@ -77,4 +82,4 @@ class PassiveAggressiveRegressionModel(Model):
                          'loss' : ErrorChecker.key_check_and_load('loss', model_params, default = 'epsilon_insensitive'),
                          'epsilon' : ErrorChecker.key_check_and_load('epsilon', model_params, default = 0.1) } # TODO: consider leftovers? non-oblig
 
-        self._model = PassiveAggressiveRegressor(**model_config)
+        self._model = SGDRegressor(**model_config)
