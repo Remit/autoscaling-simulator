@@ -29,12 +29,35 @@ class NeuralNet(Model):
                 }
             },
             "model": {
-                "name": "three_layers_neural_net",
+                "name": "neural_net",
+                "layers": [
+                  {
+                      "type": "Dense",
+                      "units": 10,
+                      "params": {}
+                  },
+                  {
+                      "type": "Dropout",
+                      "rate": 0.1,
+                      "params": {}
+                  },
+                  {
+                      "type": "Dense",
+                      "units": 5,
+                      "params": {}
+                  }
+                ],
                 "model_params": {
-                    "loss_function": "mean_squared_error",
-                    "optimizer": "adam"
-                }
-            },
+                    "learning": {
+                      "loss": "mean_squared_error",
+                      "optimizer": "adam"
+                    },
+                    "default_layers_params": {
+                      "Dense" : {},
+                      "Dropout" : {}
+                    }
+                  }
+                },
             "performance_metric": {
                 "metric_source_name": "response_stats",
                 "metric_name": "buffer_time",
