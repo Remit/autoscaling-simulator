@@ -1,12 +1,11 @@
-import warnings
 import tensorflow as tf
-import numpy as np
 
-from autoscalingsim.scaling.policiesbuilder.metric.scaling_aspect_calculation.calculators.learning_based.model.model import Model
+from autoscalingsim.scaling.policiesbuilder.metric.scaling_aspect_calculation.calculators.learning_based.model.model import ScalingAspectToQualityMetricModel
+from autoscalingsim.scaling.policiesbuilder.metric.scaling_aspect_calculation.calculators.learning_based.model.nonlinear.nonlinear import NonlinearModel
 from autoscalingsim.utils.error_check import ErrorChecker
 
-@Model.register('neural_net')
-class NeuralNet(Model):
+@ScalingAspectToQualityMetricModel.register('neural_net')
+class NeuralNet(NonlinearModel):
 
     """
 
@@ -118,13 +117,3 @@ class NeuralNet(Model):
             self._model.add(layer_template['model'](**layer_params))
 
         self._model.compile(**learning_params)
-
-    def _internal_predict(self, model_input):
-
-        return self._model.predict(model_input).flatten().tolist()[0]
-
-    def fit(self, model_input, model_output):
-
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
-            self._model.fit(model_input, np.asarray(model_output), verbose = 0)

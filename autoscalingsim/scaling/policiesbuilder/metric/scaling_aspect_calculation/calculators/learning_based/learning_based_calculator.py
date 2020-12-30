@@ -6,7 +6,7 @@ from autoscalingsim.utils.metric_units_registry import MetricUnitsRegistry
 from autoscalingsim.scaling.policiesbuilder.metric.scaling_aspect_calculation.desired_scaling_aspect_calculator import DesiredAspectValueCalculator
 from autoscalingsim.utils.error_check import ErrorChecker
 
-from .model import Model
+from .model import ScalingAspectToQualityMetricModel
 from .scaling_aspect_value_derivator import ScalingAspectValueDerivator
 from .model_quality_metric import ModelQualityMetric
 
@@ -56,7 +56,7 @@ class LearningBasedCalculator(DesiredAspectValueCalculator):
                                            'submetric_name': ErrorChecker.key_check_and_load('submetric_name', performance_metric_conf, default = '*') }
 
         model_config = ErrorChecker.key_check_and_load('model', config, default = dict())
-        self.model = Model.get(ErrorChecker.key_check_and_load('name', model_config, default = 'passive_aggressive'))(model_config)
+        self.model = ScalingAspectToQualityMetricModel.get(ErrorChecker.key_check_and_load('name', model_config, default = 'passive_aggressive'))(model_config)
 
         optimizer_config = ErrorChecker.key_check_and_load('optimizer_config', config, default = dict())
         self.scaling_aspect_value_derivator = ScalingAspectValueDerivator(optimizer_config, performance_metric_threshold, compose_model_input)
