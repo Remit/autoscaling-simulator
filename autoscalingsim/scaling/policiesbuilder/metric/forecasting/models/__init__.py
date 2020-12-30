@@ -5,3 +5,4 @@ from . import arima
 from . import lstm
 from . import ssa
 from . import svr
+from . import ensemble
