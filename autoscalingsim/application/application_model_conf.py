@@ -94,104 +94,108 @@ class ApplicationModelConfiguration:
                 raise ValueError(f'No configuration file found in {config_file}')
 
             with open(config_file) as f:
-                config = json.load(f)
+                try:
+                    config = json.load(f)
 
-                self.name = ErrorChecker.key_check_and_load('app_name', config)
+                    self.name = ErrorChecker.key_check_and_load('app_name', config)
 
-                #############################################################################
-                # Parsing the application-wide configurations applied to every service
-                #############################################################################
-                utilization_metrics_conf = ErrorChecker.key_check_and_load('utilization_metrics_conf', config)
+                    #############################################################################
+                    # Parsing the application-wide configurations applied to every service
+                    #############################################################################
+                    utilization_metrics_conf = ErrorChecker.key_check_and_load('utilization_metrics_conf', config)
 
-                averaging_interval_raw = ErrorChecker.key_check_and_load('averaging_interval', utilization_metrics_conf)
-                averaging_interval_val = ErrorChecker.key_check_and_load('value', averaging_interval_raw, 'averaging_interval')
-                averaging_interval_unit = ErrorChecker.key_check_and_load('unit', averaging_interval_raw, 'averaging_interval')
-                averaging_interval = pd.Timedelta(averaging_interval_val, unit = averaging_interval_unit)
+                    averaging_interval_raw = ErrorChecker.key_check_and_load('averaging_interval', utilization_metrics_conf)
+                    averaging_interval_val = ErrorChecker.key_check_and_load('value', averaging_interval_raw, 'averaging_interval')
+                    averaging_interval_unit = ErrorChecker.key_check_and_load('unit', averaging_interval_raw, 'averaging_interval')
+                    averaging_interval = pd.Timedelta(averaging_interval_val, unit = averaging_interval_unit)
 
-                if averaging_interval % simulation_step != pd.Timedelta(0):
-                    raise ValueError('Averaging interval is not a multiple of the provided simulation step')
+                    if averaging_interval % simulation_step != pd.Timedelta(0):
+                        raise ValueError('Averaging interval is not a multiple of the provided simulation step')
 
-                sampling_interval_raw = ErrorChecker.key_check_and_load('sampling_interval', utilization_metrics_conf)
-                sampling_interval_val = ErrorChecker.key_check_and_load('value', sampling_interval_raw, 'sampling_interval')
-                sampling_interval_unit = ErrorChecker.key_check_and_load('unit', sampling_interval_raw, 'sampling_interval')
-                sampling_interval = pd.Timedelta(sampling_interval_val, unit = sampling_interval_unit)
+                    sampling_interval_raw = ErrorChecker.key_check_and_load('sampling_interval', utilization_metrics_conf)
+                    sampling_interval_val = ErrorChecker.key_check_and_load('value', sampling_interval_raw, 'sampling_interval')
+                    sampling_interval_unit = ErrorChecker.key_check_and_load('unit', sampling_interval_raw, 'sampling_interval')
+                    sampling_interval = pd.Timedelta(sampling_interval_val, unit = sampling_interval_unit)
 
-                if sampling_interval % simulation_step != pd.Timedelta(0):
-                    raise ValueError('Sampling interval is not a multiple of the provided simulation step')
+                    if sampling_interval % simulation_step != pd.Timedelta(0):
+                        raise ValueError('Sampling interval is not a multiple of the provided simulation step')
 
-                ################################################################
-                # Parsing the configuration of requests for the application,
-                # the results are stored in the RequestProcessingInfo objects
-                ################################################################
-                request_confs = ErrorChecker.key_check_and_load('requests', config)
-                for request_info in request_confs:
+                    ################################################################
+                    # Parsing the configuration of requests for the application,
+                    # the results are stored in the RequestProcessingInfo objects
+                    ################################################################
+                    request_confs = ErrorChecker.key_check_and_load('requests', config)
+                    for request_info in request_confs:
 
-                    request_type = ErrorChecker.key_check_and_load('request_type', request_info, 'request')
-                    entry_service = ErrorChecker.key_check_and_load('entry_service', request_info, 'request_type', request_type)
+                        request_type = ErrorChecker.key_check_and_load('request_type', request_info, 'request')
+                        entry_service = ErrorChecker.key_check_and_load('entry_service', request_info, 'request_type', request_type)
 
-                    processing_times = {}
-                    processing_times_raw = ErrorChecker.key_check_and_load('processing_times', request_info, 'request_type', request_type)
-                    processing_times_unit = ErrorChecker.key_check_and_load('unit', processing_times_raw, 'request_type', request_type)
-                    processing_times_vals = ErrorChecker.key_check_and_load('values', processing_times_raw, 'request_type', request_type)
-                    for processing_time_service_entry in processing_times_vals:
-                        service_name = ErrorChecker.key_check_and_load('service', processing_time_service_entry, 'request_type', request_type)
+                        processing_times = {}
+                        processing_times_raw = ErrorChecker.key_check_and_load('processing_times', request_info, 'request_type', request_type)
+                        processing_times_unit = ErrorChecker.key_check_and_load('unit', processing_times_raw, 'request_type', request_type)
+                        processing_times_vals = ErrorChecker.key_check_and_load('values', processing_times_raw, 'request_type', request_type)
+                        for processing_time_service_entry in processing_times_vals:
+                            service_name = ErrorChecker.key_check_and_load('service', processing_time_service_entry, 'request_type', request_type)
 
-                        upstream_time = ErrorChecker.key_check_and_load('upstream', processing_time_service_entry, 'request_type', request_type)
-                        ErrorChecker.value_check('upstream_time', upstream_time, operator.ge, 0, [f'request_type {request_type}', f'service {service_name}'])
+                            upstream_time = ErrorChecker.key_check_and_load('upstream', processing_time_service_entry, 'request_type', request_type)
+                            ErrorChecker.value_check('upstream_time', upstream_time, operator.ge, 0, [f'request_type {request_type}', f'service {service_name}'])
 
-                        downstream_time = ErrorChecker.key_check_and_load('downstream', processing_time_service_entry, 'request_type', request_type)
-                        ErrorChecker.value_check('downstream_time', downstream_time, operator.ge, 0, [f'request_type {request_type}', f'service {service_name}'])
+                            downstream_time = ErrorChecker.key_check_and_load('downstream', processing_time_service_entry, 'request_type', request_type)
+                            ErrorChecker.value_check('downstream_time', downstream_time, operator.ge, 0, [f'request_type {request_type}', f'service {service_name}'])
 
-                        processing_times[service_name] = { 'upstream' : pd.Timedelta(upstream_time, unit = processing_times_unit), \
-                                                           'downstream' : pd.Timedelta(downstream_time, unit = processing_times_unit) }
+                            processing_times[service_name] = { 'upstream' : pd.Timedelta(upstream_time, unit = processing_times_unit), \
+                                                               'downstream' : pd.Timedelta(downstream_time, unit = processing_times_unit) }
 
-                    timeout_raw = ErrorChecker.key_check_and_load('timeout', request_info, 'request_type', request_type)
-                    timeout_val = ErrorChecker.key_check_and_load('value', timeout_raw, 'request_type', request_type)
-                    timeout_unit = ErrorChecker.key_check_and_load('unit', timeout_raw, 'request_type', request_type)
-                    timeout = pd.Timedelta(timeout_val, unit = timeout_unit)
-                    ErrorChecker.value_check('timeout', timeout, operator.ge, pd.Timedelta(0, unit = timeout_unit), [f'request_type {request_type}'])
+                        timeout_raw = ErrorChecker.key_check_and_load('timeout', request_info, 'request_type', request_type)
+                        timeout_val = ErrorChecker.key_check_and_load('value', timeout_raw, 'request_type', request_type)
+                        timeout_unit = ErrorChecker.key_check_and_load('unit', timeout_raw, 'request_type', request_type)
+                        timeout = pd.Timedelta(timeout_val, unit = timeout_unit)
+                        ErrorChecker.value_check('timeout', timeout, operator.ge, pd.Timedelta(0, unit = timeout_unit), [f'request_type {request_type}'])
 
-                    request_size_raw = ErrorChecker.key_check_and_load('request_size', request_info, 'request_type', request_type)
-                    request_size_value = ErrorChecker.key_check_and_load('value', request_size_raw, 'request_type', request_type)
-                    request_size_unit = ErrorChecker.key_check_and_load('unit', request_size_raw, 'request_type', request_type)
-                    request_size = Size(request_size_value, request_size_unit)
+                        request_size_raw = ErrorChecker.key_check_and_load('request_size', request_info, 'request_type', request_type)
+                        request_size_value = ErrorChecker.key_check_and_load('value', request_size_raw, 'request_type', request_type)
+                        request_size_unit = ErrorChecker.key_check_and_load('unit', request_size_raw, 'request_type', request_type)
+                        request_size = Size(request_size_value, request_size_unit)
 
-                    response_size_raw = ErrorChecker.key_check_and_load('response_size', request_info, 'request_type', request_type)
-                    response_size_value = ErrorChecker.key_check_and_load('value', response_size_raw, 'request_type', request_type)
-                    response_size_unit = ErrorChecker.key_check_and_load('unit', response_size_raw, 'request_type', request_type)
-                    response_size = Size(response_size_value, response_size_unit)
+                        response_size_raw = ErrorChecker.key_check_and_load('response_size', request_info, 'request_type', request_type)
+                        response_size_value = ErrorChecker.key_check_and_load('value', response_size_raw, 'request_type', request_type)
+                        response_size_unit = ErrorChecker.key_check_and_load('unit', response_size_raw, 'request_type', request_type)
+                        response_size = Size(response_size_value, response_size_unit)
 
-                    request_operation_type = ErrorChecker.key_check_and_load('operation_type', request_info, 'request_type', request_type)
+                        request_operation_type = ErrorChecker.key_check_and_load('operation_type', request_info, 'request_type', request_type)
 
-                    request_processing_requirements = ErrorChecker.key_check_and_load('processing_requirements', request_info, 'request_type', request_type)
+                        request_processing_requirements = ErrorChecker.key_check_and_load('processing_requirements', request_info, 'request_type', request_type)
 
-                    req_proc_info = RequestProcessingInfo(request_type, entry_service, processing_times, timeout,
-                                                          request_size, response_size, request_operation_type, request_processing_requirements)
-                    self.reqs_processing_infos[request_type] = req_proc_info
+                        req_proc_info = RequestProcessingInfo(request_type, entry_service, processing_times, timeout,
+                                                              request_size, response_size, request_operation_type, request_processing_requirements)
+                        self.reqs_processing_infos[request_type] = req_proc_info
 
-                ##############################################################################
-                # Parsing the configuration of services and creating the Service objects
-                ##############################################################################
-                services_confs = ErrorChecker.key_check_and_load('services', config)
-                for service_config in services_confs:
+                    ##############################################################################
+                    # Parsing the configuration of services and creating the Service objects
+                    ##############################################################################
+                    services_confs = ErrorChecker.key_check_and_load('services', config)
+                    for service_config in services_confs:
 
-                    service_name = ErrorChecker.key_check_and_load('name', service_config, 'service')
+                        service_name = ErrorChecker.key_check_and_load('name', service_config, 'service')
 
-                    buffers_config = ErrorChecker.key_check_and_load('buffers_config', service_config, 'service', service_name)
-                    system_requirements = ResourceRequirements.from_dict(ErrorChecker.key_check_and_load('system_requirements', service_config, 'service', service_name))
-                    self.service_instance_requirements[service_name] = system_requirements
+                        buffers_config = ErrorChecker.key_check_and_load('buffers_config', service_config, 'service', service_name)
+                        system_requirements = ResourceRequirements.from_dict(ErrorChecker.key_check_and_load('system_requirements', service_config, 'service', service_name))
+                        self.service_instance_requirements[service_name] = system_requirements
 
-                    self.service_confs.append(ServiceConfiguration(service_name,
-                                                                   system_requirements,
-                                                                   buffers_config,
-                                                                   averaging_interval,
-                                                                   sampling_interval))
+                        self.service_confs.append(ServiceConfiguration(service_name,
+                                                                       system_requirements,
+                                                                       buffers_config,
+                                                                       averaging_interval,
+                                                                       sampling_interval))
 
-                    # Adding the links of the given service to the structure.
-                    next_services = ErrorChecker.key_check_and_load('next', service_config, 'service', service_name, default = list())
-                    self.structure.add_next_services(service_name, next_services)
-                    prev_services = ErrorChecker.key_check_and_load('prev', service_config, 'service', service_name, default = list())
-                    self.structure.add_prev_services(service_name, prev_services)
+                        # Adding the links of the given service to the structure.
+                        next_services = ErrorChecker.key_check_and_load('next', service_config, 'service', service_name, default = list())
+                        self.structure.add_next_services(service_name, next_services)
+                        prev_services = ErrorChecker.key_check_and_load('prev', service_config, 'service', service_name, default = list())
+                        self.structure.add_prev_services(service_name, prev_services)
+
+                except json.JSONDecodeError:
+                    raise ValueError(f'An invalid JSON when parsing for {self.__class__.__name__}')
 
     def get_next_services(self, service_name : str) -> list:
 

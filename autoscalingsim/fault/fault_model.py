@@ -44,22 +44,27 @@ class FaultModel:
                 raise ValueError(f'No configuration file found under the path {config_file} for {self.__class__.__name__}')
 
             with open(config_file) as f:
-                config = json.load(f)
 
-                node_failures = ErrorChecker.key_check_and_load('node_groups_failures', config)
-                for node_failure_conf in node_failures:
-                    failure_class = NodeGroupFailure.get(ErrorChecker.key_check_and_load('type', node_failure_conf))
-                    prob = ErrorChecker.key_check_and_load('probability', node_failure_conf)
-                    if np.random.binomial(1, prob) == 1: # failure will happen
-                        self._add_failure(simulation_conf['starting_time'], simulation_conf['simulation_step'], steps_count, failure_class, node_failure_conf)
+                try:
+                    config = json.load(f)
+
+                    node_failures = ErrorChecker.key_check_and_load('node_groups_failures', config)
+                    for node_failure_conf in node_failures:
+                        failure_class = NodeGroupFailure.get(ErrorChecker.key_check_and_load('type', node_failure_conf))
+                        prob = ErrorChecker.key_check_and_load('probability', node_failure_conf)
+                        if np.random.binomial(1, prob) == 1: # failure will happen
+                            self._add_failure(simulation_conf['starting_time'], simulation_conf['simulation_step'], steps_count, failure_class, node_failure_conf)
 
 
-                service_failures = ErrorChecker.key_check_and_load('services_failures', config)
-                for service_failure_conf in service_failures:
-                    failure_class = ServiceFailure.get(ErrorChecker.key_check_and_load('type', service_failure_conf))
-                    prob = ErrorChecker.key_check_and_load('probability', service_failure_conf)
-                    if np.random.binomial(1, prob) == 1: # failure will happen
-                        self._add_failure(simulation_conf['starting_time'], simulation_conf['simulation_step'], steps_count, failure_class, service_failure_conf)
+                    service_failures = ErrorChecker.key_check_and_load('services_failures', config)
+                    for service_failure_conf in service_failures:
+                        failure_class = ServiceFailure.get(ErrorChecker.key_check_and_load('type', service_failure_conf))
+                        prob = ErrorChecker.key_check_and_load('probability', service_failure_conf)
+                        if np.random.binomial(1, prob) == 1: # failure will happen
+                            self._add_failure(simulation_conf['starting_time'], simulation_conf['simulation_step'], steps_count, failure_class, service_failure_conf)
+
+                except json.JSONDecodeError:
+                    raise ValueError(f'An invalid JSON when parsing for {self.__class__.__name__}')
 
     def get_failure_state_deltas(self, cur_timestamp : pd.Timestamp):
 

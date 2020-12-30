@@ -18,15 +18,20 @@ class LoadModel(MetricSource):
             raise ValueError('Configuration file not provided for the WorkloadModel.')
         else:
             with open(filename) as f:
-                config = json.load(f)
-                load_kind = ErrorChecker.key_check_and_load('load_kind', config)
-                regions_configs = ErrorChecker.key_check_and_load('regions_configs', config)
 
-                for region_config in regions_configs:
-                    region_name = ErrorChecker.key_check_and_load('region_name', region_config)
-                    pattern = ErrorChecker.key_check_and_load('pattern', region_config, 'region_name', region_name)
-                    load_configs = ErrorChecker.key_check_and_load('load_configs', region_config, 'region_name', region_name)
-                    self.region_models[region_name] = RegionalLoadModel.get(load_kind)(region_name, pattern, load_configs, simulation_step, reqs_processing_infos)
+                try:
+                    config = json.load(f)
+                    load_kind = ErrorChecker.key_check_and_load('load_kind', config)
+                    regions_configs = ErrorChecker.key_check_and_load('regions_configs', config)
+
+                    for region_config in regions_configs:
+                        region_name = ErrorChecker.key_check_and_load('region_name', region_config)
+                        pattern = ErrorChecker.key_check_and_load('pattern', region_config, 'region_name', region_name)
+                        load_configs = ErrorChecker.key_check_and_load('load_configs', region_config, 'region_name', region_name)
+                        self.region_models[region_name] = RegionalLoadModel.get(load_kind)(region_name, pattern, load_configs, simulation_step, reqs_processing_infos)
+
+                except json.JSONDecodeError:
+                    raise ValueError(f'An invalid JSON when parsing for {self.__class__.__name__}')
 
     def generate_requests(self, timestamp : pd.Timestamp):
 

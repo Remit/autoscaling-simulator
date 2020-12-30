@@ -36,39 +36,44 @@ class DeploymentModel:
                 raise ValueError(f'No configuration file found in {config_file}')
 
             with open(config_file) as f:
-                config = json.load(f)
 
-                regions_raw = []
-                for deployment_config in config:
+                try:
+                    config = json.load(f)
 
-                    service_name = ErrorChecker.key_check_and_load('service_name', deployment_config)
-                    deployment = ErrorChecker.key_check_and_load('deployment', deployment_config, 'service', service_name)
-                    init_service_aspects_regionalized = {}
-                    node_infos_regionalized = {}
-                    node_counts_regionalized = {}
+                    regions_raw = []
+                    for deployment_config in config:
 
-                    for region_name, region_deployment_conf in deployment.items():
+                        service_name = ErrorChecker.key_check_and_load('service_name', deployment_config)
+                        deployment = ErrorChecker.key_check_and_load('deployment', deployment_config, 'service', service_name)
+                        init_service_aspects_regionalized = {}
+                        node_infos_regionalized = {}
+                        node_counts_regionalized = {}
 
-                        init_service_aspects_regionalized[region_name] = ErrorChecker.key_check_and_load('init_aspects', region_deployment_conf, 'service', service_name)
+                        for region_name, region_deployment_conf in deployment.items():
 
-                        platform_info = ErrorChecker.key_check_and_load('platform', region_deployment_conf, 'service', service_name)
-                        provider = ErrorChecker.key_check_and_load('provider', platform_info, 'service', service_name)
-                        node_type = ErrorChecker.key_check_and_load('node_type', platform_info, 'service', service_name)
-                        node_info = providers_configs[provider].get_node_info(node_type)
-                        node_infos_regionalized[region_name] = node_info
+                            init_service_aspects_regionalized[region_name] = ErrorChecker.key_check_and_load('init_aspects', region_deployment_conf, 'service', service_name)
 
-                        node_count = ErrorChecker.key_check_and_load('count', platform_info, 'service', service_name)
-                        ErrorChecker.value_check('node_count', node_count, operator.gt, 0, [f'service {service_name}'])
-                        node_counts_regionalized[region_name] = node_count
+                            platform_info = ErrorChecker.key_check_and_load('platform', region_deployment_conf, 'service', service_name)
+                            provider = ErrorChecker.key_check_and_load('provider', platform_info, 'service', service_name)
+                            node_type = ErrorChecker.key_check_and_load('node_type', platform_info, 'service', service_name)
+                            node_info = providers_configs[provider].get_node_info(node_type)
+                            node_infos_regionalized[region_name] = node_info
 
-                    regions_raw.append(region_name)
-                    self.service_deployments_confs[service_name] = ServiceDeploymentConfiguration(service_name,
-                                                                                                  init_service_aspects_regionalized,
-                                                                                                  node_infos_regionalized,
-                                                                                                  node_counts_regionalized,
-                                                                                                  service_instance_requirements[service_name])
+                            node_count = ErrorChecker.key_check_and_load('count', platform_info, 'service', service_name)
+                            ErrorChecker.value_check('node_count', node_count, operator.gt, 0, [f'service {service_name}'])
+                            node_counts_regionalized[region_name] = node_count
 
-                self.regions = list(set(regions_raw))
+                        regions_raw.append(region_name)
+                        self.service_deployments_confs[service_name] = ServiceDeploymentConfiguration(service_name,
+                                                                                                      init_service_aspects_regionalized,
+                                                                                                      node_infos_regionalized,
+                                                                                                      node_counts_regionalized,
+                                                                                                      service_instance_requirements[service_name])
+
+                    self.regions = list(set(regions_raw))
+
+                except json.JSONDecodeError:
+                    raise ValueError(f'An invalid JSON when parsing for {self.__class__.__name__}')
 
     def to_init_platform_state_delta(self):
 
