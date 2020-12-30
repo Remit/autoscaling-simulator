@@ -1,1 +1,1 @@
-from . import three_layers_neural_net
+from . import neural_net

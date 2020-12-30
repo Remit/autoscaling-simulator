@@ -5,8 +5,8 @@ import numpy as np
 from autoscalingsim.scaling.policiesbuilder.metric.scaling_aspect_calculation.calculators.learning_based.model.model import Model
 from autoscalingsim.utils.error_check import ErrorChecker
 
-@Model.register('three_layers_neural_net')
-class ThreeLayersNeuralNet(Model):
+@Model.register('neural_net')
+class NeuralNet(Model):
 
     """
 
@@ -63,22 +63,38 @@ class ThreeLayersNeuralNet(Model):
     }
     """
 
+    _LAYERS = {
+        'Dense': { 'model': tf.keras.layers.Dense, 'mandatory_params_names': ['units'], 'default_params': { 'activation' : 'relu' } },
+        'Dropout': { 'model': tf.keras.layers.Dropout, 'mandatory_params_names': ['rate'], 'default_params': {} }
+    }
+
     def __init__(self, config):
 
         super().__init__(config)
 
         model_params = ErrorChecker.key_check_and_load('model_params', config, default = dict())
+        learning_params = ErrorChecker.key_check_and_load('learning', model_params, default = {'loss' : 'mean_squared_error', 'optimizer' : 'adam'})
+        default_layers_params = ErrorChecker.key_check_and_load('default_layers_params', model_params, default = dict())
 
-        loss_function = ErrorChecker.key_check_and_load('loss_function', model_params, self.__class__.__name__, default = 'mean_squared_error')
-        optimizer = ErrorChecker.key_check_and_load('optimizer', model_params, self.__class__.__name__, default = 'adam')
+        self._model = tf.keras.models.Sequential()
+        model_layers = ErrorChecker.key_check_and_load('layers', config, default = list())
+        for layer_conf in model_layers:
+            layer_type = ErrorChecker.key_check_and_load('type', layer_conf)
+            layer_template = self.__class__._LAYERS.get(layer_type, None) # TODO: class?
+            if layer_template is None:
+                raise ValueError(f'Undefined layer {layer_type}')
 
-        self._model = tf.keras.models.Sequential([
-            tf.keras.layers.Dense(10, activation = 'relu'),
-            tf.keras.layers.Dense(5, activation = 'relu'),
-            tf.keras.layers.Dense(1)
-        ])
+            mandatory_layer_params = dict()
+            for mandatory_param_name in layer_template['mandatory_params_names']:
+                mandatory_param_value = ErrorChecker.key_check_and_load(mandatory_param_name, layer_conf)
+                mandatory_layer_params[mandatory_param_name] = mandatory_param_value
 
-        self._model.compile(loss = loss_function, optimizer = optimizer)
+            optional_params = ErrorChecker.key_check_and_load('params', layer_conf, default = default_layers_params.get(layer_type, layer_template['default_params']))
+            layer_params = {**mandatory_layer_params, **optional_params}
+
+            self._model.add(layer_template['model'](**layer_params))
+
+        self._model.compile(**learning_params)
 
     def _internal_predict(self, model_input):
 
