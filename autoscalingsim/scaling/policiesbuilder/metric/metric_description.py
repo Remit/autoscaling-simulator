@@ -5,77 +5,98 @@ from autoscalingsim.utils.metric_converter import MetricConverter
 from autoscalingsim.utils.error_check import ErrorChecker
 from autoscalingsim.utils.metric_units_registry import MetricUnitsRegistry
 
-from .scalingmetric import ScalingMetricRegionalized
+from .scalingmetric import ScalingMetricGroup, ScalingMetric
 from .accessor_other_service_metric.accessor import AccessorToOtherService
 
-class MetricSettingsPerRegion:
+class MetricGroupDescription:
 
-    def __init__(self, metric_converter : MetricConverter, metric_unit_type, values_filter_conf : dict,
-                 values_aggregator_conf : dict, desired_aspect_value_calculator_conf : dict, correlator_conf : dict, stabilizer_conf : dict,
-                 forecaster_conf : dict, priority : int, max_limit : float, min_limit : float):
+    """
+    "metrics_groups": [
+        {
+            "name": "group1",
+            "priority": 1,
+            "initial_max_limit": 15,
+            "initial_min_limit": 1,
+            "desired_aspect_value_calculator": { ... },
+            "stabilizer_conf": { ... },
+            "metrics": [
+                {
+                    "metric_source_name": "response_stats",
+                    "metric_name": "buffer_time",
+                    "submetric_name": "*",
+                    "metric_type": "duration",
+                    "metric_params": {
+                      "duration_unit": "ms"
+                    },
+                    "values_filter_conf": { ... },
+                    "values_aggregator_conf": { ... },
+                    "forecaster_conf": { ... }
+                }
+            ]
+            "default_metric_config" : {
+                "values_filter_conf": { ... },
+                "values_aggregator_conf": { ... },
+                "forecaster_conf": { ... }
+            }
+        }, { ... }
+    ]
+    """
 
-        self.metric_converter = metric_converter
-        self.metric_unit_type = metric_unit_type
-        self.values_filter_conf = values_filter_conf
-        self.values_aggregator_conf = values_aggregator_conf
-        self.desired_aspect_value_calculator_conf = desired_aspect_value_calculator_conf
-        self.correlator_conf = correlator_conf
-        self.stabilizer_conf = stabilizer_conf
-        self.forecaster_conf = forecaster_conf
-        self.priority = priority
-        self.max_limit = max_limit
-        self.min_limit = min_limit
+    def __init__(self, service_name : str, aspect_name : str, metrics_description_conf : dict):
 
-class MetricDescription:
-
-    """ Stores all the necessary information to create a scaling metric """
-
-    def __init__(self, service_name : str, aspect_name : str, metric_description_conf : dict):
-
-        self.service_name = service_name
         self.aspect_name = aspect_name
 
         service_key = 'service'
-        self.metric_source_name = ErrorChecker.key_check_and_load('metric_source_name', metric_description_conf, service_key, service_name)
-        self.metric_name = ErrorChecker.key_check_and_load('metric_name', metric_description_conf, service_key, service_name)
-        self.submetric_name = ErrorChecker.key_check_and_load('submetric_name', metric_description_conf, service_key, service_name, default = '')
-        metric_type = ErrorChecker.key_check_and_load('metric_type', metric_description_conf, service_key, service_name, default = 'noop')
-        metric_params = ErrorChecker.key_check_and_load('metric_params', metric_description_conf, service_key, service_name, default = {})
+        self.name = ErrorChecker.key_check_and_load('name', metrics_description_conf, service_key, service_name)
+        self.priority = ErrorChecker.key_check_and_load('priority', metrics_description_conf, service_key, service_name)
+        self.initial_max_limit = ErrorChecker.key_check_and_load('initial_max_limit', metrics_description_conf, service_key, service_name)
+        self.initial_min_limit = ErrorChecker.key_check_and_load('initial_min_limit', metrics_description_conf, service_key, service_name)
+        self.desired_aspect_value_calculator_conf = ErrorChecker.key_check_and_load('desired_aspect_value_calculator_conf', metrics_description_conf, service_key, service_name)
+        self.stabilizer_conf = ErrorChecker.key_check_and_load('stabilizer_conf', metrics_description_conf, service_key, service_name)
+
+        self._metrics_descriptions = list()
+        metrics_descriptions = ErrorChecker.key_check_and_load('metrics', metrics_description_conf, service_key, service_name, default = list())
+        default_metric_config = ErrorChecker.key_check_and_load('default_metric_config', metrics_description_conf, service_key, service_name, default = dict())
+        for metric_description_raw in metrics_descriptions:
+            self._metrics_descriptions.append(MetricDescription(service_name, metric_description_raw, default_metric_config))
+
+    def to_metric_group(self, service_name : str, region_name : str, state_reader : StateReader):
+
+        metrics = [ metric_description.to_metric(service_name, region_name, state_reader) for metric_description in self._metrics_descriptions ]
+        return ScalingMetricGroup(service_name, self.aspect_name, self.name, self.priority, region_name, state_reader, self.initial_min_limit, self.initial_max_limit,
+                                  self.desired_aspect_value_calculator_conf, self.stabilizer_conf, metrics)
+
+class MetricDescription:
+
+    SERVICE_NAME_WILDCARD = 'default'
+    SERVICE_SOURCE_WILDCARD = 'Service'
+
+    """ Stores all the necessary information to create a scaling metric """
+
+    def __init__(self, service_name : str, metric_description_conf : dict, default_metric_config : dict):
+
+        self.service_name = service_name
+        self.metric_source_name = ErrorChecker.key_check_and_load('metric_source_name', metric_description_conf)
+
+        self.metric_name = ErrorChecker.key_check_and_load('metric_name', metric_description_conf)
+        self.submetric_name = ErrorChecker.key_check_and_load('submetric_name', metric_description_conf, default = '')
+        metric_type = ErrorChecker.key_check_and_load('metric_type', metric_description_conf, default = 'noop')
+        metric_params = ErrorChecker.key_check_and_load('metric_params', metric_description_conf, default = {})
         self.metric_converter = MetricConverter.get(metric_type)(metric_params)
         self.metric_unit_type = MetricUnitsRegistry.get(metric_type)
-        related_service_to_consider = ErrorChecker.key_check_and_load('related_service_to_consider', metric_description_conf, service_key, service_name, default = '')
+        related_service_to_consider = ErrorChecker.key_check_and_load('related_service_to_consider', metric_description_conf, default = '')
         self.accessor_to_related_service_class = AccessorToOtherService.get(related_service_to_consider) if len(related_service_to_consider) > 0 else None
 
-        self.values_filter_conf = ErrorChecker.key_check_and_load('values_filter_conf', metric_description_conf, service_key, service_name)
-        self.values_aggregator_conf = ErrorChecker.key_check_and_load('values_aggregator_conf', metric_description_conf, service_key, service_name)
-        self.stabilizer_conf = ErrorChecker.key_check_and_load('stabilizer_conf', metric_description_conf, service_key, service_name)
-        self.forecaster_conf = ErrorChecker.key_check_and_load('forecaster_conf', metric_description_conf, service_key, service_name)
-        self.desired_aspect_value_calculator_conf = ErrorChecker.key_check_and_load('desired_aspect_value_calculator_conf', metric_description_conf, service_key, service_name)
-        self.correlator_conf = ErrorChecker.key_check_and_load('correlator_conf', metric_description_conf, service_key, service_name, default = dict())
+        self.values_filter_conf = ErrorChecker.key_check_and_load('values_filter_conf', metric_description_conf, default = default_metric_config.get('values_filter_conf', dict()))
+        self.values_aggregator_conf = ErrorChecker.key_check_and_load('values_aggregator_conf', metric_description_conf, default = default_metric_config.get('values_aggregator_conf', dict()))
+        self.forecaster_conf = ErrorChecker.key_check_and_load('forecaster_conf', metric_description_conf, default = default_metric_config.get('forecaster_conf', dict()))
+        self.correlator_conf = ErrorChecker.key_check_and_load('correlator_conf', metric_description_conf, default = default_metric_config.get('correlator_conf', dict()))
 
-        self.priority = ErrorChecker.key_check_and_load('priority', metric_description_conf, service_key, service_name)
-        self.initial_max_limit = ErrorChecker.key_check_and_load('initial_max_limit', metric_description_conf, service_key, service_name)
-        self.initial_min_limit = ErrorChecker.key_check_and_load('initial_min_limit', metric_description_conf, service_key, service_name)
+    def to_metric(self, service_name : str, region_name : str, state_reader : StateReader):
 
-        self.state_reader = None
+        init_service_name = service_name if self.service_name == self.__class__.SERVICE_NAME_WILDCARD else self.service_name
+        init_metric_source_name = service_name if self.metric_source_name == self.__class__.SERVICE_SOURCE_WILDCARD else self.metric_source_name
 
-    def to_regionalized_metric(self, regions : list, service_name : str = None,
-                               metric_source_name : str = None, state_reader : StateReader = None):
-
-        if service_name is None:
-            service_name = self.service_name
-
-        if metric_source_name is None:
-            metric_source_name = self.metric_source_name
-
-        if state_reader is None:
-            state_reader = self.state_reader
-
-        per_region_settings = MetricSettingsPerRegion( self.metric_converter, self.metric_unit_type, self.values_filter_conf,
-                                                       self.values_aggregator_conf, self.desired_aspect_value_calculator_conf,
-                                                       self.correlator_conf, self.stabilizer_conf, self.forecaster_conf,
-                                                       self.priority, self.initial_max_limit, self.initial_min_limit )
-
-        return ScalingMetricRegionalized(regions, service_name, self.aspect_name,
-                                         metric_source_name, self.metric_name, self.submetric_name,
-                                         per_region_settings, state_reader, self.accessor_to_related_service_class)
+        if init_service_name == service_name:
+            return ScalingMetric(init_service_name, region_name, init_metric_source_name, self.metric_name, self.submetric_name, state_reader, self.accessor_to_related_service_class,
+                                 self.metric_converter, self.metric_unit_type, self.values_filter_conf, self.values_aggregator_conf, self.forecaster_conf, self.correlator_conf)

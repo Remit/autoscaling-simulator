@@ -36,9 +36,9 @@ class StateReader:
 
         return { source_name : self.get_metric_value(source_name, region_name, metric_name, submetric_name) for source_name in source_names }
 
-    def get_resource_requirements(self, source_name : str, region_name : str):
+    def get_resource_requirements(self, source_name : str):
 
-        return self.sources[source_name].get_resource_requirements(region_name)
+        return self.sources[source_name].get_resource_requirements()
 
     def get_placement_parameter(self, source_name : str, region_name : str, parameter : str):
 

@@ -11,6 +11,9 @@ class Rule(ABC):
 
         target_value_raw = ErrorChecker.key_check_and_load('target_value', config)
         metric_unit_type = ErrorChecker.key_check_and_load('metric_unit_type', config)
+        if metric_unit_type is None:
+            raise ValueError(f'{self.__class__}-based calculators can only be used on metric groups that have at least one metric in them!')
+
         self._populate_target_value(target_value_raw, metric_unit_type)
 
     def _populate_target_value(self, target_value_raw : dict, metric_unit_type):

@@ -1,6 +1,11 @@
+import collections
 import pandas as pd
 
 from abc import ABC, abstractmethod
+
+from autoscalingsim.scaling.state_reader import StateReader
+
+from .scaled_service_settings import ScaledServiceScalingSettings
 
 class ScalingEffectAggregationRule(ABC):
 
@@ -23,15 +28,24 @@ class ScalingEffectAggregationRule(ABC):
 
     _Registry = {}
 
-    def __init__(self, metrics_by_priority : dict, scaled_aspect_name : str):
+    def __init__(self, service_name : str, regions : list, scaling_setting_for_service : ScaledServiceScalingSettings, state_reader : StateReader):
 
-        self._metrics_by_priority = metrics_by_priority
-        self._scaled_aspect_name = scaled_aspect_name
+        self.service_name = service_name
+        self.state_reader = state_reader
+
+        self._metric_groups_by_region = dict()
+        for region in regions:
+            metric_groups_by_priority = dict()
+            for metric_group_description in scaling_setting_for_service.metric_groups_descriptions:
+                metric_groups_by_priority[metric_group_description.priority] = metric_group_description.to_metric_group(service_name, region, state_reader)
+                self._metric_groups_by_region[region] = collections.OrderedDict(sorted(metric_groups_by_priority.items()))
+
+        self._scaled_aspect_name = scaling_setting_for_service.scaled_aspect_name
 
     @abstractmethod
     def __call__(self, cur_timestamp : pd.Timestamp):
 
-        pass
+        pass        
 
     @classmethod
     def register(cls, name : str):
@@ -46,7 +60,7 @@ class ScalingEffectAggregationRule(ABC):
     def get(cls, name : str):
 
         if not name in cls._Registry:
-            raise ValueError(f'An attempt to use a non-existent aggregation rule {name}')
+            raise ValueError(f'An attempt to use a non-existent {cls.__name__} {name}')
 
         return cls._Registry[name]
 

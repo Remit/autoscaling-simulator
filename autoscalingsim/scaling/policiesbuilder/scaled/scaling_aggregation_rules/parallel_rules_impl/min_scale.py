@@ -4,6 +4,6 @@ from autoscalingsim.scaling.policiesbuilder.scaled.scaling_aggregation_rules.par
 @ScalingEffectAggregationRule.register('minScale')
 class MinScalingEffectAggregationRule(ParallelScalingEffectAggregationRule):
 
-    def __init__(self, metrics_by_priority : dict, scaled_aspect_name : str):
+    def __init__(self, service_name : str, regions : list, scaling_setting_for_service : 'ScaledServiceScalingSettings', state_reader : 'StateReader'):
 
-        super().__init__(metrics_by_priority, scaled_aspect_name, 'min')
+        super().__init__(service_name, regions, scaling_setting_for_service, state_reader, 'min')

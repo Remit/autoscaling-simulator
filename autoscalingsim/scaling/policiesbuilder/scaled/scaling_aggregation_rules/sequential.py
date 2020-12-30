@@ -7,10 +7,10 @@ from autoscalingsim.scaling.policiesbuilder.scaled.scaling_aggregation import Sc
 @ScalingEffectAggregationRule.register('seqScale')
 class SequentialScalingEffectAggregationRule(ScalingEffectAggregationRule):
 
-    def __init__(self, metrics_by_priority : dict, scaled_aspect_name : str,
+    def __init__(self, service_name : str, regions : list, scaling_setting_for_service : 'ScaledServiceScalingSettings', state_reader : 'StateReader',
                  expected_deviation_ratio : float = 0.25):
 
-        super().__init__(metrics_by_priority, scaled_aspect_name)
+        super().__init__(service_name, regions, scaling_setting_for_service, state_reader)
 
         self._expected_deviation_ratio = expected_deviation_ratio
 

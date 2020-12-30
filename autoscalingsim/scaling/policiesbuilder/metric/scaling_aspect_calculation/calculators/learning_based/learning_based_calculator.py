@@ -31,9 +31,14 @@ class LearningBasedCalculator(DesiredAspectValueCalculator):
         super().__init__(config)
 
         fallback_calculator_config = ErrorChecker.key_check_and_load('fallback_calculator', config,
-                                                                     default = {'category': 'rule', 'config': { 'name': 'ratio', 'target_value': 0.05 }})
+                                                                     default = {'category': 'rule',
+                                                                                'config': { 'name': 'ratio',
+                                                                                            'target_value': 0.05 }})
         fallback_calculator_category = ErrorChecker.key_check_and_load('category', fallback_calculator_config)
-        self.fallback_calculator = DesiredAspectValueCalculator.get(fallback_calculator_category)(ErrorChecker.key_check_and_load('config', fallback_calculator_config))
+        fallback_calculator_params = ErrorChecker.key_check_and_load('config', fallback_calculator_config)
+        fallback_calculator_params['metric_unit_type'] = ErrorChecker.key_check_and_load('metric_unit_type', config, default = None)
+
+        self.fallback_calculator = DesiredAspectValueCalculator.get(fallback_calculator_category)(fallback_calculator_params)
 
         model_quality_metric_config = ErrorChecker.key_check_and_load('model_quality_metric', config, default = dict())
         model_quality_metric_name = ErrorChecker.key_check_and_load('name', model_quality_metric_config, default = 'r2_score')

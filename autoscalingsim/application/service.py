@@ -43,25 +43,7 @@ class Service(MetricSource):
                  averaging_interval : pd.Timedelta,
                  sampling_interval : pd.Timedelta):
 
-        # Initializing scaling-related functionality
-        metrics_by_priority = {}
-        for metric_description in scaling_setting_for_service.metrics_descriptions:
-
-            m_service_name = metric_description.service_name
-            m_source_name = metric_description.metric_source_name
-
-            if m_service_name == self.__class__.SERVICE_NAME_WILDCARD:
-                m_service_name = service_name
-
-            if m_source_name == self.__class__.SERVICE_SOURCE_WILDCARD:
-                m_source_name = service_name
-
-            if m_service_name == service_name:
-                metrics_by_priority[metric_description.priority] = metric_description.to_regionalized_metric(service_regions, m_service_name, m_source_name, state_reader)
-
-        self.metrics_by_priority = collections.OrderedDict(sorted(metrics_by_priority.items()))
-        self.scaling_effect_aggregation_rule = ScalingEffectAggregationRule.get(scaling_setting_for_service.scaling_effect_aggregation_rule_name)(self.metrics_by_priority,
-                                                                                                                                                  scaling_setting_for_service.scaled_aspect_name)
+        self.scaling_effect_aggregation_rule = ScalingEffectAggregationRule.get(scaling_setting_for_service.scaling_effect_aggregation_rule_name)(service_name, service_regions, scaling_setting_for_service, state_reader)
 
         self.state = ServiceStateRegionalized(service_name,
                                               init_timestamp,
@@ -100,9 +82,9 @@ class Service(MetricSource):
 
         return self.state.get_metric_value(region_name, metric_name)
 
-    def get_resource_requirements(self, region_name : str):
+    def get_resource_requirements(self):
 
-        return self.state.get_resource_requirements(region_name)
+        return self.state.get_resource_requirements()
 
     def get_placement_parameter(self, region_name : str, parameter : str):
 

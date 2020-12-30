@@ -28,8 +28,9 @@ class ServiceStateRegionalized:
                  buffers_config : dict,
                  sampling_interval : pd.Timestamp):
 
-        self.region_states = {}
+        self.region_states = dict()
         self.service_name = service_name
+        self.service_instance_resource_requirements = service_instance_resource_requirements
         for region_name in service_regions:
             self.region_states[region_name] = ServiceState(service_name,
                                                            init_timestamp,
@@ -93,11 +94,8 @@ class ServiceStateRegionalized:
 
         return { region_name : region_state.check_out_system_resources_utilization() for region_name, region_state in self.region_states.items() }
 
-    def get_resource_requirements(self, region_name : str) -> ResourceRequirements:
+    def get_resource_requirements(self) -> ResourceRequirements:
 
         """ Provides resource requirements of a single service instance """
 
-        if not region_name in self.region_states:
-            raise ValueError(f'A state for the given region name {region_name} was not found')
-
-        return self.region_states[region_name].service_instance_resource_requirements
+        return self.service_instance_resource_requirements

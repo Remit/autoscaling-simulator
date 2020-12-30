@@ -4,7 +4,7 @@ import numbers
 import collections
 import pandas as pd
 
-from .metric.metric_description import MetricDescription
+from .metric.metric_description import MetricGroupDescription
 from .scaled.scaled_service_settings import ScaledServiceScalingSettings
 
 from autoscalingsim.utils.error_check import ErrorChecker
@@ -42,10 +42,10 @@ class ScalingPolicyConfiguration:
 
                     service_name = ErrorChecker.key_check_and_load('service_name', service_config, self.__class__.__name__)
                     scaled_aspect_name = ErrorChecker.key_check_and_load('scaled_aspect_name', service_config, 'service', service_name)
-                    metric_descriptions = ErrorChecker.key_check_and_load('metrics_descriptions', service_config, 'service', service_name)
-                    metrics_descriptions = [ MetricDescription(service_name, scaled_aspect_name, md_conf) for md_conf in metric_descriptions ]
+                    metric_groups_descriptions = ErrorChecker.key_check_and_load('metrics_groups', service_config, 'service', service_name)
+                    metric_groups_descriptions = [ MetricGroupDescription(service_name, scaled_aspect_name, mgd_conf) for mgd_conf in metric_groups_descriptions ]
 
-                    self._services_scaling_config[service_name] = ScaledServiceScalingSettings(metrics_descriptions,
+                    self._services_scaling_config[service_name] = ScaledServiceScalingSettings(metric_groups_descriptions,
                                                                                                ErrorChecker.key_check_and_load('scaling_effect_aggregation_rule_name', service_config, 'service', service_name),
                                                                                                service_name, scaled_aspect_name)
 
