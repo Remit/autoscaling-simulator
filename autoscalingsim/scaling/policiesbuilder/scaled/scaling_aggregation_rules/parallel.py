@@ -2,6 +2,7 @@ import collections
 import numpy as np
 import pandas as pd
 
+from autoscalingsim.desired_state.service_group.group_of_services_reg import GroupOfServicesRegionalized
 from autoscalingsim.scaling.policiesbuilder.scaled.scaling_aggregation import ScalingEffectAggregationRule
 from autoscalingsim.desired_state.aggregators import StatesAggregator
 

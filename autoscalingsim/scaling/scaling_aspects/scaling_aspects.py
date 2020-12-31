@@ -1,5 +1,6 @@
 import numbers
 import pandas as pd
+import numpy as np
 import operator
 from abc import ABC, abstractmethod
 
@@ -102,5 +103,10 @@ class ScalingAspect(ABC):
     def is_zero(self):
 
         return self._value == 0
+
+    @property
+    def isnan(self):
+
+        return np.isnan(self._value)
 
 from .scaling_aspects_realizations import *

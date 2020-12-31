@@ -1,5 +1,6 @@
 import operator
 import pandas as pd
+import numpy as np
 from abc import ABC, abstractmethod
 
 class MetricCategory(ABC):
@@ -10,16 +11,26 @@ class MetricCategory(ABC):
 
         pass
 
+    @abstractmethod
+    def __init__(self):
+
+        pass
+
     @classmethod
     def convert_df(cls, df : pd.DataFrame):
 
         df.value = [ cls(val) for val in df.value ]
         return df
 
-    @abstractmethod
-    def to_float(self):
+    @property
+    def value(self):
 
-        pass
+        return self._value
+
+    @property
+    def isnan(self):
+
+        return np.isnan(self._value)
 
     def __add__(self, other):
 

@@ -1,3 +1,4 @@
+import collections
 import numpy as np
 import pandas as pd
 from sklearn.exceptions import NotFittedError
@@ -10,19 +11,60 @@ from .model import ScalingAspectToQualityMetricModel
 from .scaling_aspect_value_derivator import ScalingAspectValueDerivator
 from .model_quality_metric import ModelQualityMetric
 
-def compose_model_input(cur_aspect_val, current_metric_val):
+class Buffer:
 
-    if isinstance(cur_aspect_val, list) and isinstance(current_metric_val, list):
-        return np.asarray([cur_aspect_val, current_metric_val]).T
-    else:
-        return [[cur_aspect_val, current_metric_val]]
+    def __init__(self, capacity : int):
+
+        self._buffer = list()
+        self._capacity = capacity
+
+    def put(self, val):
+
+        self._buffer.append(val)
+        self._buffer = self._buffer[ -self._capacity : ]
+
+    def get_if_full(self):
+
+        if len(self._buffer) == self._capacity:
+            contents = self._buffer
+            self._buffer = list()
+            return contents
+        else:
+            return None
+
+class SetOfBuffers:
+
+    def __init__(self, capacity : int):
+
+        self._buffers = collections.defaultdict(lambda: Buffer(capacity))
+
+    def put(self, vals):
+
+        for buffer_name, val in vals.items():
+            self._buffers[buffer_name].put(val)
+
+    def get_if_full(self):
+
+        result = collections.defaultdict(list)
+        for buf_name, buffer in self._buffers.items():
+            buf_res = buffer.get_if_full()
+            if buf_res is None:
+                return None
+
+            result[buf_name] = buf_res
+
+        return result
+
+def hasnan(vals):
+
+    for val in vals.values():
+        if val.isnan:
+            return True
+
+    return False
 
 @DesiredAspectValueCalculator.register('learning')
 class LearningBasedCalculator(DesiredAspectValueCalculator):
-
-    # from sklearn.pipeline import make_pipeline
-    # from sklearn.preprocessing import StandardScaler
-    # consider pipeline reg = make_pipeline(StandardScaler(), SGDRegressor(max_iter=1000, tol=1e-3))
 
     _Registry = {}
 
@@ -43,10 +85,10 @@ class LearningBasedCalculator(DesiredAspectValueCalculator):
         self.model_quality_metric = ModelQualityMetric.get(model_quality_metric_name)
         self.model_quality_threshold = ErrorChecker.key_check_and_load('threshold', model_quality_metric_config, default = 'r2_score')
 
-        self.minibatch_size = ErrorChecker.key_check_and_load('minibatch_size', config, default = 1)
-        self.aspect_vals = list()
-        self.metric_vals = list()
-        self.performance_metric_vals = list()
+        minibatch_size = ErrorChecker.key_check_and_load('minibatch_size', config, default = 1)
+        self.aspect_vals_buffer = Buffer(minibatch_size)
+        self.performance_metric_vals_buffer = Buffer(minibatch_size)
+        self.metrics_vals_buffer = SetOfBuffers(minibatch_size)
 
         performance_metric_conf = ErrorChecker.key_check_and_load('performance_metric', config)
 
@@ -61,7 +103,7 @@ class LearningBasedCalculator(DesiredAspectValueCalculator):
         self.model = ScalingAspectToQualityMetricModel.get(ErrorChecker.key_check_and_load('name', model_config, default = 'passive_aggressive'))(model_config)
 
         optimizer_config = ErrorChecker.key_check_and_load('optimizer_config', config, default = dict())
-        self.scaling_aspect_value_derivator = ScalingAspectValueDerivator(optimizer_config, performance_metric_threshold, compose_model_input)
+        self.scaling_aspect_value_derivator = ScalingAspectValueDerivator(optimizer_config, performance_metric_threshold, self.model.input_formatter)
 
         self.state_reader = ErrorChecker.key_check_and_load('state_reader', config)
 
@@ -71,6 +113,7 @@ class LearningBasedCalculator(DesiredAspectValueCalculator):
         current_performance_metric_val = current_performance_metric_vals.mean().value
 
         result = None
+        # TODO: check below
         use_fallback = self._should_use_fallback_calculator(cur_aspect_val, current_metric_val, current_performance_metric_val)
         if use_fallback:
             result = self.fallback_calculator._compute_internal(cur_aspect_val, forecasted_metric_vals)
@@ -84,26 +127,17 @@ class LearningBasedCalculator(DesiredAspectValueCalculator):
             for forecasted_metric_val, aspect_val_prediction in unique_aspect_vals_predictions.items():
                 result.value[result.value == forecasted_metric_val] = aspect_val_prediction
 
-        # TODO: make buffer class
-        if not np.isnan(cur_aspect_val.value):
-            self.aspect_vals.append(cur_aspect_val.value)
-        if not np.isnan(current_metric_val):
-            self.metric_vals.append(current_metric_val)
-        if not np.isnan(current_performance_metric_val):
-            self.performance_metric_vals.append(current_performance_metric_val)
+        if not np.isnan(current_performance_metric_val) and not hasnan(current_metric_val) and not cur_aspect_val.isnan:
+            self.aspect_vals_buffer.put(cur_aspect_val)
+            self.performance_metric_vals_buffer.put(current_performance_metric_val)
+            self.metrics_vals_buffer.put(current_metric_val)
 
-        cur_aspect_vals_cut = self.aspect_vals[-self.minibatch_size:]
-        cur_metric_vals_cut = self.metric_vals[-self.minibatch_size:]
-        cur_performance_metric_vals_cut = self.performance_metric_vals[-self.minibatch_size:]
+        cur_aspect_vals = self.aspect_vals_buffer.get_if_full()
+        cur_performance_metric_vals = self.performance_metric_vals_buffer.get_if_full()
+        cur_metric_vals = self.metrics_vals_buffer.get_if_full()
 
-        if len(cur_aspect_vals_cut) == self.minibatch_size and len(cur_metric_vals_cut) == self.minibatch_size and len(cur_performance_metric_vals_cut) == self.minibatch_size:
-            self.aspect_vals = cur_aspect_vals_cut
-            self.metric_vals = cur_metric_vals_cut
-            self.performance_metric_vals = cur_performance_metric_vals_cut
-
-            training_batch = compose_model_input(cur_aspect_vals_cut, cur_metric_vals_cut)
-
-            self.model.fit(training_batch, cur_performance_metric_vals_cut)
+        if not cur_aspect_vals is None and not cur_performance_metric_vals is None and not cur_metric_vals is None:
+            self.model.fit(cur_aspect_vals, cur_metric_vals, cur_performance_metric_vals)
 
         return result
 
@@ -113,7 +147,7 @@ class LearningBasedCalculator(DesiredAspectValueCalculator):
             if np.isnan(current_performance_metric_val):
                 return True
 
-            predicted_performance_metric_val = self.model.predict(compose_model_input(cur_aspect_val.value, current_metric_val))
+            predicted_performance_metric_val = self.model.predict(cur_aspect_val, current_metric_val)
             if self.model_quality_metric([current_performance_metric_val], [predicted_performance_metric_val]) > self.model_quality_threshold:
                 return True
             else:

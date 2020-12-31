@@ -13,8 +13,6 @@ class Duration(MetricCategory):
 
         return cls(val, unit = unit)
 
-    def to_float(self): return self._value.microseconds / 1000
-
     def __init__(self, value : int = 0, unit : str = 'ms'):
 
-        self._value = pd.Timedelta(value, unit = unit)
+        self._value = pd.Timedelta(value, unit = unit).microseconds / 1000

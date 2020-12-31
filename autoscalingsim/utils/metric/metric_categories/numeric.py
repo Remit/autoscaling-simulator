@@ -10,8 +10,6 @@ class Numeric(MetricCategory):
 
         return cls(val)
 
-    def to_float(self): return self._value
-
     def __init__(self, value : float = 0.0):
 
         self._value = value

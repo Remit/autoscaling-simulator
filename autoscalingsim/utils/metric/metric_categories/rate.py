@@ -23,8 +23,6 @@ class Rate(MetricCategory):
 
         return cls(val, time_interval = pd.Timedelta(time_value, unit = time_unit))
 
-    def to_float(self): return self._value
-
     def __init__(self, value : float = 0, time_interval : pd.Timedelta = pd.Timedelta(1, 's')):
 
         self._value = value / ( time_interval.microseconds / 1_000_000 ) # per second

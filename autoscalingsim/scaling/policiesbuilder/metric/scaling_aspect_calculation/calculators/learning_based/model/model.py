@@ -13,11 +13,21 @@ class ScalingAspectToQualityMetricModel(ABC):
 
         self.kind = ErrorChecker.key_check_and_load('kind', config, default = 'offline')
 
-    def predict(self, model_input):
+    def predict(self, cur_aspect_vals, cur_metric_vals):
 
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
-            return self._internal_predict(model_input)
+            return self._internal_predict(self.input_formatter(cur_aspect_vals, cur_metric_vals))
+
+    def fit(self, cur_aspect_vals, cur_metric_vals, model_output):
+
+        self._internal_fit(self.input_formatter(cur_aspect_vals, cur_metric_vals), model_output)
+
+    @property
+    @abstractmethod
+    def input_formatter(self):
+
+        pass
 
     @abstractmethod
     def _internal_predict(self, model_input):
@@ -25,7 +35,7 @@ class ScalingAspectToQualityMetricModel(ABC):
         pass
 
     @abstractmethod
-    def fit(self, model_input, model_output):
+    def _internal_fit(self, model_input, model_output):
 
         pass
 

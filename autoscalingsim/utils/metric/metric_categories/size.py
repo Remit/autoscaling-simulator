@@ -21,8 +21,6 @@ class Size(MetricCategory):
 
         return cls(val, unit = unit)
 
-    def to_float(self): return self.to_bytes()
-
     def __init__(self, value : float = 0.0, unit : str = 'B'):
 
         if not unit in self.__class__.sizes_bytes and not unit.upper() in self.__class__.sizes_bytes:

@@ -1,5 +1,3 @@
-import collections
-
 from autoscalingsim.scaling.state_reader import StateReader
 from autoscalingsim.utils.error_check import ErrorChecker
 

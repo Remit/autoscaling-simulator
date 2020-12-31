@@ -1,5 +1,4 @@
 import pandas as pd
-import collections
 
 from .correlator.correlator import Correlator
 from .filtering.valuesfilter import ValuesFilter
@@ -11,7 +10,6 @@ from .limiter import Limiter
 
 from autoscalingsim.scaling.state_reader import StateReader
 from autoscalingsim.utils.metric.metrics_registry import MetricsRegistry
-from autoscalingsim.desired_state.service_group.group_of_services_reg import GroupOfServicesRegionalized
 from autoscalingsim.scaling.scaling_aspects import ScalingAspect
 from autoscalingsim.utils.error_check import ErrorChecker
 
@@ -33,7 +31,6 @@ class ScalingMetricGroup:
         dav_calculator_conf = ErrorChecker.key_check_and_load('config', desired_aspect_value_calculator_conf, 'region', region_name, default = dict())
         dav_calculator_conf['region'] = region_name
         dav_calculator_conf['state_reader'] = state_reader
-        #dav_calculator_conf['metric_unit_type'] = self.metrics[0].metric_unit_type if len(self.metrics) > 0 else None
 
         self.desired_aspect_value_calculator = DesiredAspectValueCalculator.get(dav_calculator_category)(dav_calculator_conf)
 
@@ -53,10 +50,6 @@ class ScalingMetricGroup:
 
         if len(future_metric_vals) > 0:
             cur_aspect_val = self.state_reader.get_aspect_value(self.service_name, self.region_name, self.aspect_name)
-
-            print(f'future_metric_val: {future_metric_vals}')
-            print(f'cur_metric_val: {cur_metric_vals}')
-            print(f'cur_aspect_val: {cur_aspect_val}')
 
             desired_scaling_aspect = self.desired_aspect_value_calculator.compute(cur_aspect_val, future_metric_vals, cur_metric_vals)
             desired_scaling_aspect_stabilized = self.stabilizer.stabilize(desired_scaling_aspect)
