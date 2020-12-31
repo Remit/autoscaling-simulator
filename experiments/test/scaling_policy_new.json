@@ -28,8 +28,8 @@
         "metrics_descriptions": [
           {
             "metric_source_name": "Load",
-            "metric_name": "auth",
-            "metric_type": "rate",
+            "metric_name": "load",
+            "submetric_name": "auth",
             "metric_params": {
               "sampling_interval": {
                 "value": 1,

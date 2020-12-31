@@ -5,7 +5,7 @@ import pandas as pd
 from .node_information.node import NodeInfo
 from .node_information.provider_nodes import ProviderNodes
 
-from autoscalingsim.utils.size import Size
+from autoscalingsim.utils.metric.metric_categories.size import Size
 from autoscalingsim.utils.price import PricePerUnitTime
 from autoscalingsim.utils.credits import CreditsPerUnitTime
 from autoscalingsim.utils.error_check import ErrorChecker
@@ -34,19 +34,13 @@ class PlatformModelConfigurationParser:
                         vCPU = ErrorChecker.key_check_and_load('vCPU', node_type, type)
 
                         memory_raw = ErrorChecker.key_check_and_load('memory', node_type, type)
-                        memory_value = ErrorChecker.key_check_and_load('value', memory_raw, type)
-                        memory_unit = ErrorChecker.key_check_and_load('unit', memory_raw, type)
-                        memory = Size(memory_value, memory_unit)
+                        memory = Size.to_metric(memory_raw)
 
                         disk_raw = ErrorChecker.key_check_and_load('disk', node_type, type)
-                        disk_value = ErrorChecker.key_check_and_load('value', disk_raw, type)
-                        disk_unit = ErrorChecker.key_check_and_load('unit', disk_raw, type)
-                        disk = Size(disk_value, disk_unit)
+                        disk = Size.to_metric(disk_raw)
 
                         network_bandwidth_raw = ErrorChecker.key_check_and_load('network_bandwidth', node_type, type)
-                        network_bandwidth_value = ErrorChecker.key_check_and_load('value', network_bandwidth_raw, type)
-                        network_bandwidth_unit = ErrorChecker.key_check_and_load('unit', network_bandwidth_raw, type)
-                        network_bandwidth = Size(network_bandwidth_value, network_bandwidth_unit)
+                        network_bandwidth = Size.to_metric(network_bandwidth_raw)
 
                         price_raw = ErrorChecker.key_check_and_load('price', node_type, type)
                         price = price_raw

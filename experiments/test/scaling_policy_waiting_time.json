@@ -15,7 +15,6 @@
           {
             "metric_source_name": "Service",
             "metric_name": "waiting_time",
-            "metric_type": "duration",
             "metric_params": {
               "duration_unit": "ms"
             },

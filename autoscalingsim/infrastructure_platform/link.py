@@ -3,7 +3,7 @@ import pandas as pd
 from .node_information.node import NodeInfo
 
 from autoscalingsim.load.request import Request
-from autoscalingsim.utils.size import Size
+from autoscalingsim.utils.metric.metric_categories.size import Size
 
 class NodeGroupLink:
 
@@ -76,7 +76,7 @@ class NodeGroupLink:
 
         for req in target.requests_in_transfer:
             if req in self.requests_in_transfer:
-                self.requests_in_transfer.remove(req)            
+                self.requests_in_transfer.remove(req)
 
     def can_accept_request(self, req : Request):
 

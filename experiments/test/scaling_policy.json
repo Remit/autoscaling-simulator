@@ -24,7 +24,11 @@
                               "category": "rule",
                               "config": {
                                 "name": "ratio",
-                                "target_value": 0.05,
+                                "target": {
+                                    "metric_name": "vCPU",
+                                    "value": 0.05,
+                                    "unit": "float"
+                                },
                                 "adjustment_heuristic_conf": {
                                   "name": "rescale",
                                   "scaling_factor": 1.15
@@ -64,8 +68,7 @@
                             "performance_metric": {
                                 "metric_source_name": "response_stats",
                                 "metric_name": "buffer_time",
-                                "submetric_name": "*",
-                                "metric_type": "duration"
+                                "submetric_name": "*"
                             },
                             "model_quality_metric": {
                                 "name": "mean_squared_error",

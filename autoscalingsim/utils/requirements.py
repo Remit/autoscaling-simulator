@@ -1,6 +1,6 @@
 import numbers
 
-from .size import Size
+from .metric.metric_categories.size import Size
 from .error_check import ErrorChecker
 
 class ResourceRequirements:

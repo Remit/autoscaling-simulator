@@ -21,5 +21,5 @@ class RatioRule(Rule):
 
     def compute_desired(self, cur_aspect_val, metric_vals):
 
-        metric_ratio = metric_vals / self.target_value
+        metric_ratio = metric_vals[self.metric_name] / self.target_value
         return cur_aspect_val * metric_ratio

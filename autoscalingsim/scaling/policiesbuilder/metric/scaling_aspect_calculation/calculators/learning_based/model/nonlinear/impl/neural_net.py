@@ -20,7 +20,11 @@ class NeuralNet(NonlinearModel):
                 "category": "rule",
                 "config": {
                     "name": "ratio",
-                    "target_value": 0.05,
+                    "target": {
+                        "metric_name": "vCPU",
+                        "value": 0.05,
+                        "unit": "float"
+                    },
                     "adjustment_heuristic_conf": {
                       "name": "rescale",
                       "scaling_factor": 1.15
@@ -61,7 +65,6 @@ class NeuralNet(NonlinearModel):
                 "metric_source_name": "response_stats",
                 "metric_name": "buffer_time",
                 "submetric_name": "*",
-                "metric_type": "duration",
                 "threshold": {
                     "value": 100,
                     "unit": "ms"

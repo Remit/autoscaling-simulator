@@ -1,7 +1,7 @@
 import pandas as pd
 
 from .requirements import ResourceRequirements
-from .size import Size
+from .metric.metric_categories.size import Size
 
 class RequestProcessingInfo:
 

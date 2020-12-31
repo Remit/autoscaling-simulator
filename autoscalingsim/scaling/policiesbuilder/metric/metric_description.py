@@ -1,9 +1,7 @@
 import collections
 
 from autoscalingsim.scaling.state_reader import StateReader
-from autoscalingsim.utils.metric_converter import MetricConverter
 from autoscalingsim.utils.error_check import ErrorChecker
-from autoscalingsim.utils.metric_units_registry import MetricUnitsRegistry
 
 from .scalingmetric import ScalingMetricGroup, ScalingMetric
 from .accessor_other_service_metric.accessor import AccessorToOtherService
@@ -80,10 +78,6 @@ class MetricDescription:
 
         self.metric_name = ErrorChecker.key_check_and_load('metric_name', metric_description_conf)
         self.submetric_name = ErrorChecker.key_check_and_load('submetric_name', metric_description_conf, default = '')
-        metric_type = ErrorChecker.key_check_and_load('metric_type', metric_description_conf, default = 'noop')
-        metric_params = ErrorChecker.key_check_and_load('metric_params', metric_description_conf, default = {})
-        self.metric_converter = MetricConverter.get(metric_type)(metric_params)
-        self.metric_unit_type = MetricUnitsRegistry.get(metric_type)
         related_service_to_consider = ErrorChecker.key_check_and_load('related_service_to_consider', metric_description_conf, default = '')
         self.accessor_to_related_service_class = AccessorToOtherService.get(related_service_to_consider) if len(related_service_to_consider) > 0 else None
 
@@ -98,5 +92,5 @@ class MetricDescription:
         init_metric_source_name = service_name if self.metric_source_name == self.__class__.SERVICE_SOURCE_WILDCARD else self.metric_source_name
 
         if init_service_name == service_name:
-            return ScalingMetric(init_service_name, region_name, init_metric_source_name, self.metric_name, self.submetric_name, state_reader, self.accessor_to_related_service_class,
-                                 self.metric_converter, self.metric_unit_type, self.values_filter_conf, self.values_aggregator_conf, self.forecaster_conf, self.correlator_conf)
+            return ScalingMetric(init_service_name, region_name, init_metric_source_name, self.metric_name, self.submetric_name, state_reader,
+                                 self.accessor_to_related_service_class, self.values_filter_conf, self.values_aggregator_conf, self.forecaster_conf, self.correlator_conf)

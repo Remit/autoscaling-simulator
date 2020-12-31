@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from sklearn.exceptions import NotFittedError
 
-from autoscalingsim.utils.metric_units_registry import MetricUnitsRegistry
+from autoscalingsim.utils.metric.metrics_registry import MetricsRegistry
 from autoscalingsim.scaling.policiesbuilder.metric.scaling_aspect_calculation.desired_scaling_aspect_calculator import DesiredAspectValueCalculator
 from autoscalingsim.utils.error_check import ErrorChecker
 
@@ -30,15 +30,13 @@ class LearningBasedCalculator(DesiredAspectValueCalculator):
 
         super().__init__(config)
 
-        fallback_calculator_config = ErrorChecker.key_check_and_load('fallback_calculator', config,
-                                                                     default = {'category': 'rule',
-                                                                                'config': { 'name': 'ratio',
-                                                                                            'target_value': 0.05 }})
-        fallback_calculator_category = ErrorChecker.key_check_and_load('category', fallback_calculator_config)
-        fallback_calculator_params = ErrorChecker.key_check_and_load('config', fallback_calculator_config)
-        fallback_calculator_params['metric_unit_type'] = ErrorChecker.key_check_and_load('metric_unit_type', config, default = None)
+        fallback_calculator_config = ErrorChecker.key_check_and_load('fallback_calculator', config, default = None)
+        if fallback_calculator_config is None:
+            raise ValueError('No configuration for the desired scaling aspect value fallback calculator is provided')
 
-        self.fallback_calculator = DesiredAspectValueCalculator.get(fallback_calculator_category)(fallback_calculator_params)
+        fallback_calculator_category = ErrorChecker.key_check_and_load('category', fallback_calculator_config)
+
+        self.fallback_calculator = DesiredAspectValueCalculator.get(fallback_calculator_category)(ErrorChecker.key_check_and_load('config', fallback_calculator_config))
 
         model_quality_metric_config = ErrorChecker.key_check_and_load('model_quality_metric', config, default = dict())
         model_quality_metric_name = ErrorChecker.key_check_and_load('name', model_quality_metric_config, default = 'r2_score')
@@ -52,13 +50,12 @@ class LearningBasedCalculator(DesiredAspectValueCalculator):
 
         performance_metric_conf = ErrorChecker.key_check_and_load('performance_metric', config)
 
-        parser = MetricUnitsRegistry.get_parser(ErrorChecker.key_check_and_load('metric_type', performance_metric_conf, default = 'duration'))
-        performance_metric_threshold = parser.parse_to_float(ErrorChecker.key_check_and_load('threshold', performance_metric_conf, default = { 'value': 50, 'unit': 'ms' }))
-
-        self.performance_metric_config = { 'source_name': ErrorChecker.key_check_and_load('metric_source_name', performance_metric_conf, default = 'response_stats'),
+        self.performance_metric_config = { 'source_name': ErrorChecker.key_check_and_load('metric_source_name', performance_metric_conf),
                                            'region_name': ErrorChecker.key_check_and_load('region', config),
-                                           'metric_name': ErrorChecker.key_check_and_load('metric_name', performance_metric_conf, default = 'buffer_time'),
+                                           'metric_name': ErrorChecker.key_check_and_load('metric_name', performance_metric_conf),
                                            'submetric_name': ErrorChecker.key_check_and_load('submetric_name', performance_metric_conf, default = '*') }
+
+        performance_metric_threshold = MetricsRegistry.get(self.performance_metric_config['metric_name']).to_metric(ErrorChecker.key_check_and_load('threshold', performance_metric_conf))
 
         model_config = ErrorChecker.key_check_and_load('model', config, default = dict())
         self.model = ScalingAspectToQualityMetricModel.get(ErrorChecker.key_check_and_load('name', model_config, default = 'passive_aggressive'))(model_config)

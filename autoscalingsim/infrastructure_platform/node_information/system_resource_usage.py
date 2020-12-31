@@ -2,7 +2,7 @@ import operator
 import numbers
 from copy import deepcopy
 
-from autoscalingsim.utils.size import Size
+from autoscalingsim.utils.metric.metric_categories.size import Size
 
 class SystemResourceUsage:
 

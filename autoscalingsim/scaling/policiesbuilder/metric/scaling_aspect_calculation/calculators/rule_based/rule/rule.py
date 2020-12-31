@@ -1,6 +1,7 @@
 import collections
 from abc import ABC, abstractmethod
 
+from autoscalingsim.utils.metric.metrics_registry import MetricsRegistry
 from autoscalingsim.utils.error_check import ErrorChecker
 
 class Rule(ABC):
@@ -9,23 +10,10 @@ class Rule(ABC):
 
     def __init__(self, config):
 
-        target_value_raw = ErrorChecker.key_check_and_load('target_value', config)
-        metric_unit_type = ErrorChecker.key_check_and_load('metric_unit_type', config)
-        if metric_unit_type is None:
-            raise ValueError(f'{self.__class__}-based calculators can only be used on metric groups that have at least one metric in them!')
-
-        self._populate_target_value(target_value_raw, metric_unit_type)
-
-    def _populate_target_value(self, target_value_raw : dict, metric_unit_type):
-
-        target_value = target_value_raw
-
-        if isinstance(target_value, collections.Mapping):
-            value = ErrorChecker.key_check_and_load('value', target_value)
-            unit = ErrorChecker.key_check_and_load('unit', target_value)
-            target_value = metric_unit_type(value, unit = unit)
-
-        self.target_value = target_value
+        target_conf = ErrorChecker.key_check_and_load('target', config)
+        self.metric_name = ErrorChecker.key_check_and_load('metric_name', target_conf)
+        metric_category = MetricsRegistry.get(self.metric_name)
+        self.target_value = metric_category.to_metric(target_conf)
 
     @abstractmethod
     def compute_desired(self, cur_aspect_val, metric_vals):

@@ -10,7 +10,7 @@ from autoscalingsim.deployment.service_deployment_conf import ServiceDeploymentC
 from autoscalingsim.scaling.policiesbuilder.scaled.scaled_service_settings import ScaledServiceScalingSettings
 from autoscalingsim.scaling.state_reader import StateReader
 from autoscalingsim.utils.request_processing_info import RequestProcessingInfo
-from autoscalingsim.utils.size import Size
+from autoscalingsim.utils.metric.metric_categories.size import Size
 from autoscalingsim.utils.requirements import ResourceRequirements
 from autoscalingsim.utils.error_check import ErrorChecker
 
@@ -153,14 +153,10 @@ class ApplicationModelConfiguration:
                         ErrorChecker.value_check('timeout', timeout, operator.ge, pd.Timedelta(0, unit = timeout_unit), [f'request_type {request_type}'])
 
                         request_size_raw = ErrorChecker.key_check_and_load('request_size', request_info, 'request_type', request_type)
-                        request_size_value = ErrorChecker.key_check_and_load('value', request_size_raw, 'request_type', request_type)
-                        request_size_unit = ErrorChecker.key_check_and_load('unit', request_size_raw, 'request_type', request_type)
-                        request_size = Size(request_size_value, request_size_unit)
+                        request_size = Size.to_metric(request_size_raw)
 
                         response_size_raw = ErrorChecker.key_check_and_load('response_size', request_info, 'request_type', request_type)
-                        response_size_value = ErrorChecker.key_check_and_load('value', response_size_raw, 'request_type', request_type)
-                        response_size_unit = ErrorChecker.key_check_and_load('unit', response_size_raw, 'request_type', request_type)
-                        response_size = Size(response_size_value, response_size_unit)
+                        response_size = Size.to_metric(response_size_raw)
 
                         request_operation_type = ErrorChecker.key_check_and_load('operation_type', request_info, 'request_type', request_type)
 

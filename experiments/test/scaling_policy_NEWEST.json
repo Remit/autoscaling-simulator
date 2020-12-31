@@ -80,7 +80,6 @@
                           "metric_source_name": "response_stats",
                           "metric_name": "buffer_time",
                           "submetric_name": "*",
-                          "metric_type": "duration"
                       },
                       "model_quality_metric": {
                           "name": "mean_squared_error",

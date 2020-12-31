@@ -2,7 +2,6 @@ import pandas as pd
 
 from .system_resource_usage import SystemResourceUsage
 
-from autoscalingsim.utils.size import Size
 from autoscalingsim.utils.price import PricePerUnitTime
 from autoscalingsim.utils.credits import CreditsPerUnitTime
 from autoscalingsim.utils.requirements import ResourceRequirements
@@ -20,9 +19,9 @@ class NodeInfo:
                  provider : str,
                  node_type : str,
                  vCPU : int,
-                 memory : Size,
-                 disk : Size,
-                 network_bandwidth : Size,
+                 memory : 'Size',
+                 disk : 'Size',
+                 network_bandwidth : 'Size',
                  price_per_unit_time : PricePerUnitTime = PricePerUnitTime(0),
                  cpu_credits_per_unit_time : CreditsPerUnitTime = CreditsPerUnitTime('vCPU', 0),
                  latency : pd.Timedelta = pd.Timedelta(0, unit = 'ms'),
@@ -99,7 +98,7 @@ class NodeInfo:
         return self._latency
 
     @property
-    def network_bandwidth(self) -> Size:
+    def network_bandwidth(self) -> 'Size':
 
         return self._network_bandwidth
 

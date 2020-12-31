@@ -43,7 +43,7 @@ class LoadModel(MetricSource):
 
         return { region_name : region_load_model.get_stat() for region_name, region_load_model in self.region_models.items()}
 
-    def get_metric_value(self, region_name : str, req_type : str, submetric_name : str):
+    def get_metric_value(self, region_name : str, metric_name : str, req_type : str):
 
         return self.region_models[region_name].get_requests_count_per_unit_of_time(req_type)
 
