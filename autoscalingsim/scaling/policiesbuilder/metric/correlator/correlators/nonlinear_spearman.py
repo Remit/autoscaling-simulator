@@ -3,9 +3,9 @@ import pandas as pd
 from autoscalingsim.scaling.policiesbuilder.metric.correlator.correlator import Correlator
 
 @Correlator.register('spearman')
-class LinearCorrelator(Correlator):
+class SpearmanCorrelator(Correlator):
 
-    """ Implements lag derivation for metric time series based on Pearson linear correlation coefficient """
+    """ Implements lag derivation for metric time series based on Spearman nonlinear correlation coefficient """
 
     def _compute_correlation(self, metrics_vals_1 : pd.Series, metrics_vals_2 : pd.Series, lag : int):
 

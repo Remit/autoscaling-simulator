@@ -57,7 +57,8 @@ class Correlator(ABC):
             other_service_metric_vals_resampled = metric_vals.resample(min_resolution).mean()
             associated_service_metric_vals_resampled = self.associated_service_metric_vals.resample(min_resolution).mean()
 
-            corr_raw = { lag : self._compute_correlation(associated_service_metric_vals_resampled['value'], other_service_metric_vals_resampled['value'], lag) for lag in lags_range }
+            common_len = min(associated_service_metric_vals_resampled.shape[0], other_service_metric_vals_resampled.shape[0])
+            corr_raw = { lag : self._compute_correlation(associated_service_metric_vals_resampled['value'][-common_len:], other_service_metric_vals_resampled['value'][-common_len:], lag) for lag in lags_range }
             corr_pruned = { lag : corr for lag, corr in corr_raw.items() if not corr is None}
 
             if len(corr_pruned) > 0:

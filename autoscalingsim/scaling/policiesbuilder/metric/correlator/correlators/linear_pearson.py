@@ -2,8 +2,8 @@ import pandas as pd
 
 from autoscalingsim.scaling.policiesbuilder.metric.correlator.correlator import Correlator
 
-@Correlator.register('linear')
-class LinearCorrelator(Correlator):
+@Correlator.register('pearson')
+class PearsonCorrelator(Correlator):
 
     """ Implements lag derivation for metric time series based on Pearson linear correlation coefficient """
 
