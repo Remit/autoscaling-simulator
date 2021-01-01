@@ -160,7 +160,7 @@ class ApplicationModelConfiguration:
 
                         request_operation_type = ErrorChecker.key_check_and_load('operation_type', request_info, 'request_type', request_type)
 
-                        request_processing_requirements = ErrorChecker.key_check_and_load('processing_requirements', request_info, 'request_type', request_type)
+                        request_processing_requirements = ErrorChecker.key_check_and_load('processing_requirements', request_info, 'request_type', request_type) 
 
                         req_proc_info = RequestProcessingInfo(request_type, entry_service, processing_times, timeout,
                                                               request_size, response_size, request_operation_type, request_processing_requirements)

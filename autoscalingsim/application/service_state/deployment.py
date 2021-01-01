@@ -62,7 +62,7 @@ class Deployment:
 
         return self.node_group.system_resources_taken_by_requests(self.service_name)
 
-    def system_resources_taken_by_all_requests(self):
+    def system_resources_taken_by_all_requests(self): 
 
         return self.node_group.system_resources_taken_by_all_requests()
 

@@ -36,7 +36,6 @@ class ServiceStateRegionalized:
                                                            init_timestamp,
                                                            region_name,
                                                            averaging_interval,
-                                                           service_instance_resource_requirements,
                                                            buffers_config,
                                                            sampling_interval)
 
@@ -94,7 +93,7 @@ class ServiceStateRegionalized:
 
         return { region_name : region_state.check_out_system_resources_utilization() for region_name, region_state in self.region_states.items() }
 
-    def get_resource_requirements(self) -> ResourceRequirements:
+    def get_resource_requirements(self) -> ResourceRequirements: # TODO: make a property
 
         """ Provides resource requirements of a single service instance """
 

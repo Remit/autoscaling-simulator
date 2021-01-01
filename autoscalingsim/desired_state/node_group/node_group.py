@@ -181,7 +181,7 @@ class HomogeneousNodeGroup(NodeGroup):
         return self.services_state.instances_count_for_service(req.processing_service) \
                 > sum( self.shared_processor.in_processing_stat_for_service(req.processing_service).values() )
 
-    def system_resources_to_take_from_requirements(self, res_reqs : ResourceRequirements):
+    def system_resources_to_take_from_requirements(self, res_reqs : ResourceRequirements): 
 
         return self.node_info.system_resources_to_take_from_requirements(res_reqs)
 

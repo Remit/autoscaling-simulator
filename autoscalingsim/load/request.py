@@ -54,7 +54,7 @@ class Request:
         return self.request_processing_info.entry_service
 
     @property
-    def resource_requirements(self):
+    def resource_requirements(self): 
 
         return self.request_processing_info.resource_requirements
 

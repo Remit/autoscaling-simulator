@@ -3,7 +3,7 @@ import numbers
 from .metric.metric_categories.size import Size
 from .error_check import ErrorChecker
 
-class ResourceRequirements:
+class ResourceRequirements: 
 
     """ Container for the resource requirements, e.g. by a service or a request """
 

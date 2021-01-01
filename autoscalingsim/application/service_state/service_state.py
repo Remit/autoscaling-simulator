@@ -75,13 +75,11 @@ class ServiceState:
                  init_timestamp : pd.Timestamp,
                  region_name : str,
                  averaging_interval : pd.Timedelta,
-                 service_instance_resource_requirements : ResourceRequirements,
                  buffers_config : dict,
                  sampling_interval : pd.Timedelta):
 
         self.service_name = service_name
         self.region_name = region_name
-        self.service_instance_resource_requirements = service_instance_resource_requirements
         self.averaging_interval = averaging_interval
         self.sampling_interval = sampling_interval
 
