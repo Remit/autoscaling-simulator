@@ -101,7 +101,7 @@
                           "metric_name": "vCPU",
                           "related_service_to_consider": "previous",
                           "correlator_conf": {
-                            "name": "distance-affinely-invariant",
+                            "name": "total-information-coefficient",
                             "config": {
                               "history_buffer_size": {
                                 "value": 2,

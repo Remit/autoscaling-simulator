@@ -24,7 +24,8 @@ setup(
                         'tensorflow==2.4.0',
                         'https://github.com/kieferk/pymssa/tarball/master ; sys_platform == linux',
                         'https://github.com/Remit/pymssa/tarball/master ; sys_platform == windows',
-                        'dcor==0.5.2'
+                        'dcor==0.5.2',
+                        'minepy==1.2.5'
                       ],
    scripts = [
                'autoscalingsim-cl.py',
