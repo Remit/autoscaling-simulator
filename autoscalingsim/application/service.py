@@ -84,7 +84,7 @@ class Service(MetricSource):
 
     def get_resource_requirements(self):
 
-        return self.state.get_resource_requirements()
+        return self.state.resource_requirements
 
     def get_placement_parameter(self, region_name : str, parameter : str):
 

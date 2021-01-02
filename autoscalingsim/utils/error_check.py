@@ -1,3 +1,5 @@
+import collections
+
 class ErrorChecker:
 
     value_check_not_msgs = {
@@ -16,7 +18,7 @@ class ErrorChecker:
                            obj_name = None,
                            default = None):
 
-        if structure is None:
+        if structure is None or not isinstance(structure, collections.Iterable):
             return default
 
         return structure[key] if key in structure else default

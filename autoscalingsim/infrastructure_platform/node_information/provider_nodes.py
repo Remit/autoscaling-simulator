@@ -14,8 +14,8 @@ class ProviderNodes:
         self.node_infos = {}
         self.provider = provider
 
-    def add_node_info(self, node_type : str, vCPU : int, memory : int, disk : int,
-                      network_bandwidth_MBps : int, price_per_unit_time : PricePerUnitTime,
+    def add_node_info(self, node_type : str, vCPU : 'Numeric', memory : 'Size', disk : 'Size',
+                      network_bandwidth_MBps : 'Size', price_per_unit_time : PricePerUnitTime,
                       cpu_credits_per_unit_time : CreditsPerUnitTime,
                       latency : pd.Timedelta, requests_acceleration_factor : float,
                       labels : list = []):

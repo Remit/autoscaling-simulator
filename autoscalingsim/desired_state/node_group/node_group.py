@@ -14,7 +14,7 @@ from autoscalingsim.infrastructure_platform.node_information.node import NodeInf
 from autoscalingsim.infrastructure_platform.link import NodeGroupLink
 from autoscalingsim.infrastructure_platform.node_group_utilization import NodeGroupUtilization
 from autoscalingsim.load.request import Request
-from autoscalingsim.utils.requirements import ResourceRequirements
+from autoscalingsim.utils.requirements import ResourceRequirementsSample
 from autoscalingsim.desired_state.placement import ServicesPlacement
 
 class NodeGroup(ABC):
@@ -106,9 +106,14 @@ class HomogeneousNodeGroup(NodeGroup):
         elif isinstance(services_instances_counts, gos.GroupOfServices):
             self.services_state = services_instances_counts
 
-        fits, self.system_resources_usage = self.node_info.services_require_system_resources(self.services_state, self.nodes_count)
-        if not fits:
-            raise ValueError('An attempt to place services on a node group of insufficient capacity')
+        #fits, self.system_resources_usage = self.node_info.services_require_system_resources(self.services_state, self.nodes_count)
+        #if not fits:
+        #    raise ValueError('An attempt to place services on a node group of insufficient capacity')
+
+    @property
+    def system_resources_usage(self):
+
+        return self.node_info.cap(self.services_state.resource_requirements_sample, self.nodes_count)
 
     def step(self, time_budget : pd.Timedelta):
 
@@ -131,8 +136,8 @@ class HomogeneousNodeGroup(NodeGroup):
             deleted_services_state_fragment = remaining_node_group_fragment.services_state.downsize_proportionally(downsizing_coef)
 
         remaining_node_group_fragment.nodes_count -= other.nodes_count
-        _, remaining_node_group_fragment.system_resources_usage = remaining_node_group_fragment.node_info.services_require_system_resources(remaining_node_group_fragment.services_state,
-                                                                                                                                            remaining_node_group_fragment.nodes_count)
+        #_, remaining_node_group_fragment.system_resources_usage = remaining_node_group_fragment.node_info.services_require_system_resources(remaining_node_group_fragment.services_state,
+        #                                                                                                                                    remaining_node_group_fragment.nodes_count)
 
         # Splitting requests being processed or in transmission between two fragments
         remaining_node_group_fragment.uplink.update_bandwidth(remaining_node_group_fragment.nodes_count)
@@ -181,7 +186,7 @@ class HomogeneousNodeGroup(NodeGroup):
         return self.services_state.instances_count_for_service(req.processing_service) \
                 > sum( self.shared_processor.in_processing_stat_for_service(req.processing_service).values() )
 
-    def system_resources_to_take_from_requirements(self, res_reqs : ResourceRequirements): 
+    def system_resources_to_take_from_requirements(self, res_reqs : ResourceRequirementsSample):
 
         return self.node_info.system_resources_to_take_from_requirements(res_reqs)
 
@@ -207,7 +212,7 @@ class HomogeneousNodeGroup(NodeGroup):
         import autoscalingsim.desired_state.service_group.group_of_services as gos
 
         self.services_state = gos.GroupOfServices()
-        self.system_resources_usage = SystemResourceUsage(self.node_info, self.nodes_count)
+        #self.system_resources_usage = SystemResourceUsage(self.node_info, self.nodes_count)
 
     def compute_soft_adjustment(self, adjustment_in_aspects : dict,
                                 requirements_by_service_instance : dict) -> tuple:
@@ -219,8 +224,9 @@ class HomogeneousNodeGroup(NodeGroup):
         whether there are any instances of the given type at all.
         """
 
+        requirements_by_service_instance_sampled = { service_name : res_req.average_sample for service_name, res_req in requirements_by_service_instance.items() }
         res_usage_by_service = { service_name : self.node_info.system_resources_to_take_from_requirements(requirements) \
-                                    for service_name, requirements in requirements_by_service_instance.items()}
+                                    for service_name, requirements in requirements_by_service_instance_sampled.items()}
 
         res_usage_by_service = OrderedDict(reversed(sorted(res_usage_by_service.items(), key = lambda elem: elem[1])))
 
@@ -249,6 +255,7 @@ class HomogeneousNodeGroup(NodeGroup):
 
         return (generalized_deltas, selected_postponed_scaling_event, unmet_changes)
 
+    # TODO: ?
     def update_utilization(self, service_name : str,
                            system_resources_usage : SystemResourceUsage,
                            timestamp : pd.Timestamp,
@@ -275,9 +282,9 @@ class HomogeneousNodeGroup(NodeGroup):
 
         self.services_state += services_group_delta
 
-        fits, self.system_resources_usage = self.node_info.services_require_system_resources(self.services_state, self.nodes_count)
-        if not fits:
-            raise ValueError('An attempt to place services on a node group of insufficient capacity')
+        #fits, self.system_resources_usage = self.node_info.services_require_system_resources(self.services_state, self.nodes_count)
+        #if not fits:
+        #    raise ValueError('An attempt to place services on a node group of insufficient capacity')
 
     def to_delta(self, direction : int = 1):
 

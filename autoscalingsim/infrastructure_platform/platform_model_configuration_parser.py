@@ -2,10 +2,10 @@ import json
 import collections
 import pandas as pd
 
-from .node_information.node import NodeInfo
 from .node_information.provider_nodes import ProviderNodes
 
 from autoscalingsim.utils.metric.metric_categories.size import Size
+from autoscalingsim.utils.metric.metric_categories.numeric import Numeric
 from autoscalingsim.utils.price import PricePerUnitTime
 from autoscalingsim.utils.credits import CreditsPerUnitTime
 from autoscalingsim.utils.error_check import ErrorChecker
@@ -31,7 +31,8 @@ class PlatformModelConfigurationParser:
                     for node_type in node_types_config:
                         type = ErrorChecker.key_check_and_load('type', node_type, cls.__name__)
 
-                        vCPU = ErrorChecker.key_check_and_load('vCPU', node_type, type)
+                        vCPU_raw = ErrorChecker.key_check_and_load('vCPU', node_type, type)
+                        vCPU = Numeric.to_metric(vCPU_raw)
 
                         memory_raw = ErrorChecker.key_check_and_load('memory', node_type, type)
                         memory = Size.to_metric(memory_raw)

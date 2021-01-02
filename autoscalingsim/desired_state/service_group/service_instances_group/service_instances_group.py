@@ -13,6 +13,7 @@ class ServiceInstancesGroup:
 
         self.service_name = service_name
         self.service_resource_reqs = service_resource_reqs
+
         self.scaling_aspects = collections.defaultdict(ScalingAspect)
 
         aspects_vals_raw = { 'count' : 1 } if aspects_vals is None else aspects_vals

@@ -4,7 +4,7 @@ from .system_resource_usage import SystemResourceUsage
 
 from autoscalingsim.utils.price import PricePerUnitTime
 from autoscalingsim.utils.credits import CreditsPerUnitTime
-from autoscalingsim.utils.requirements import ResourceRequirements
+from autoscalingsim.utils.requirements import ResourceRequirements, ResourceRequirementsSample
 from autoscalingsim.desired_state.service_group.group_of_services import GroupOfServices
 
 class NodeInfo:
@@ -18,7 +18,7 @@ class NodeInfo:
     def __init__(self,
                  provider : str,
                  node_type : str,
-                 vCPU : int,
+                 vCPU : 'Numeric',
                  memory : 'Size',
                  disk : 'Size',
                  network_bandwidth : 'Size',
@@ -40,7 +40,23 @@ class NodeInfo:
         self._requests_acceleration_factor = requests_acceleration_factor
         self._labels = labels
 
-    def system_resources_to_take_from_requirements(self, res_requirements : ResourceRequirements) -> SystemResourceUsage:
+    def cap(self, res_requirements : ResourceRequirementsSample, nodes_count : int) -> SystemResourceUsage:
+
+        if res_requirements.vCPU > nodes_count * self._vCPU:
+            res_requirements.vCPU = self._vCPU
+
+        if res_requirements.memory > nodes_count * self._memory:
+            res_requirements.memory = self._memory
+
+        if res_requirements.disk > nodes_count * self._disk:
+            res_requirements.disk = self._disk
+
+        if res_requirements.network_bandwidth > nodes_count * self._network_bandwidth:
+            res_requirements.network_bandwidth = self._network_bandwidth
+
+        return SystemResourceUsage(self, nodes_count, res_requirements.to_dict())
+
+    def system_resources_to_take_from_requirements(self, res_requirements : ResourceRequirementsSample) -> SystemResourceUsage:
 
         """
         Computes system resource usage that will be taken on this type of node
@@ -67,17 +83,19 @@ class NodeInfo:
         requirements_by_service = services_state.services_requirements
         counts_by_service = services_state.services_counts
 
-        joint_resource_requirements = ResourceRequirements.new_empty_resource_requirements()
+        joint_resource_requirements = sum([counts_by_service[service_name] * requirements for service_name, requirements in requirements_by_service.items()], ResourceRequirements())
 
-        for service_name, requirements in requirements_by_service.items():
-            factor = counts_by_service[service_name]
-            joint_resource_requirements += factor * requirements
+        #joint_resource_requirements = ResourceRequirements.new_empty_resource_requirements()
+
+        #for service_name, requirements in requirements_by_service.items():
+        #    factor = counts_by_service[service_name]
+        #    joint_resource_requirements += factor * requirements
 
         for label in joint_resource_requirements.labels:
             if not label in self._labels:
                 return (False, 0.0)
 
-        system_resource_usage = SystemResourceUsage(self, instances_count, joint_resource_requirements.to_dict())
+        system_resource_usage = SystemResourceUsage(self, instances_count, joint_resource_requirements.average_representation)
         allocated = not system_resource_usage.is_full
 
         return (allocated, system_resource_usage)

@@ -28,7 +28,7 @@ class Request:
         self.network_time = pd.Timedelta(0, unit = 'ms')
         self.buffer_time = {}
 
-        self.processing_service = None
+        self._processing_service = None
         self._upstream = True
         self.replies_expected = 1
 
@@ -49,14 +49,25 @@ class Request:
         self.processing_time_left = self.request_processing_info.get_upstream_processing_time(self.processing_service)
 
     @property
+    def processing_service(self):
+
+        return self._processing_service
+
+    @processing_service.setter
+    def processing_service(self, new_processing_service : str):
+
+        self._cur_resource_requirements = self.request_processing_info.resource_requirements.sample
+        self._processing_service = new_processing_service
+
+    @property
     def entry_service(self):
 
         return self.request_processing_info.entry_service
 
     @property
-    def resource_requirements(self): 
+    def resource_requirements(self):
 
-        return self.request_processing_info.resource_requirements
+        return self._cur_resource_requirements
 
     @property
     def request_size(self):

@@ -3,6 +3,7 @@ import numbers
 from copy import deepcopy
 
 from autoscalingsim.utils.metric.metric_categories.size import Size
+from autoscalingsim.utils.metric.metric_categories.numeric import Numeric
 
 class SystemResourceUsage:
 
@@ -14,7 +15,7 @@ class SystemResourceUsage:
     """
 
     system_resources = {
-        'vCPU'              : int,
+        'vCPU'              : Numeric,
         'memory'            : Size,
         'disk'              : Size,
         'network_bandwidth' : Size
@@ -23,7 +24,7 @@ class SystemResourceUsage:
     def __init__(self,
                  node_info : 'NodeInfo',
                  instance_count : int = 1,
-                 system_resources_usage : dict = {'vCPU' : 0, 'memory' : Size(0),
+                 system_resources_usage : dict = {'vCPU' : Numeric(0), 'memory' : Size(0),
                                                   'disk': Size(0),
                                                   'network_bandwidth' : Size(0)}):
 

@@ -3,6 +3,7 @@ import numbers
 
 from autoscalingsim.deltarepr.group_of_services_delta import GroupOfServicesDelta
 from autoscalingsim.scaling.scaling_aspects import ScalingAspect
+from autoscalingsim.utils.requirements import ResourceRequirementsSample
 
 class GroupOfServices:
 
@@ -177,6 +178,11 @@ class GroupOfServices:
     def services_requirements(self) -> dict:
 
         return { service_name : group.resource_requirements for service_name, group in self.services_groups.items() }
+
+    @property
+    def resource_requirements_sample(self) -> ResourceRequirementsSample:
+
+        return sum([ group.resource_requirements.sample for group in self.services_groups.values() ], ResourceRequirementsSample())
 
     @property
     def is_empty(self) -> bool:

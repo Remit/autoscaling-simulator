@@ -13,6 +13,8 @@ class Size(MetricCategory):
         'EB' : 1152921504606846976,
         'ZB' : 1180591620717411303424 }
 
+    default_unit = 'B'
+
     @classmethod
     def to_metric(cls, config : dict):
 
@@ -31,22 +33,22 @@ class Size(MetricCategory):
         normalizer = 1 if unit in self.__class__.sizes_bytes else 8 # handles the case of *bit unit
         self._value = (value / normalizer) * self.__class__.sizes_bytes[unit.upper()]
 
-    def to_bytes(self): return self._to_unit('B')
+    def to_bytes(self): return self.to_unit('B')
 
-    def to_kilobytes(self): return self._to_unit('kB')
+    def to_kilobytes(self): return self.to_unit('kB')
 
-    def to_megabytes(self): return self._to_unit('MB')
+    def to_megabytes(self): return self.to_unit('MB')
 
-    def to_gigabytes(self): return self._to_unit('GB')
+    def to_gigabytes(self): return self.to_unit('GB')
 
-    def to_terabytes(self): return self._to_unit('TB')
+    def to_terabytes(self): return self.to_unit('TB')
 
-    def to_petabytes(self): return self._to_unit('PB')
+    def to_petabytes(self): return self.to_unit('PB')
 
-    def to_exabytes(self): return self._to_unit('EB')
+    def to_exabytes(self): return self.to_unit('EB')
 
-    def to_zetabytes(self): return self._to_unit('ZB')
+    def to_zetabytes(self): return self.to_unit('ZB')
 
-    def _to_unit(self, unit : str) -> float:
+    def to_unit(self, unit : str) -> float:
 
         return self._value / self.__class__.sizes_bytes[unit]

@@ -27,13 +27,18 @@
 				]
 			},
 			"system_requirements": {
-				"vCPU": 1,
+				"vCPU": {
+					"mean": 1,
+					"std": 0
+				},
 		    "memory": {
-					"value": 1,
+					"mean": 1,
+					"std": 0.5,
 					"unit": "GB"
 				},
 		    "disk": {
-					"value": 800,
+					"mean": 800,
+					"std": 100,
 					"unit": "MB"
 				}
 			},
@@ -56,13 +61,18 @@
 				]
 			},
 			"system_requirements": {
-				"vCPU": 1,
+				"vCPU": {
+					"mean": 1,
+					"std": 0
+				},
 				"memory": {
-					"value": 1,
+					"mean": 1,
+					"std": 0.1,
 					"unit": "GB"
 				},
 		    "disk": {
-					"value": 5,
+					"mean": 5,
+					"std": 0.1,
 					"unit": "GB"
 				}
 			},
@@ -85,13 +95,18 @@
 				]
 			},
 			"system_requirements": {
-				"vCPU": 2,
+				"vCPU": {
+					"mean": 2,
+					"std": 0
+				},
 				"memory": {
-					"value": 1,
+					"mean": 1,
+					"std": 0.1,
 					"unit": "GB"
 				},
 		    "disk": {
-					"value": 500,
+					"mean": 500,
+					"std": 50,
 					"unit": "GB"
 				}
 			},
@@ -137,13 +152,18 @@
 			},
 			"operation_type": "rw",
 			"processing_requirements": {
-				"vCPU": 1,
+				"vCPU": {
+					"mean": 1,
+					"std": 0
+				},
 				"memory": {
-					"value": 50,
+					"mean": 50,
+					"std": 5,
 					"unit": "MB"
 				},
 		    "disk": {
-					"value": 0,
+					"mean": 0,
+					"std": 0,
 					"unit": "B"
 				}
 			}
@@ -185,13 +205,18 @@
 			},
 			"operation_type": "rw",
 			"processing_requirements": {
-				"vCPU": 1,
+				"vCPU": {
+					"mean": 1,
+					"std": 0
+				},
 				"memory": {
-					"value": 100,
+					"mean": 100,
+					"std": 10,
 					"unit": "MB"
 				},
 		    "disk": {
-					"value": 10,
+					"mean": 10,
+					"std": 1,
 					"unit": "KB"
 				}
 			}
