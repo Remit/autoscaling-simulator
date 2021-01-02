@@ -93,7 +93,7 @@ class AzureFunctionsExperimentGenerator(ExperimentGenerator):
 
         # TODO: consider using information about the function? e.g. distribution over the functions
         # we have to first select a function with its probabilities distribution...
-        duration_data_aggregated = duration_data.groupby(['HashApp']).mean() 
+        duration_data_aggregated = duration_data.groupby(['HashApp']).mean()
         duration_data_selected = duration_data_aggregated.reindex(apps_in_diapazone).dropna()
         duration_percentiles = duration_data_selected.mean()[5:]
 

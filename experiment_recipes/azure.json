@@ -1,5 +1,4 @@
 {
-  "recipe_type": "azurefunctions",
   "general": {
     "platform_config_file": "experiments/test/platform.json",
     "application_recipe": {
@@ -18,13 +17,8 @@
       "services" : {
         "buffers_config": { "discipline": "FIFO" },
         "system_requirements": {
-          "vCPU": [1, 2],
-          "memory": {
-            "value": [1, 2, 3, 4],
-            "unit": "GB"
-          },
           "disk": {
-            "value": [0, 1, 2],
+            "mean": [0, 1, 2],
             "unit": "GB"
           }
         }
@@ -39,13 +33,11 @@
       "request_types_count": 1,
       "duration": { },
       "system_requirements": {
-        "vCPU": 1,
-        "memory": { },
-        "disk": { "value": 0, "unit": "B" }
+        "disk": { "mean": 0, "std": 0, "unit": "B" }
       },
       "timeout_headroom": 0.1,
-      "request_size": { "min"  : 1, "max" : 100, "unit": "KB" },
-      "response_size": { "min" : 1, "max" : 1, "unit": "KB" },
+      "request_size": { "mean": { "min" : 1, "max" : 100 }, "std": {"min" : 1, "max" : 2}, "unit": "KB" },
+      "response_size": { "mean": { "min" : 1, "max" : 1 }, "std": {"min" : 0.1, "max" : 0.2}, "unit": "KB" },
       "operation_type": { "r" : 0.9, "rw" : 0.1}
     },
     "load_recipe": {
@@ -67,13 +59,30 @@
       }
     }
   },
-  "specific": {
-    "data_path": "D:/@TUM/PhD/FINAL/traces/azurefunctions/",
-    "file_id": 1,
-    "consider_applications_with_invocations_quantiles": {
-      "left_quantile": 0.7,
-      "right_quantile": 0.9
+  "specific": [
+    {
+      "name": "azurefunctions",
+      "config" : {
+        "data_path": "D:/@TUM/PhD/FINAL/traces/azurefunctions/",
+        "file_id": 1,
+        "consider_applications_with_invocations_quantiles": {
+          "left_quantile": 0.7,
+          "right_quantile": 0.9
+        },
+        "app_size_quantile_among_selected_based_on_invocations": 0.9
+      }
     },
-    "app_size_quantile_among_selected_based_on_invocations": 0.9
-  }
+    {
+      "name": "azure-vms",
+      "config": {
+        "data_path": "D:/@TUM/PhD/FINAL/traces/azuredata-resourceutil/",
+        "file_ids": [1],
+        "vm_category": ["Interactive"],
+        "unique_vms_selected_in_each_cpu_readings_file": 20,
+        "percentage_gap_to_be_considered_single_req": 2,
+        "bins_for_empirical_distribution_count": 10,
+        "cpu_to_memory_correlation": 0.9
+      }
+    }
+  ]
 }

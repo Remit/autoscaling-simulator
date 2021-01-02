@@ -7,6 +7,7 @@ import pandas as pd
 import autoscalingsim.conf_keys as conf_keys
 
 from .structure_generator import AppStructureGenerator
+from .parameters_distribution import ParametersDistribution
 
 from autoscalingsim.infrastructure_platform.platform_model_configuration_parser import PlatformModelConfigurationParser
 from autoscalingsim.utils.requirements import ResourceRequirements
@@ -36,7 +37,8 @@ class ExperimentGenerator:
 
     """
 
-    _Registry = {}
+    _Registry_of_application_generators = dict()
+    _Registry_of_resource_requirements_generators = dict()
 
     vm_booting_durations_from_studies = { 'aws': {'value': 40, 'unit': 's' },
                                           'google': {'value': 15, 'unit': 's'},
@@ -70,11 +72,14 @@ class ExperimentGenerator:
         with open(experiment_generation_recipe_path) as f:
             recipe_conf = json.load(f)
             experiment_generation_recipe = ErrorChecker.key_check_and_load('general', recipe_conf)
-            recipe_type = ErrorChecker.key_check_and_load('recipe_type', recipe_conf)
-            if recipe_type in self.__class__._Registry:
-                specialized_generator_config = ErrorChecker.key_check_and_load('specific', recipe_conf)
-                self.__class__._Registry[recipe_type].enrich_experiment_generation_recipe(specialized_generator_config,
-                                                                                          experiment_generation_recipe)
+            specialized_generators = ErrorChecker.key_check_and_load('specific', recipe_conf, default = list())
+
+            for specialized_generator in specialized_generators:
+                generator_name = ErrorChecker.key_check_and_load('name', specialized_generator)
+                if generator_name in self.__class__._Registry:
+                    generator_config = ErrorChecker.key_check_and_load('config', specialized_generator, default = None)
+                    if not generator_config is None:
+                        self.__class__._Registry[generator_name].enrich_experiment_generation_recipe(generator_config, experiment_generation_recipe)
 
             # Generate the application configuration
             # Services
@@ -98,16 +103,29 @@ class ExperimentGenerator:
                 buffers_config = experiment_generation_recipe['application_recipe']['services']['buffers_config']
                 buffers_config['buffer_capacity_by_request_type'] = buffers_capacity_by_request_type
 
-                system_requirements_diapazones = experiment_generation_recipe['application_recipe']['services']['system_requirements']
-                vCPU_options = system_requirements_diapazones['vCPU']
-                memory_options = system_requirements_diapazones['memory']['value']
-                disk_options = system_requirements_diapazones['disk']['value']
+                services_system_requirements = experiment_generation_recipe['application_recipe']['services']['system_requirements']
 
-                system_requirements = { 'vCPU': self._randomly_choose_one(vCPU_options),
-                                        'memory': { 'value': self._randomly_choose_one(memory_options),
-                                                    'unit': system_requirements_diapazones['memory']['unit'] },
-                                        'disk': { 'value': self._randomly_choose_one(disk_options),
-                                                  'unit': system_requirements_diapazones['disk']['unit'] } }
+                system_requirements = dict()
+                if 'vCPU_mem_generator' in services_system_requirements:
+                    dual_service_cpu_mem_util_means_distr = ParametersDistribution.from_dict(services_system_requirements['vCPU_mem_generator']['mean'])
+                    dual_service_cpu_mem_util_stds_distr = ParametersDistribution.from_dict(services_system_requirements['vCPU_mem_generator']['std'])
+
+                    vCPU_mean, mem_mean = dual_service_cpu_mem_util_means_distr.sample
+                    vCPU_std, mem_std = dual_service_cpu_mem_util_stds_distr.sample
+
+                    system_requirements['vCPU'] = { 'mean': vCPU_mean, 'std': vCPU_std }
+                    system_requirements['memory'] = = { 'mean': mem_mean, 'std': mem_std, 'unit': 'B' }
+
+                else:
+
+                    vCPU_mean_options, vCPU_std_options = services_system_requirements['vCPU']['mean'], services_system_requirements['vCPU']['std']
+                    memory_mean_options, memory_std_options = services_system_requirements['memory']['mean'], services_system_requirements['memory']['std']
+
+                    system_requirements['vCPU'] = { 'mean': self._randomly_choose_one(vCPU_mean_options), 'std': self._randomly_choose_one(vCPU_std_options) }
+                    system_requirements['memory'] = { 'mean': self._randomly_choose_one(memory_mean_options), 'std': self._randomly_choose_one(memory_std_options), 'unit': services_system_requirements['memory']['unit'] }
+
+                disk_mean_options, disk_std_options = services_system_requirements['disk']['mean'], services_system_requirements['disk']['std']
+                system_requirements['disk'] = { 'mean': self._randomly_choose_one(disk_mean_options), 'std': self._randomly_choose_one(disk_std_options), 'unit': services_system_requirements['disk']['unit'] }
 
                 services_resource_requirements[self._service_name(service_id)] = ResourceRequirements.from_dict(system_requirements)
 
@@ -125,22 +143,35 @@ class ExperimentGenerator:
             requests_processing_durations = experiment_generation_recipe['requests_recipe']['duration']
             duration_percentiles_intervals = [ (beg, end) for beg, end in zip(requests_processing_durations['percentiles']['starts'],
                                                                               requests_processing_durations['percentiles']['ends']) ]
-            memory_usage_by_requests = experiment_generation_recipe['requests_recipe']['system_requirements']['memory']
-            memory_usage_by_requests_intervals = [ (beg, end) for beg, end in zip(memory_usage_by_requests['percentiles']['starts'],
-                                                                                  memory_usage_by_requests['percentiles']['ends']) ]
 
             for request_type_id in range(request_types_count):
+
+                requests_processing_requirements = experiment_generation_recipe['requests_recipe']['system_requirements']
+                system_requirements = dict()
+                if 'vCPU_mem_generator' in requests_processing_requirements:
+                    dual_req_cpu_mem_util_means_distr = ParametersDistribution.from_dict(requests_processing_requirements['vCPU_mem_generator']['mean'])
+                    dual_req_cpu_mem_util_stds_distr = ParametersDistribution.from_dict(requests_processing_requirements['vCPU_mem_generator']['std'])
+
+                    vCPU_mean, mem_mean = dual_req_cpu_mem_util_means_distr.sample
+                    vCPU_std, mem_std = dual_req_cpu_mem_util_stds_distr.sample
+
+                    system_requirements['vCPU'] = { 'mean': vCPU_mean, 'std': vCPU_std }
+                    system_requirements['memory'] = = { 'mean': mem_mean, 'std': mem_std, 'unit': 'B' }
+
+                else:
+
+                    vCPU_mean_options, vCPU_std_options = requests_processing_requirements['vCPU']['mean'], requests_processing_requirements['vCPU']['std']
+                    memory_mean_options, memory_std_options = requests_processing_requirements['memory']['mean'], requests_processing_requirements['memory']['std']
+
+                    system_requirements['vCPU'] = { 'mean': self._randomly_choose_one(vCPU_mean_options), 'std': self._randomly_choose_one(vCPU_std_options) }
+                    system_requirements['memory'] = { 'mean': self._randomly_choose_one(memory_mean_options), 'std': self._randomly_choose_one(memory_std_options), 'unit': requests_processing_requirements['memory']['unit'] }
+
+                disk_mean_options, disk_std_options = requests_processing_requirements['disk']['mean'], requests_processing_requirements['disk']['std']
+                system_requirements['disk'] = { 'mean': self._randomly_choose_one(disk_mean_options), 'std': self._randomly_choose_one(disk_std_options), 'unit': requests_processing_requirements['disk']['unit'] }
+
                 selected_bin_interval = self._randomly_choose_one(duration_percentiles_intervals, requests_processing_durations['probabilities'])
                 processing_duration_by_request = random.uniform(selected_bin_interval[0], selected_bin_interval[1])
-
-                selected_bin_interval = self._randomly_choose_one(memory_usage_by_requests_intervals, memory_usage_by_requests['probabilities'])
-                memory_usage_by_request = int(random.uniform(selected_bin_interval[0], selected_bin_interval[1]))
-
-                processing_requirements = experiment_generation_recipe['requests_recipe']['system_requirements']
-                processing_requirements['memory'] = { 'value': memory_usage_by_request, 'unit': 'MB' }
-
                 processing_times = { 'unit': requests_processing_durations['unit'], 'values': [] }
-
                 durations = list()
                 for service_id in range(services_count):
 
@@ -156,8 +187,8 @@ class ExperimentGenerator:
                                                         'upstream': upstream_processing_time,
                                                         'downstream': downstream_processing_time })
 
-                req_size_conf = experiment_generation_recipe['requests_recipe']['request_size']
-                resp_size_conf = experiment_generation_recipe['requests_recipe']['response_size']
+                req_size_conf = experiment_generation_recipe['requests_recipe']['request_size'] # TODO: as distr
+                resp_size_conf = experiment_generation_recipe['requests_recipe']['response_size'] # TODO: as distr
 
                 timeout_network_adj = pd.Timedelta(2 * 10 * services_count, unit = 'ms')
                 timeout_raw = pd.Timedelta(int(round((1 + experiment_generation_recipe['requests_recipe']['timeout_headroom']) * sum(durations), -1)), requests_processing_durations['unit'])
@@ -168,11 +199,11 @@ class ExperimentGenerator:
                         'entry_service': self._service_name(0),
                         'processing_times': processing_times,
                         'timeout': { 'value': timeout, 'unit': 'ms' },
-            			'request_size': { 'value': self._uniformly_choose_value_from_interval(req_size_conf), 'unit': req_size_conf['unit'] },
-            			'response_size': { 'value': self._uniformly_choose_value_from_interval(resp_size_conf), 'unit': resp_size_conf['unit'] },
+            			'request_size': { 'mean': self._uniformly_choose_value_from_interval(req_size_conf['mean']), 'std': self._uniformly_choose_value_from_interval(req_size_conf['std']), 'unit': req_size_conf['unit'] },
+            			'response_size': { 'mean': self._uniformly_choose_value_from_interval(resp_size_conf['mean']), 'std': self._uniformly_choose_value_from_interval(resp_size_conf['mean']), 'unit': resp_size_conf['unit'] },
             			'operation_type': self._randomly_choose_one(list(experiment_generation_recipe['requests_recipe']['operation_type'].keys()),
                                                                     list(experiment_generation_recipe['requests_recipe']['operation_type'].values())),
-            			'processing_requirements': processing_requirements
+            			'processing_requirements': system_requirements
         			}
 
                 app_config['requests'].append(request_conf)
