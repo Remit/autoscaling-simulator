@@ -10,6 +10,40 @@ class CountableResourceRequirement:
 
     """ Represents countable system resource requirement generating samples of resource requirement from the normal distribution """
 
+    _countable_requirements = {
+        'vCPU' : Numeric,
+        'memory' : Size,
+        'disk' : Size,
+        'network_bandwidth' : Size
+    }
+
+    _sanity_coef = 0.001 # fraction of mean considered as a minimal unit for the resource requirement
+
+    @classmethod
+    def get_resource_class(cls, resource_name : str):
+
+        return cls._countable_requirements[resource_name]
+
+    @classmethod
+    def vCPU_from_dict(cls, config : dict = None):
+
+        return cls.from_dict(cls.get_resource_class('vCPU'), config)
+
+    @classmethod
+    def memory_from_dict(cls, config : dict = None):
+
+        return cls.from_dict(cls.get_resource_class('memory'), config)
+
+    @classmethod
+    def disk_from_dict(cls, config : dict = None):
+
+        return cls.from_dict(cls.get_resource_class('disk'), config)
+
+    @classmethod
+    def network_bandwidth_from_dict(cls, config : dict = None):
+
+        return cls.from_dict(cls.get_resource_class('network_bandwidth'), config)
+
     @classmethod
     def from_dict(cls, resource_class : type, config : dict = None):
 
@@ -50,7 +84,7 @@ class CountableResourceRequirement:
     @property
     def mean(self):
 
-        return self._resource_class(self._mean, unit = self._unit)#.value
+        return self._resource_class(self._mean, unit = self._unit)
 
     @property
     def is_empty(self):
@@ -60,7 +94,7 @@ class CountableResourceRequirement:
     @property
     def sample(self):
 
-        return self._resource_class(np.random.normal(self._mean, self._std), unit = self._unit)
+        return self._resource_class(max(np.random.normal(self._mean, self._std), self.__class__._sanity_coef * self._mean), unit = self._unit)
 
     def _has_comparable_resource_class_with(self, other : 'CountableResourceRequirement'):
 
@@ -80,35 +114,17 @@ class ResourceRequirements:
 
     """ Container for the resource requirements, e.g. by a service or a request """
 
-    _countable_requirements = {
-        'vCPU' : Numeric,
-        'memory' : Size,
-        'disk' : Size,
-        'network_bandwidth' : Size
-    }
-
-    #@classmethod
-    #def new_empty_resource_requirements(cls):
-
-    #    return cls(None, None, None, None, None)
-
     @classmethod
     def from_dict(cls, requirements_raw : dict):
 
-        vCPU_raw = ErrorChecker.key_check_and_load('vCPU', requirements_raw)
-        vCPU = CountableResourceRequirement.from_dict(cls._countable_requirements['vCPU'], vCPU_raw)
-
-        memory_raw = ErrorChecker.key_check_and_load('memory', requirements_raw)
-        memory = CountableResourceRequirement.from_dict(cls._countable_requirements['memory'], memory_raw)
-
-        disk_raw = ErrorChecker.key_check_and_load('disk', requirements_raw)
-        disk = CountableResourceRequirement.from_dict(cls._countable_requirements['disk'], disk_raw)
+        vCPU = CountableResourceRequirement.vCPU_from_dict(ErrorChecker.key_check_and_load('vCPU', requirements_raw))
+        memory = CountableResourceRequirement.memory_from_dict(ErrorChecker.key_check_and_load('memory', requirements_raw))
+        disk = CountableResourceRequirement.disk_from_dict(ErrorChecker.key_check_and_load('disk', requirements_raw))
 
         try:
-            network_bandwidth_raw = ErrorChecker.key_check_and_load('network_bandwidth', requirements_raw)
-            network_bandwidth = CountableResourceRequirement.from_dict(cls._countable_requirements['network_bandwidth'], network_bandwidth_raw)
+            network_bandwidth = CountableResourceRequirement.network_bandwidth_from_dict(ErrorChecker.key_check_and_load('network_bandwidth', requirements_raw))
         except AttributeError:
-            network_bandwidth = CountableResourceRequirement.from_dict(cls._countable_requirements['network_bandwidth'])
+            network_bandwidth = CountableResourceRequirement.network_bandwidth_from_dict()
 
         try:
             labels = ErrorChecker.key_check_and_load('labels', requirements_raw)
@@ -120,10 +136,10 @@ class ResourceRequirements:
     def __init__(self, vCPU : CountableResourceRequirement = None, memory : CountableResourceRequirement = None,
                  disk : CountableResourceRequirement = None, network_bandwidth : CountableResourceRequirement = None, labels : list = None):
 
-        self._vCPU = vCPU if not vCPU is None else CountableResourceRequirement(self.__class__._countable_requirements['vCPU'])
-        self._memory = memory if not memory is None else CountableResourceRequirement(self.__class__._countable_requirements['memory'])
-        self._disk = disk if not disk is None else CountableResourceRequirement(self.__class__._countable_requirements['disk'])
-        self._network_bandwidth = network_bandwidth if not network_bandwidth is None else CountableResourceRequirement(self.__class__._countable_requirements['network_bandwidth'])
+        self._vCPU = vCPU if not vCPU is None else CountableResourceRequirement.vCPU_from_dict()
+        self._memory = memory if not memory is None else CountableResourceRequirement.memory_from_dict()
+        self._disk = disk if not disk is None else CountableResourceRequirement.disk_from_dict()
+        self._network_bandwidth = network_bandwidth if not network_bandwidth is None else CountableResourceRequirement.network_bandwidth_from_dict()
         self._labels = labels if not labels is None else list()
 
     @property
@@ -187,10 +203,10 @@ class ResourceRequirementsSample:
 
     def __init__(self, vCPU : Numeric = None, memory : Size = None, disk : Size = None, network_bandwidth : Size = None, labels : list = list()):
 
-        self.vCPU = vCPU if not vCPU is None else ResourceRequirements._countable_requirements['vCPU'](0)
-        self.memory = memory if not memory is None else ResourceRequirements._countable_requirements['memory'](0)
-        self.disk = disk if not disk is None else ResourceRequirements._countable_requirements['disk'](0)
-        self.network_bandwidth = network_bandwidth if not network_bandwidth is None else ResourceRequirements._countable_requirements['network_bandwidth'](0)
+        self.vCPU = vCPU if not vCPU is None else CountableResourceRequirement.get_resource_class('vCPU')(0)
+        self.memory = memory if not memory is None else CountableResourceRequirement.get_resource_class('memory')(0)
+        self.disk = disk if not disk is None else CountableResourceRequirement.get_resource_class('disk')(0)
+        self.network_bandwidth = network_bandwidth if not network_bandwidth is None else CountableResourceRequirement.get_resource_class('network_bandwidth')(0)
         self.labels = labels if not labels is None else list()
 
     def __add__(self, other : 'ResourceRequirementsSample'):

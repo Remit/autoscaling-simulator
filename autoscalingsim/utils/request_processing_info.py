@@ -1,6 +1,6 @@
 import pandas as pd
 
-from .requirements import ResourceRequirements
+from .requirements import ResourceRequirements, CountableResourceRequirement
 from .metric.metric_categories.size import Size
 
 class RequestProcessingInfo:
@@ -17,8 +17,8 @@ class RequestProcessingInfo:
                  entry_service : str,
                  processing_times : dict,
                  timeout : pd.Timedelta,
-                 request_size : Size,
-                 response_size : Size,
+                 request_size : CountableResourceRequirement,
+                 response_size : CountableResourceRequirement,
                  request_operation_type : str,
                  request_processing_requirements : dict):
 

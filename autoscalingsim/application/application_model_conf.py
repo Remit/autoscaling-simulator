@@ -11,7 +11,7 @@ from autoscalingsim.scaling.policiesbuilder.scaled.scaled_service_settings impor
 from autoscalingsim.scaling.state_reader import StateReader
 from autoscalingsim.utils.request_processing_info import RequestProcessingInfo
 from autoscalingsim.utils.metric.metric_categories.size import Size
-from autoscalingsim.utils.requirements import ResourceRequirements
+from autoscalingsim.utils.requirements import ResourceRequirements, CountableResourceRequirement
 from autoscalingsim.utils.error_check import ErrorChecker
 
 class ServiceConfiguration:
@@ -152,15 +152,12 @@ class ApplicationModelConfiguration:
                         timeout = pd.Timedelta(timeout_val, unit = timeout_unit)
                         ErrorChecker.value_check('timeout', timeout, operator.ge, pd.Timedelta(0, unit = timeout_unit), [f'request_type {request_type}'])
 
-                        request_size_raw = ErrorChecker.key_check_and_load('request_size', request_info, 'request_type', request_type)
-                        request_size = Size.to_metric(request_size_raw)
-
-                        response_size_raw = ErrorChecker.key_check_and_load('response_size', request_info, 'request_type', request_type)
-                        response_size = Size.to_metric(response_size_raw)
+                        request_size = CountableResourceRequirement.memory_from_dict(ErrorChecker.key_check_and_load('request_size', request_info, 'request_type', request_type))
+                        response_size = CountableResourceRequirement.memory_from_dict(ErrorChecker.key_check_and_load('response_size', request_info, 'request_type', request_type))
 
                         request_operation_type = ErrorChecker.key_check_and_load('operation_type', request_info, 'request_type', request_type)
 
-                        request_processing_requirements = ErrorChecker.key_check_and_load('processing_requirements', request_info, 'request_type', request_type) 
+                        request_processing_requirements = ErrorChecker.key_check_and_load('processing_requirements', request_info, 'request_type', request_type)
 
                         req_proc_info = RequestProcessingInfo(request_type, entry_service, processing_times, timeout,
                                                               request_size, response_size, request_operation_type, request_processing_requirements)

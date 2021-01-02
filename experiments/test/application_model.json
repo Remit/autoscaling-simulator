@@ -143,11 +143,13 @@
 				"unit": "ms"
 			},
 			"request_size": {
-				"value": 1,
+				"mean": 1,
+				"std": 0,
 				"unit": "KB"
 			},
 			"response_size": {
-				"value": 1,
+				"mean": 1,
+				"std": 0.1,
 				"unit": "KB"
 			},
 			"operation_type": "rw",
@@ -196,11 +198,13 @@
 				"unit": "ms"
 			},
 			"request_size": {
-				"value": 4,
+				"mean": 4,
+				"std": 0,
 				"unit": "KB"
 			},
 			"response_size": {
-				"value": 1,
+				"mean": 1,
+				"std": 0.1,
 				"unit": "KB"
 			},
 			"operation_type": "rw",

@@ -26,9 +26,10 @@ class Request:
 
         self.cumulative_time = pd.Timedelta(0, unit = 'ms')
         self.network_time = pd.Timedelta(0, unit = 'ms')
-        self.buffer_time = {}
+        self.buffer_time = dict()
 
         self._processing_service = None
+        self._size = None
         self._upstream = True
         self.replies_expected = 1
 
@@ -58,6 +59,7 @@ class Request:
 
         self._cur_resource_requirements = self.request_processing_info.resource_requirements.sample
         self._processing_service = new_processing_service
+        self._size = self.request_processing_info.request_size.sample if self._upstream else self.request_processing_info.response_size.sample
 
     @property
     def entry_service(self):
@@ -72,12 +74,12 @@ class Request:
     @property
     def request_size(self):
 
-        return self.request_processing_info.request_size
+        return self._size
 
     @property
     def response_size(self):
 
-        return self.request_processing_info.response_size
+        return self._size
 
     @property
     def timeout(self):
