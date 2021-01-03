@@ -192,55 +192,56 @@ class PlatformModel:
         interval_begins = list(timeline_of_deltas_raw.keys())
         interval_ends = list(timeline_of_deltas_raw.keys())[1:]
 
-        while max(interval_ends) > simulation_end:
-            interval_begins = interval_begins[:-1]
-            interval_ends = interval_ends[:-1]
+        if len(interval_ends) > 0:
+            while max(interval_ends) > simulation_end:
+                interval_begins = interval_begins[:-1]
+                interval_ends = interval_ends[:-1]
 
-        interval_ends.append(simulation_end)
+            interval_ends.append(simulation_end)
 
-        for timestamp_beg, timestamp_end in zip(interval_begins, interval_ends):
-            timestamp = timestamp_beg
-            deltas_lst = timeline_of_deltas_raw[timestamp]
-            for delta in deltas_lst:
-                cur_state += delta
+            for timestamp_beg, timestamp_end in zip(interval_begins, interval_ends):
+                timestamp = timestamp_beg
+                deltas_lst = timeline_of_deltas_raw[timestamp]
+                for delta in deltas_lst:
+                    cur_state += delta
 
-            node_counts_raw = cur_state.node_counts_for_change_status(in_change)
+                node_counts_raw = cur_state.node_counts_for_change_status(in_change)
 
-            repeated_data = collections.defaultdict(lambda: collections.defaultdict(lambda: collections.defaultdict(int)))
-            for region_name, node_count_per_provider in node_counts_raw.items():
-                for provider_name, node_count_per_type in node_count_per_provider.items():
-                    for node_type, node_count in node_count_per_type.items():
-
-                        joint_node_count[provider_name][region_name][node_type][self.__class__.timestamps_key].append(timestamp)
-                        joint_node_count[provider_name][region_name][node_type][self.__class__.node_count_key].append(node_count)
-                        repeated_data[provider_name][region_name][node_type] = node_count
-
-            # Just repeating what we already computed before if the state did not change
-            timestamp += simulation_step
-            timestamp_real_end = min(timestamp_end, simulation_end)
-            while timestamp < timestamp_real_end:
-
-                for provider_name, node_count_per_provider in repeated_data.items():
-                    for region_name, node_count_per_type in node_count_per_provider.items():
+                repeated_data = collections.defaultdict(lambda: collections.defaultdict(lambda: collections.defaultdict(int)))
+                for region_name, node_count_per_provider in node_counts_raw.items():
+                    for provider_name, node_count_per_type in node_count_per_provider.items():
                         for node_type, node_count in node_count_per_type.items():
+
                             joint_node_count[provider_name][region_name][node_type][self.__class__.timestamps_key].append(timestamp)
                             joint_node_count[provider_name][region_name][node_type][self.__class__.node_count_key].append(node_count)
+                            repeated_data[provider_name][region_name][node_type] = node_count
 
+                # Just repeating what we already computed before if the state did not change
                 timestamp += simulation_step
+                timestamp_real_end = min(timestamp_end, simulation_end)
+                while timestamp < timestamp_real_end:
 
-        # Adjusting the start of the intervals to be zeros since we do not have
-        # the information on possible node types before these nodes appear
-        for provider_name in joint_node_count:
-            for region_name in joint_node_count[provider_name]:
-                for node_type in joint_node_count[provider_name][region_name]:
-                    cur_start_timestamp = simulation_start + simulation_step
-                    if len(joint_node_count[provider_name][region_name][node_type][self.__class__.timestamps_key]) > 0:
-                        cur_start_timestamp = joint_node_count[provider_name][region_name][node_type][self.__class__.timestamps_key][0]
-                    timestamp = cur_start_timestamp - simulation_step
+                    for provider_name, node_count_per_provider in repeated_data.items():
+                        for region_name, node_count_per_type in node_count_per_provider.items():
+                            for node_type, node_count in node_count_per_type.items():
+                                joint_node_count[provider_name][region_name][node_type][self.__class__.timestamps_key].append(timestamp)
+                                joint_node_count[provider_name][region_name][node_type][self.__class__.node_count_key].append(node_count)
 
-                    while timestamp >= simulation_start:
-                        joint_node_count[provider_name][region_name][node_type][self.__class__.timestamps_key].insert(0, timestamp)
-                        joint_node_count[provider_name][region_name][node_type][self.__class__.node_count_key].insert(0, 0)
-                        timestamp -= simulation_step
+                    timestamp += simulation_step
+
+            # Adjusting the start of the intervals to be zeros since we do not have
+            # the information on possible node types before these nodes appear
+            for provider_name in joint_node_count:
+                for region_name in joint_node_count[provider_name]:
+                    for node_type in joint_node_count[provider_name][region_name]:
+                        cur_start_timestamp = simulation_start + simulation_step
+                        if len(joint_node_count[provider_name][region_name][node_type][self.__class__.timestamps_key]) > 0:
+                            cur_start_timestamp = joint_node_count[provider_name][region_name][node_type][self.__class__.timestamps_key][0]
+                        timestamp = cur_start_timestamp - simulation_step
+
+                        while timestamp >= simulation_start:
+                            joint_node_count[provider_name][region_name][node_type][self.__class__.timestamps_key].insert(0, timestamp)
+                            joint_node_count[provider_name][region_name][node_type][self.__class__.node_count_key].insert(0, 0)
+                            timestamp -= simulation_step
 
         return joint_node_count

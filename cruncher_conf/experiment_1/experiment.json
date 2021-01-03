@@ -2,6 +2,7 @@
   "experiment_config": {
     "regime": "alternative_policies",
     "repetitions_count_per_simulation": 2,
+    "keep_evaluated_configs": false,
     "results_folder": "D:/@TUM/PhD/FINAL/experimentresults",
     "regime_config": {
       "unchanged_configs_folder": "constant_configs",
@@ -15,8 +16,8 @@
       "unit": "ms"
     },
     "time_to_simulate": {
-      "value": 2,
-      "unit": "m"
+      "value": 45,
+      "unit": "s"
     }
   }
 }

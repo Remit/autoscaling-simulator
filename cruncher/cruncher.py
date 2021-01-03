@@ -37,14 +37,15 @@ class Cruncher:
                 results_folder = ErrorChecker.key_check_and_load('results_folder', experiment_config)
                 if not results_folder is None and not os.path.exists(results_folder):
                     os.makedirs(results_folder)
-
+                keep_evaluated_configs = ErrorChecker.key_check_and_load('keep_evaluated_configs', experiment_config)
+                
                 simulation_config_raw = ErrorChecker.key_check_and_load('simulation_config', config)
                 simulation_config = { 'simulation_step': pd.Timedelta(**ErrorChecker.key_check_and_load('simulation_step', simulation_config_raw)),
                                       'starting_time': pd.Timestamp(ErrorChecker.key_check_and_load('starting_time', simulation_config_raw)),
                                       'time_to_simulate': pd.Timedelta(**ErrorChecker.key_check_and_load('time_to_simulate', simulation_config_raw)) }
 
                 regime_config = ErrorChecker.key_check_and_load('regime_config', experiment_config)
-                self.regime = ExperimentalRegime.get(regime)(config_folder, regime_config, Simulator(**simulation_config), repetitions_count_per_simulation, results_folder)
+                self.regime = ExperimentalRegime.get(regime)(config_folder, regime_config, Simulator(**simulation_config), repetitions_count_per_simulation, results_folder, keep_evaluated_configs)
 
             except json.JSONDecodeError:
                 raise ValueError(f'An invalid JSON when parsing for {self.__class__.__name__}')

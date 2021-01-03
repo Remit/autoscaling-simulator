@@ -4,11 +4,12 @@ class ExperimentalRegime(ABC):
 
     _Registry = {}
 
-    def __init__(self, simulator : 'Simulator', repetitions_count_per_simulation : int, results_folder : str):
+    def __init__(self, simulator : 'Simulator', repetitions_count_per_simulation : int, results_folder : str, keep_evaluated_configs : bool = False):
 
         self.simulator = simulator
         self.repetitions_count_per_simulation = repetitions_count_per_simulation
         self.results_folder = results_folder
+        self.keep_evaluated_configs = keep_evaluated_configs
 
     @abstractmethod
     def run_experiment(self):

@@ -30,13 +30,12 @@ class Simulator:
         self.simulations = {}
         self.simulations_configs = {}
 
-    def add_simulation(self, configs_dir : str, results_dir : str = None, stat_updates_every_round : int = 0):
+    def add_simulation(self, configs_dir : str, results_dir : str = None, stat_updates_every_round : int = 0, simulation_name : str = None):
 
-        simulation_name = ''
         if not os.path.exists(configs_dir):
             raise ValueError('The specified directory with the configuration files does not exist.')
 
-        simulation_name = os.path.split(configs_dir)[-1]
+        simulation_name = os.path.split(configs_dir)[-1] if simulation_name is None else simulation_name
         config_listing_path = os.path.join(configs_dir, 'confs.json')
         if not os.path.isfile(config_listing_path):
             raise ValueError('No configs listing file in the specified configuration directory.')

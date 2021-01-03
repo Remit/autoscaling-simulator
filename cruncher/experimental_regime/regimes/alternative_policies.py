@@ -25,11 +25,12 @@ class AlternativePoliciesExperimentalRegime(ExperimentalRegime):
 
     _concretization_delimiter = '$$'
     _policies_categories_delimiter = '___'
+    _simulation_name_pattern = '{}%%%{}'
 
     def __init__(self, config_folder : str, regime_config : dict, simulator : 'Simulator',
                  repetitions_count_per_simulation : int, results_folder : str, keep_evaluated_configs : bool = False):
 
-        super().__init__(simulator, repetitions_count_per_simulation, results_folder)
+        super().__init__(simulator, repetitions_count_per_simulation, results_folder, keep_evaluated_configs)
 
         self.unchanged_configs_folder = os.path.join(config_folder, ErrorChecker.key_check_and_load('unchanged_configs_folder', regime_config))
         if not os.path.exists(self.unchanged_configs_folder):
@@ -39,7 +40,6 @@ class AlternativePoliciesExperimentalRegime(ExperimentalRegime):
             raise ValueError(f'Folder {self.alternatives_folder} for the evaluated alternative configs of the experiments does not exist')
 
         self.config_folder = config_folder
-        self.keep_evaluated_configs = keep_evaluated_configs
 
     def populate_subfolders(self):
 
@@ -112,8 +112,14 @@ class AlternativePoliciesExperimentalRegime(ExperimentalRegime):
             with open(confs_filepath, 'w') as f:
                 json.dump(config, f)
 
-        #paths_with_configs_for_experiments
-        # repeat repetitions_count_per_simulation
-        # 2. add it as a simulation, and then start it
-        # 3. collect the data from all the simulations
-        #def add_simulation(self, configs_dir : str, results_dir : str = None, stat_updates_every_round : int = 0):
+        for configs_folder in paths_with_configs_for_experiments:
+            for sim_id in range(self.repetitions_count_per_simulation):
+                self.simulator.add_simulation(configs_folder,
+                                              simulation_name = self.__class__._simulation_name_pattern.format(os.path.basename(os.path.normpath(configs_folder)), sim_id))
+
+        self.simulator.start_simulation()
+
+        # 3. collect the data from all the simulations, aggregate it and put into the self.results_folder
+
+        if not self.keep_evaluated_configs:
+            shutil.rmtree(tmp_folder_for_evaluated_configs, ignore_errors = True)
