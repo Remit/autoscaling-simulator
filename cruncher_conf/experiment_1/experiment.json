@@ -1,10 +1,10 @@
 {
   "experiment_config": {
-    "regime": "policy"
+    "regime": "alternative_policies",
     "repetitions_count_per_simulation": 2,
-    "results_folder": "D:\@TUM\PhD\FINAL\experimentresults",
+    "results_folder": "D:/@TUM/PhD/FINAL/experimentresults",
     "regime_config": {
-      "unchanged_configs_folder": "constant_configs"
+      "unchanged_configs_folder": "constant_configs",
       "alternatives_folder": "alternatives"
     }
   },

@@ -3,74 +3,10 @@ import glob
 import json
 import pandas as pd
 
-from autoscalingsim import Simulator
+from autoscalingsim.simulator import Simulator
 from autoscalingsim.utils.error_check import ErrorChecker
 
-
-from abc import ABC, abstractmethod
-
-class ExperimentalRegime(ABC):
-
-    _Registry = {}
-
-    def __init__(self, simulator : Simulator, repetitions_count_per_simulation : int, results_folder : str):
-
-        self.simulator = simulator
-        self.repetitions_count_per_simulation = repetitions_count_per_simulation
-        self.results_folder = results_folder
-
-    @abstractmethod
-    def run_experiment(self):
-        pass
-
-    @classmethod
-    def register(cls, name : str):
-
-        def decorator(regime_class):
-            cls._Registry[name] = regime_class
-            return regime_class
-
-        return decorator
-
-    @classmethod
-    def get(cls, name : str):
-
-        if not name in cls._Registry:
-            raise ValueError(f'An attempt to use a non-existent {cls.__name__} {name}')
-
-        return cls._Registry[name]
-
-@Regime.register('alternative_policies')
-class AlternativePoliciesExperimentalRegime(ExperimentalRegime):
-
-    def __init__(self, config_folder : str, regime_config : dict, simulator : Simulator, repetitions_count_per_simulation : int, results_folder : str):
-
-        super().__init__(simulator, repetitions_count_per_simulation, results_folder)
-
-        self.unchanged_configs_folder = os.path.join(config_folder, ErrorChecker.key_check_and_load('unchanged_configs_folder', regime_config))
-        if not os.path.exists(self.unchanged_configs_folder):
-            raise ValueError(f'Folder {self.unchanged_configs_folder} for the unchanged configs of the experiments does not exist')
-        self.alternatives_folder = os.path.join(config_folder, ErrorChecker.key_check_and_load('alternatives_folder', regime_config))
-        if not os.path.exists(self.alternatives_folder):
-            raise ValueError(f'Folder {self.alternatives_folder} for the evaluated alternative configs of the experiments does not exist')
-
-    def run_experiment(self):
-
-        # repeat repetitions_count_per_simulation
-        # 1. for each alternative create its own configs directory
-        # 2. add it as a simulation, and then start it
-        # 3. collect the data from all the simulations
-        #def add_simulation(self, configs_dir : str, results_dir : str = None, stat_updates_every_round : int = 0):
-        pass
-
-@Regime.register('building_blocks')
-class BuildingBlocksExperimentalRegime(ExperimentalRegime):
-
-    def __init__(self, config_folder : str, simulator : Simulator, regime_config : dict):
-        pass
-
-    def run_experiment(self):
-        pass
+from .experimental_regime.experimental_regime import ExperimentalRegime
 
 class Cruncher:
 
@@ -108,7 +44,7 @@ class Cruncher:
                                       'time_to_simulate': pd.Timedelta(**ErrorChecker.key_check_and_load('time_to_simulate', simulation_config_raw)) }
 
                 regime_config = ErrorChecker.key_check_and_load('regime_config', experiment_config)
-                self.regime = Regime.get(regime)(config_folder, regime_config, Simulator(**simulation_config), repetitions_count_per_simulation, results_folder)
+                self.regime = ExperimentalRegime.get(regime)(config_folder, regime_config, Simulator(**simulation_config), repetitions_count_per_simulation, results_folder)
 
             except json.JSONDecodeError:
                 raise ValueError(f'An invalid JSON when parsing for {self.__class__.__name__}')
