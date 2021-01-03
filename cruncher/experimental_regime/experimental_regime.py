@@ -1,14 +1,29 @@
+from autoscalingsim import conf_keys
 from abc import ABC, abstractmethod
 
 class ExperimentalRegime(ABC):
 
     _Registry = {}
 
-    def __init__(self, simulator : 'Simulator', repetitions_count_per_simulation : int, results_folder : str, keep_evaluated_configs : bool = False):
+    _Policies_folders_names = [
+        conf_keys.CONF_LOAD_MODEL_KEY,
+        conf_keys.CONF_APPLICATION_MODEL_KEY,
+        conf_keys.CONF_SCALING_POLICY_KEY,
+        conf_keys.CONF_PLATFORM_MODEL_KEY,
+        conf_keys.CONF_SCALING_MODEL_KEY,
+        conf_keys.CONF_ADJUSTMENT_POLICY_KEY,
+        conf_keys.CONF_DEPLOYMENT_MODEL_KEY,
+        conf_keys.CONF_FAULT_MODEL_KEY
+    ]
+
+    _concretization_delimiter = '@@'
+    _policies_categories_delimiter = '___'
+    _simulation_instance_delimeter = '%%%'
+
+    def __init__(self, simulator : 'Simulator', repetitions_count_per_simulation : int, keep_evaluated_configs : bool = False):
 
         self.simulator = simulator
         self.repetitions_count_per_simulation = repetitions_count_per_simulation
-        self.results_folder = results_folder
         self.keep_evaluated_configs = keep_evaluated_configs
 
     @abstractmethod

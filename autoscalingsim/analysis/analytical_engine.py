@@ -39,44 +39,27 @@ class AnalysisFramework:
             > Autoscaling time budget evaluation graphs
     """
 
-    def __init__(self,
-                 simulation_step : pd.Timedelta,
-                 figures_dir = None):
+    def __init__(self, simulation_step : pd.Timedelta, figures_dir = None):
 
         self.simulation_step = simulation_step
         self.figures_dir = figures_dir
 
-    def build_figures(self,
-                      simulation : Simulation,
-                      results_dirs : str = '',
-                      figures_dir = None):
+    def build_figures_for_single_simulation(self, simulation : Simulation = None, results_dirs : str = '', figures_dir = None):
         # TODO: figure settings from config file?
         # TODO: get results from the results_dir, also need to add storing into it
 
-        figures_dir_in_use = self.figures_dir
-
-        if not figures_dir is None:
-            figures_dir_in_use = figures_dir
+        figures_dir_in_use = self.figures_dir if figures_dir is None else figures_dir
 
         # Getting the data into the unified representation for processing
         # either from the simulation or from the results_dir
-        response_times_regionalized = {}
-        load_regionalized = {}
-        buffer_times_regionalized = {}
-        network_times_regionalized = {}
-        desired_node_count_per_provider = {}
-        actual_node_count_per_provider = {}
-        utilization_per_service = {}
-        infrastructure_cost_per_provider = {}
-        if not simulation is None:
-            load_regionalized = simulation.application_model.load_model.get_generated_load()
-            response_times_regionalized = simulation.application_model.response_stats.get_response_times_by_request()
-            buffer_times_regionalized = simulation.application_model.response_stats.get_buffer_times_by_request()
-            network_times_regionalized = simulation.application_model.response_stats.get_network_times_by_request()
-            desired_node_count_per_provider = simulation.application_model.desired_node_count
-            actual_node_count_per_provider = simulation.application_model.actual_node_count
-            infrastructure_cost_per_provider = simulation.application_model.infrastructure_cost
-            utilization_per_service = simulation.application_model.utilization
+        response_times_regionalized = simulation.application_model.response_stats.get_response_times_by_request() if not simulation is None else dict()
+        load_regionalized = simulation.application_model.load_model.get_generated_load() if not simulation is None else dict()
+        buffer_times_regionalized = simulation.application_model.response_stats.get_buffer_times_by_request() if not simulation is None else dict()
+        network_times_regionalized = simulation.application_model.response_stats.get_network_times_by_request() if not simulation is None else dict()
+        desired_node_count_per_provider = simulation.application_model.desired_node_count if not simulation is None else dict()
+        actual_node_count_per_provider = simulation.application_model.actual_node_count if not simulation is None else dict()
+        utilization_per_service = simulation.application_model.utilization if not simulation is None else dict()
+        infrastructure_cost_per_provider = simulation.application_model.infrastructure_cost if not simulation is None else dict()
 
         # Building figures with the internal functions
         # Autoscaling quality evaluation category
@@ -120,3 +103,11 @@ class AnalysisFramework:
                                                buffer_times_regionalized,
                                                network_times_regionalized,
                                                figures_dir = figures_dir_in_use)
+
+    def build_comparative_figures(self, simulations_by_name : dict, figures_dir : str = None):
+
+        figures_dir_in_use = self.figures_dir if figures_dir is None else figures_dir
+
+        ResponseTimesCDF.comparative_plot(simulations_by_name, self.simulation_step, figures_dir = figures_dir_in_use)
+        #FulfilledDroppedBarchart.comparative_plot(simulations_by_name, figures_dir = figures_dir_in_use)
+        #DistributionRequestsTimesBarchart.comparative_plot(simulations_by_name, figures_dir = figures_dir_in_use)

@@ -12,25 +12,10 @@ from autoscalingsim.utils.error_check import ErrorChecker
 @ExperimentalRegime.register('alternative_policies')
 class AlternativePoliciesExperimentalRegime(ExperimentalRegime):
 
-    _Policies_folders_names = [
-        conf_keys.CONF_LOAD_MODEL_KEY,
-        conf_keys.CONF_APPLICATION_MODEL_KEY,
-        conf_keys.CONF_SCALING_POLICY_KEY,
-        conf_keys.CONF_PLATFORM_MODEL_KEY,
-        conf_keys.CONF_SCALING_MODEL_KEY,
-        conf_keys.CONF_ADJUSTMENT_POLICY_KEY,
-        conf_keys.CONF_DEPLOYMENT_MODEL_KEY,
-        conf_keys.CONF_FAULT_MODEL_KEY
-    ]
-
-    _concretization_delimiter = '$$'
-    _policies_categories_delimiter = '___'
-    _simulation_name_pattern = '{}%%%{}'
-
     def __init__(self, config_folder : str, regime_config : dict, simulator : 'Simulator',
-                 repetitions_count_per_simulation : int, results_folder : str, keep_evaluated_configs : bool = False):
+                 repetitions_count_per_simulation : int, keep_evaluated_configs : bool = False):
 
-        super().__init__(simulator, repetitions_count_per_simulation, results_folder, keep_evaluated_configs)
+        super().__init__(simulator, repetitions_count_per_simulation, keep_evaluated_configs)
 
         self.unchanged_configs_folder = os.path.join(config_folder, ErrorChecker.key_check_and_load('unchanged_configs_folder', regime_config))
         if not os.path.exists(self.unchanged_configs_folder):
@@ -43,7 +28,7 @@ class AlternativePoliciesExperimentalRegime(ExperimentalRegime):
 
     def populate_subfolders(self):
 
-        for policy_folder_name in self.__class__._Policies_folders_names:
+        for policy_folder_name in ExperimentalRegime._Policies_folders_names:
             policy_folder_name_full = os.path.join(self.alternatives_folder, policy_folder_name)
             if not os.path.exists(policy_folder_name_full):
                 os.makedirs(policy_folder_name_full)
@@ -56,9 +41,9 @@ class AlternativePoliciesExperimentalRegime(ExperimentalRegime):
 
         alternatives_by_policy = collections.defaultdict(list)
         for policy_type in os.listdir(self.alternatives_folder):
-            if not policy_type in self.__class__._Policies_folders_names:
+            if not policy_type in ExperimentalRegime._Policies_folders_names:
                 raise ValueError(f'Unexpected folder {policy_type} in {self.alternatives_folder}.\
-                                   The options are: {self.__class__._Policies_folders_names}. Use method populate_subfolders of {self.__class__.__name__} to create all the directories correctly.')
+                                   The options are: {ExperimentalRegime._Policies_folders_names}. Use method populate_subfolders of {self.__class__.__name__} to create all the directories correctly.')
 
             json_files_for_policy_type = glob.glob(os.path.join(self.alternatives_folder, policy_type, '*.json'))
             if len(json_files_for_policy_type) > 0:
@@ -71,8 +56,8 @@ class AlternativePoliciesExperimentalRegime(ExperimentalRegime):
 
         paths_with_configs_for_experiments = list()
         for combination in itertools.product(*alternatives_as_tuples):
-            folder_name_for_considered_combination = 'alternative' + ''.join(self.__class__._policies_categories_delimiter + '%s' \
-                                                                              % self.__class__._concretization_delimiter.join(map(str, alt)) for alt in combination)
+            folder_name_for_considered_combination = 'alternative' + ''.join(ExperimentalRegime._policies_categories_delimiter + '%s' \
+                                                                              % ExperimentalRegime._concretization_delimiter.join(map(str, alt)) for alt in combination)
 
             path_to_considered_combination = os.path.join(tmp_folder_for_evaluated_configs, folder_name_for_considered_combination)
             if not os.path.exists(path_to_considered_combination):
@@ -115,11 +100,9 @@ class AlternativePoliciesExperimentalRegime(ExperimentalRegime):
         for configs_folder in paths_with_configs_for_experiments:
             for sim_id in range(self.repetitions_count_per_simulation):
                 self.simulator.add_simulation(configs_folder,
-                                              simulation_name = self.__class__._simulation_name_pattern.format(os.path.basename(os.path.normpath(configs_folder)), sim_id))
+                                              simulation_name = f'{os.path.basename(os.path.normpath(configs_folder))}{ExperimentalRegime._simulation_instance_delimeter}{sim_id}')
 
         self.simulator.start_simulation()
-
-        # 3. collect the data from all the simulations, aggregate it and put into the self.results_folder
 
         if not self.keep_evaluated_configs:
             shutil.rmtree(tmp_folder_for_evaluated_configs, ignore_errors = True)

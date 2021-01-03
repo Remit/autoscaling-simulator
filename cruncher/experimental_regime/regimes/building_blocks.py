@@ -7,7 +7,7 @@ from autoscalingsim.utils.error_check import ErrorChecker
 class BuildingBlocksExperimentalRegime(ExperimentalRegime):
 
     def __init__(self, config_folder : str, regime_config : dict, simulator : 'Simulator',
-                 repetitions_count_per_simulation : int, results_folder : str, keep_evaluated_configs : bool = False):
+                 repetitions_count_per_simulation : int, keep_evaluated_configs : bool = False):
         pass
 
     def run_experiment(self):
