@@ -29,6 +29,7 @@ class Request:
         self.buffer_time = dict()
 
         self._processing_service = None
+        self._cur_resource_requirements = None
         self._size = None
         self._upstream = True
         self.replies_expected = 1
@@ -95,3 +96,28 @@ class Request:
     def downstream(self):
 
         return not self._upstream
+
+    def __deepcopy__(self, memo):
+
+        req_copy = self.__class__(self.region_name, self.request_type, self.request_processing_info, self.simulation_step, self.request_id)
+
+        req_copy.processing_time_left = self.processing_time_left
+        req_copy.waiting_on_link_left = self.waiting_on_link_left
+
+        req_copy.cumulative_time = self.cumulative_time
+        req_copy.network_time = self.network_time
+        req_copy.buffer_time = self.buffer_time.copy()
+
+        req_copy._processing_service = self._processing_service
+        req_copy._cur_resource_requirements = self._cur_resource_requirements
+        req_copy._size = self._size
+        req_copy._upstream = self._upstream
+        req_copy.replies_expected = self.replies_expected
+        memo[id(req_copy)] = req_copy
+        return req_copy
+
+    def __repr__(self):
+
+        return f'{self.__class__.__name__}(region_name = {self.region_name}, request_type = {self.request_type}, \
+                                           request_processing_info = {self.request_processing_info}, simulation_step = {self.simulation_step}, \
+                                           request_id = {self.request_id})'

@@ -12,7 +12,7 @@ class ParametersDistribution:
         return cls(config['probs'], config['util_intervals'], config['absolute_cores_vals'], config['absolute_mem_vals'])
 
     @classmethod
-    def from_empirical_data(self, empirical_data : list, bins_cnt : int = 10, cpu_to_memory_correlation : float = 0.9):
+    def from_empirical_data(cls, empirical_data : list, bins_cnt : int = 10, cpu_to_memory_correlation : float = 0.9):
 
         util_data_clean = [ tuple[0] for tuple in empirical_data ]
         count_c, bins_c, = np.histogram(util_data_clean, bins = min(bins_cnt, len(util_data_clean)))
@@ -36,7 +36,7 @@ class ParametersDistribution:
 
     @property
     def sample(self):
-        idx = np.random.choice(range(len(self.util_intervals)), p = probs)
+        idx = np.random.choice(range(len(self.util_intervals)), p = self.probs)
         selected_util = np.random.uniform(self.util_intervals[idx][0], self.util_intervals[idx][1])
         cores_req = self.absolute_cores_vals[idx] * selected_util
         mem_req = self.absolute_mem_vals[idx] * selected_util

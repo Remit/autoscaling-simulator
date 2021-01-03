@@ -107,9 +107,10 @@ class AzureFunctionsExperimentGenerator(ExperimentGenerator):
         experiment_generation_recipe['requests_recipe']['duration'] = { 'percentiles': { 'starts': duration_percentiles_starts, 'ends': duration_percentiles_ends},
                                                                         'probabilities': [0.01, 0.24, 0.25, 0.25, 0.24, 0.01],
                                                                         'unit': 'ms'}
-        experiment_generation_recipe['requests_recipe']['system_requirements']['memory'] = { 'percentiles': { 'starts': memory_percentiles_starts, 'ends': memory_percentiles_ends},
-                                                                                             'probabilities': [0.01, 0.04, 0.20, 0.25, 0.25, 0.20, 0.04, 0.01],
-                                                                                             'unit': 'MB'}
+        # TODO: change according to the format in experiment generator and agree with the possible overwrite by other data analyzer
+        #experiment_generation_recipe['requests_recipe']['system_requirements']['memory'] = { 'percentiles': { 'starts': memory_percentiles_starts, 'ends': memory_percentiles_ends},
+        #                                                                                     'probabilities': [0.01, 0.04, 0.20, 0.25, 0.25, 0.20, 0.04, 0.01],
+        #                                                                                     'unit': 'MB'}
 
         invocations_data_per_app = invocations_data.groupby(['HashApp', 'datetime']).max()
         invocations_data_per_hour_per_app = invocations_data_per_app.groupby(['HashApp', pd.Grouper(freq='60T', level='datetime')]).sum().fillna(0).rename(columns = {'invocations': 'Load'})

@@ -94,7 +94,7 @@ class ServiceStateRegionalized:
         return { region_name : region_state.check_out_system_resources_utilization() for region_name, region_state in self.region_states.items() }
 
     @property
-    def resource_requirements(self) -> ResourceRequirements: 
+    def resource_requirements(self) -> ResourceRequirements:
 
         """ Provides resource requirements of a single service instance """
 

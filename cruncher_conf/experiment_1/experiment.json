@@ -1,0 +1,22 @@
+{
+  "experiment_config": {
+    "regime": "policy"
+    "repetitions_count_per_simulation": 2,
+    "results_folder": "D:\@TUM\PhD\FINAL\experimentresults",
+    "regime_config": {
+      "unchanged_configs_folder": "constant_configs"
+      "alternatives_folder": "alternatives"
+    }
+  },
+  "simulation_config": {
+    "starting_time": "2020-09-17T10:00:00",
+    "simulation_step": {
+      "value": 10,
+      "unit": "ms"
+    },
+    "time_to_simulate": {
+      "value": 2,
+      "unit": "m"
+    }
+  }
+}

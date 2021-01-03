@@ -1,6 +1,6 @@
 {
   "general": {
-    "platform_config_file": "experiments/test/platform.json",
+    "platform_config_file": "experiments/test/platform_model.json",
     "application_recipe": {
       "app_name": "test",
     	"utilization_metrics_conf": {
@@ -19,6 +19,7 @@
         "system_requirements": {
           "disk": {
             "mean": [0, 1, 2],
+            "std": [0.1, 0.2, 0.3],
             "unit": "GB"
           }
         }
@@ -79,9 +80,11 @@
         "file_ids": [1],
         "vm_category": ["Interactive"],
         "unique_vms_selected_in_each_cpu_readings_file": 20,
-        "percentage_gap_to_be_considered_single_req": 2,
+        "percentage_gap_to_be_considered_single_req": 3,
         "bins_for_empirical_distribution_count": 10,
-        "cpu_to_memory_correlation": 0.9
+        "cpu_to_memory_correlation": 0.9,
+        "rescaling_factor_requests_memory_requirements": 0.1,
+        "csv_reading_batch_size": 100000
       }
     }
   ]

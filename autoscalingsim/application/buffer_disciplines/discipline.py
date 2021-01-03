@@ -114,9 +114,7 @@ class QueuingDiscipline(ABC):
         request_id.
         """
 
-        for req in reversed(self.requests):
-            if req.request_id == request_id:
-                self.requests.remove(req)
+        self.requests = deque([ req for req in reversed(self.requests) if req.request_id != request_id ])
 
     def size(self):
 

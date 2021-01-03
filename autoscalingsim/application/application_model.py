@@ -1,4 +1,5 @@
 import pandas as pd
+from copy import deepcopy
 
 from .response_stats import ResponseStatsRegionalized
 from .application_model_conf import ApplicationModelConfiguration
@@ -137,7 +138,8 @@ class ApplicationModel:
             for next_service_name in next_services_names:
                 req.processing_service = next_service_name
                 req.set_upstream_processing_time_for_current_service()
-                self.services[next_service_name].add_request(req)
+                self.services[next_service_name].add_request(deepcopy(req))
+
         else:
             req.set_downstream() # Converting the request req into the response
 

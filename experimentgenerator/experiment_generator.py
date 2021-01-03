@@ -3,6 +3,7 @@ import json
 import uuid
 import math
 import random
+import collections
 import pandas as pd
 import autoscalingsim.conf_keys as conf_keys
 
@@ -37,8 +38,7 @@ class ExperimentGenerator:
 
     """
 
-    _Registry_of_application_generators = dict()
-    _Registry_of_resource_requirements_generators = dict()
+    _Registry = dict()
 
     vm_booting_durations_from_studies = { 'aws': {'value': 40, 'unit': 's' },
                                           'google': {'value': 15, 'unit': 's'},
@@ -114,7 +114,7 @@ class ExperimentGenerator:
                     vCPU_std, mem_std = dual_service_cpu_mem_util_stds_distr.sample
 
                     system_requirements['vCPU'] = { 'mean': vCPU_mean, 'std': vCPU_std }
-                    system_requirements['memory'] = = { 'mean': mem_mean, 'std': mem_std, 'unit': 'B' }
+                    system_requirements['memory'] = { 'mean': mem_mean, 'std': mem_std, 'unit': 'B' }
 
                 else:
 
@@ -156,7 +156,7 @@ class ExperimentGenerator:
                     vCPU_std, mem_std = dual_req_cpu_mem_util_stds_distr.sample
 
                     system_requirements['vCPU'] = { 'mean': vCPU_mean, 'std': vCPU_std }
-                    system_requirements['memory'] = = { 'mean': mem_mean, 'std': mem_std, 'unit': 'B' }
+                    system_requirements['memory'] = { 'mean': mem_mean, 'std': mem_std, 'unit': 'B' }
 
                 else:
 
@@ -225,7 +225,7 @@ class ExperimentGenerator:
 
                 for node_type, node_info in providers_configs[provider]:
 
-                    sys_resources_to_occupy = node_info.system_resources_to_take_from_requirements(services_resource_requirements[self._service_name(service_id)])
+                    sys_resources_to_occupy = node_info.system_resources_to_take_from_requirements(services_resource_requirements[self._service_name(service_id)].average_sample)
                     if not sys_resources_to_occupy.is_full:
 
                         total_resources_occupied_on_node = sys_resources_to_occupy.copy()
@@ -357,7 +357,9 @@ class ExperimentGenerator:
 
     def _randomly_choose_one(self, options : list, probabilities : list = None):
 
-        if probabilities is None:
+        if not isinstance(options, collections.Iterable):
+            return options
+        elif probabilities is None:
             return random.choice(options)
         else:
             return random.choices(options, weights = probabilities)[0]

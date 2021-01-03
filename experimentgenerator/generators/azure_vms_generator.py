@@ -80,9 +80,10 @@ class AzureVMsExperimentGenerator(ExperimentGenerator):
                 cls._unpack_and_cleanup_archive(downloaded_vm_table_archive)
 
         # Processing VMs table
+        csv_reading_batch_size = ErrorChecker.key_check_and_load('csv_reading_batch_size', specialized_generator_config, default = 1000)
         vm_categories_of_interest = ErrorChecker.key_check_and_load('vm_category', specialized_generator_config)
         colnames = ['vm_id', 'subscription_id', 'deployment_id', 'timestamp_vm_created', 'timestamp_vm_deleted', 'max_cpu', 'avg_cpu', 'p95_max_cpu', 'vm_category', 'vm_virtual_core_count_bucket', 'vm_memory_bucket']
-        vms_table_iter = pd.read_csv(os.path.join(data_path, cls.dataset_vmtable_name), names = colnames, chunksize = 10000, iterator = True, header = None)
+        vms_table_iter = pd.read_csv(os.path.join(data_path, cls.dataset_vmtable_name), names = colnames, chunksize = csv_reading_batch_size, iterator = True, header = None)
 
         selected_workloads_data = pd.DataFrame(columns = colnames)
         for iter_num, chunk in enumerate(vms_table_iter, 1):
@@ -102,7 +103,7 @@ class AzureVMsExperimentGenerator(ExperimentGenerator):
         colnames = ['timestamp', 'vm_id', 'min_cpu', 'max_cpu', 'avg_cpu']
         selected_workloads_cpu_data = pd.DataFrame(columns = colnames)
         for cpu_readings_filename in cpu_readings_filenames:
-            cpu_readings_iter = pd.read_csv(os.path.join(data_path, cpu_readings_filename), names = colnames, chunksize = 100000, iterator = True, header = None)
+            cpu_readings_iter = pd.read_csv(os.path.join(data_path, cpu_readings_filename), names = colnames, chunksize = csv_reading_batch_size, iterator = True, header = None)
 
             for iter_num, chunk in enumerate(cpu_readings_iter, 1):
                 print(f'Processing {cpu_readings_filename}: iteration {iter_num}')
@@ -120,8 +121,8 @@ class AzureVMsExperimentGenerator(ExperimentGenerator):
         for vm_id in cpu_data_unique_vms_selected:
             vm_cpu_data = selected_workloads_cpu_data[selected_workloads_cpu_data['vm_id'] == vm_id]
             vm_data = selected_workloads_data[selected_workloads_data['vm_id'] == vm_id]
-            vm_cores = int(vm_data['vm_virtual_core_count_bucket'][0])
-            vm_mem = int(vm_data['vm_memory_bucket'][0])
+            vm_cores = int(vm_data['vm_virtual_core_count_bucket'].iloc[0])
+            vm_mem = int(vm_data['vm_memory_bucket'].iloc[0])
 
             service_cpu_util_mean, service_cpu_util_std = vm_cpu_data['min_cpu'].mean() / 100, vm_cpu_data['min_cpu'].std() / 100
             service_cpu_util_means.append( (service_cpu_util_mean, vm_cores, vm_mem) )
@@ -129,30 +130,33 @@ class AzureVMsExperimentGenerator(ExperimentGenerator):
 
             vm_max_cpu, vm_avg_cpu = vm_cpu_data['max_cpu'], vm_cpu_data['avg_cpu']
             # to allow for arbitrary gap, percentage_gap_to_be_considered_single_req should be >= 100
-            req_cpu_util_raw = vm_max_cpu[ vm_max_cpu - vm_avg_cpu < percentage_gap_to_be_considered_single_req ] - service_cpu_util_mean
-            if req_cpu_util_raw.shape[0] > 0:
-                req_cpu_util_mean, req_cpu_util_std = req_cpu_util_raw.mean() / 100, req_cpu_util_raw.std() / 100
-                req_cpu_util_means.append( (req_cpu_util_mean, vm_cores, vm_mem) )
-                req_cpu_util_stds.append( (req_cpu_util_std, vm_cores, vm_mem) )
+            vm_max_cpu_selected = vm_max_cpu[ vm_max_cpu - vm_avg_cpu < percentage_gap_to_be_considered_single_req ]
+            if vm_max_cpu_selected.shape[0] > 0:
+                req_cpu_util_raw = vm_max_cpu_selected - service_cpu_util_mean
+                if req_cpu_util_raw.shape[0] > 0:
+                    req_cpu_util_mean, req_cpu_util_std = req_cpu_util_raw.mean() / 100, req_cpu_util_raw.std() / 100
+                    req_cpu_util_means.append( (req_cpu_util_mean, vm_cores, vm_mem) )
+                    req_cpu_util_stds.append( (req_cpu_util_std, vm_cores, vm_mem) )
 
         bins_cnt = ErrorChecker.key_check_and_load('bins_for_empirical_distribution_count', specialized_generator_config, default = 10)
+        rescaling_factor_requests_memory_requirements = ErrorChecker.key_check_and_load('rescaling_factor_requests_memory_requirements', specialized_generator_config, default = 1.0)
         cpu_to_memory_correlation = ErrorChecker.key_check_and_load('cpu_to_memory_correlation', specialized_generator_config, default = 0.9) # const from the paper
 
-        dual_service_cpu_mem_util_means_distr = ParametersDistribution.from_empirical_data(service_cpu_util_means, bins_cnt, cpu_to_memory_correlation)
-        dual_service_cpu_mem_util_stds_distr = ParametersDistribution.from_empirical_data(service_cpu_util_stds, bins_cnt, cpu_to_memory_correlation)
+        dual_service_cpu_mem_util_means_distr = ParametersDistribution.from_empirical_data(service_cpu_util_means, bins_cnt, cpu_to_memory_correlation * rescaling_factor_requests_memory_requirements)
+        dual_service_cpu_mem_util_stds_distr = ParametersDistribution.from_empirical_data(service_cpu_util_stds, bins_cnt, cpu_to_memory_correlation * rescaling_factor_requests_memory_requirements)
 
-        dual_req_cpu_mem_util_means_distr = ParametersDistribution.from_empirical_data(req_cpu_util_means, bins_cnt, cpu_to_memory_correlation)
-        dual_req_cpu_mem_util_stds_distr = ParametersDistribution.from_empirical_data(req_cpu_util_stds, bins_cnt, cpu_to_memory_correlation)
+        dual_req_cpu_mem_util_means_distr = ParametersDistribution.from_empirical_data(req_cpu_util_means, bins_cnt, cpu_to_memory_correlation * rescaling_factor_requests_memory_requirements)
+        dual_req_cpu_mem_util_stds_distr = ParametersDistribution.from_empirical_data(req_cpu_util_stds, bins_cnt, cpu_to_memory_correlation * rescaling_factor_requests_memory_requirements)
 
         # Enriching the recipe
         services_system_requirements = experiment_generation_recipe['application_recipe']['services']['system_requirements']
-        if not 'vCPU' in services_system_requirements and not 'memory' in services_system_requirements:
+        if not 'vCPU' in services_system_requirements or not 'memory' in services_system_requirements:
             services_system_requirements['vCPU_mem_generator'] = dict()
             services_system_requirements['vCPU_mem_generator']['mean'] = dual_service_cpu_mem_util_means_distr.to_dict()
             services_system_requirements['vCPU_mem_generator']['std'] = dual_service_cpu_mem_util_stds_distr.to_dict()
 
         requests_system_requirements = experiment_generation_recipe['requests_recipe']['system_requirements']
-        if not 'vCPU' in requests_system_requirements and not 'memory' in requests_system_requirements:
+        if not 'vCPU' in requests_system_requirements or not 'memory' in requests_system_requirements:
             requests_system_requirements['vCPU_mem_generator'] = dict()
             requests_system_requirements['vCPU_mem_generator']['mean'] = dual_req_cpu_mem_util_means_distr.to_dict()
             requests_system_requirements['vCPU_mem_generator']['std'] = dual_req_cpu_mem_util_stds_distr.to_dict()
