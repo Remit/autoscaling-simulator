@@ -109,5 +109,5 @@ class AnalysisFramework:
         figures_dir_in_use = self.figures_dir if figures_dir is None else figures_dir
 
         ResponseTimesCDF.comparative_plot(simulations_by_name, self.simulation_step, figures_dir = figures_dir_in_use)
-        #FulfilledDroppedBarchart.comparative_plot(simulations_by_name, figures_dir = figures_dir_in_use)
+        FulfilledDroppedBarchart.comparative_plot(simulations_by_name, figures_dir = figures_dir_in_use)
         #DistributionRequestsTimesBarchart.comparative_plot(simulations_by_name, figures_dir = figures_dir_in_use)

@@ -94,16 +94,12 @@ class QueuingDiscipline(ABC):
         if not req is None:
             # Processing fan-in case
             if req.replies_expected > 1:
-                req_id_ref = req.request_id
                 reqs_present = 0
                 for req_lookup in self.requests:
-                    if req_lookup.request_id == req_id_ref:
+                    if req_lookup.request_id == req.request_id:
                         reqs_present += 1
 
-                if reqs_present == req.replies_expected:
-                    return req
-                else:
-                    return None # Not all parts of the request arrived yet
+                return req if reqs_present == req.replies_expected else None
 
         return req
 

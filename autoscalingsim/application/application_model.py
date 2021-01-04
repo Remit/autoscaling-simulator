@@ -149,13 +149,14 @@ class ApplicationModel:
 
         prev_services_names = self.application_model_conf.get_prev_services(service_name)
 
-        replies_expected = len(prev_services_names)
-        if replies_expected > 0:
+        if len(prev_services_names) > 0:
             for prev_service_name in prev_services_names:
+                next_services_names = self.application_model_conf.get_next_services(prev_service_name)
+                req.replies_expected = len(next_services_names)
+                
                 req.processing_service = prev_service_name
                 req.set_downstream_processing_time_for_current_service()
-                req.replies_expected = replies_expected
-                self.services[prev_service_name].add_request(req)
+                self.services[prev_service_name].add_request(deepcopy(req))
 
             return False
 
