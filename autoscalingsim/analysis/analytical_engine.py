@@ -104,10 +104,10 @@ class AnalysisFramework:
                                                network_times_regionalized,
                                                figures_dir = figures_dir_in_use)
 
-    def build_comparative_figures(self, simulations_by_name : dict, figures_dir : str = None):
+    def build_comparative_figures(self, simulations_by_name : dict, figures_dir : str = None, names_converter = None):
 
         figures_dir_in_use = self.figures_dir if figures_dir is None else figures_dir
 
-        ResponseTimesCDF.comparative_plot(simulations_by_name, self.simulation_step, figures_dir = figures_dir_in_use)
-        FulfilledDroppedBarchart.comparative_plot(simulations_by_name, figures_dir = figures_dir_in_use)
-        DistributionRequestsTimesBarchart.comparative_plot(simulations_by_name, figures_dir = figures_dir_in_use)
+        ResponseTimesCDF.comparative_plot(simulations_by_name, self.simulation_step, figures_dir = figures_dir_in_use, names_converter = names_converter)
+        FulfilledDroppedBarchart.comparative_plot(simulations_by_name, figures_dir = figures_dir_in_use, names_converter = names_converter)
+        DistributionRequestsTimesBarchart.comparative_plot(simulations_by_name, figures_dir = figures_dir_in_use, names_converter = names_converter)

@@ -11,7 +11,7 @@ class FulfilledDroppedBarchart:
     FILENAME = 'bars_fulfilled_failed.png'
 
     @classmethod
-    def comparative_plot(cls: type, simulations_by_name : dict, bar_width : float = 0.15, figures_dir : str = None):
+    def comparative_plot(cls: type, simulations_by_name : dict, bar_width : float = 0.15, figures_dir : str = None, names_converter = None):
 
         req_types = list()
         response_times_regionalized_aggregated = collections.defaultdict(lambda: collections.defaultdict(lambda: collections.defaultdict(int)))
@@ -40,11 +40,11 @@ class FulfilledDroppedBarchart:
                 axs = [axs]
 
             response_times_regionalized_per_sim = response_times_regionalized_aggregated[region_name] if region_name in response_times_regionalized_aggregated else dict()
-            cls._internal_plot(axs, load_regionalized_per_sim, response_times_regionalized_per_sim, bar_width)
+            cls._internal_plot(axs, load_regionalized_per_sim, response_times_regionalized_per_sim, bar_width, names_converter = names_converter)
             cls._internal_post_processing(region_name, figures_dir)
 
     @classmethod
-    def _internal_plot(cls : type, axs, load_ts_per_request_type : dict, response_times_per_request_type : dict, bar_width : float):
+    def _internal_plot(cls : type, axs, load_ts_per_request_type : dict, response_times_per_request_type : dict, bar_width : float, names_converter = None):
 
         i = 0
         for req_type, gen_requests_per_simulation in load_ts_per_request_type.items():
@@ -59,7 +59,7 @@ class FulfilledDroppedBarchart:
                 succeeded_reqs.append((fulfilled_cnt / generated_reqs_cnt) * 100)
                 failed_reqs.append((failed_cnt / generated_reqs_cnt) * 100)
 
-            labels = [ plotting_constants.convert_name_of_considered_alternative_to_label(simulation_name, split_policies = True) for simulation_name in gen_requests_per_simulation.keys() ]
+            labels = [ names_converter(simulation_name, split_policies = True) for simulation_name in gen_requests_per_simulation.keys() ]
             y = np.arange(len(labels))
 
             axs[i].barh(y, succeeded_reqs, bar_width, label = 'Fulfilled')

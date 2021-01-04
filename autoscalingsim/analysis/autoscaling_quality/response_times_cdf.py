@@ -13,7 +13,7 @@ class ResponseTimesCDF:
     FILENAME = 'cdf_response_times.png'
 
     @classmethod
-    def comparative_plot(cls: type, simulations_by_name : dict, simulation_step : pd.Timedelta, figures_dir : str = None):
+    def comparative_plot(cls: type, simulations_by_name : dict, simulation_step : pd.Timedelta, figures_dir : str = None, names_converter = None):
 
         regions = list()
         response_times_regionalized_aggregated = collections.defaultdict(lambda: collections.defaultdict(lambda: collections.defaultdict(list)))
@@ -33,7 +33,7 @@ class ResponseTimesCDF:
 
             resp_times_maximums = list()
             for simulation_name, response_times_regionalized_per_sim in response_times_regionalized_aggregated.items():
-                simulation_name_as_label = plotting_constants.convert_name_of_considered_alternative_to_label(simulation_name)
+                simulation_name_as_label = names_converter(simulation_name)
                 resp_times_maximums.append(cls._internal_plot(ax, response_times_regionalized_per_sim[region_name], simulation_step, simulation_name_as_label))
 
             cls._internal_post_processing(ax, region_name, max(resp_times_maximums), figures_dir)

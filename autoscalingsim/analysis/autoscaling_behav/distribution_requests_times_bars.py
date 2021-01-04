@@ -11,7 +11,7 @@ class DistributionRequestsTimesBarchart:
     FILENAME = 'bars_req_time_distribution_by_cat.png'
 
     @classmethod
-    def comparative_plot(cls: type, simulations_by_name : dict, bar_width : float = 0.15, figures_dir : str = None):
+    def comparative_plot(cls: type, simulations_by_name : dict, bar_width : float = 0.15, figures_dir : str = None, names_converter = None):
 
         req_types = list()
         response_times_regionalized_aggregated = collections.defaultdict(lambda: collections.defaultdict(lambda: collections.defaultdict(list)))
@@ -44,11 +44,11 @@ class DistributionRequestsTimesBarchart:
 
             network_times_per_request_type = network_times_regionalized_aggregated[region_name] if region_name in network_times_regionalized_aggregated else dict()
             buffer_times_per_request_type = buffer_times_regionalized_aggregated[region_name] if region_name in buffer_times_regionalized_aggregated else dict()
-            cls._internal_plot(axs, response_times_per_request_type, network_times_per_request_type, buffer_times_per_request_type, bar_width)
+            cls._internal_plot(axs, response_times_per_request_type, network_times_per_request_type, buffer_times_per_request_type, bar_width, names_converter = names_converter)
             cls._internal_post_processing(region_name, figures_dir)
 
     @classmethod
-    def _internal_plot(cls : type, axs, response_times_per_request_type : dict, network_times_per_request_type : dict, buffer_times_per_request_type : dict, bar_width : float):
+    def _internal_plot(cls : type, axs, response_times_per_request_type : dict, network_times_per_request_type : dict, buffer_times_per_request_type : dict, bar_width : float, names_converter = None):
 
         i = 0
         for req_type, response_times_per_alternative in response_times_per_request_type.items():
@@ -73,7 +73,7 @@ class DistributionRequestsTimesBarchart:
                 total_processing_time = total_response_time - (total_network_time + total_buffer_time)
                 processing_times_per_alternative_sum.append((total_processing_time / total_response_time) * 100)
 
-            labels = [ plotting_constants.convert_name_of_considered_alternative_to_label(simulation_name, split_policies = True) for simulation_name in response_times_per_alternative.keys() ]
+            labels = [ names_converter(simulation_name, split_policies = True) for simulation_name in response_times_per_alternative.keys() ]
             y = np.arange(len(labels))
 
             axs[i].barh(y, processing_times_per_alternative_sum, bar_width, label = 'Processing')

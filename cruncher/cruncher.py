@@ -3,12 +3,30 @@ import glob
 import json
 import collections
 import pandas as pd
+import prettytable
+
+from prettytable import PrettyTable
 
 from autoscalingsim.simulator import Simulator
 from autoscalingsim.analysis.analytical_engine import AnalysisFramework
 from autoscalingsim.utils.error_check import ErrorChecker
 
 from .experimental_regime.experimental_regime import ExperimentalRegime
+
+def convert_name_of_considered_alternative_to_label(original_string : str, split_policies : bool = False):
+
+    s = '['
+    ss = original_string.split(ExperimentalRegime._policies_categories_delimiter)[1:]
+    for policy_raw in ss[:-1]:
+        k = policy_raw.split(ExperimentalRegime._concretization_delimiter)
+        s += f'{k[0]} -> {k[1]}; '
+        if split_policies:
+            s += '\n'
+
+    k = ss[-1].split(ExperimentalRegime._concretization_delimiter)
+    s += f'{k[0]} -> {k[1]}]'
+
+    return s
 
 class Cruncher:
 
@@ -69,8 +87,32 @@ class Cruncher:
             if not os.path.exists(simulation_figures_folder):
                 os.makedirs(simulation_figures_folder)
 
-            af.build_figures_for_single_simulation(simulation, figures_dir = simulation_figures_folder)
+            #af.build_figures_for_single_simulation(simulation, figures_dir = simulation_figures_folder)
 
             simulations_by_name[sim_name_pure].append(simulation)
 
-        af.build_comparative_figures(simulations_by_name, figures_dir = self.results_folder)
+        #af.build_comparative_figures(simulations_by_name, figures_dir = self.results_folder, names_converter = convert_name_of_considered_alternative_to_label)
+
+        summary_filepath = os.path.join(self.results_folder, 'summary.txt')
+        header = ''.join(['-'] * 20) + ' SUMMARY CHARACTERISTICS OF EVALUATED ALTERNATIVES ' + ''.join(['-'] * 20)
+        report_text = ''.join(['-'] * len(header)) + '\n' + header + '\n' + ''.join(['-'] * len(header)) + '\n\n'
+        for idx, sim in enumerate(simulations_by_name.items(), 1):
+            simulation_name = sim[0]
+            simulations = sim[1]
+            report_text += f'Alternative {idx}: {convert_name_of_considered_alternative_to_label(simulation_name)}\n'
+            report_text += f'>>> COST:\n'
+            total_cost_for_alternative = collections.defaultdict(lambda: collections.defaultdict(float))
+            for simulation in simulations:
+                for provider_name, cost_per_region in simulation.application_model.infrastructure_cost.items():
+                    for region_name, cost_in_time in cost_per_region.items():
+                        total_cost_for_alternative[provider_name][region_name] += (cost_in_time[-1] / len(simulations))
+
+            summary_cost_table = PrettyTable(['Provider', 'Region', 'Total cost, USD'])
+            for provider_name, cost_per_region in total_cost_for_alternative.items():
+                for region_name, total_cost in cost_per_region.items():
+                    summary_cost_table.add_row([provider_name, region_name, round(total_cost, 5)])
+
+            report_text += (str(summary_cost_table) + '\n')
+
+        with open(summary_filepath, 'w') as f:
+            f.write(report_text)

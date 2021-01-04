@@ -32,7 +32,7 @@ class LoadLineGraph:
 
                 unit = resolution // pd.Timedelta(1000, unit = 'ms')
                 plt.ylabel(f'load, requests per {unit} s')
-                plt.legend(loc = "lower right")
+                plt.legend(loc = 'lower right')
                 plt.xticks(rotation = 70)
 
             if not figures_dir is None:
