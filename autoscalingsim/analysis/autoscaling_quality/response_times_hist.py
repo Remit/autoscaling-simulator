@@ -64,3 +64,5 @@ class ResponseTimesHistogram:
                 else:
                     plt.suptitle(f'Distribution of requests by response time in region {region_name}', y = 1.05)
                     plt.show()
+
+                plt.close()

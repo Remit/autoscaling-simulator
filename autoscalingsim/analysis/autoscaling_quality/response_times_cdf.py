@@ -95,3 +95,5 @@ class ResponseTimesCDF:
         else:
             plt.title(f'CDF of requests by response time in region {region_name}')
             plt.show()
+
+        plt.close()

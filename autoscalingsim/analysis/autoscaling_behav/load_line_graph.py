@@ -41,3 +41,5 @@ class LoadLineGraph:
             else:
                 plt.title(f'Generated load over time in region {region_name}')
                 plt.show()
+
+            plt.close()

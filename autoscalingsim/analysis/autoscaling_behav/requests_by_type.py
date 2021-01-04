@@ -34,3 +34,5 @@ class GeneratedRequestsByType:
             else:
                 plt.suptitle(f'Total generated requests by type in region {region_name}')
                 plt.show()
+
+            plt.close()

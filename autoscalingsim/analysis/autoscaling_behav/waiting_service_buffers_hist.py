@@ -101,3 +101,5 @@ class WaitingServiceBuffersHistogram:
                         else:
                             plt.suptitle(f'Distribution of requests by buffer waiting time in {region_name}', y = 1.05)
                             plt.show()
+
+                        plt.close()

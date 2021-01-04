@@ -11,6 +11,95 @@ class DistributionRequestsTimesBarchart:
     FILENAME = 'bars_req_time_distribution_by_cat.png'
 
     @classmethod
+    def comparative_plot(cls: type, simulations_by_name : dict, bar_width : float = 0.15, figures_dir : str = None):
+
+        req_types = list()
+        response_times_regionalized_aggregated = collections.defaultdict(lambda: collections.defaultdict(lambda: collections.defaultdict(list)))
+        network_times_regionalized_aggregated = collections.defaultdict(lambda: collections.defaultdict(lambda: collections.defaultdict(list)))
+        buffer_times_regionalized_aggregated = collections.defaultdict(lambda: collections.defaultdict(lambda: collections.defaultdict(list)))
+        for simulation_name, simulation_instances in simulations_by_name.items():
+
+            for simulation in simulation_instances:
+                response_times_regionalized = simulation.application_model.response_stats.get_response_times_by_request()
+                for region_name, response_times_per_request_type in response_times_regionalized.items():
+                    for req_type, response_times in response_times_per_request_type.items():
+                        req_types.append(req_type)
+                        response_times_regionalized_aggregated[region_name][req_type][simulation_name].extend(response_times)
+
+                network_times_regionalized = simulation.application_model.response_stats.get_network_times_by_request()
+                for region_name, network_times_per_request_type in network_times_regionalized.items():
+                    for req_type, network_times in network_times_per_request_type.items():
+                        network_times_regionalized_aggregated[region_name][req_type][simulation_name].extend(network_times)
+
+                buffer_times_regionalized = simulation.application_model.response_stats.get_buffer_times_by_request()
+                for region_name, buffer_times_per_request_type in buffer_times_regionalized.items():
+                    for req_type, buffer_times_per_service in buffer_times_per_request_type.items():
+                        for service_name, buffer_times in buffer_times_per_service.items():
+                            buffer_times_regionalized_aggregated[region_name][req_type][simulation_name].extend(buffer_times)
+
+        for region_name, response_times_per_request_type in response_times_regionalized_aggregated.items():
+            fig, axs = plt.subplots(1, len(set(req_types)), figsize = (4, 3), sharey = True)
+            if not isinstance(axs, collections.Iterable):
+                axs = [axs]
+
+            network_times_per_request_type = network_times_regionalized_aggregated[region_name] if region_name in network_times_regionalized_aggregated else dict()
+            buffer_times_per_request_type = buffer_times_regionalized_aggregated[region_name] if region_name in buffer_times_regionalized_aggregated else dict()
+            cls._internal_plot(axs, response_times_per_request_type, network_times_per_request_type, buffer_times_per_request_type, bar_width)
+            cls._internal_post_processing(region_name, figures_dir)
+
+    @classmethod
+    def _internal_plot(cls : type, axs, response_times_per_request_type : dict, network_times_per_request_type : dict, buffer_times_per_request_type : dict, bar_width : float):
+
+        i = 0
+        for req_type, response_times_per_alternative in response_times_per_request_type.items():
+
+            processing_times_per_alternative_sum = list()
+            network_times_per_alternative_sum = list()
+            buffer_times_per_alternative_sum = list()
+
+            for simulation_name, response_times in response_times_per_alternative.items():
+                total_response_time = sum(response_times) if len(response_times) > 0 else 0
+
+                network_times_per_alternative = network_times_per_request_type[req_type] if req_type in network_times_per_request_type else dict()
+                network_times = network_times_per_alternative[simulation_name] if simulation_name in network_times_per_alternative else list()
+                total_network_time = sum(network_times) if len(network_times) > 0 else 0
+
+                buffer_times_per_alternative = buffer_times_per_request_type[req_type] if req_type in buffer_times_per_request_type else dict()
+                buffer_times = buffer_times_per_alternative[simulation_name] if simulation_name in buffer_times_per_alternative else list()
+                total_buffer_time = sum(buffer_times) if len(buffer_times) > 0 else 0
+
+                network_times_per_alternative_sum.append((total_network_time / total_response_time) * 100)
+                buffer_times_per_alternative_sum.append((total_buffer_time / total_response_time) * 100)
+                total_processing_time = total_response_time - (total_network_time + total_buffer_time)
+                processing_times_per_alternative_sum.append((total_processing_time / total_response_time) * 100)
+
+            labels = [ plotting_constants.convert_name_of_considered_alternative_to_label(simulation_name, split_policies = True) for simulation_name in response_times_per_alternative.keys() ]
+            y = np.arange(len(labels))
+
+            axs[i].barh(y, processing_times_per_alternative_sum, bar_width, label = 'Processing')
+            axs[i].barh(y, network_times_per_alternative_sum, bar_width, left = processing_times_per_alternative_sum, label = 'Transferring')
+            axs[i].barh(y, buffer_times_per_alternative_sum, bar_width, left = np.array(processing_times_per_alternative_sum) + np.array(network_times_per_alternative_sum), label = 'Waiting')
+            axs[i].set_yticks(y)
+            axs[i].set_yticklabels(labels)
+            axs[i].set_title(f'Request {req_type}')
+            axs[i].legend(loc = 'center right')
+            axs[i].set_xlabel('Time spent in status, %')
+
+            i += 1
+
+    @classmethod
+    def _internal_post_processing(cls : type, region_name : str, figures_dir : str = None):
+
+        if not figures_dir is None:
+            figure_path = os.path.join(figures_dir, plotting_constants.filename_format.format(region_name, cls.FILENAME))
+            plt.savefig(figure_path, dpi = plotting_constants.PUBLISHING_DPI, bbox_inches = 'tight')
+        else:
+            plt.suptitle(f'Distribution of the request time in the application in region {region_name}')
+            plt.show()
+
+        plt.close()
+
+    @classmethod
     def plot(cls : type,
              response_times_regionalized : dict,
              buffer_times_regionalized : dict,
@@ -93,3 +182,5 @@ class DistributionRequestsTimesBarchart:
                     plt.suptitle(f'Distribution of the request time in the application,\
                     \naggregated with the {aggregation_fn.__name__} function in region {region_name}')
                     plt.show()
+
+                plt.close()

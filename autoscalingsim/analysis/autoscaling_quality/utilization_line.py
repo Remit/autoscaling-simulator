@@ -73,3 +73,5 @@ class UtilizationLineGraph:
                 else:
                     plt.title(f'Resource utilization over time in region {region_name}')
                     plt.show()
+
+                plt.close()

@@ -83,3 +83,5 @@ class NodesUsageLineGraph:
                 else:
                     plt.suptitle(f'Desired and actual number of nodes per node type in region {region_name}', y = 1.05)
                     plt.show()
+
+                plt.close()

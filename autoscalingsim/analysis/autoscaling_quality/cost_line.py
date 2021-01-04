@@ -32,3 +32,5 @@ class CostLineGraph:
                 else:
                     plt.suptitle(f'Cost of infrastructure in region {region_name} ({provider_name})', y = 1.05)
                     plt.show()
+
+                plt.close()

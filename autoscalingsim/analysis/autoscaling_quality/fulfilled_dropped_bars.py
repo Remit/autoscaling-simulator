@@ -39,8 +39,8 @@ class FulfilledDroppedBarchart:
             if not isinstance(axs, collections.Iterable):
                 axs = [axs]
 
-            response_times_reginalized_per_sim = response_times_regionalized_aggregated[region_name] if region_name in response_times_regionalized_aggregated else dict()
-            cls._internal_plot(axs, load_regionalized_per_sim, response_times_reginalized_per_sim, bar_width)
+            response_times_regionalized_per_sim = response_times_regionalized_aggregated[region_name] if region_name in response_times_regionalized_aggregated else dict()
+            cls._internal_plot(axs, load_regionalized_per_sim, response_times_regionalized_per_sim, bar_width)
             cls._internal_post_processing(region_name, figures_dir)
 
     @classmethod
@@ -81,6 +81,8 @@ class FulfilledDroppedBarchart:
         else:
             plt.suptitle(f'Fulfilled and failed requests in region {region_name}')
             plt.show()
+
+        plt.close()
 
     @classmethod
     def plot(cls : type, response_times_regionalized : dict, load_regionalized : dict, bar_width : float = 0.15, figures_dir = None):
@@ -127,3 +129,5 @@ class FulfilledDroppedBarchart:
                     else:
                         plt.suptitle(f'Fulfilled and failed requests in region {region_name}')
                         plt.show()
+
+                    plt.close()
