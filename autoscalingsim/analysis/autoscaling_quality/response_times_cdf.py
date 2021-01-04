@@ -33,7 +33,8 @@ class ResponseTimesCDF:
 
             resp_times_maximums = list()
             for simulation_name, response_times_regionalized_per_sim in response_times_regionalized_aggregated.items():
-                resp_times_maximums.append(cls._internal_plot(ax, response_times_regionalized_per_sim[region_name], simulation_step, simulation_name))
+                simulation_name_as_label = plotting_constants.convert_name_of_considered_alternative_to_label(simulation_name)
+                resp_times_maximums.append(cls._internal_plot(ax, response_times_regionalized_per_sim[region_name], simulation_step, simulation_name_as_label))
 
             cls._internal_post_processing(ax, region_name, max(resp_times_maximums), figures_dir)
 
@@ -68,7 +69,7 @@ class ResponseTimesCDF:
                 cdfs_per_req_type[req_type] = np.cumsum(reqs_count_binned) / sum(reqs_count_binned)
 
             for req_type, cdf_vals in cdfs_per_req_type.items():
-                lbl = f'{additional_label}: {req_type}' if not additional_label is None else req_type
+                lbl = f'{additional_label}:\n{req_type}' if not additional_label is None else req_type
                 ax.plot(x_axis, cdf_vals, label = lbl)
 
             return max(x_axis)
@@ -86,7 +87,7 @@ class ResponseTimesCDF:
             ax.text(0, percentile + 0.001, f"{(int(percentile * 100))}th percentile", fontdict = font)
 
         plt.xlabel('Response time, ms')
-        plt.legend(loc = "lower right")
+        plt.legend(loc = 'lower center', bbox_to_anchor = (0.5, -0.45))
 
         if not figures_dir is None:
             figure_path = os.path.join(figures_dir, plotting_constants.filename_format.format(region_name, cls.FILENAME))

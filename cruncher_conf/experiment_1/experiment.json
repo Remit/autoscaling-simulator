@@ -16,8 +16,8 @@
       "unit": "ms"
     },
     "time_to_simulate": {
-      "value": 45,
-      "unit": "s"
+      "value": 1,
+      "unit": "m"
     }
   }
 }
