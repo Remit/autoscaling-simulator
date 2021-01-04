@@ -36,7 +36,6 @@ class AnalysisFramework:
               separately for each buffer (idea - to locate the bottleneck service)
             + Barchart of the processing vs waiting vs network time for the fulfilled requests,
               a bar for each request type
-            > Autoscaling time budget evaluation graphs
     """
 
     def __init__(self, simulation_step : pd.Timedelta, figures_dir = None):
@@ -46,7 +45,7 @@ class AnalysisFramework:
 
     def build_figures_for_single_simulation(self, simulation : Simulation = None, results_dirs : str = '', figures_dir = None):
         # TODO: figure settings from config file?
-        # TODO: get results from the results_dir, also need to add storing into it
+        # TODO: get results from the results_dir, also need to add storing into it // restore via simulations???
 
         figures_dir_in_use = self.figures_dir if figures_dir is None else figures_dir
 
@@ -63,51 +62,33 @@ class AnalysisFramework:
 
         # Building figures with the internal functions
         # Autoscaling quality evaluation category
-        ResponseTimesCDF.plot(response_times_regionalized,
-                              self.simulation_step,
-                              figures_dir = figures_dir_in_use)
+        ResponseTimesCDF.plot(response_times_regionalized, self.simulation_step, figures_dir = figures_dir_in_use)
 
-        ResponseTimesHistogram.plot(response_times_regionalized,
-                                    3 * int(self.simulation_step.microseconds / 1000),
-                                    figures_dir = figures_dir_in_use)
+        ResponseTimesHistogram.plot(response_times_regionalized, 3 * int(self.simulation_step.microseconds / 1000), figures_dir = figures_dir_in_use)
 
-        FulfilledDroppedBarchart.plot(response_times_regionalized,
-                                      load_regionalized,
-                                      figures_dir = figures_dir_in_use)
+        FulfilledDroppedBarchart.plot(response_times_regionalized, load_regionalized, figures_dir = figures_dir_in_use)
 
-        UtilizationLineGraph.plot(utilization_per_service,
-                                  resolution = pd.Timedelta(1, unit = 's'),
-                                  figures_dir = figures_dir_in_use)
+        UtilizationLineGraph.plot(utilization_per_service, resolution = pd.Timedelta(1, unit = 's'), figures_dir = figures_dir_in_use)
 
-        CostLineGraph.plot(infrastructure_cost_per_provider,
-                           resolution = pd.Timedelta(1, unit = 's'),
-                           figures_dir = figures_dir_in_use)
+        CostLineGraph.plot(infrastructure_cost_per_provider, resolution = pd.Timedelta(1, unit = 's'), figures_dir = figures_dir_in_use)
 
         # Autoscaling behaviour characterization category
-        LoadLineGraph.plot(load_regionalized,
-                           resolution = pd.Timedelta(1, unit = 's'),
-                           figures_dir = figures_dir_in_use)
+        LoadLineGraph.plot(load_regionalized, resolution = pd.Timedelta(1, unit = 's'), figures_dir = figures_dir_in_use)
 
-        GeneratedRequestsByType.plot(load_regionalized,
-                                     figures_dir = figures_dir_in_use)
+        GeneratedRequestsByType.plot(load_regionalized, figures_dir = figures_dir_in_use)
 
-        NodesUsageLineGraph.plot(desired_node_count_per_provider,
-                                 actual_node_count_per_provider,
-                                 figures_dir = figures_dir_in_use)
+        NodesUsageLineGraph.plot(desired_node_count_per_provider, actual_node_count_per_provider, figures_dir = figures_dir_in_use)
 
-        WaitingServiceBuffersHistogram.plot(buffer_times_regionalized,
-                                            bins_size_ms = (self.simulation_step.microseconds // 1000),
-                                            figures_dir = figures_dir_in_use)
+        WaitingServiceBuffersHistogram.plot(buffer_times_regionalized, bins_size_ms = (self.simulation_step.microseconds // 1000), figures_dir = figures_dir_in_use)
 
-        DistributionRequestsTimesBarchart.plot(response_times_regionalized,
-                                               buffer_times_regionalized,
-                                               network_times_regionalized,
-                                               figures_dir = figures_dir_in_use)
+        DistributionRequestsTimesBarchart.plot(response_times_regionalized, buffer_times_regionalized, network_times_regionalized, figures_dir = figures_dir_in_use)
 
     def build_comparative_figures(self, simulations_by_name : dict, figures_dir : str = None, names_converter = None):
 
         figures_dir_in_use = self.figures_dir if figures_dir is None else figures_dir
 
         ResponseTimesCDF.comparative_plot(simulations_by_name, self.simulation_step, figures_dir = figures_dir_in_use, names_converter = names_converter)
+
         FulfilledDroppedBarchart.comparative_plot(simulations_by_name, figures_dir = figures_dir_in_use, names_converter = names_converter)
+
         DistributionRequestsTimesBarchart.comparative_plot(simulations_by_name, figures_dir = figures_dir_in_use, names_converter = names_converter)

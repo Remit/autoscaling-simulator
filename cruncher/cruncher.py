@@ -87,11 +87,11 @@ class Cruncher:
             if not os.path.exists(simulation_figures_folder):
                 os.makedirs(simulation_figures_folder)
 
-            #af.build_figures_for_single_simulation(simulation, figures_dir = simulation_figures_folder)
+            af.build_figures_for_single_simulation(simulation, figures_dir = simulation_figures_folder)
 
             simulations_by_name[sim_name_pure].append(simulation)
 
-        #af.build_comparative_figures(simulations_by_name, figures_dir = self.results_folder, names_converter = convert_name_of_considered_alternative_to_label)
+        af.build_comparative_figures(simulations_by_name, figures_dir = self.results_folder, names_converter = convert_name_of_considered_alternative_to_label)
 
         summary_filepath = os.path.join(self.results_folder, 'summary.txt')
         header = ''.join(['-'] * 20) + ' SUMMARY CHARACTERISTICS OF EVALUATED ALTERNATIVES ' + ''.join(['-'] * 20)
@@ -102,6 +102,7 @@ class Cruncher:
             total_cost_for_alternative = collections.defaultdict(lambda: collections.defaultdict(float))
             response_times_regionalized_aggregated = collections.defaultdict(lambda: collections.defaultdict(int))
             load_regionalized_aggregated = collections.defaultdict(lambda: collections.defaultdict(int))
+            resource_names = list()
             for simulation in simulation_instances:
                 for provider_name, cost_per_region in simulation.application_model.infrastructure_cost.items():
                     for region_name, cost_in_time in cost_per_region.items():
@@ -119,6 +120,13 @@ class Cruncher:
                             generated_req_cnt = sum(load_timeline.value)
                             if generated_req_cnt > 0:
                                 load_regionalized_aggregated[region_name][req_type] += generated_req_cnt
+
+                utilization_aggregated = collections.defaultdict(lambda: collections.defaultdict(lambda: collections.defaultdict(float)))
+                for service_name, utilization_per_region in simulation.application_model.utilization.items():
+                    for region_name, utilization_per_resource in utilization_per_region.items():
+                        for resource_name, utilization_ts in utilization_per_resource.items():
+                            resource_names.append(resource_name)
+                            utilization_aggregated[service_name][region_name][resource_name] += (utilization_ts.value.mean() / len(simulation_instances))
 
             report_text += f'Alternative {idx}: {convert_name_of_considered_alternative_to_label(simulation_name)}\n\n'
             report_text += f'>>> COST:\n'
@@ -139,6 +147,17 @@ class Cruncher:
                     summary_reqs_table.add_row([region_name, req_type, generated_cnt, f'{met_slo_cnt} ({met_slo_percent})'])
 
             report_text += (str(summary_reqs_table) + '\n\n')
+
+            report_text += f'>>> AVERAGE RESOURCE UTILIZATION:\n'
+            resource_names = list(set(resource_names))
+            resource_names_header = [ f'{res_name}, %' for res_name in resource_names ]
+            summary_res_util_table = PrettyTable(['Service', 'Region'] + resource_names_header)
+            for service_name, utilization_per_region in utilization_aggregated.items():
+                for region_name, utilization_per_resource in utilization_per_region.items():
+                    ordered_res_utils = [ round(utilization_per_resource[resource_name] * 100, 2) if resource_name in utilization_per_resource else 0.0 for resource_name in resource_names ]
+                    summary_res_util_table.add_row([service_name, region_name] + ordered_res_utils)
+
+            report_text += (str(summary_res_util_table) + '\n\n')
 
         with open(summary_filepath, 'w') as f:
             f.write(report_text)
