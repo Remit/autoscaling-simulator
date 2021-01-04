@@ -20,6 +20,7 @@ setup(
                         'statsmodels>=0.12.1',
                         'scipy',
                         'sklearn',
+                        'prettytable',
                         'numpy==1.19.3 ; sys_platform == windows',
                         'tensorflow==2.4.0',
                         'https://github.com/kieferk/pymssa/tarball/master ; sys_platform == linux',

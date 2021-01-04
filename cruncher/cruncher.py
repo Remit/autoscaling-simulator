@@ -97,22 +97,48 @@ class Cruncher:
         header = ''.join(['-'] * 20) + ' SUMMARY CHARACTERISTICS OF EVALUATED ALTERNATIVES ' + ''.join(['-'] * 20)
         report_text = ''.join(['-'] * len(header)) + '\n' + header + '\n' + ''.join(['-'] * len(header)) + '\n\n'
         for idx, sim in enumerate(simulations_by_name.items(), 1):
-            simulation_name = sim[0]
-            simulations = sim[1]
-            report_text += f'Alternative {idx}: {convert_name_of_considered_alternative_to_label(simulation_name)}\n'
-            report_text += f'>>> COST:\n'
+            simulation_name, simulation_instances = sim[0], sim[1]
+
             total_cost_for_alternative = collections.defaultdict(lambda: collections.defaultdict(float))
-            for simulation in simulations:
+            response_times_regionalized_aggregated = collections.defaultdict(lambda: collections.defaultdict(int))
+            load_regionalized_aggregated = collections.defaultdict(lambda: collections.defaultdict(int))
+            for simulation in simulation_instances:
                 for provider_name, cost_per_region in simulation.application_model.infrastructure_cost.items():
                     for region_name, cost_in_time in cost_per_region.items():
-                        total_cost_for_alternative[provider_name][region_name] += (cost_in_time[-1] / len(simulations))
+                        total_cost_for_alternative[provider_name][region_name] += (cost_in_time[-1] / len(simulation_instances))
 
+                response_times_regionalized = simulation.application_model.response_stats.get_response_times_by_request()
+                for region_name, response_times_per_request_type in response_times_regionalized.items():
+                    for req_type, response_times in response_times_per_request_type.items():
+                        response_times_regionalized_aggregated[region_name][req_type] += len(response_times)
+
+                load_regionalized = simulation.application_model.load_model.get_generated_load()
+                for region_name, load_ts_per_request_type in load_regionalized.items():
+                    for req_type, load_timeline in load_ts_per_request_type.items():
+                        if len(load_timeline.value) > 0:
+                            generated_req_cnt = sum(load_timeline.value)
+                            if generated_req_cnt > 0:
+                                load_regionalized_aggregated[region_name][req_type] += generated_req_cnt
+
+            report_text += f'Alternative {idx}: {convert_name_of_considered_alternative_to_label(simulation_name)}\n\n'
+            report_text += f'>>> COST:\n'
             summary_cost_table = PrettyTable(['Provider', 'Region', 'Total cost, USD'])
             for provider_name, cost_per_region in total_cost_for_alternative.items():
                 for region_name, total_cost in cost_per_region.items():
                     summary_cost_table.add_row([provider_name, region_name, round(total_cost, 5)])
 
-            report_text += (str(summary_cost_table) + '\n')
+            report_text += (str(summary_cost_table) + '\n\n')
+
+            report_text += f'>>> REQUESTS THAT MET SLO:\n'
+            summary_reqs_table = PrettyTable(['Region', 'Request type', 'Total generated', 'Met SLO (%)'])
+            for region_name, generated_by_req_type in load_regionalized_aggregated.items():
+                for req_type, generated_cnt in generated_by_req_type.items():
+                    response_times_per_request_type = response_times_regionalized_aggregated[region_name] if region_name in response_times_regionalized_aggregated else dict()
+                    met_slo_cnt = response_times_per_request_type[req_type] if req_type in response_times_per_request_type else 0
+                    met_slo_percent = round((met_slo_cnt / generated_cnt) * 100, 2)
+                    summary_reqs_table.add_row([region_name, req_type, generated_cnt, f'{met_slo_cnt} ({met_slo_percent})'])
+
+            report_text += (str(summary_reqs_table) + '\n\n')
 
         with open(summary_filepath, 'w') as f:
             f.write(report_text)
