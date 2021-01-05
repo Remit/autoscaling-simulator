@@ -46,10 +46,10 @@ class UtilizationLineGraph:
                     for resource_name, utilization_ts in utilization_per_resource.items():
 
                         utilization_ts.index = pd.to_datetime(utilization_ts.index)
-                        utilization_ts.value = pd.to_numeric(utilization_ts.value) * 100
+                        utilization_ts.value = pd.to_numeric(utilization_ts.value)
                         resampled_utilization = utilization_ts.resample(resolution).mean()
 
-                        axs[j][i].plot(resampled_utilization, label = resource_name)
+                        axs[j][i].plot(resampled_utilization * 100, label = resource_name)
 
                         unit = resolution // pd.Timedelta(1000, unit = 'ms')
                         axs[j][i].set_ylabel(f'{resource_name} util.,\n% per {unit} s')

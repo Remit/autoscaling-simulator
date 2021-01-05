@@ -308,6 +308,7 @@ class ServiceState:
             if not system_resource_name in self.service_utilizations:
                 self.service_utilizations[system_resource_name] = pd.DataFrame(columns = ['datetime', 'value']).set_index('datetime')
             deployment_util = deployment.utilization(system_resource_name)
+
             if not deployment_util is None:
                 # Aligning the time series
                 common_index = deployment_util.index.union(self.service_utilizations[system_resource_name].index)

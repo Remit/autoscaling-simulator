@@ -85,12 +85,6 @@ class NodeInfo:
 
         joint_resource_requirements = sum([counts_by_service[service_name] * requirements for service_name, requirements in requirements_by_service.items()], ResourceRequirements())
 
-        #joint_resource_requirements = ResourceRequirements.new_empty_resource_requirements()
-
-        #for service_name, requirements in requirements_by_service.items():
-        #    factor = counts_by_service[service_name]
-        #    joint_resource_requirements += factor * requirements
-
         for label in joint_resource_requirements.labels:
             if not label in self._labels:
                 return (False, 0.0)
