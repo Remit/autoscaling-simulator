@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from collections.abc import Iterable
 
-import autoscalingsim.analysis.plotting_constants as plotting_constants
+import stethoscope.plotting_constants as plotting_constants
 
 from autoscalingsim.infrastructure_platform.platform_model import PlatformModel
 

@@ -5,7 +5,7 @@ import matplotlib.ticker as ticker
 from matplotlib import pyplot as plt
 from collections.abc import Iterable
 
-import autoscalingsim.analysis.plotting_constants as plotting_constants
+import stethoscope.plotting_constants as plotting_constants
 
 class ResponseTimesHistogram:
 

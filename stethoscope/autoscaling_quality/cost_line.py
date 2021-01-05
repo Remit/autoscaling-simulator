@@ -5,7 +5,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 import matplotlib.ticker as ticker
 
-import autoscalingsim.analysis.plotting_constants as plotting_constants
+import stethoscope.plotting_constants as plotting_constants
 
 class CostLineGraph:
 

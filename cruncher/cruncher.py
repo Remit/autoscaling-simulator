@@ -5,12 +5,11 @@ import collections
 import pandas as pd
 import numpy as np
 import prettytable
-
 from prettytable import PrettyTable
 
+from stethoscope.analytical_engine import AnalysisFramework
 from autoscalingsim.simulator import Simulator
 from autoscalingsim.infrastructure_platform.platform_model import PlatformModel
-from autoscalingsim.analysis.analytical_engine import AnalysisFramework
 from autoscalingsim.utils.error_check import ErrorChecker
 
 from .experimental_regime.experimental_regime import ExperimentalRegime

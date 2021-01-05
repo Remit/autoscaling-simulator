@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.ticker as ticker
 from matplotlib import pyplot as plt
 
-import autoscalingsim.analysis.plotting_constants as plotting_constants
+import stethoscope.plotting_constants as plotting_constants
 
 class DistributionRequestsTimesBarchart:
 
