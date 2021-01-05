@@ -3,11 +3,13 @@ import glob
 import json
 import collections
 import pandas as pd
+import numpy as np
 import prettytable
 
 from prettytable import PrettyTable
 
 from autoscalingsim.simulator import Simulator
+from autoscalingsim.infrastructure_platform.platform_model import PlatformModel
 from autoscalingsim.analysis.analytical_engine import AnalysisFramework
 from autoscalingsim.utils.error_check import ErrorChecker
 
@@ -102,6 +104,8 @@ class Cruncher:
             total_cost_for_alternative = collections.defaultdict(lambda: collections.defaultdict(float))
             response_times_regionalized_aggregated = collections.defaultdict(lambda: collections.defaultdict(int))
             load_regionalized_aggregated = collections.defaultdict(lambda: collections.defaultdict(int))
+            utilization_aggregated = collections.defaultdict(lambda: collections.defaultdict(lambda: collections.defaultdict(float)))
+            node_count_aggregated = collections.defaultdict(lambda: collections.defaultdict(lambda: collections.defaultdict(lambda: {'avg': {'desired': 0.0, 'actual': 0.0}, 'std': {'desired': 0.0, 'actual': 0.0}})))
             resource_names = list()
             for simulation in simulation_instances:
                 for provider_name, cost_per_region in simulation.application_model.infrastructure_cost.items():
@@ -121,12 +125,28 @@ class Cruncher:
                             if generated_req_cnt > 0:
                                 load_regionalized_aggregated[region_name][req_type] += generated_req_cnt
 
-                utilization_aggregated = collections.defaultdict(lambda: collections.defaultdict(lambda: collections.defaultdict(float)))
                 for service_name, utilization_per_region in simulation.application_model.utilization.items():
                     for region_name, utilization_per_resource in utilization_per_region.items():
                         for resource_name, utilization_ts in utilization_per_resource.items():
                             resource_names.append(resource_name)
                             utilization_aggregated[service_name][region_name][resource_name] += (utilization_ts.value.mean() / len(simulation_instances))
+
+                desired_node_count_per_provider = simulation.application_model.desired_node_count
+                actual_node_count_per_provider = simulation.application_model.actual_node_count
+                for provider_name, desired_node_count_per_region in desired_node_count_per_provider.items():
+                    for region_name, desired_node_count_per_node_type in desired_node_count_per_region.items():
+                        for node_type, desired_counts_raw in desired_node_count_per_node_type.items():
+                            desired_count_avg = np.mean(desired_counts_raw[PlatformModel.node_count_key])
+                            desired_count_std = np.std(desired_counts_raw[PlatformModel.node_count_key])
+                            node_count_aggregated[provider_name][region_name][node_type]['avg']['desired'] += (desired_count_avg / len(simulation_instances))
+                            node_count_aggregated[provider_name][region_name][node_type]['std']['desired'] += (desired_count_std / len(simulation_instances))
+
+                            actual_counts_raw = actual_node_count_per_provider.get(provider_name, dict()).get(region_name, dict()).get(node_type, dict())
+                            actual_count_avg = np.mean(actual_counts_raw[PlatformModel.node_count_key])
+                            actual_count_std = np.std(actual_counts_raw[PlatformModel.node_count_key])
+                            node_count_aggregated[provider_name][region_name][node_type]['avg']['actual'] += (desired_count_avg / len(simulation_instances))
+                            node_count_aggregated[provider_name][region_name][node_type]['std']['actual'] += (desired_count_std / len(simulation_instances))
+
 
             report_text += f'Alternative {idx}: {convert_name_of_considered_alternative_to_label(simulation_name)}\n\n'
             report_text += f'>>> COST:\n'
@@ -158,6 +178,17 @@ class Cruncher:
                     summary_res_util_table.add_row([service_name, region_name] + ordered_res_utils)
 
             report_text += (str(summary_res_util_table) + '\n\n')
+
+            report_text += f'>>> NODES USAGE BY TYPE:\n'
+            summary_nodes_table = PrettyTable(['Provider', 'Region', 'Node type', 'Desired count avg (std)', 'Actual count avg (std)'])
+            for provider_name, node_count_per_region in node_count_aggregated.items():
+                for region_name, node_count_per_node_type in node_count_per_region.items():
+                    for node_type, counts in node_count_per_node_type.items():
+                        desired = f'{round(counts["avg"]["desired"], 2)} (\u00B1{round(counts["std"]["desired"], 5)})'
+                        actual = f'{round(counts["avg"]["actual"], 2)} (\u00B1{round(counts["std"]["actual"], 5)})'
+                        summary_nodes_table.add_row([provider_name, region_name, node_type, desired, actual])
+
+            report_text += (str(summary_nodes_table) + '\n\n')
 
         with open(summary_filepath, 'w') as f:
             f.write(report_text)
