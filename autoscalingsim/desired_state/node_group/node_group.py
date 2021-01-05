@@ -183,8 +183,7 @@ class HomogeneousNodeGroup(NodeGroup):
 
     def _has_enough_free_service_instances(self, req : Request):
 
-        return self.services_state.instances_count_for_service(req.processing_service) \
-                > sum( self.shared_processor.in_processing_stat_for_service(req.processing_service).values() )
+        return self.services_state.instances_count_for_service(req.processing_service) > self.shared_processor.service_instances_fraction_in_use_for_service(req.processing_service)
 
     def system_resources_to_take_from_requirements(self, res_reqs : ResourceRequirementsSample):
 

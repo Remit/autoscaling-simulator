@@ -3,7 +3,7 @@ import pandas as pd
 from copy import deepcopy
 
 from autoscalingsim.load.request import Request
-from autoscalingsim.utils.requirements import ResourceRequirements
+from autoscalingsim.utils.requirements import ResourceRequirements, ResourceRequirementsSample
 
 class RequestsProcessor:
 
@@ -71,6 +71,16 @@ class RequestsProcessor:
     def in_processing_stat_for_service(self, service_name : str):
 
         return self._stat.get(service_name, {})
+
+    def service_instances_fraction_in_use_for_service(self, service_name : str):
+
+        result = 0
+        for req_type, req_cnt in self._stat.get(service_name, {None: 0}).items():
+            if not req_type is None:
+                req_vCPU_usage = self._res_requirements_of_requests.get(service_name, dict()).get(req_type, ResourceRequirementsSample()).vCPU.value
+                result += req_cnt * req_vCPU_usage
+
+        return result
 
     def requests_counts_and_requirements_for_service(self, service_name : str):
 
