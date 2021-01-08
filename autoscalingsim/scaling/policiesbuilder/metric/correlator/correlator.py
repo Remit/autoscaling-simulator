@@ -58,12 +58,15 @@ class Correlator(ABC):
             associated_service_metric_vals_resampled = self.associated_service_metric_vals.resample(min_resolution).mean()
 
             common_len = min(associated_service_metric_vals_resampled.shape[0], other_service_metric_vals_resampled.shape[0])
-            corr_raw = { lag : self._compute_correlation(associated_service_metric_vals_resampled['value'][-common_len:], other_service_metric_vals_resampled['value'][-common_len:], lag) for lag in lags_range }
-            corr_pruned = { lag : corr for lag, corr in corr_raw.items() if not corr is None}
+            associated_service_metric_vals_inp = associated_service_metric_vals_resampled['value'][-common_len:]
+            other_service_metric_vals_inp = other_service_metric_vals_resampled['value'][-common_len:]
+            if associated_service_metric_vals_inp.shape == other_service_metric_vals_inp.shape:
+                corr_raw = { lag : self._compute_correlation(associated_service_metric_vals_inp, other_service_metric_vals_inp, lag) for lag in lags_range }
+                corr_pruned = { lag : corr for lag, corr in corr_raw.items() if not corr is None}
 
-            if len(corr_pruned) > 0:
-                linear_correlation_df = pd.DataFrame({'lags': list(corr_pruned.keys()), 'correlation': list(corr_pruned.values())}).set_index('lags')
-                lags_per_service[service_name] = { 'lag': int(linear_correlation_df.correlation.idxmax()) * min_resolution, 'correlation': linear_correlation_df.correlation.max() }
+                if len(corr_pruned) > 0:
+                    linear_correlation_df = pd.DataFrame({'lags': list(corr_pruned.keys()), 'correlation': list(corr_pruned.values())}).set_index('lags')
+                    lags_per_service[service_name] = { 'lag': int(linear_correlation_df.correlation.idxmax()) * min_resolution, 'correlation': linear_correlation_df.correlation.max() }
 
         return lags_per_service
 

@@ -109,16 +109,16 @@ class ApplicationModelConfiguration:
                     averaging_interval_unit = ErrorChecker.key_check_and_load('unit', averaging_interval_raw, 'averaging_interval')
                     averaging_interval = pd.Timedelta(averaging_interval_val, unit = averaging_interval_unit)
 
-                    if averaging_interval % simulation_step != pd.Timedelta(0):
-                        raise ValueError('Averaging interval is not a multiple of the provided simulation step')
+                    #if averaging_interval % simulation_step != pd.Timedelta(0):
+                    #    raise ValueError('Averaging interval is not a multiple of the provided simulation step')
 
                     sampling_interval_raw = ErrorChecker.key_check_and_load('sampling_interval', utilization_metrics_conf)
                     sampling_interval_val = ErrorChecker.key_check_and_load('value', sampling_interval_raw, 'sampling_interval')
                     sampling_interval_unit = ErrorChecker.key_check_and_load('unit', sampling_interval_raw, 'sampling_interval')
                     sampling_interval = pd.Timedelta(sampling_interval_val, unit = sampling_interval_unit)
 
-                    if sampling_interval % simulation_step != pd.Timedelta(0):
-                        raise ValueError('Sampling interval is not a multiple of the provided simulation step')
+                    #if sampling_interval % simulation_step != pd.Timedelta(0):
+                    #    raise ValueError('Sampling interval is not a multiple of the provided simulation step')
 
                     ################################################################
                     # Parsing the configuration of requests for the application,

@@ -26,14 +26,6 @@ class BufferUtilization(EntityUtilization):
 
         self.update('waiting_requests_count', timestamp, value, averaging_interval)
 
-    #def get(self, metric_name : str, interval : pd.Timedelta):
-
-    #    """ Provides the waiting time in an appropriate format """
-
-    #    res = super().get(metric_name, interval)
-
-    #    return convert_to_class(res, pd.Timedelta, unit = 'ms') if metric_name == waiting_time_metric_name else res
-
     def get(self, metric_name : str, interval : pd.Timedelta):
 
         """ Provides the waiting time in an appropriate format """

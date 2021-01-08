@@ -81,6 +81,10 @@ class SeasonalLoadModel(RegionalLoadModel):
         gen_reqs = []
         for req_type, ratio in self.reqs_types_ratios.items():
             ms_bucket_picked = pd.Timedelta(timestamp.microsecond / 1000, unit = 'ms') // self.simulation_step
+            self.current_req_split_across_simulation_steps[req_type].keys()
+
+            tmp_series_of_buckets = pd.Series(list(self.current_req_split_across_simulation_steps[req_type].keys()))
+            ms_bucket_picked = tmp_series_of_buckets[abs(tmp_series_of_buckets - ms_bucket_picked).idxmin()]
             req_types_reqs_num = self.current_req_split_across_simulation_steps[req_type][ms_bucket_picked]
 
             for i in range(req_types_reqs_num):
