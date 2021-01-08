@@ -100,7 +100,7 @@ class ApplicationModel:
 
     def step(self, cur_timestamp : pd.Timestamp, simulation_step : pd.Timedelta):
 
-        new_requests = self.load_model.generate_requests(cur_timestamp)#.copy()
+        new_requests = self.load_model.generate_requests(cur_timestamp)
 
         self._put_incoming_requests_into_entry_service(new_requests)
 
@@ -153,7 +153,7 @@ class ApplicationModel:
             for prev_service_name in prev_services_names:
                 next_services_names = self.application_model_conf.get_next_services(prev_service_name)
                 req.replies_expected = len(next_services_names)
-                
+
                 req.processing_service = prev_service_name
                 req.set_downstream_processing_time_for_current_service()
                 self.services[prev_service_name].add_request(deepcopy(req))

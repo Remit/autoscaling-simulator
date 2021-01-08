@@ -139,7 +139,7 @@
 				]
 			},
 			"timeout": {
-				"value": 300,
+				"value": 1000,
 				"unit": "ms"
 			},
 			"request_size": {
@@ -194,7 +194,7 @@
 				]
 			},
 			"timeout": {
-				"value": 400,
+				"value": 1000,
 				"unit": "ms"
 			},
 			"request_size": {

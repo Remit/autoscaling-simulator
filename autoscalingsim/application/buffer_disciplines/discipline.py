@@ -94,10 +94,13 @@ class QueuingDiscipline(ABC):
         if not req is None:
             # Processing fan-in case
             if req.replies_expected > 1:
+                req_id = req.request_id
                 reqs_present = 0
                 for req_lookup in self.requests:
-                    if req_lookup.request_id == req.request_id:
+                    if req_lookup.request_id == req_id:
                         reqs_present += 1
+                        if req_lookup.cumulative_time > req.cumulative_time:
+                            req = req_lookup
 
                 return req if reqs_present == req.replies_expected else None
 

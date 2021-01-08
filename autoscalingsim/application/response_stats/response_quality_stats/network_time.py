@@ -13,4 +13,4 @@ class NetworkTimeStats(ResponseQualityStats):
 
     def add_request(self, cur_timestamp : pd.Timestamp, req : Request):
 
-        self._add_request_stats(cur_timestamp, req.network_time.microseconds / 1000, [req.request_type])
+        self._add_request_stats(cur_timestamp, req.network_time.value / 1_000_000, [req.request_type])

@@ -67,8 +67,8 @@
         "data_path": "D:/@TUM/PhD/FINAL/traces/azurefunctions/",
         "file_id": 1,
         "consider_applications_with_invocations_quantiles": {
-          "left_quantile": 0.7,
-          "right_quantile": 0.9
+          "left_quantile": 0.9,
+          "right_quantile": 0.95
         },
         "app_size_quantile_among_selected_based_on_invocations": 0.9
       }

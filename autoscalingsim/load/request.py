@@ -24,7 +24,7 @@ class Request:
         self.processing_time_left = pd.Timedelta(0, unit = 'ms')
         self.waiting_on_link_left = pd.Timedelta(0, unit = 'ms')
 
-        self.cumulative_time = pd.Timedelta(0, unit = 'ms')
+        self._cumulative_time = pd.Timedelta(0, unit = 'ms')
         self.network_time = pd.Timedelta(0, unit = 'ms')
         self.buffer_time = dict()
 
@@ -97,6 +97,16 @@ class Request:
 
         return not self._upstream
 
+    @property
+    def cumulative_time(self):
+
+        return self._cumulative_time
+
+    @cumulative_time.setter
+    def cumulative_time(self, new_val):
+
+        self._cumulative_time = new_val
+
     def __deepcopy__(self, memo):
 
         req_copy = self.__class__(self.region_name, self.request_type, self.request_processing_info, self.simulation_step, self.request_id)
@@ -104,7 +114,7 @@ class Request:
         req_copy.processing_time_left = self.processing_time_left
         req_copy.waiting_on_link_left = self.waiting_on_link_left
 
-        req_copy.cumulative_time = self.cumulative_time
+        req_copy._cumulative_time = self._cumulative_time
         req_copy.network_time = self.network_time
         req_copy.buffer_time = self.buffer_time.copy()
 

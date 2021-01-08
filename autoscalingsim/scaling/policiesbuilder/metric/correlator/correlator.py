@@ -72,8 +72,9 @@ class Correlator(ABC):
         minimas_to_consider = [pd.Timedelta(1, unit = 's')]
 
         for service_name, metric_vals in self.other_service_metric_vals.items():
-            other_service_metric_vals_min_resolution = min(metric_vals.index.to_series().diff()[1:])
-            if not other_service_metric_vals_min_resolution is pd.NaT: minimas_to_consider.append(other_service_metric_vals_min_resolution)
+            if metric_vals.shape[0] > 0:
+                other_service_metric_vals_min_resolution = min(metric_vals.index.to_series().diff()[1:])
+                if not other_service_metric_vals_min_resolution is pd.NaT: minimas_to_consider.append(other_service_metric_vals_min_resolution)
 
         associated_service_metric_vals_min_resolution = min(self.associated_service_metric_vals.index.to_series().diff()[1:])
         if not associated_service_metric_vals_min_resolution is pd.NaT: minimas_to_consider.append(associated_service_metric_vals_min_resolution)

@@ -103,6 +103,7 @@ class AzureFunctionsExperimentGenerator(ExperimentGenerator):
         memory_percentiles_ends = list(memory_percentiles)
 
         # Enriching the recipe
+        # TODO: consider empirical distribution
         experiment_generation_recipe['application_recipe']['services']['services_count'] = services_count
         experiment_generation_recipe['requests_recipe']['duration'] = { 'percentiles': { 'starts': duration_percentiles_starts, 'ends': duration_percentiles_ends},
                                                                         'probabilities': [0.01, 0.24, 0.25, 0.25, 0.24, 0.01],

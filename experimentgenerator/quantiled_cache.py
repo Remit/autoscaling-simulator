@@ -28,7 +28,8 @@ class QuantiledCache:
 
     def update_and_get(self, left_quantile_invocations, right_quantile_invocations, invocations_data : pd.DataFrame):
 
-        if (not left_quantile_invocations in self._cached_results) and (not right_quantile_invocations in self._cached_results):
+        invocations_filtered = None
+        if (not left_quantile_invocations in self._cached_results) or (not right_quantile_invocations in self._cached_results):
             invocations_data_per_app = invocations_data.groupby(['HashApp', 'datetime']).max()
             invocations_data_per_hour = invocations_data_per_app.groupby(['HashApp', pd.Grouper(freq='60T', level='datetime')]).sum().fillna(0).rename(columns = {'invocations': 'Load'})
             invocations_data_per_day = invocations_data_per_hour.groupby(['HashApp']).mean()
