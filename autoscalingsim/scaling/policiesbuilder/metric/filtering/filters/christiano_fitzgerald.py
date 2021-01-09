@@ -43,4 +43,4 @@ class ChristianoFitzgerald(ValuesFilter):
 
     def _derive_based_on_recommended(self, values : pd.DataFrame, quarterly_period : int):
 
-        return quarterly_period / (values.index.to_series().diff().fillna(pd.Timedelta(1, unit = 's')).min().microseconds / 1000 ** 2)
+        return quarterly_period / max((values.index.to_series().diff().fillna(pd.Timedelta(1, unit = 's')).min().microseconds / 1000 ** 2), 0.001)
