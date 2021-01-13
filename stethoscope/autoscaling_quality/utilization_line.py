@@ -32,7 +32,8 @@ class UtilizationLineGraph:
             if len(utilization_per_service) > 0:
                 fig, axs = plt.subplots(nrows = plotting_constants.SYSTEM_RESOURCES_CNT,
                                         ncols = len(utilization_per_service),
-                                        figsize = (len(utilization_per_service) * 4, plotting_constants.SYSTEM_RESOURCES_CNT * 4))
+                                        figsize = (len(utilization_per_service) * plotting_constants.SQUARE_PLOT_SIDE_INCH,
+                                                   plotting_constants.SYSTEM_RESOURCES_CNT * plotting_constants.SQUARE_PLOT_SIDE_INCH))
                 font = {'color': 'black', 'weight': 'bold', 'size': 12}
                 if not isinstance(axs, Iterable):
                     axs = [axs]
@@ -54,7 +55,7 @@ class UtilizationLineGraph:
                         unit = resolution // pd.Timedelta(1000, unit = 'ms')
                         axs[j][i].set_ylabel(f'{resource_name} util.,\n% per {unit} s')
                         axs[j][i].legend(loc = "lower right")
-                        axs[j][i].set_title(f'Service {service_name}', y = 1.2, fontdict = font)
+                        axs[j][i].set_title(f'Service {service_name[:plotting_constants.VARIABLE_NAMES_SIZE_LIMIT]}...', y = 1.2, fontdict = font)
                         #axs[j][i].yaxis.set_major_locator(ticker.MaxNLocator(integer=True))
                         axs[j][i].yaxis.set_major_locator(ticker.MultipleLocator(25))
                         axs[j][i].yaxis.set_minor_locator(ticker.MultipleLocator(5))
