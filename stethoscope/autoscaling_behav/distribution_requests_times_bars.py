@@ -120,7 +120,7 @@ class DistributionRequestsTimesBarchart:
             present_request_types_cnt = len([ True for resp_times in response_times_per_request_type.values() if len(resp_times) > 0 ])
 
             if present_request_types_cnt > 0:
-                fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (3 * present_request_types_cnt, 3))
+                fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (plotting_constants.SQUARE_PLOT_SIDE_INCH * present_request_types_cnt, plotting_constants.SQUARE_PLOT_SIDE_INCH))
                 buffer_times_by_request = buffer_times_regionalized[region_name]
                 network_times_by_request = network_times_regionalized[region_name]
 
@@ -128,16 +128,10 @@ class DistributionRequestsTimesBarchart:
                 aggregated_buf_waiting_time_per_req_type = []
                 aggregated_network_time_per_req_type = []
 
-                req_types = list(response_times_per_request_type.keys())
-                max_response_time = 0
-                for req_type in req_types:
+                for req_type in response_times_per_request_type.keys():
 
                     req_type_response_times = response_times_per_request_type[req_type]
-
-                    req_type_network_times = [0.0]
-                    if req_type in network_times_by_request:
-                        req_type_network_times = network_times_by_request[req_type]
-
+                    req_type_network_times = network_times_by_request[req_type] if req_type in network_times_by_request else [0.0]
                     aggregated_network_time_per_req_type.append(aggregation_fn(req_type_network_times))
 
                     req_type_buf_waiting_times = [0.0]
@@ -152,26 +146,24 @@ class DistributionRequestsTimesBarchart:
                     agg_proc_time = aggregation_fn(req_type_response_times) - (aggregated_buf_waiting_time_per_req_type[-1] + aggregated_network_time_per_req_type[-1])
                     aggregated_processing_time_per_req_type.append(agg_proc_time)
 
-                    if len(req_type_response_times) > 0:
-                        max_response_time = max(max_response_time, max(req_type_response_times))
-
-                ax.bar(req_types, aggregated_processing_time_per_req_type,
-                       bar_width, label='Processing')
+                req_types = [ f'{req_type[:plotting_constants.VARIABLE_NAMES_SIZE_LIMIT]}...' for req_type in response_times_per_request_type.keys() ]
+                ax.bar(req_types, aggregated_processing_time_per_req_type, bar_width, label='Processing')
                 ax.bar(req_types, aggregated_network_time_per_req_type,
-                       bar_width, bottom = aggregated_processing_time_per_req_type,
-                       label='Transferring')
+                       bar_width, bottom = aggregated_processing_time_per_req_type, label='Transferring')
 
                 ax.bar(req_types, aggregated_buf_waiting_time_per_req_type,
                        bar_width, bottom = np.array(aggregated_processing_time_per_req_type) \
-                                            + np.array(aggregated_network_time_per_req_type),
-                       label='Waiting')
+                                            + np.array(aggregated_network_time_per_req_type), label='Waiting')
 
                 ax.set_ylabel('Duration, ms')
-                ax.set_ylim(0, (max_response_time + 10))
                 ax.legend(loc = 'lower center', bbox_to_anchor=(0.5, -0.3), ncol = 3)
 
-                ax.yaxis.set_major_locator(ticker.MultipleLocator(50))
-                ax.yaxis.set_minor_locator(ticker.MultipleLocator(10))
+                major_ticks_interval_raw = int(ax.get_ylim()[1] / (plotting_constants.SQUARE_PLOT_SIDE_INCH * plotting_constants.MAJOR_TICKS_PER_INCH))
+                major_ticks_interval = round(major_ticks_interval_raw, -max(len(str(major_ticks_interval_raw)) - 2, 0))
+                minor_ticks_interval = major_ticks_interval // plotting_constants.MINOR_TICKS_PER_MAJOR_TICK_INTERVAL
+
+                ax.yaxis.set_major_locator(ticker.MultipleLocator(major_ticks_interval))
+                ax.yaxis.set_minor_locator(ticker.MultipleLocator(minor_ticks_interval))
 
                 fig.tight_layout()
 

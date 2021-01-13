@@ -10,8 +10,7 @@ class LoadLineGraph:
     FILENAME = 'ts_line_load.png'
 
     @classmethod
-    def plot(cls : type,
-             load_regionalized : dict,
+    def plot(cls : type, load_regionalized : dict,
              resolution : pd.Timedelta = pd.Timedelta(1000, unit = 'ms'),
              figures_dir = None):
 

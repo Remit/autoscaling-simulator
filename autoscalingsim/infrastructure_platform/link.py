@@ -58,10 +58,8 @@ class NodeGroupLink:
             req.network_time += req.simulation_step
 
             if req.waiting_on_link_left <= pd.Timedelta(0):
-                if req.cumulative_time < req.timeout:
-                    requests_for_buffer.append(req)
-                    self.used_bandwidth -= self._req_occupied(req)
-
+                requests_for_buffer.append(req)
+                self.used_bandwidth -= self._req_occupied(req)
                 self.requests_in_transfer.remove(req)
 
         return requests_for_buffer

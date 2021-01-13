@@ -45,12 +45,6 @@ class OldestFirstQueue(QueuingDiscipline):
 
         return req
 
-    def shuffle(self):
-
-        """ Not implemented """
-
-        pass
-
     def add_cumulative_time(self, delta : pd.Timedelta, service_name : str):
 
         for req in self.requests:

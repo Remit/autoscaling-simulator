@@ -23,9 +23,8 @@ class SeasonalLoadModel(RegionalLoadModel):
         self.reqs_types_ratios = RatiosParser.parse(load_configs)
         self.reqs_generators = DistributionsParser.parse(load_configs)
 
-        self.current_means_split_across_seconds = {}
-        self.current_second_leftover_reqs = { req_type : -1 for req_type in self.reqs_types_ratios }
-        self.current_req_split_across_simulation_steps = {}
+        self.current_means_split_across_seconds = dict()
+        self.current_req_split_across_simulation_steps = dict()
         for req_type in self.reqs_types_ratios:
             self.current_req_split_across_simulation_steps[req_type] = { ms_bucket_id : 0 for ms_bucket_id in range(pd.Timedelta(1000, unit = 'ms') // self.simulation_step) }
 
@@ -41,7 +40,7 @@ class SeasonalLoadModel(RegionalLoadModel):
 
         self._populate_split_across_seconds_if_needed(timestamp, month, seconds_per_time_unit, time_unit)
 
-        second_in_time_unit = int(timestamp.timestamp()) % seconds_per_time_unit
+        second_in_time_unit = int(timestamp.timestamp()) % seconds_per_time_unit # TODO: is it correct?
         self._populate_simulation_steps_in_second_if_needed(second_in_time_unit)
 
         return self._generate_requests_on_current_simulation_step(timestamp)
@@ -64,24 +63,21 @@ class SeasonalLoadModel(RegionalLoadModel):
         avg_param = self.current_means_split_across_seconds[second_in_time_unit]
 
         if self.cur_second_in_time_unit != second_in_time_unit:
-            self.current_second_leftover_reqs = { req_type : val - 1 for req_type, val in self.current_second_leftover_reqs.items() }
-            self.cur_second_in_time_unit = second_in_time_unit
-
-        for req_type, ratio in self.reqs_types_ratios.items():
-            if self.current_second_leftover_reqs[req_type] < 0:
+            for req_type, ratio in self.reqs_types_ratios.items():
                 self.reqs_generators[req_type].set_avg_param(avg_param)
-                self.current_second_leftover_reqs[req_type] = max(int(ratio * self.reqs_generators[req_type].generate()), 0)
-                self.current_req_split_across_simulation_steps[req_type] = { ms_bucket_id : 0 for ms_bucket_id in self.current_req_split_across_simulation_steps[req_type] }
+                current_second_reqs = max(int(ratio * self.reqs_generators[req_type].generate()), 0)
 
-                for _ in range(self.current_second_leftover_reqs[req_type]):
+                self.current_req_split_across_simulation_steps[req_type] = { ms_bucket_id : 0 for ms_bucket_id in self.current_req_split_across_simulation_steps[req_type] }
+                for _ in range(current_second_reqs):
                     self.current_req_split_across_simulation_steps[req_type][np.random.randint(len(self.current_req_split_across_simulation_steps[req_type]))] += 1
+
+            self.cur_second_in_time_unit = second_in_time_unit
 
     def _generate_requests_on_current_simulation_step(self, timestamp : pd.Timestamp) -> list:
 
         gen_reqs = []
         for req_type, ratio in self.reqs_types_ratios.items():
             ms_bucket_picked = pd.Timedelta(timestamp.microsecond / 1000, unit = 'ms') // self.simulation_step
-            self.current_req_split_across_simulation_steps[req_type].keys()
 
             tmp_series_of_buckets = pd.Series(list(self.current_req_split_across_simulation_steps[req_type].keys()))
             ms_bucket_picked = tmp_series_of_buckets[abs(tmp_series_of_buckets - ms_bucket_picked).idxmin()]

@@ -158,7 +158,7 @@ class ServiceState:
 
                                 req = self.downstream_buf.attempt_fan_in()
                                 if not req is None:
-                                    if deployment.can_schedule_request(req): # correct
+                                    if deployment.can_schedule_request(req):
                                         req = self.downstream_buf.fan_in()
                                         deployment.start_processing(req)
                                         advancing = True
@@ -167,7 +167,6 @@ class ServiceState:
 
                                 req = self.upstream_buf.attempt_take()
                                 if not req is None:
-
                                     if deployment.can_schedule_request(req):
                                         req = self.upstream_buf.take()
                                         deployment.start_processing(req)

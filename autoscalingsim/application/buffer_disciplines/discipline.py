@@ -65,15 +65,6 @@ class QueuingDiscipline(ABC):
         pass
 
     @abstractmethod
-    def shuffle(self):
-
-        """
-        Shuffles the queue according to the specific discipline
-        """
-
-        pass
-
-    @abstractmethod
     def add_cumulative_time(self, delta : pd.Timedelta, service_name : str):
 
         pass
@@ -81,6 +72,18 @@ class QueuingDiscipline(ABC):
     def __init__(self):
 
         self.requests = deque([])
+
+    def drop_old_requests(self):
+
+        self.requests = deque([req for req in self.requests if req.cumulative_time < req.timeout])
+
+    def shuffle(self):
+
+        """
+        Shuffles the queue according to the specific discipline
+        """
+
+        self.requests.rotate()
 
     def attempt_fan_in(self):
 

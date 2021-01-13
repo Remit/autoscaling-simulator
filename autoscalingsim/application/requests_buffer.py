@@ -28,6 +28,8 @@ class RequestsBuffer:
 
     def step(self):
 
+        self.discipline.drop_old_requests()
+
         for link in self.links:
             ready_reqs = link.step()
 

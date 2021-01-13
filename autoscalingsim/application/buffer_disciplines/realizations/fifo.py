@@ -31,11 +31,6 @@ class FIFOQueue(QueuingDiscipline):
 
         return req
 
-    def shuffle(self):
-
-        req = self.take()
-        self.requests.appendleft(req)
-
     def add_cumulative_time(self, delta : pd.Timedelta, service_name : str):
 
         for req in self.requests:

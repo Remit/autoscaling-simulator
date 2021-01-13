@@ -79,7 +79,7 @@ class AnalysisFramework:
 
         NodesUsageLineGraph.plot(desired_node_count_per_provider, actual_node_count_per_provider, figures_dir = figures_dir_in_use)
 
-        WaitingServiceBuffersHistogram.plot(buffer_times_regionalized, bins_size_ms = (self.simulation_step.microseconds // 1000), figures_dir = figures_dir_in_use)
+        WaitingServiceBuffersHistogram.plot(buffer_times_regionalized, figures_dir = figures_dir_in_use)
 
         DistributionRequestsTimesBarchart.plot(response_times_regionalized, buffer_times_regionalized, network_times_regionalized, figures_dir = figures_dir_in_use)
 
