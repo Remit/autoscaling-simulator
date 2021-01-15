@@ -81,15 +81,15 @@ class WindowedCombiner(Combiner):
 
         self.aggregation_operation = sum # todo: consider parameterizing, should return single int
 
-    def combine(self,
-                scaled_entities_adjustments : dict):
+    def combine(self, scaled_entities_adjustments : dict):
 
         unified_timeline_of_adjustments = {}
         for scaled_entity, timeline_df in scaled_entities_adjustments.items():
             aggregated_timeline = timeline_df.resample(self.resolution).apply(self.aggregation_operation).to_dict()
             for aspect_name, timed_change in aggregated_timeline.items():
                 for ts, change_val in timed_change.items():
-                    unified_timeline_of_adjustments[ts] = {scaled_entity : {aspect_name : change_val}}
+                    if change_val != 0: # TODO: think of decoupling this logic into a wrapper
+                        unified_timeline_of_adjustments[ts] = {scaled_entity : {aspect_name : change_val}}
 
         unified_timeline_of_adjustments = OrderedDict(sorted(unified_timeline_of_adjustments.items(),
                                                              key = lambda elem: elem[0]))

@@ -62,8 +62,8 @@ class Region:
         unmet_increase, new_generalized_increase_deltas = self._attempt_services_placement_maximizing_chances_of_scale_down(unmet_increase, cur_groups, scaled_service_instance_requirements_by_service)
         new_generalized_deltas.extend(new_generalized_increase_deltas)
 
-        unmet_increase, new_generalized_returned_deltas = self._attempt_services_placement_on_to_be_scaled_down_groups(unmet_increase, postponed_scaling_events, scaled_service_instance_requirements_by_service)
-        new_generalized_deltas.extend(new_generalized_returned_deltas)
+        #unmet_increase, new_generalized_returned_deltas = self._attempt_services_placement_on_to_be_scaled_down_groups(unmet_increase, postponed_scaling_events, scaled_service_instance_requirements_by_service)
+        #new_generalized_deltas.extend(new_generalized_returned_deltas)
 
         regional_delta = RegionalDelta(self.region_name, new_generalized_deltas) if len(new_generalized_deltas) > 0 else None
         unmet_changes_on_ts = {**unmet_reduction, **unmet_increase}

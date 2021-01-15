@@ -56,7 +56,8 @@ class AdjustmentPolicy:
             for region_name, services_changes in raw_scaling_aspects_changes.items():
                 for service_name, aspect_vals_changes in services_changes.items():
                     for aspect_name, aspect_val_change in aspect_vals_changes.items():
-                        result[region_name][service_name][aspect_name][timestamp] = aspect_val_change
+                        if aspect_val_change != 0:
+                            result[region_name][service_name][aspect_name][timestamp] = aspect_val_change
 
             prev_services_state = desired_state_regionalized
 

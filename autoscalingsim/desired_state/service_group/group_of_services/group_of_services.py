@@ -95,10 +95,8 @@ class GroupOfServices:
                 coverage = service_group // other.services_groups[service_name]
                 min_coverage = min(coverage) if len(coverage) > 0 else 1
                 times_cur_service_group_covers_other.append(min_coverage)
-            else:
-                times_cur_service_group_covers_other.append(0)
 
-        return min(times_cur_service_group_covers_other)
+        return min(times_cur_service_group_covers_other) if len(times_cur_service_group_covers_other) > 0 else 0
 
     def __mod__(self, other : 'GroupOfServices'):
 

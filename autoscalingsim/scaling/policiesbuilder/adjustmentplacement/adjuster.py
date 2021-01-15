@@ -52,12 +52,17 @@ class Adjuster(ABC):
         #unmet_change = {'eu': {'db': {'count': 14.0}, 'appserver': {'count': -6}}}
         #unmet_change = {'eu': {'db': {'count': 14.0}, 'appserver': {'count': -6}}}
         #ts_of_unmet_change = cur_timestamp
+        #unmet_change = {'eu': {'service-75c4f5fa-4da4-11eb-a82c-d8cb8af1e959': {'count': 200.0}}}
+        unmet_change = {'eu': {'service-75c4f5fa-4da4-11eb-a82c-d8cb8af1e959': {'count': -12.0}, 'service-75c4f5fa-4da4-11eb-a82c-d8cb8af1e959': {'count': -8.0}}}
+        #unmet_change = {'eu': {'service-75c4f5fa-4da4-11eb-a82c-d8cb8af1e959': {'count': -8.0}}}
 
         in_work_state = current_state
 
         while not unmet_change is None:
 
+            print(f'>> unmet_change BEFORE: {unmet_change}')
             unmet_change = self._attempt_to_use_existing_nodes_and_scale_down_if_needed(in_work_state, ts_of_unmet_change, unmet_change, timeline_of_deltas)
+            print(f'>> unmet_change AFTER: {unmet_change}')
 
             if len(unmet_change) > 0:
 
@@ -65,12 +70,12 @@ class Adjuster(ABC):
                 in_work_state, unmet_change_state, state_duration = self._roll_out_enforced_updates_temporarily(in_work_state, ts_of_unmet_change,
                                                                                                                 unmet_change, timeline_of_deltas, timeline_of_unmet_changes)
 
-                state_addition_deltas, state_score_addition = self._evaluate_nodes_addition_option(in_work_state, unmet_change_state, state_duration)
-                state_substitution_deltas, state_score_substitution = self._evaluate_nodes_substitution_option(in_work_state, ts_of_unmet_change, unmet_change_state, state_duration)
+                state_addition_delta, state_score_addition = self._evaluate_nodes_addition_option(in_work_state, unmet_change_state, state_duration)
+                state_substitution_delta, state_score_substitution = self._evaluate_nodes_substitution_option(in_work_state, ts_of_unmet_change, unmet_change_state, state_duration)
 
                 self._update_timeline_with_best_option(timeline_of_deltas, ts_of_unmet_change,
-                                                       state_addition_deltas, state_score_addition,
-                                                       state_substitution_deltas, state_score_substitution)
+                                                       state_addition_delta, state_score_addition,
+                                                       state_substitution_delta, state_score_substitution)
 
             ts_of_unmet_change, unmet_change = timeline_of_unmet_changes.next()
 
@@ -101,35 +106,35 @@ class Adjuster(ABC):
     def _evaluate_nodes_addition_option(self, in_work_state : PlatformState, unmet_change_state : GroupOfServicesRegionalized,
                                         state_duration : pd.Timedelta):
 
-        state_addition_deltas, state_score_addition = self.desired_change_calculator.compute_adjustment(unmet_change_state, state_duration)
+        state_addition_delta, state_score_addition = self.desired_change_calculator.compute_adjustment(unmet_change_state, state_duration)
 
         state_score_addition += self.scorer.score_platform_state(in_work_state, StateDuration.from_single_value(state_duration))
 
-        return (state_addition_deltas, state_score_addition)
+        return (state_addition_delta, state_score_addition)
 
     def _evaluate_nodes_substitution_option(self, in_work_state : PlatformState, ts_of_unmet_change : pd.Timestamp,
                                             unmet_change_state : GroupOfServicesRegionalized, state_duration : pd.Timedelta):
 
         in_work_collective_services_states = in_work_state.collective_services_states
         in_work_collective_services_states += unmet_change_state
-        state_substitution_deltas, state_score_substitution = self.desired_change_calculator.compute_adjustment(in_work_collective_services_states, state_duration)
+        state_substitution_delta, state_score_substitution = self.desired_change_calculator.compute_adjustment(in_work_collective_services_states, state_duration)
 
-        till_state_substitution = state_substitution_deltas.till_full_enforcement(self.scaling_model, ts_of_unmet_change)
+        till_state_substitution = state_substitution_delta.till_full_enforcement(self.scaling_model, ts_of_unmet_change)
 
         state_score_substitution += self.scorer.score_platform_state(in_work_state, till_state_substitution)
 
-        return (state_substitution_deltas, state_score_substitution)
+        return (state_substitution_delta, state_score_substitution)
 
     def _update_timeline_with_best_option(self, timeline_of_deltas_ref : DeltaTimeline, ts_of_unmet_change : pd.Timestamp,
-                                          state_addition_deltas, state_score_addition,
-                                          state_substitution_deltas, state_score_substitution):
+                                          state_addition_delta, state_score_addition,
+                                          state_substitution_delta, state_score_substitution):
 
         if state_score_addition.is_worst:
-            timeline_of_deltas_ref.add_state_delta(ts_of_unmet_change, state_score_substitution)
+            timeline_of_deltas_ref.add_state_delta(ts_of_unmet_change, state_substitution_delta)
         elif state_score_substitution.is_worst:
-            timeline_of_deltas_ref.add_state_delta(ts_of_unmet_change, state_addition_deltas)
+            timeline_of_deltas_ref.add_state_delta(ts_of_unmet_change, state_addition_delta)
         else:
-            chosen_state_delta = state_addition_deltas if state_score_addition.joint_score > state_score_substitution.joint_score else state_substitution_deltas
+            chosen_state_delta = state_addition_delta if state_score_addition.joint_score > state_score_substitution.joint_score else state_substitution_delta
             timeline_of_deltas_ref.add_state_delta(ts_of_unmet_change, chosen_state_delta)
 
     @classmethod

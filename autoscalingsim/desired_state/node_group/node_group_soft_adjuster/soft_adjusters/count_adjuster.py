@@ -102,16 +102,20 @@ class CountBasedSoftAdjuster(NodeGroupSoftAdjuster):
         for service_name, service_instance_resource_usage in node_sys_resource_usage_by_service_sorted.items():
             if service_name in unmet_changes:
 
+                #print(f'instance count: {node_sys_resource_usage.instance_count}')
+                #print(f'ins max usg: {node_sys_resource_usage.instance_max_usage}')
+
                 # Case of adding services to the existing nodes
                 if not service_name in services_cnt_change:
                     services_cnt_change[service_name] = 0
 
-                if not node_sys_resource_usage.is_full and unmet_changes[service_name] > 0:
-                    while (unmet_changes[service_name] - services_cnt_change[service_name] > 0) and not node_sys_resource_usage.is_full:
+                if node_sys_resource_usage.can_accommodate_another_service_instance and unmet_changes[service_name] > 0:
+                    while (unmet_changes[service_name] - services_cnt_change[service_name] > 0) and node_sys_resource_usage.can_accommodate_another_service_instance:
                         node_sys_resource_usage += service_instance_resource_usage
+                        #print(f'node_sys_resource_usage: {node_sys_resource_usage}')
                         services_cnt_change[service_name] += 1
 
-                    if node_sys_resource_usage.is_full:
+                    if not node_sys_resource_usage.can_accommodate_another_service_instance:
                         node_sys_resource_usage -= service_instance_resource_usage
                         services_cnt_change[service_name] -= 1
 
@@ -125,11 +129,7 @@ class CountBasedSoftAdjuster(NodeGroupSoftAdjuster):
         # Trying the same solution temp_accommodation to reduce the amount of iterations by
         # considering whether it can be repeated multiple times
         services_cnt_change = {service_name: change_val for service_name, change_val in services_cnt_change.items() if change_val != 0}
-
-        nodes_to_accommodate_res_usage = max([math.ceil(res_usage / other_res_usage) \
-                                                for other_res_name, other_res_usage in self.node_group_ref.node_info.max_usage.items() \
-                                                for res_name, res_usage in node_sys_resource_usage.to_dict().items() \
-                                                if other_res_name == res_name and other_res_usage > other_res_usage.__class__(0)]) # TODO: think of making new abstraction for vcpu resource and adding is_positive to it
+        nodes_to_accommodate_res_usage = node_sys_resource_usage.compress().instance_count
         for service_name, count_in_solution in services_cnt_change.items():
             unmet_changes[service_name] -= count_in_solution
 
@@ -137,6 +137,9 @@ class CountBasedSoftAdjuster(NodeGroupSoftAdjuster):
         services_group_delta = None
 
         if nodes_to_accommodate_res_usage < self.node_group_ref.nodes_count:
+            print('>> SCALE-DOWN ISSUED!')
+            print(f'>> unmet_changes: {unmet_changes}')
+            print(f'>> nodes_to_accommodate_res_usage: {nodes_to_accommodate_res_usage}')
             # scale down for nodes
             postponed_scaling_event = HorizontalScaleDown(self.node_group_ref, self.node_group_ref.nodes_count - nodes_to_accommodate_res_usage)
             deleted_services = postponed_scaling_event.deleted_services

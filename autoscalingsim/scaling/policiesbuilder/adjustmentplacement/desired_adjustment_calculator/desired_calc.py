@@ -42,4 +42,4 @@ class DesiredPlatformAdjustmentCalculator:
                 regions[region_name] = Region.from_conf(region_name, optimal_placement)
                 scores_per_region[region_name] = optimal_placement.score
 
-        return (PlatformState(regions).to_deltas(), StateScore(scores_per_region))
+        return (PlatformState(regions).to_delta(), StateScore(scores_per_region))

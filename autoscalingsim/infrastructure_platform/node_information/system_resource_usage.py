@@ -1,5 +1,6 @@
 import operator
 import numbers
+import math
 from copy import deepcopy
 
 from autoscalingsim.utils.metric.metric_categories.size import Size
@@ -13,6 +14,8 @@ class SystemResourceUsage:
     each arithmetic operation on the system resource usage checks whether the
     operands have the matching node types.
     """
+
+    MAX_ALLOWED_SYSTEM_RESOURCE_USAGE_BY_SERVICES = 0.3
 
     system_resources = {
         'vCPU'              : Numeric,
@@ -81,6 +84,25 @@ class SystemResourceUsage:
                         for other_res_name, other_res_usage in other_usage.system_resources_usage.items() \
                         for res_name, res_usage in self.system_resources_usage.items() \
                         if other_res_name == res_name])
+
+    def compress(self):
+
+        new_instances_count_by_resource = dict()
+        for res_name, res_usage in self.system_resources_usage.items():
+            new_instances_count_by_resource[res_name] = math.ceil(res_usage / (self.instance_max_usage[res_name] * self.__class__.MAX_ALLOWED_SYSTEM_RESOURCE_USAGE_BY_SERVICES))
+
+        new_instances_count = max(new_instances_count_by_resource.values()) if len(new_instances_count_by_resource) > 0 else self.instance_count
+
+        return self.__class__(self.node_info, min(new_instances_count, self.instance_count), deepcopy(self.system_resources_usage))
+
+    @property
+    def can_accommodate_another_service_instance(self):
+
+        for res_name, res_usage in self.system_resources_usage.items():
+            if res_usage >= self.__class__.MAX_ALLOWED_SYSTEM_RESOURCE_USAGE_BY_SERVICES * self.instance_count * self.instance_max_usage[res_name]:
+                return False
+
+        return True
 
     @property
     def is_full(self):

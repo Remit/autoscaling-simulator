@@ -17,7 +17,6 @@ class TimelineOfDesiredServicesChanges:
         for region_name, scaling_events_timelines_per_service in scaling_events_timelines_per_region_per_service.items():
             if len(scaling_events_timelines_per_service) > 0:
                 self.timeline_per_region[region_name] = combiner.combine(scaling_events_timelines_per_service)
-
                 self.current_index_per_region[region_name] = 0
                 if len(self.timeline_per_region[region_name]) > 0:
                     timestamps_of_services_changes = list(self.timeline_per_region[region_name].keys())
@@ -33,8 +32,7 @@ class TimelineOfDesiredServicesChanges:
 
         if len(self.current_timestamp_per_region) > 0:
             min_cur_timestamp = min(list(self.current_timestamp_per_region.values()))
-            regions_with_the_cur_ts = [ region_name for region_name, ts in self.current_timestamp_per_region.items() \
-                                            if ts == min_cur_timestamp ]
+            regions_with_the_cur_ts = [ region_name for region_name, ts in self.current_timestamp_per_region.items() if ts == min_cur_timestamp ]
 
             services_scalings_on_ts = {}
             for region_name in regions_with_the_cur_ts:

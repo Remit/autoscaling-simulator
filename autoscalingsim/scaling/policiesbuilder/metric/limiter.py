@@ -34,11 +34,11 @@ class Limiter:
 
     def _min_comparison(self, x_min, values : pd.DataFrame):
 
-        return self._comparison(x_min, values, operator.lt, max)
+        return self._comparison(x_min, values, operator.ge, max)
 
     def _max_comparison(self, x_max, values : pd.DataFrame):
 
-        return self._comparison(x_max, values, operator.gt, min)
+        return self._comparison(x_max, values, operator.le, min)
 
     def _comparison(self, fill_value, values : pd.DataFrame, comparison_op, value_selection_func):
 

@@ -78,7 +78,7 @@ class PlatformState:
 
         return { region_name : region.to_placement() for region_name, region in self.regions.items()}
 
-    def to_deltas(self):
+    def to_delta(self):
 
         return PlatformStateDelta([region.to_deltas() for region in self.regions.values()])
 

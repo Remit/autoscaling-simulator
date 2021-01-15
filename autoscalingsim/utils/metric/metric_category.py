@@ -40,10 +40,7 @@ class MetricCategory(ABC):
 
         return self._add(other, -1)
 
-    def __mul__(self, multiplier : int):
-
-        if not isinstance(multiplier, int):
-            raise ValueError(f'Non-int multiplier for {self.__class__.__name___}')
+    def __mul__(self, multiplier : float):
 
         return self.__class__(self._value * multiplier)
 
