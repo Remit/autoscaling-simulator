@@ -22,7 +22,7 @@ class Adjuster(ABC):
 
     def __init__(self, adjustment_horizon : dict, scaling_model : ScalingModel,
                  services_resource_requirements : dict, combiner_settings : dict,
-                 calc_conf : 'DesiredPlatformAdjustmentCalculatorConfig', score_calculator_class : ScoreCalculator):
+                 calc_conf : 'DesiredPlatformAdjustmentCalculatorConfig', score_calculator_class : ScoreCalculator, node_groups_registry : 'NodeGroupsRegistry'):
 
         self.scaling_model = scaling_model
         self.services_resource_requirements = services_resource_requirements
@@ -36,7 +36,7 @@ class Adjuster(ABC):
         combiner_conf = ErrorChecker.key_check_and_load('conf', combiner_settings, self.__class__.__name__)
         self.combiner = Combiner.get(combiner_type)(combiner_conf)
 
-        self.desired_change_calculator = DesiredPlatformAdjustmentCalculator(self.scorer, services_resource_requirements, calc_conf)
+        self.desired_change_calculator = DesiredPlatformAdjustmentCalculator(self.scorer, services_resource_requirements, calc_conf, node_groups_registry)
 
     def adjust_platform_state(self, cur_timestamp : pd.Timestamp, services_scaling_events : dict, current_state : PlatformState):
 
@@ -64,18 +64,19 @@ class Adjuster(ABC):
             unmet_change = self._attempt_to_use_existing_nodes_and_scale_down_if_needed(in_work_state, ts_of_unmet_change, unmet_change, timeline_of_deltas)
             print(f'>> unmet_change AFTER: {unmet_change}')
 
-            if len(unmet_change) > 0:
+            if False:
+                if len(unmet_change) > 0:
 
-                # TODO: add test that ensures that timeline_of_deltas is unchanged
-                in_work_state, unmet_change_state, state_duration = self._roll_out_enforced_updates_temporarily(in_work_state, ts_of_unmet_change,
-                                                                                                                unmet_change, timeline_of_deltas, timeline_of_unmet_changes)
+                    # TODO: add test that ensures that timeline_of_deltas is unchanged
+                    in_work_state, unmet_change_state, state_duration = self._roll_out_enforced_updates_temporarily(in_work_state, ts_of_unmet_change,
+                                                                                                                    unmet_change, timeline_of_deltas, timeline_of_unmet_changes)
 
-                state_addition_delta, state_score_addition = self._evaluate_nodes_addition_option(in_work_state, unmet_change_state, state_duration)
-                state_substitution_delta, state_score_substitution = self._evaluate_nodes_substitution_option(in_work_state, ts_of_unmet_change, unmet_change_state, state_duration)
+                    state_addition_delta, state_score_addition = self._evaluate_nodes_addition_option(in_work_state, unmet_change_state, state_duration)
+                    state_substitution_delta, state_score_substitution = self._evaluate_nodes_substitution_option(in_work_state, ts_of_unmet_change, unmet_change_state, state_duration)
 
-                self._update_timeline_with_best_option(timeline_of_deltas, ts_of_unmet_change,
-                                                       state_addition_delta, state_score_addition,
-                                                       state_substitution_delta, state_score_substitution)
+                    self._update_timeline_with_best_option(timeline_of_deltas, ts_of_unmet_change,
+                                                           state_addition_delta, state_score_addition,
+                                                           state_substitution_delta, state_score_substitution)
 
             ts_of_unmet_change, unmet_change = timeline_of_unmet_changes.next()
 

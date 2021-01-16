@@ -38,14 +38,28 @@ class NodeGroupLink:
 
     """
 
-    def __init__(self, node_info : NodeInfo, count_of_nodes_in_group : int):
+    @classmethod
+    def new_empty_link(cls, node_info : NodeInfo, count_of_nodes_in_group : int):
 
-        self.latency = node_info.latency
-        self.single_link_network_bandwidth = node_info.network_bandwidth
+        return cls(node_info.latency, node_info.network_bandwidth, node_info.network_bandwidth * count_of_nodes_in_group, None, Size(0))
 
-        self.bandwidth = self.single_link_network_bandwidth * count_of_nodes_in_group
-        self.requests_in_transfer = []
-        self.used_bandwidth = Size(0)
+    def __init__(self, latency : pd.Timedelta, single_link_network_bandwidth : Size, bandwidth : int, requests_in_transfer : list, used_bandwidth : Size):
+
+        self.latency = latency
+        self.single_link_network_bandwidth = single_link_network_bandwidth
+        self.bandwidth = bandwidth
+        self.requests_in_transfer = list() if requests_in_transfer is None else requests_in_transfer
+        self.used_bandwidth = used_bandwidth
+
+    def __add__(self, other : 'NodeGroupLink'):
+
+        return self.__class__(self.latency, self.single_link_network_bandwidth, self.bandwidth + other.bandwidth,
+                              self.requests_in_transfer + other.requests_in_transfer, self.used_bandwidth + other.used_bandwidth)
+
+    def __sub__(self, other : 'NodeGroupLink'):
+
+        return self.__class__(self.latency, self.single_link_network_bandwidth, self.bandwidth - other.bandwidth,
+                              [ req for req in self.requests_in_transfer if not req in other.requests_in_transfer], self.used_bandwidth - other.used_bandwidth)
 
     def step(self):
 
@@ -98,3 +112,11 @@ class NodeGroupLink:
 
         req_size = req.request_size if req.upstream else req.response_size
         return req_size * (self.latency // req.simulation_step) # taking channel for that many simulation steps * by the taken bandwidth
+
+    def __repr__(self):
+
+        return f'{self.__class__.__name__}(latency = {self.latency},\
+                                           single_link_network_bandwidth = {self.single_link_network_bandwidth},\
+                                           bandwidth = {self.bandwidth}, \
+                                           requests_in_transfer = {self.requests_in_transfer}, \
+                                           used_bandwidth = {self.used_bandwidth})'

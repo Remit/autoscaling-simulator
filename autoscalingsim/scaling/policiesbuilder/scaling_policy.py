@@ -30,7 +30,7 @@ class ScalingPolicy:
 
     def __init__(self, simulation_conf : dict, state_reader : StateReader,
                  scaling_manager : ScalingManager, service_instance_requirements : dict,
-                 configs_contents_table : dict):
+                 configs_contents_table : dict, node_groups_registry : 'NodeGroupsRegistry'):
 
         self.scaling_manager = scaling_manager
         self.last_sync_timestamp = simulation_conf['starting_time']
@@ -39,7 +39,7 @@ class ScalingPolicy:
 
         self.platform_model = PlatformModel(state_reader, scaling_manager,
                                             service_instance_requirements, self.scaling_settings.services_scaling_config,
-                                            simulation_conf, configs_contents_table)
+                                            simulation_conf, configs_contents_table, node_groups_registry)
 
     def reconcile_state(self, cur_timestamp : pd.Timestamp):
 

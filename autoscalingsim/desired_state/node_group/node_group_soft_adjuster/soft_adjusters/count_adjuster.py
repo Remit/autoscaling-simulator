@@ -4,78 +4,6 @@ from copy import deepcopy
 
 from ..node_group_soft_adjuster import NodeGroupSoftAdjuster
 
-class HorizontalScaleDown:
-
-    def __init__(self, original_node_group : 'HomogeneousNodeGroup', count_of_nodes_to_remove : int):
-
-        import autoscalingsim.desired_state.node_group as n_grp
-
-        self.original_node_group = original_node_group
-        fragment_to_remove = n_grp.HomogeneousNodeGroup(original_node_group.node_info, count_of_nodes_to_remove)
-
-        self.remaining_node_group_fragment = None
-        self.deleted_node_group_fragment = None
-        self.deleted_services_state_fragment = None
-
-        if original_node_group.can_shrink_with(fragment_to_remove):
-
-            remaining_node_group_fragment, deleted_fragment = original_node_group.split(fragment_to_remove)
-            if not remaining_node_group_fragment.is_empty:
-                self.remaining_node_group_fragment = remaining_node_group_fragment
-
-            deleted_node_group_fragment = deleted_fragment['node_group_fragment']
-            if not deleted_node_group_fragment.is_empty:
-                self.deleted_node_group_fragment = deleted_node_group_fragment
-
-            self.deleted_services_state_fragment = deleted_fragment['services_state_fragment']
-
-    @property
-    def remainder(self):
-
-        return self.remaining_node_group_fragment
-
-    @property
-    def deleted(self):
-
-        if not self.deleted_node_group_fragment is None:
-            result = deepcopy(self.deleted_node_group_fragment)
-            result.add_to_services_state(self.deleted_services_state_fragment.to_delta())
-            return result
-        else:
-            return None
-
-    @property
-    def deleted_services(self):
-
-        return self.deleted_services_state_fragment
-
-    def to_scale_down_in_deltas(self):
-
-        import autoscalingsim.deltarepr.generalized_delta as g_delta
-        import autoscalingsim.deltarepr.node_group_delta as n_grp_delta
-
-        result = self.to_split_in_deltas()
-        if not self.deleted_node_group_fragment is None:
-            services_group_delta = None if self.deleted_services_state_fragment is None else self.deleted_services_state_fragment.to_delta(-1)
-            result.append(g_delta.GeneralizedDelta(n_grp_delta.NodeGroupDelta(deepcopy(self.deleted_node_group_fragment), sign = -1, in_change = True, virtual = False), services_group_delta))
-            #result.append(g_delta.GeneralizedDelta(n_grp_delta.NodeGroupDelta(deepcopy(self.deleted_node_group_fragment), sign = 1, in_change = False, virtual = False), None))
-
-        return result
-
-    def to_split_in_deltas(self):
-
-        import autoscalingsim.deltarepr.generalized_delta as g_delta
-        import autoscalingsim.deltarepr.node_group_delta as n_grp_delta
-
-        result = list()
-        result.append(g_delta.GeneralizedDelta(n_grp_delta.NodeGroupDelta(deepcopy(self.original_node_group), sign = -1, in_change = False, virtual = False), None))
-        if not self.remaining_node_group_fragment is None:
-            result.append(g_delta.GeneralizedDelta(n_grp_delta.NodeGroupDelta(deepcopy(self.remaining_node_group_fragment), sign = 1, in_change = False, virtual = False), None))
-        if not self.deleted_node_group_fragment is None:
-            result.append(g_delta.GeneralizedDelta(n_grp_delta.NodeGroupDelta(deepcopy(self.deleted_node_group_fragment), sign = 1, in_change = False, virtual = False), None))
-
-        return result
-
 @NodeGroupSoftAdjuster.register('count')
 class CountBasedSoftAdjuster(NodeGroupSoftAdjuster):
 
@@ -90,7 +18,7 @@ class CountBasedSoftAdjuster(NodeGroupSoftAdjuster):
         import autoscalingsim.deltarepr.group_of_services_delta as gos_delta
 
         generalized_deltas = list()
-        postponed_scaling_event = None
+        scale_down_delta = None
 
         node_sys_resource_usage = self.node_group_ref.system_resources_usage.copy()
 
@@ -137,14 +65,15 @@ class CountBasedSoftAdjuster(NodeGroupSoftAdjuster):
         services_group_delta = None
 
         if nodes_to_accommodate_res_usage < self.node_group_ref.nodes_count:
-            print('>> SCALE-DOWN ISSUED!')
-            print(f'>> unmet_changes: {unmet_changes}')
-            print(f'>> nodes_to_accommodate_res_usage: {nodes_to_accommodate_res_usage}')
-            # scale down for nodes
-            postponed_scaling_event = HorizontalScaleDown(self.node_group_ref, self.node_group_ref.nodes_count - nodes_to_accommodate_res_usage)
-            deleted_services = postponed_scaling_event.deleted_services
-            if not deleted_services is None:
-                count_of_deleted_services = deleted_services.raw_aspect_value_for_every_service('count')
+
+            nodes_to_be_scaled_down = self.node_group_ref.nodes_count - nodes_to_accommodate_res_usage
+            fragment_to_remove = n_grp.HomogeneousNodeGroup(self.node_group_ref._node_groups_registry, self.node_group_ref.node_info, nodes_to_be_scaled_down, self.node_group_ref.region_name, node_group_id = self.node_group_ref.id)
+            sg_to_remove = self.node_group_ref.services_state.downsize_proportionally(nodes_to_be_scaled_down / self.node_group_ref.nodes_count)
+            services_group_delta = None if sg_to_remove is None else sg_to_remove.to_delta(-1)
+            scale_down_delta = g_delta.GeneralizedDelta(n_grp_delta.NodeGroupDelta(fragment_to_remove, sign = -1, in_change = True, virtual = False), services_group_delta)
+
+            if not sg_to_remove is None:
+                count_of_deleted_services = sg_to_remove.raw_aspect_value_for_every_service('count')
                 services_cnt_change = { service_name : min(raw_change + count_of_deleted_services[service_name], 0) for service_name, raw_change in services_cnt_change.items() \
                                             if service_name in count_of_deleted_services }
 
@@ -152,11 +81,11 @@ class CountBasedSoftAdjuster(NodeGroupSoftAdjuster):
 
             # scale down/up only for services, nodegroup remains unchanged
             services_cnt_change_count = { service_name : {'count': change_val} for service_name, change_val in services_cnt_change.items() if change_val != 0 }
-            node_group_delta = n_grp_delta.NodeGroupDelta(deepcopy(self.node_group_ref), sign = 1, in_change = False, virtual = True)
+            node_group_delta = n_grp_delta.NodeGroupDelta(self.node_group_ref, sign = 1, in_change = False, virtual = True)
             services_group_delta = gos_delta.GroupOfServicesDelta(services_cnt_change_count, in_change = True, services_reqs = scaled_service_instance_requirements_by_service)
             generalized_deltas.append(g_delta.GeneralizedDelta(node_group_delta, services_group_delta))
 
         # Returning generalized deltas (enforced and not enforced) and the unmet changes in services counts
         unmet_changes = {service_name: count for service_name, count in unmet_changes.items() if count != 0}
 
-        return (generalized_deltas, postponed_scaling_event, unmet_changes)
+        return (generalized_deltas, scale_down_delta, unmet_changes)

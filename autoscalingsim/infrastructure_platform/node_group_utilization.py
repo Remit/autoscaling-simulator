@@ -1,3 +1,4 @@
+import collections
 import pandas as pd
 from copy import deepcopy
 
@@ -12,6 +13,18 @@ class ServiceUtilization(EntityUtilization):
     def __init__(self):
 
         super().__init__(SystemResourceUsage.system_resources)
+
+    def __add__(self, other : 'ServiceUtilization'):
+
+        result = self.__class__()
+        result.utilizations = self.utilizations.copy()
+        for metric_name, util_metric in other.utilizations.items():
+            if metric_name in result.utilizations:
+                result.utilizations[metric_name] += util_metric
+            else:
+                result.utilizations[metric_name] = util_metric
+
+        return result
 
     def update_with_system_resources_usage(self,
                                            timestamp : pd.Timestamp,
@@ -30,9 +43,15 @@ class NodeGroupUtilization:
     This system resource utilization information is stored on per-service basis.
     """
 
-    def __init__(self, service_utilizations : dict = None):
+    def __init__(self, service_utilizations : collections.defaultdict = None):
 
-        self.service_utilizations = dict() if service_utilizations is None else service_utilizations
+        self.service_utilizations = collections.defaultdict(ServiceUtilization) if service_utilizations is None else service_utilizations
+
+    def __add__(self, other : 'NodeGroupUtilization'):
+
+        result = self.__class__(self.service_utilizations)
+        for service_name, service_utilization in other.service_utilizations.items():
+            result.service_utilizations[service_name] += service_utilization
 
     def update_with_system_resources_usage(self,
                                            service_name : str,

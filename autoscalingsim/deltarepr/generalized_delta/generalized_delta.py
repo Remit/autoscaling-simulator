@@ -93,11 +93,9 @@ class GeneralizedDelta:
         node_group_delta_virtual = None
 
         if self.node_group_delta.sign < 0:
-            node_group_delta_virtual = deepcopy(self.node_group_delta)
+            node_group_delta_virtual = self.node_group_delta.to_virtual()
         elif self.node_group_delta.sign > 0:
-            node_group_delta_virtual = deepcopy(delayed_node_group_delta['delta'])
-
-        node_group_delta_virtual.virtual = True
+            node_group_delta_virtual = delayed_node_group_delta['delta'].to_virtual()
 
         return node_group_delta_virtual
 

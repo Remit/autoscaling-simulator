@@ -1,21 +1,26 @@
 import collections
 from copy import deepcopy
 
-from .node_group import HomogeneousNodeGroup, HomogeneousNodeGroupDummy
+from .node_group import HomogeneousNodeGroup, HomogeneousNodeGroupDummy, NodeGroupsFactory
 
 from autoscalingsim.desired_state.placement import Placement, ServicesPlacement
 from autoscalingsim.deltarepr.node_group_delta import NodeGroupDelta
 from autoscalingsim.deltarepr.generalized_delta import GeneralizedDelta
 from autoscalingsim.deltarepr.regional_delta import RegionalDelta
 
+class NodeGroupSetFactory:
+
+    def __init__(self, node_groups_registry : 'NodeGroupsRegistry'):
+
+        self._node_groups_factory = NodeGroupsFactory(node_groups_registry)
+
+    def from_conf(self, placement : Placement, region_name : str):
+
+        return HomogeneousNodeGroupSet( [ self._node_groups_factory.from_services_placement(services_placement, region_name) for services_placement in placement ] )
+
 class HomogeneousNodeGroupSet:
 
     """ Bundles multiple node groups to perform joint operations on them """
-
-    @classmethod
-    def from_conf(cls : type, placement : Placement):
-
-        return cls( [ HomogeneousNodeGroup.from_services_placement(services_placement) for services_placement in placement ] )
 
     def __init__(self, node_groups : list = None, node_groups_in_change : dict = None):
 
@@ -74,21 +79,18 @@ class HomogeneousNodeGroupSet:
         node_group_delta = generalized_delta.node_group_delta
 
         if node_group_delta.sign > 0:
-            groups_to_change[node_group_delta.node_group.id] = node_group_delta.node_group
+            if node_group_delta.node_group.id in groups_to_change:
+                groups_to_change[node_group_delta.node_group.id] += node_group_delta.node_group
+            else:
+                groups_to_change[node_group_delta.node_group.id] = node_group_delta.node_group
 
         elif node_group_delta.sign < 0:
             if node_group_delta.node_group.id in groups_to_change:
-                if not node_group_delta.in_change:
-                    self.removed_node_group_ids.append(node_group_delta.node_group.id)
+                groups_to_change[node_group_delta.node_group.id] -= node_group_delta.node_group
+                if groups_to_change[node_group_delta.node_group.id].is_empty:
+                    del groups_to_change[node_group_delta.node_group.id] # ??
 
-                #del groups_to_change[node_group_delta.node_group.id]
-                remaining_node_group_fragment, deleted_node_group_and_services_state = groups_to_change[node_group_delta.node_group.id].split(node_group_delta.node_group)
-                if remaining_node_group_fragment.is_empty:
-                    del groups_to_change[node_group_delta.node_group.id]
-                else:
-                    groups_to_change[node_group_delta.node_group.id] = deleted_node_group_and_services_state['node_group_fragment']
-
-            elif generalized_delta.fault:
+            elif generalized_delta.fault: # TODO
                 self._issue_node_group_failure_and_restart_if_possible(node_group_delta, groups_to_change)
 
     def _issue_node_group_failure_and_restart_if_possible(self, node_group_delta, groups_to_change : dict):

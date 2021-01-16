@@ -26,7 +26,8 @@ class ServiceStateRegionalized:
                  averaging_interval : pd.Timedelta,
                  service_instance_resource_requirements : ResourceRequirements,
                  buffers_config : dict,
-                 sampling_interval : pd.Timestamp):
+                 sampling_interval : pd.Timestamp,
+                 node_groups_registry : 'NodeGroupsRegistry'):
 
         self.region_states = dict()
         self.service_name = service_name
@@ -37,7 +38,8 @@ class ServiceStateRegionalized:
                                                            region_name,
                                                            averaging_interval,
                                                            buffers_config,
-                                                           sampling_interval)
+                                                           sampling_interval,
+                                                           node_groups_registry)
 
     def add_request(self, req : Request):
 
@@ -56,36 +58,20 @@ class ServiceStateRegionalized:
         for service_state in self.region_states.values():
             service_state.step(cur_timestamp, simulation_step)
 
-    def prepare_groups_for_removal(self, region_name : str, node_group_ids : list):
+    def force_remove_groups(self, region_name : str, node_group : HomogeneousNodeGroup):
 
         if region_name in self.region_states:
-            for node_group_id in node_group_ids:
-                self.region_states[region_name].prepare_group_for_removal(node_group_id)
-
-    def force_remove_groups(self, region_name : str, node_group_ids : list):
-
-        if region_name in self.region_states:
-            for node_group_id in node_group_ids:
-                self.region_states[region_name].force_remove_group(node_group_id)
+            self.region_states[region_name].force_remove_group(node_group)
 
     def update_placement(self, region_name : str, node_group : HomogeneousNodeGroup):
-
-        if not region_name in self.region_states:
-            raise ValueError(f'A state for the given region name {region_name} was not found')
 
         self.region_states[region_name].update_placement(node_group)
 
     def get_aspect_value(self, region_name : str, aspect_name : str):
 
-        if not region_name in self.region_states:
-            raise ValueError(f'A state for the given region name {region_name} was not found')
-
         return self.region_states[region_name].get_aspect_value(aspect_name)
 
     def get_metric_value(self, region_name : str, metric_name : str):
-
-        if not region_name in self.region_states:
-            raise ValueError(f'A state for the given region name {region_name} was not found')
 
         return self.region_states[region_name].get_metric_value(metric_name)
 

@@ -60,27 +60,22 @@ class DeltaTimeline:
         enforcement_made = False
         actual_state_updated = False
 
-        node_groups_ids_mark_for_removal = defaultdict(lambda: defaultdict(list))
-        node_groups_ids_remove = {}
-
         if borderline_ts_for_updates > self.latest_state_update:
 
             timeline_to_consider = self.timeline.between_with_beginning_excluded(self.latest_state_update, borderline_ts_for_updates)
-            enforcement_made = self._enforce_deltas_in_timeline(timeline_to_consider, node_groups_ids_mark_for_removal)
+            enforcement_made = self._enforce_deltas_in_timeline(timeline_to_consider)
 
             timeline_to_consider = self.timeline.between_with_beginning_excluded(self.latest_state_update, borderline_ts_for_updates)
             actual_state_updated = self._update_actual_state_using_timeline(timeline_to_consider)
-
-            node_groups_ids_remove = self.actual_state.extract_ids_removed_since_last_time()
 
         updates_applied = enforcement_made or actual_state_updated
         cur_platform_state = self.actual_state if updates_applied else None
 
         self.latest_state_update = borderline_ts_for_updates if updates_applied else self.latest_state_update
 
-        return (cur_platform_state, node_groups_ids_mark_for_removal, node_groups_ids_remove)
+        return cur_platform_state
 
-    def _enforce_deltas_in_timeline(self, timeline_to_consider : dict, node_groups_ids_mark_for_removal : dict):
+    def _enforce_deltas_in_timeline(self, timeline_to_consider : dict):
 
         updates_applied = False
 
@@ -88,7 +83,6 @@ class DeltaTimeline:
             for state_delta in state_deltas:
                 if not state_delta.is_enforced:
                     self._enforce_state_delta(timestamp, state_delta)
-                    self._update_marked_for_removal(state_delta, node_groups_ids_mark_for_removal)
                     updates_applied = True
 
         return updates_applied
@@ -121,12 +115,6 @@ class DeltaTimeline:
                 self.latest_enforcement = new_timestamp
 
             self.add_state_delta(new_timestamp, new_state_delta)
-
-    def _update_marked_for_removal(self, state_delta : PlatformStateDelta, node_groups_ids_mark_for_removal : dict):
-
-        for entity_name, state_delta_ids_for_removal_per_entity in state_delta.node_groups_ids_for_removal.items():
-            for region_name, state_delta_ids_for_removal_per_entity_region in state_delta_ids_for_removal_per_entity.items():
-                node_groups_ids_mark_for_removal[entity_name][region_name].extend(state_delta_ids_for_removal_per_entity_region)
 
     def to_dict(self):
 

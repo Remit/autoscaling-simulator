@@ -14,7 +14,7 @@ from autoscalingsim.utils.error_check import ErrorChecker
 class AdjustmentPolicy:
 
     def __init__(self, node_for_scaled_services_types : dict, service_instance_requirements : dict,
-                 state_reader : StateReader, scaling_model : ScalingModel, config_file : str):
+                 state_reader : StateReader, scaling_model : ScalingModel, config_file : str, node_groups_registry : 'NodeGroupsRegistry'):
 
         self.scaling_model = scaling_model
 
@@ -35,7 +35,7 @@ class AdjustmentPolicy:
             calc_conf = DesiredPlatformAdjustmentCalculatorConfig(placement_hint, optimizer_type, node_for_scaled_services_types, state_reader)
 
             self.adjuster = adjuster_class(adjustment_horizon, self.scaling_model,
-                                           service_instance_requirements, combiner_settings, calc_conf)
+                                           service_instance_requirements, combiner_settings, calc_conf, node_groups_registry)
 
     def adjust_platform_state(self, cur_timestamp : pd.Timestamp,
                               desired_states_timeline : dict, platform_state : PlatformState):

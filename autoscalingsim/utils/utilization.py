@@ -13,8 +13,18 @@ class UtilizationMetric:
     def __init__(self, metric_name : str, utilization : dict = None):
 
         self.metric_name = metric_name
-        self.utilization = {'datetime': [], 'value': []} if utilization is None else utilization
+        self.utilization = {'datetime': list(), 'value': list()} if utilization is None else utilization
         self.tmp_state = TempState()
+
+    def __add__(self, other : 'UtilizationMetric'):
+
+        df_1 = pd.DataFrame({'datetime': self.utilization['datetime'], 'value': self.utilization['value']}).set_index('datetime')
+        df_2 = pd.DataFrame({'datetime': other.utilization['datetime'], 'value': other.utilization['value']}).set_index('datetime')
+        df_res = df_1.add(df_2, fill_value = 0) / 2
+        result = self.__class__(self.metric_name, {'datetime': df_res.index.to_list(), 'value': df_res.value.to_list()})
+        result.tmp_state += other.tmp_state
+
+        return result
 
     def update(self, cur_ts : pd.Timestamp, cur_val : float, averaging_interval : pd.Timedelta):
 

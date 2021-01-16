@@ -25,9 +25,10 @@ class DeploymentModel:
     def __init__(self,
                  service_instance_requirements : dict,
                  providers_configs : dict,
-                 config_file : str):
+                 config_file : str,
+                 node_groups_registry : 'NodeGroupsRegistry'):
 
-        self.service_deployments_confs = {}
+        self.service_deployments_confs = dict()
 
         if not isinstance(config_file, str):
             raise ValueError(f'Incorrect type of the configuration file path, should be string')
@@ -68,7 +69,8 @@ class DeploymentModel:
                                                                                                       init_service_aspects_regionalized,
                                                                                                       node_infos_regionalized,
                                                                                                       node_counts_regionalized,
-                                                                                                      service_instance_requirements[service_name])
+                                                                                                      service_instance_requirements[service_name],
+                                                                                                      node_groups_registry)
 
                     self.regions = list(set(regions_raw))
 

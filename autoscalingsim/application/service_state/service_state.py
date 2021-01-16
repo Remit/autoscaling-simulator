@@ -1,7 +1,6 @@
 import operator
 import pandas as pd
 
-from .deployment import Deployment
 from .service_metric import ServiceMetric, SumAggregator
 
 from autoscalingsim.load.request import Request
@@ -76,18 +75,17 @@ class ServiceState:
                  region_name : str,
                  averaging_interval : pd.Timedelta,
                  buffers_config : dict,
-                 sampling_interval : pd.Timedelta):
+                 sampling_interval : pd.Timedelta,
+                 node_groups_registry : 'NodeGroupsRegistry'):
 
         self.service_name = service_name
         self.region_name = region_name
         self.averaging_interval = averaging_interval
         self.sampling_interval = sampling_interval
+        self.node_groups_registry = node_groups_registry
 
         self.upstream_buf = None
         self.downstream_buf = None
-
-        self.deployments = {}
-        self.unschedulable = []
 
         self.service_utilizations = {}
 
@@ -122,7 +120,7 @@ class ServiceState:
     @property
     def processed(self):
 
-        return [ req for deployment in self.deployments.values() for req in deployment.processed_for_service() ]
+        return self.node_groups_registry.processed_for_service(self.service_name, self.region_name)
 
     def step(self, cur_timestamp : pd.Timestamp, simulation_step : pd.Timedelta):
 
@@ -136,17 +134,16 @@ class ServiceState:
 
         time_budget = simulation_step
 
-        if len(self.deployments) > 0:
+        if self.node_groups_registry.is_deployed(self.service_name, self.region_name):
             self.upstream_buf.step()
             self.downstream_buf.step()
 
-            for deployment in self.deployments.values():
-                if not deployment.node_group.id in self.unschedulable:
-                    time_budget = min(time_budget, deployment.step(time_budget))
-                    deployment_resources_taken = deployment.system_resources_reserved() \
-                                                 + deployment.system_resources_taken_by_all_requests()
+            for node_group in self.node_groups_registry.node_groups_for_service(self.service_name, self.region_name):
+                #if not node_group.id in self.unschedulable:
+                    time_budget = min(time_budget, node_group.step(time_budget))
+                    resources_taken = node_group.system_resources_usage + node_group.system_resources_taken_by_all_requests()
 
-                    if not deployment_resources_taken.is_full:
+                    if not resources_taken.is_full:
 
                         while time_budget > pd.Timedelta(0, unit = 'ms'):
                             advancing = True
@@ -158,18 +155,18 @@ class ServiceState:
 
                                 req = self.downstream_buf.attempt_fan_in()
                                 if not req is None:
-                                    if deployment.can_schedule_request(req):
+                                    if node_group.can_schedule_request(req):
                                         req = self.downstream_buf.fan_in()
-                                        deployment.start_processing(req)
+                                        node_group.start_processing(req)
                                         advancing = True
                                     else:
                                         self.downstream_buf.shuffle()
 
                                 req = self.upstream_buf.attempt_take()
                                 if not req is None:
-                                    if deployment.can_schedule_request(req):
+                                    if node_group.can_schedule_request(req):
                                         req = self.upstream_buf.take()
-                                        deployment.start_processing(req)
+                                        node_group.start_processing(req)
                                         advancing = True
                                     else:
                                         self.upstream_buf.shuffle()
@@ -190,58 +187,22 @@ class ServiceState:
                 self.upstream_buf.update_utilization(cur_timestamp, self.averaging_interval)
                 self.downstream_buf.update_utilization(cur_timestamp, self.averaging_interval)
 
-                # Service instances deployments
-                for deployment in self.deployments.values():
-                    deployment_resources_taken = deployment.system_resources_reserved() \
-                                                 + deployment.system_resources_taken_by_requests()
-                    deployment.update_utilization(deployment_resources_taken, cur_timestamp, self.averaging_interval)
+                # Service instances on node groups
+                for node_group in self.node_groups_registry.node_groups_for_service(self.service_name, self.region_name):
+                    resources_taken = node_group.system_resources_usage + node_group.system_resources_taken_by_requests(self.service_name)
+                    node_group.update_utilization(self.service_name, resources_taken, cur_timestamp, self.averaging_interval)
 
-    def prepare_group_for_removal(self, node_group_id : int):
+    def force_remove_group(self, node_group : HomogeneousNodeGroup):
 
-        """
-        Adds the provided node group ID to the list of groups
-        that should not be used in scheduling the requests.
-        """
+        self._check_out_system_resources_utilization_for_node_group(node_group)
 
-        self.unschedulable.append(node_group_id)
-
-    def force_remove_group(self, node_group_id : int):
-
-        """
-        Removes the deployment that the provided node group is used in.
-        The record about this node group not being available for requests
-        scheduling is also removed.
-        """
-
-        if node_group_id in self.unschedulable:
-            self.unschedulable.remove(node_group_id)
-
-        if node_group_id in self.deployments:
-            self._check_out_system_resources_utilization_for_deployment(self.deployments[node_group_id])
-            del self.deployments[node_group_id]
-
-        self.upstream_buf.detach_link(node_group_id)
-        self.downstream_buf.detach_link(node_group_id)
-
-        service_instances_count = self._count_service_instances()
-        self.upstream_buf.update_capacity(service_instances_count)
-        self.downstream_buf.update_capacity(service_instances_count)
+        self.upstream_buf.detach_link(node_group.id)
+        self.downstream_buf.detach_link(node_group.id)
 
     def update_placement(self, node_group : HomogeneousNodeGroup):
 
-        """
-        Creates a new deployment for the service instances with the new
-        node group. The node group might be shared among multiple services.
-        """
-
-        self.deployments[node_group.id] = Deployment(self.service_name, node_group)
-
         self.upstream_buf.add_link(node_group.id, node_group.uplink)
         self.downstream_buf.add_link(node_group.id, node_group.downlink)
-
-        service_instances_count = self._count_service_instances()
-        self.upstream_buf.update_capacity(service_instances_count)
-        self.downstream_buf.update_capacity(service_instances_count)
 
     def get_aspect_value(self, aspect_name : str):
 
@@ -251,7 +212,7 @@ class ServiceState:
         The collected values are summed up and returned.
         """
 
-        return sum([ deployment.aspect_value(aspect_name) for deployment in self.deployments.values() ])
+        return self.node_groups_registry.aspect_value_for_service(aspect_name, self.service_name, self.region_name)
 
     def get_metric_value(self, metric_name : str,
                          interval : pd.Timedelta = pd.Timedelta(0, unit = 'ms')):
@@ -264,16 +225,18 @@ class ServiceState:
         service_metric_value = pd.DataFrame({'value': pd.Series([], dtype = 'float')}, index = pd.to_datetime([]))
         # Case of resource utilization metric
         if metric_name in SystemResourceUsage.system_resources:
-            for deployment in self.deployments.values():
-                cur_deployment_util = deployment.utilization(metric_name, interval)
+            for node_group in self.node_groups_registry.node_groups_for_service(self.service_name, self.region_name):
+                cur_util = node_group.utilization(self.service_name, metric_name, interval)
 
                 # Aligning the time series
-                common_index = cur_deployment_util.index.union(service_metric_value.index).astype(cur_deployment_util.index.dtype)
-                cur_deployment_util = cur_deployment_util.reindex(common_index, fill_value = 0)
-                service_metric_value = service_metric_value.reindex(common_index, fill_value = 0)
-                service_metric_value += cur_deployment_util
+                #common_index = cur_util.index.union(service_metric_value.index).astype(cur_util.index.dtype)
+                #cur_util = cur_util.reindex(common_index, fill_value = 0)
+                #service_metric_value = service_metric_value.reindex(common_index, fill_value = 0)
+                #service_metric_value += cur_util
 
-            service_metric_value /= sum([deployment.nodes_count for deployment in self.deployments.values()]) # normalization
+                service_metric_value = service_metric_value.add(cur_util, fill_value = 0)
+
+            service_metric_value /= sum([node_group.nodes_count for node_group in self.node_groups_registry.node_groups_for_service(self.service_name, self.region_name)]) # normalization
 
         elif metric_name in self.service_metrics_and_sources:
 
@@ -288,12 +251,12 @@ class ServiceState:
         resources utilization data from all the deployments, and returns it.
         """
 
-        for deployment in self.deployments.values():
-            self._check_out_system_resources_utilization_for_deployment(deployment)
+        for node_group in self.node_groups_registry.node_groups_for_service(self.service_name, self.region_name):
+            self._check_out_system_resources_utilization_for_node_group(node_group)
 
         return self.service_utilizations
 
-    def _check_out_system_resources_utilization_for_deployment(self, deployment : Deployment):
+    def _check_out_system_resources_utilization_for_node_group(self, node_group : 'HomogeneousNodeGroup'):
 
         """
         In contrast to getting the metric values on spot for scaling purposes,
@@ -306,15 +269,17 @@ class ServiceState:
         for system_resource_name in SystemResourceUsage.system_resources:
             if not system_resource_name in self.service_utilizations:
                 self.service_utilizations[system_resource_name] = pd.DataFrame(columns = ['datetime', 'value']).set_index('datetime')
-            deployment_util = deployment.utilization(system_resource_name)
+            node_group_util = node_group.utilization(self.service_name, system_resource_name, pd.Timedelta(0, unit = 'ms'))#self.averaging_interval)
 
-            if not deployment_util is None:
+            if not node_group_util is None:
                 # Aligning the time series
-                common_index = deployment_util.index.union(self.service_utilizations[system_resource_name].index)
-                deployment_util = deployment_util.reindex(common_index, fill_value = 0)
-                self.service_utilizations[system_resource_name] = self.service_utilizations[system_resource_name].reindex(common_index, fill_value = 0)
-                self.service_utilizations[system_resource_name] += deployment_util
+                #common_index = node_group_util.index.union(self.service_utilizations[system_resource_name].index)
+                #node_group_util = node_group_util.reindex(common_index, fill_value = 0)
+                #self.service_utilizations[system_resource_name] = self.service_utilizations[system_resource_name].reindex(common_index, fill_value = 0)
+                #self.service_utilizations[system_resource_name] += node_group_util
+
+                self.service_utilizations[system_resource_name] = self.service_utilizations[system_resource_name].add(node_group_util, fill_value = 0)
 
     def _count_service_instances(self):
 
-        return sum([ deployment.aspect_value('count').value for deployment in self.deployments.values() ])
+        return self.node_groups_registry.count_node_groups_for_service(self.service_name, self.region_name)

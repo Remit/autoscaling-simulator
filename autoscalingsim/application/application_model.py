@@ -11,6 +11,7 @@ from autoscalingsim.scaling.policiesbuilder.scaling_policy import ScalingPolicy
 from autoscalingsim.scaling.state_reader import StateReader
 from autoscalingsim.scaling.scaling_manager import ScalingManager
 from autoscalingsim.utils.requirements import ResourceRequirements
+from autoscalingsim.utils.node_groups_registry import NodeGroupsRegistry
 from autoscalingsim.simulator import conf_keys
 from autoscalingsim.load.request import Request
 
@@ -74,6 +75,7 @@ class ApplicationModel:
 
         self.services = dict()
         self._utilization = dict()
+        self._node_groups_registry = NodeGroupsRegistry()
         self.application_model_conf = ApplicationModelConfiguration(configs_contents_table[conf_keys.CONF_APPLICATION_MODEL_KEY], simulation_conf['simulation_step'])
         self.state_reader = StateReader(application_structure = self.application_model_conf.structure)
 
@@ -81,7 +83,7 @@ class ApplicationModel:
         self.state_reader.add_source('Load', self.load_model)
 
         scaling_manager = ScalingManager()
-        self.scaling_policy = ScalingPolicy(simulation_conf, self.state_reader, scaling_manager, self.application_model_conf.service_instance_requirements, configs_contents_table)
+        self.scaling_policy = ScalingPolicy(simulation_conf, self.state_reader, scaling_manager, self.application_model_conf.service_instance_requirements, configs_contents_table, self._node_groups_registry)
         self.response_stats = ResponseStatsRegionalized(self.scaling_policy.service_regions)
         self.state_reader.add_source('response_stats', self.response_stats)
 
@@ -91,8 +93,9 @@ class ApplicationModel:
         # Taking correct scaling settings for the service which is derived from a ScaledService
         for service_conf in self.application_model_conf.service_confs:
             service_scaling_settings = self.scaling_policy.scaling_settings_for_service(service_conf.service_name)
-            service = service_conf.to_service(self.scaling_policy.service_regions, simulation_conf['starting_time'], service_scaling_settings, self.state_reader)
+            service = service_conf.to_service(self.scaling_policy.service_regions, simulation_conf['starting_time'], service_scaling_settings, self.state_reader, self._node_groups_registry)
             self.services[service_conf.service_name] = service
+            self._node_groups_registry.add_service_reference(service_conf.service_name, service)
 
             # Adding services as sources to the state managers
             self.state_reader.add_source(service_conf.service_name, service)

@@ -73,7 +73,7 @@ class PlatformModel:
 
 
     def __init__(self, state_reader : StateReader, scaling_manager : ScalingManager, service_instance_requirements : dict,
-                 services_scaling_config : dict, simulation_conf : dict, configs_contents_table : dict):
+                 services_scaling_config : dict, simulation_conf : dict, configs_contents_table : dict, node_groups_registry : 'NodeGroupsRegistry'):
 
         self.scaling_manager = scaling_manager
 
@@ -86,11 +86,12 @@ class PlatformModel:
         self.adjustment_policy = AdjustmentPolicy(self.providers_configs,
                                                   service_instance_requirements,
                                                   state_reader, self.scaling_model,
-                                                  configs_contents_table[conf_keys.CONF_ADJUSTMENT_POLICY_KEY])
+                                                  configs_contents_table[conf_keys.CONF_ADJUSTMENT_POLICY_KEY], node_groups_registry)
 
         deployment_model = DeploymentModel(service_instance_requirements,
                                            self.providers_configs,
-                                           configs_contents_table[conf_keys.CONF_DEPLOYMENT_MODEL_KEY])
+                                           configs_contents_table[conf_keys.CONF_DEPLOYMENT_MODEL_KEY],
+                                           node_groups_registry)
 
         self._service_regions = deployment_model.regions
 
@@ -114,18 +115,10 @@ class PlatformModel:
             if not fault_state_delta is None:
                 self.state_deltas_timeline.add_state_delta(cur_timestamp, fault_state_delta)
 
-        actual_state, node_groups_ids_mark_for_removal, node_groups_ids_remove = self.state_deltas_timeline.roll_out_updates(cur_timestamp)
+        actual_state = self.state_deltas_timeline.roll_out_updates(cur_timestamp)
 
         if not actual_state is None:
             self.scaling_manager.set_deployments(actual_state)
-
-        if len(node_groups_ids_mark_for_removal) > 0:
-            for service_name, node_groups_ids_mark_for_removal_regionalized in node_groups_ids_mark_for_removal.items():
-                self.scaling_manager.mark_groups_for_removal(service_name, node_groups_ids_mark_for_removal_regionalized)
-
-        if len(node_groups_ids_remove) > 0:
-            for region_name, node_groups_ids in node_groups_ids_remove.items():
-                self.scaling_manager.remove_groups_for_region(region_name, node_groups_ids)
 
     def get_node_info(self, provider : str, node_type : str) -> NodeInfo:
 

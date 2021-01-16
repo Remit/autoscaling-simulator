@@ -11,8 +11,15 @@ class TempState:
 
     def __init__(self):
 
-        self.tmp_buffer_datetimes = []
-        self.tmp_buffer_values = []
+        self.tmp_buffer_datetimes = list()
+        self.tmp_buffer_values = list()
+
+    def __add__(self, other : 'TempState'):
+
+        result = self.__class__()
+        result.tmp_buffer_datetimes = self.tmp_buffer_datetimes + other.tmp_buffer_datetimes
+        result.tmp_buffer_values = self.tmp_buffer_values + other.tmp_buffer_values
+        return result
 
     def update_and_get(self, obs_timestamp : pd.Timestamp, obs_value : float,
                        averaging_interval : pd.Timedelta):

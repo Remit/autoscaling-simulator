@@ -11,7 +11,8 @@ class CostMinimizer(Adjuster):
                  scaling_model : ScalingModel,
                  scaled_service_instance_requirements_by_service : dict,
                  combiner_settings : dict,
-                 calc_conf : 'DesiredChangeCalculatorConfig'):
+                 calc_conf : 'DesiredChangeCalculatorConfig',
+                 node_groups_registry : 'NodeGroupsRegistry'):
 
         score_calculator_class = ScoreCalculator.get(self.__class__.__name__)
         super().__init__(adjustment_horizon,
@@ -19,4 +20,5 @@ class CostMinimizer(Adjuster):
                          scaled_service_instance_requirements_by_service,
                          combiner_settings,
                          calc_conf,
-                         score_calculator_class)
+                         score_calculator_class,
+                         node_groups_registry)

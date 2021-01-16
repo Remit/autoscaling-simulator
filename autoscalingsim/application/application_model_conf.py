@@ -36,11 +36,11 @@ class ServiceConfiguration:
 
     def to_service(self, service_regions : list, starting_time : pd.Timestamp,
                    service_scaling_settings : ScaledServiceScalingSettings,
-                   state_reader : StateReader):
+                   state_reader : StateReader, node_groups_registry : 'NodeGroupsRegistry'):
 
         return Service(self.service_name, starting_time, service_regions,
                        self.system_requirements, self.buffers_config, service_scaling_settings,
-                       state_reader, self.averaging_interval, self.sampling_interval)
+                       state_reader, self.averaging_interval, self.sampling_interval, node_groups_registry)
 
 class ApplicationModelConfiguration:
 

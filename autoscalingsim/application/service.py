@@ -41,7 +41,8 @@ class Service(MetricSource):
                  scaling_setting_for_service : ScalingPolicyConfiguration,
                  state_reader : StateReader,
                  averaging_interval : pd.Timedelta,
-                 sampling_interval : pd.Timedelta):
+                 sampling_interval : pd.Timedelta,
+                 node_groups_registry : 'NodeGroupsRegistry'):
 
         self.scaling_effect_aggregation_rule = ScalingEffectAggregationRule.get(scaling_setting_for_service.scaling_effect_aggregation_rule_name)(service_name, service_regions, scaling_setting_for_service, state_reader)
 
@@ -51,7 +52,8 @@ class Service(MetricSource):
                                               averaging_interval,
                                               resource_requirements,
                                               buffers_config,
-                                              sampling_interval)
+                                              sampling_interval,
+                                              node_groups_registry)
 
     def reconcile_desired_state(self, cur_timestamp : pd.Timedelta):
 
@@ -90,13 +92,9 @@ class Service(MetricSource):
 
         return self.get_placement_parameter(region_name, parameter)
 
-    def prepare_groups_for_removal_in_region(self, region_name : str, node_group_ids : list):
+    def force_remove_groups_in_region(self, region_name : str, node_group : HomogeneousNodeGroup):
 
-        self.state.prepare_groups_for_removal(region_name, node_group_ids)
-
-    def force_remove_groups_in_region(self, region_name : str, node_groups_ids : list):
-
-        self.state.force_remove_groups(region_name, node_groups_ids)
+        self.state.force_remove_groups(region_name, node_group)
 
     def update_placement_in_region(self, region_name : str, node_group : HomogeneousNodeGroup):
 

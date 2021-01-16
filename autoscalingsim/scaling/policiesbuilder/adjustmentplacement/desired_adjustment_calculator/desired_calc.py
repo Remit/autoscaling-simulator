@@ -7,7 +7,7 @@ from .placing import Placer
 from .scoring import Scorer, Score, StateScore
 
 from autoscalingsim.scaling.state_reader import StateReader
-from autoscalingsim.desired_state.region import Region
+from autoscalingsim.desired_state.region import RegionFactory, Region
 from autoscalingsim.desired_state.platform_state import PlatformState
 from autoscalingsim.desired_state.service_group.group_of_services_reg import GroupOfServicesRegionalized
 
@@ -17,7 +17,8 @@ class DesiredPlatformAdjustmentCalculator:
 
     def __init__(self, scorer : Scorer,
                  services_resource_requirements : dict,
-                 calc_conf : DesiredPlatformAdjustmentCalculatorConfig):
+                 calc_conf : DesiredPlatformAdjustmentCalculatorConfig,
+                 node_groups_registry : 'NodeGroupsRegistry'):
 
         self.placer = Placer(calc_conf.placement_hint,
                              calc_conf.node_for_scaled_services_types,
@@ -26,6 +27,8 @@ class DesiredPlatformAdjustmentCalculator:
 
         self.scorer = scorer
         self.optimizer = Optimizer.get(calc_conf.optimizer_type)()
+
+        self._region_factory = RegionFactory(node_groups_registry)
 
     def compute_adjustment(self, group_of_services_reg : GroupOfServicesRegionalized,
                            state_duration : pd.Timedelta):
@@ -39,7 +42,7 @@ class DesiredPlatformAdjustmentCalculator:
             scored_placements = self.scorer.score_placements(placements, state_duration)
             if len(scored_placements) > 0:
                 optimal_placement = self.optimizer.select_best(scored_placements)
-                regions[region_name] = Region.from_conf(region_name, optimal_placement)
+                regions[region_name] = self._region_factory.from_conf(region_name, optimal_placement)
                 scores_per_region[region_name] = optimal_placement.score
 
         return (PlatformState(regions).to_delta(), StateScore(scores_per_region))

@@ -7,18 +7,17 @@ class NodeGroupDelta:
     def __init__(self, node_group : NodeGroup, sign : int = 1,
                  in_change : bool = True, virtual : bool = False):
 
-        self.node_group = node_group
+        self.node_group = node_group.produce_virtual_copy() if (virtual and not node_group.virtual) else node_group
         self.sign = sign
         self.in_change = in_change
-        self.virtual = virtual
 
     def enforce(self):
 
-        result = deepcopy(self)
-        result.in_change = False
-        result.virtual = False
+        return self.__class__(self.node_group.enforce(), self.sign, False, False)
 
-        return result#self.__class__(deepcopy(self.node_group, self.sign, False, False)
+    def to_virtual(self):
+
+        return self.__class__(self.node_group, self.sign, self.in_change, True)
 
     def copy(self):
 
@@ -29,6 +28,11 @@ class NodeGroupDelta:
         result = self.__class__(deepcopy(self.node_group, memo), self.sign, self.in_change, self.virtual)
         memo[id(result)] = result
         return result
+
+    @property
+    def virtual(self):
+
+        return self.node_group.virtual
 
     @property
     def provider(self):
