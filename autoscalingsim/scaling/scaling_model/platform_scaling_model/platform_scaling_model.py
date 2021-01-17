@@ -30,7 +30,7 @@ class PlatformScalingModel:
         if node_group_delta.in_change:
             provider = node_group_delta.provider
             node_type = node_group_delta.node_type
-            delay = self.platform_scaling_infos[provider].termination_duration_for_node_type(node_type) if node_group_delta.sign < 0 \
+            delay = self.platform_scaling_infos[provider].termination_duration_for_node_type(node_type) if node_group_delta.is_scale_down \
                 else self.platform_scaling_infos[provider].booting_duration_for_node_type(node_type)
 
             enforced_node_group_delta = node_group_delta.enforce()

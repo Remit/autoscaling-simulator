@@ -78,13 +78,13 @@ class HomogeneousNodeGroupSet:
 
         node_group_delta = generalized_delta.node_group_delta
 
-        if node_group_delta.sign > 0:
+        if node_group_delta.is_scale_up:
             if node_group_delta.node_group.id in groups_to_change:
                 groups_to_change[node_group_delta.node_group.id] += node_group_delta.node_group
             else:
                 groups_to_change[node_group_delta.node_group.id] = node_group_delta.node_group
 
-        elif node_group_delta.sign < 0:
+        elif node_group_delta.is_scale_down:
             if node_group_delta.node_group.id in groups_to_change:
                 groups_to_change[node_group_delta.node_group.id] -= node_group_delta.node_group
                 if groups_to_change[node_group_delta.node_group.id].is_empty:

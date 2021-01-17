@@ -20,7 +20,7 @@ class GeneralizedDelta:
 
         self.node_group_delta = node_group_delta if not node_group_delta is None else None
         self.services_group_delta = services_group_delta if not services_group_delta is None else None
-        self._cached_enforcement = {}
+        self._cached_enforcement = dict()
         self.fault = fault
 
     def till_full_enforcement(self, scaling_model, delta_timestamp : pd.Timestamp):
@@ -92,9 +92,9 @@ class GeneralizedDelta:
 
         node_group_delta_virtual = None
 
-        if self.node_group_delta.sign < 0:
+        if self.node_group_delta.is_scale_down:
             node_group_delta_virtual = self.node_group_delta.to_virtual()
-        elif self.node_group_delta.sign > 0:
+        elif self.node_group_delta.is_scale_up:
             node_group_delta_virtual = delayed_node_group_delta['delta'].to_virtual()
 
         return node_group_delta_virtual
@@ -106,16 +106,14 @@ class GeneralizedDelta:
 
         max_service_delay = pd.Timedelta(0, unit = 'ms')
         delay_added_by_nodes_booting = pd.Timedelta(0, unit = 'ms')
-        if self.node_group_delta.sign < 0:
+        if self.node_group_delta.is_scale_down:
             if len(services_groups_deltas_by_delays) > 0:
                 max_service_delay = max(list(services_groups_deltas_by_delays.keys()))
-        elif self.node_group_delta.sign > 0:
+        elif self.node_group_delta.is_scale_up:
             delay_added_by_nodes_booting = node_group_delay
 
-        delayed_node_groups_deltas = { 'delay': max_service_delay + node_group_delay,
-                                       'delta': delayed_node_group_delta }
-        delayed_services_groups_deltas = [ {'delay': delay + delay_added_by_nodes_booting, 'delta': delta} \
-                                            for delay, delta in services_groups_deltas_by_delays.items() ]
+        delayed_node_groups_deltas = { 'delay': max_service_delay + node_group_delay, 'delta': delayed_node_group_delta }
+        delayed_services_groups_deltas = [ {'delay': delay + delay_added_by_nodes_booting, 'delta': delta} for delay, delta in services_groups_deltas_by_delays.items() ]
 
         return (delayed_node_groups_deltas, delayed_services_groups_deltas)
 

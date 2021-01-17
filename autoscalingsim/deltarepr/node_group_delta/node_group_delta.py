@@ -8,24 +8,24 @@ class NodeGroupDelta:
                  in_change : bool = True, virtual : bool = False):
 
         self.node_group = node_group.produce_virtual_copy() if (virtual and not node_group.virtual) else node_group
-        self.sign = sign
+        self._sign = sign
         self.in_change = in_change
 
     def enforce(self):
 
-        return self.__class__(self.node_group.enforce(), self.sign, False, False)
+        return self.__class__(self.node_group.enforce(), self._sign, False, False)
 
     def to_virtual(self):
 
-        return self.__class__(self.node_group, self.sign, self.in_change, True)
+        return self.__class__(self.node_group, self._sign, self.in_change, True)
 
     def copy(self):
 
-        return self.__class__(self.node_group, self.sign, self.in_change, self.virtual)
+        return self.__class__(self.node_group, self._sign, self.in_change, self.virtual)
 
     def __deepcopy__(self, memo):
 
-        result = self.__class__(deepcopy(self.node_group, memo), self.sign, self.in_change, self.virtual)
+        result = self.__class__(deepcopy(self.node_group, memo), self._sign, self.in_change, self.virtual)
         memo[id(result)] = result
         return result
 
@@ -47,12 +47,12 @@ class NodeGroupDelta:
     @property
     def is_scale_down(self):
 
-        return self.sign == -1
+        return self._sign == -1
 
     @property
     def is_scale_up(self):
 
-        return self.sign == 1
+        return self._sign == 1
 
     @property
     def id(self):
@@ -67,6 +67,6 @@ class NodeGroupDelta:
     def __repr__(self):
 
         return f'{self.__class__.__name__}( node_group = {self.node_group}, \
-                                            sign = {self.sign}, \
+                                            sign = {self._sign}, \
                                             in_change = {self.in_change}, \
                                             virtual = {self.virtual})'
