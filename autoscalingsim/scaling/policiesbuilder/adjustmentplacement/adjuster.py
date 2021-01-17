@@ -52,8 +52,8 @@ class Adjuster(ABC):
         #unmet_change = {'eu': {'db': {'count': 14.0}, 'appserver': {'count': -6}}}
         #unmet_change = {'eu': {'db': {'count': 14.0}, 'appserver': {'count': -6}}}
         #ts_of_unmet_change = cur_timestamp
-        #unmet_change = {'eu': {'service-75c4f5fa-4da4-11eb-a82c-d8cb8af1e959': {'count': 200.0}}}
-        unmet_change = {'eu': {'service-75c4f5fa-4da4-11eb-a82c-d8cb8af1e959': {'count': -12.0}, 'service-75c4f5fa-4da4-11eb-a82c-d8cb8af1e959': {'count': -8.0}}}
+        unmet_change = {'eu': {'service-75c4f5fa-4da4-11eb-a82c-d8cb8af1e959': {'count': 200.0}}}
+        #unmet_change = {'eu': {'service-75c4f5fa-4da4-11eb-a82c-d8cb8af1e959': {'count': -12.0}, 'service-75c4f5fa-4da4-11eb-a82c-d8cb8af1e959': {'count': -8.0}}}
         #unmet_change = {'eu': {'service-75c4f5fa-4da4-11eb-a82c-d8cb8af1e959': {'count': -8.0}}}
 
         in_work_state = current_state
@@ -64,19 +64,16 @@ class Adjuster(ABC):
             unmet_change = self._attempt_to_use_existing_nodes_and_scale_down_if_needed(in_work_state, ts_of_unmet_change, unmet_change, timeline_of_deltas)
             print(f'>> unmet_change AFTER: {unmet_change}')
 
-            if False:
-                if len(unmet_change) > 0:
+            if len(unmet_change) > 0:
 
-                    # TODO: add test that ensures that timeline_of_deltas is unchanged
-                    in_work_state, unmet_change_state, state_duration = self._roll_out_enforced_updates_temporarily(in_work_state, ts_of_unmet_change,
-                                                                                                                    unmet_change, timeline_of_deltas, timeline_of_unmet_changes)
+                # TODO: add test that ensures that timeline_of_deltas is unchanged
+                in_work_state, unmet_change_state, state_duration = self._roll_out_enforced_updates_temporarily(in_work_state, ts_of_unmet_change,
+                                                                                                                unmet_change, timeline_of_deltas, timeline_of_unmet_changes)
 
-                    state_addition_delta, state_score_addition = self._evaluate_nodes_addition_option(in_work_state, unmet_change_state, state_duration)
-                    state_substitution_delta, state_score_substitution = self._evaluate_nodes_substitution_option(in_work_state, ts_of_unmet_change, unmet_change_state, state_duration)
+                state_addition_delta, state_score_addition = self._evaluate_nodes_addition_option(in_work_state, unmet_change_state, state_duration)
+                state_substitution_delta, state_score_substitution = self._evaluate_nodes_substitution_option(in_work_state, ts_of_unmet_change, unmet_change_state, state_duration)
 
-                    self._update_timeline_with_best_option(timeline_of_deltas, ts_of_unmet_change,
-                                                           state_addition_delta, state_score_addition,
-                                                           state_substitution_delta, state_score_substitution)
+                self._update_timeline_with_best_option(timeline_of_deltas, ts_of_unmet_change, state_addition_delta, state_score_addition, state_substitution_delta, state_score_substitution)
 
             ts_of_unmet_change, unmet_change = timeline_of_unmet_changes.next()
 
@@ -94,7 +91,7 @@ class Adjuster(ABC):
                                                timeline_of_deltas_ref : DeltaTimeline, timeline_of_unmet_changes_ref : TimelineOfDesiredServicesChanges):
 
         tmp_timeline_of_deltas = deepcopy(timeline_of_deltas_ref)
-        new_in_work_state, _, _ = tmp_timeline_of_deltas.roll_out_updates(ts_of_unmet_change)
+        new_in_work_state = tmp_timeline_of_deltas.roll_out_updates(ts_of_unmet_change)
         if not new_in_work_state is None:
             in_work_state = new_in_work_state
 
