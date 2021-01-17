@@ -48,7 +48,6 @@ class ScalingPolicy:
             desired_states_to_process = self.scaling_manager.compute_desired_state(cur_timestamp)
 
             if len(desired_states_to_process) > 0:
-                # TODO: Combine -> scaling app as a whole to remove bottlenecks
 
                 self.platform_model.adjust_platform_state(cur_timestamp, desired_states_to_process)
 
@@ -75,11 +74,11 @@ class ScalingPolicy:
 
         return self.platform_model.compute_actual_node_count(simulation_start, simulation_step, simulation_end)
 
+    def scaling_settings_for_service(self, service_name : str):
+
+        return self.scaling_settings.scaling_settings_for_service(service_name)
+
     @property
     def service_regions(self):
 
         return self.platform_model.service_regions
-
-    def scaling_settings_for_service(self, service_name : str):
-
-        return self.scaling_settings.scaling_settings_for_service(service_name)

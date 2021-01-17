@@ -1,1 +1,1 @@
-from .node_group import HomogeneousNodeGroup, HomogeneousNodeGroupDummy
+from .node_group import NodeGroup, NodeGroupDummy

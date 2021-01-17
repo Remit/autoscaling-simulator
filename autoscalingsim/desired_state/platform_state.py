@@ -55,25 +55,6 @@ class PlatformState:
 
         return (PlatformStateDelta(groups_deltas_raw), unmet_increase)
 
-    def extract_compensating_deltas(self):
-
-        compensating_deltas_in_regions = {}
-        for region_name, region in self.regions.items():
-            compensating_deltas = region.extract_compensating_deltas()
-            if not compensating_deltas is None:
-                compensating_deltas_in_regions[region_name] = compensating_deltas
-
-        return PlatformStateDelta(compensating_deltas_in_regions) if len(compensating_deltas_in_regions) > 0 else None
-
-    def extract_ids_removed_since_last_time(self):
-
-        ids_in_regions = {}
-        for region_name, region in self.regions.items():
-            removed_ids = region.extract_ids_removed_since_last_time()
-            if len(removed_ids) > 0: ids_in_regions[region_name] = removed_ids
-
-        return ids_in_regions
-
     def to_placements(self):
 
         return { region_name : region.to_placement() for region_name, region in self.regions.items()}

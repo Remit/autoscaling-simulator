@@ -1,5 +1,5 @@
 from autoscalingsim.fault.failure.failure import ServiceFailure
-from autoscalingsim.desired_state.node_group.node_group import HomogeneousNodeGroupDummy
+from autoscalingsim.desired_state.node_group.node_group import NodeGroupDummy
 from autoscalingsim.deltarepr.node_group_delta import NodeGroupDelta
 from autoscalingsim.deltarepr.generalized_delta import GeneralizedDelta
 from autoscalingsim.deltarepr.group_of_services_delta import GroupOfServicesDelta
@@ -15,8 +15,7 @@ class ServiceTerminationFailure(ServiceFailure):
 
     def to_regional_state_delta(self):
 
-        node_group_delta = NodeGroupDelta(HomogeneousNodeGroupDummy(), sign = -1,
-                                          in_change = False, virtual = True)
+        node_group_delta = NodeGroupDelta(NodeGroupDummy().enforce(), sign = -1, virtual = True)
 
         aspects_vals_per_service = {self.service_name : {'count': -self.count_of_services_affected}}
         services_group_delta = GroupOfServicesDelta(aspects_vals_per_service, in_change = False)

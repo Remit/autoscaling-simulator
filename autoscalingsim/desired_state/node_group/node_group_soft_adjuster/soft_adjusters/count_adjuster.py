@@ -30,9 +30,6 @@ class CountBasedSoftAdjuster(NodeGroupSoftAdjuster):
         for service_name, service_instance_resource_usage in node_sys_resource_usage_by_service_sorted.items():
             if service_name in unmet_changes:
 
-                #print(f'instance count: {node_sys_resource_usage.instance_count}')
-                #print(f'ins max usg: {node_sys_resource_usage.instance_max_usage}')
-
                 # Case of adding services to the existing nodes
                 if not service_name in services_cnt_change:
                     services_cnt_change[service_name] = 0
@@ -40,7 +37,6 @@ class CountBasedSoftAdjuster(NodeGroupSoftAdjuster):
                 if node_sys_resource_usage.can_accommodate_another_service_instance and unmet_changes[service_name] > 0:
                     while (unmet_changes[service_name] - services_cnt_change[service_name] > 0) and node_sys_resource_usage.can_accommodate_another_service_instance:
                         node_sys_resource_usage += service_instance_resource_usage
-                        #print(f'node_sys_resource_usage: {node_sys_resource_usage}')
                         services_cnt_change[service_name] += 1
 
                     if not node_sys_resource_usage.can_accommodate_another_service_instance:
@@ -67,10 +63,10 @@ class CountBasedSoftAdjuster(NodeGroupSoftAdjuster):
         if nodes_to_accommodate_res_usage < self.node_group_ref.nodes_count:
 
             nodes_to_be_scaled_down = self.node_group_ref.nodes_count - nodes_to_accommodate_res_usage
-            fragment_to_remove = n_grp.HomogeneousNodeGroup(self.node_group_ref._node_groups_registry, self.node_group_ref.node_info, nodes_to_be_scaled_down, self.node_group_ref.region_name, node_group_id = self.node_group_ref.id)
+            fragment_to_remove = n_grp.NodeGroup(self.node_group_ref._node_groups_registry, self.node_group_ref.node_info, nodes_to_be_scaled_down, self.node_group_ref.region_name, node_group_id = self.node_group_ref.id)
             sg_to_remove = self.node_group_ref.services_state.downsize_proportionally(nodes_to_be_scaled_down / self.node_group_ref.nodes_count)
             services_group_delta = None if sg_to_remove is None else sg_to_remove.to_delta(-1)
-            scale_down_delta = g_delta.GeneralizedDelta(n_grp_delta.NodeGroupDelta(fragment_to_remove, sign = -1, in_change = True, virtual = False), services_group_delta)
+            scale_down_delta = g_delta.GeneralizedDelta(n_grp_delta.NodeGroupDelta(fragment_to_remove, sign = -1, virtual = False), services_group_delta)
 
             if not sg_to_remove is None:
                 count_of_deleted_services = sg_to_remove.raw_aspect_value_for_every_service('count')
@@ -81,7 +77,7 @@ class CountBasedSoftAdjuster(NodeGroupSoftAdjuster):
 
             # scale down/up only for services, nodegroup remains unchanged
             services_cnt_change_count = { service_name : {'count': change_val} for service_name, change_val in services_cnt_change.items() if change_val != 0 }
-            node_group_delta = n_grp_delta.NodeGroupDelta(self.node_group_ref, sign = 1, in_change = False, virtual = True)
+            node_group_delta = n_grp_delta.NodeGroupDelta(self.node_group_ref, sign = 1, virtual = True)
             services_group_delta = gos_delta.GroupOfServicesDelta(services_cnt_change_count, in_change = True, services_reqs = scaled_service_instance_requirements_by_service)
             generalized_deltas.append(g_delta.GeneralizedDelta(node_group_delta, services_group_delta))
 

@@ -1,7 +1,7 @@
 import collections
 from copy import deepcopy
 
-from .node_group import HomogeneousNodeGroup, HomogeneousNodeGroupDummy, NodeGroupsFactory
+from .node_group import NodeGroup, NodeGroupDummy, NodeGroupsFactory
 
 from autoscalingsim.desired_state.placement import Placement, ServicesPlacement
 from autoscalingsim.deltarepr.node_group_delta import NodeGroupDelta
@@ -16,9 +16,9 @@ class NodeGroupSetFactory:
 
     def from_conf(self, placement : Placement, region_name : str):
 
-        return HomogeneousNodeGroupSet( [ self._node_groups_factory.from_services_placement(services_placement, region_name) for services_placement in placement ] )
+        return NodeGroupSet( [ self._node_groups_factory.from_services_placement(services_placement, region_name) for services_placement in placement ] )
 
-class HomogeneousNodeGroupSet:
+class NodeGroupSet:
 
     """ Bundles multiple node groups to perform joint operations on them """
 
@@ -37,7 +37,7 @@ class HomogeneousNodeGroupSet:
 
         node_groups = deepcopy(self)
         for generalized_delta in regional_delta:
-            node_groups._add_groups(generalized_delta) # TODO: check if regional delta contains all the required generealized deltas
+            node_groups._add_groups(generalized_delta)
 
         return node_groups
 
@@ -59,20 +59,14 @@ class HomogeneousNodeGroupSet:
             if node_group_delta.node_group.id in groups_to_change:
                 groups_to_change[node_group_delta.node_group.id].add_to_services_state(services_group_delta) # TODO: check if it can at all be allocated
             elif generalized_delta.fault:
-                self._issue_service_failure_and_restart_if_possible(services_group_delta, groups_to_change)
+                self._issue_service_failure(services_group_delta, groups_to_change)
 
-    def _issue_service_failure_and_restart_if_possible(self, services_group_delta, groups_to_change : dict):
-
-        import autoscalingsim.deltarepr.service_instances_group_delta as sig_delta
-        import autoscalingsim.deltarepr.group_of_services_delta as gos_delta
+    def _issue_service_failure(self, services_group_delta : 'GroupOfServicesDelta', groups_to_change : dict):
 
         for group in groups_to_change.values():
             if group.services_state.is_compatible_with(services_group_delta):
                 compensating_services_group_delta = services_group_delta.to_concrete_delta(group.services_state.services_requirements, count_sign = 1, in_change = True)
                 group.add_to_services_state(services_group_delta)
-
-                compensating_node_group_delta = NodeGroupDelta(group, in_change = False, virtual = True)
-                self.failures_compensating_deltas.append(GeneralizedDelta(compensating_node_group_delta, compensating_services_group_delta))
 
     def _modify_node_groups_state(self, generalized_delta : GeneralizedDelta, groups_to_change : dict):
 
@@ -90,50 +84,23 @@ class HomogeneousNodeGroupSet:
                 if groups_to_change[node_group_delta.node_group.id].is_empty:
                     del groups_to_change[node_group_delta.node_group.id] # ??
 
-            elif generalized_delta.fault: # TODO
-                self._issue_node_group_failure_and_restart_if_possible(node_group_delta, groups_to_change)
+            elif generalized_delta.fault:
+                self._issue_node_group_failure(node_group_delta, groups_to_change)
 
-    def _issue_node_group_failure_and_restart_if_possible(self, node_group_delta, groups_to_change : dict):
+    def _issue_node_group_failure(self, node_group_delta : 'NodeGroupDelta', groups_to_change : dict):
 
         tmp_removed_node_group_ids = list()
 
+        group_id_to_fail = None
         for group_id, group in groups_to_change.items():
-            if not group_id in self.removed_node_group_ids:
-                if group.can_shrink_with(node_group_delta.node_group):
+            if group.can_shrink_with(node_group_delta.node_group):
+                group_id_to_fail = group_id
+                break
 
-                    tmp_removed_node_group_ids.append(group_id)
-
-                    remaining_node_group_fragment, deleted_fragment = group.split(node_group_delta.node_group)
-
-                    compensating_node_group_delta = NodeGroupDelta(node_group = deleted_fragment['node_group_fragment'], sign = 1, in_change = True)
-                    services_compensating_delta = deleted_fragment['services_state_fragment'].to_delta(direction = 1)
-                    self.failures_compensating_deltas.append(GeneralizedDelta(compensating_node_group_delta, services_compensating_delta))
-
-                    if not remaining_node_group_fragment.is_empty:
-                        remaining_node_group_delta = NodeGroupDelta(node_group = remaining_node_group_fragment, sign = 1, in_change = False)
-                        self._node_groups[remaining_node_group_fragment.id] = remaining_node_group_fragment
-                        self.failures_compensating_deltas.append(GeneralizedDelta(remaining_node_group_delta, None))
-
-                    break
-
-        for group_if in tmp_removed_node_group_ids:
-            if group_id in groups_to_change:
-                del groups_to_change[group_id]
-
-        self.removed_node_group_ids.extend(tmp_removed_node_group_ids)
-
-
-    def extract_compensating_deltas(self):
-
-        compensating_deltas = self.failures_compensating_deltas
-        self.failures_compensating_deltas = list()
-        return compensating_deltas
-
-    def extract_ids_removed_since_last_time(self):
-
-        ids_ret = self.removed_node_group_ids
-        self.removed_node_group_ids = list()
-        return ids_ret
+        if not group_id_to_fail is None:
+            groups_to_change[group_id_to_fail] -= node_group_delta.node_group
+            if groups_to_change[group_id_to_fail].is_empty:
+                del groups_to_change[group_id_to_fail]
 
     def node_groups_for_change_status(self, in_change : bool):
 
@@ -189,16 +156,16 @@ class HomogeneousNodeGroupSet:
 
     def __iter__(self):
 
-        return HomogeneousNodeGroupSetIterator(self)
+        return NodeGroupSetIterator(self)
 
     def __repr__(self):
 
         return f'{self.__class__.__name__}(node_groups = {self._node_groups},\
                                            node_groups_in_change = {self._in_change_node_groups})'
 
-class HomogeneousNodeGroupSetIterator:
+class NodeGroupSetIterator:
 
-    def __init__(self, node_group_set : 'HomogeneousNodeGroupSet'):
+    def __init__(self, node_group_set : 'NodeGroupSet'):
 
         self._index = 0
         self._node_group_set = node_group_set

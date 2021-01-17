@@ -5,7 +5,7 @@ class GroupOfServicesDelta:
     @classmethod
     def from_deltas(cls : type, deltas : dict, in_change : bool = True):
 
-        services_group_delta = cls({}, in_change)
+        services_group_delta = cls(dict(), in_change)
         services_group_delta.deltas = deltas
 
         return services_group_delta
@@ -13,7 +13,7 @@ class GroupOfServicesDelta:
     def __init__(self, aspects_vals_per_entity : dict = {},
                  in_change : bool = True, services_reqs : dict = {}):
 
-        self.deltas = {}
+        self.deltas = dict()
         for service_name, aspects_vals in aspects_vals_per_entity.items():
             if service_name in services_reqs:
                 self.deltas[service_name] = ServiceInstancesGroupDelta(service_name, aspects_vals, services_reqs[service_name])

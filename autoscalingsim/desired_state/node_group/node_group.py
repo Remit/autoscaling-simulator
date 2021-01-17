@@ -2,7 +2,7 @@ import math
 import collections
 import pandas as pd
 from collections import OrderedDict
-from abc import ABC
+from abc import ABC, abstractmethod
 from copy import deepcopy
 
 from .requests_processor import RequestsProcessor
@@ -25,14 +25,14 @@ class NodeGroupsFactory:
 
     def create_group(self, node_info : NodeInfo, nodes_count : int, region_name : str, services_instances_counts : dict = None, requirements_by_service : dict = None):
 
-        return HomogeneousNodeGroup(self._node_groups_registry, node_info, nodes_count, region_name, services_instances_counts, requirements_by_service)
+        return NodeGroup(self._node_groups_registry, node_info, nodes_count, region_name, services_instances_counts, requirements_by_service)
 
     def from_services_placement(self, services_placement : ServicesPlacement, region_name : str):
 
-        return HomogeneousNodeGroup(self._node_groups_registry, services_placement.node_info, services_placement.nodes_count, region_name,
+        return NodeGroup(self._node_groups_registry, services_placement.node_info, services_placement.nodes_count, region_name,
                                     services_placement.single_node_services_state.scale_all_service_instances_by(services_placement.nodes_count))
 
-class NodeGroup(ABC):
+class NodeGroupBase(ABC):
 
     def __init__(self, node_type : str = None, provider : str = None, nodes_count : int = 0, node_group_id : int = None):
 
@@ -41,6 +41,13 @@ class NodeGroup(ABC):
         self.nodes_count = nodes_count
         self.id = id(self) if node_group_id is None else node_group_id
         self.services_state = None
+        self._enforced = False
+
+    @property
+    @abstractmethod
+    def virtual(self):
+
+        pass
 
     def can_shrink_with(self, node_group : 'NodeGroup'):
 
@@ -62,13 +69,24 @@ class NodeGroup(ABC):
 
         return [] if self.services_state is None else self.services_state.services
 
-class HomogeneousNodeGroupDummy(NodeGroup):
+    @property
+    def enforced(self):
+
+        return self._enforced
+
+class NodeGroupDummy(NodeGroupBase):
 
     """ Used as a wildcard to implement failures in node groups """
 
     def __init__(self, node_type : str = None, provider : str = None, nodes_count : int = 0):
 
         super().__init__(node_type, provider, nodes_count)
+        self._enforced = True
+
+    @property
+    def virtual(self):
+
+        return False
 
     def __repr__(self):
 
@@ -76,18 +94,19 @@ class HomogeneousNodeGroupDummy(NodeGroup):
                                            provider = {self.provider}, \
                                            nodes_count = {self.nodes_count})'
 
-class VirtualHomogeneousNodeGroup(NodeGroup):
+class VirtualNodeGroup(NodeGroupBase):
 
     def __init__(self, node_group_id : int):
 
         super().__init__(node_group_id = node_group_id)
+        self._enforced = True
 
     @property
     def virtual(self):
 
         return True
 
-class HomogeneousNodeGroup(NodeGroup):
+class NodeGroup(NodeGroupBase):
 
     def __init__(self, node_groups_registry : 'NodeGroupsRegistry', node_info : NodeInfo, nodes_count : int, region_name : str,
                  services_instances_counts : dict = None,
@@ -114,87 +133,9 @@ class HomogeneousNodeGroup(NodeGroup):
         elif isinstance(services_instances_counts, gos.GroupOfServices):
             self.services_state = services_instances_counts
 
-        self._enforced = False
         self._region_name = region_name
         self._node_groups_registry = node_groups_registry
         self._utilization = NodeGroupUtilization()
-
-    def enforce(self):
-
-        result = deepcopy(self)
-        result._enforced = True
-        self._node_groups_registry.register_node_group(result)
-        return result
-
-    @property
-    def enforced(self):
-
-        return self._enforced
-
-    @property
-    def region_name(self):
-
-        return self._region_name
-
-    def produce_virtual_copy(self):
-
-        return VirtualHomogeneousNodeGroup(self.id)
-
-    @property
-    def virtual(self):
-
-        return False
-
-    def __add__(self, other : 'HomogeneousNodeGroup'):
-
-        result = deepcopy(self)
-
-        result.nodes_count += other.nodes_count
-        result.services_state += other.services_state
-
-        #result._utilization += other._utilization# TODO: consider if it is needed?
-        result.uplink += other.uplink
-        result.downlink += other.downlink
-        result.shared_processor += other.shared_processor
-
-        if self.enforced:
-            self._node_groups_registry.deregister_node_group(self)
-
-        if other.enforced:
-            self._node_groups_registry.deregister_node_group(other)
-
-        return result
-
-    def __sub__(self, other):
-
-        result = deepcopy(self)
-
-        result.nodes_count = max(result.nodes_count - other.nodes_count, 0)
-        result.services_state -= other.services_state
-
-        #result._utilization -= other._utilization
-        result.uplink -= other.uplink
-        result.downlink -= other.downlink
-        result.shared_processor -= other.shared_processor
-
-        if self.enforced:
-            self._node_groups_registry.deregister_node_group(self)
-
-        if other.enforced:
-            self._node_groups_registry.deregister_node_group(other)
-
-        if result.is_empty:
-            if result.enforced:
-                self._node_groups_registry.deregister_node_group(result)
-            else:
-                self._node_groups_registry.block_for_scheduling(result)
-
-        return result
-
-    @property
-    def system_resources_usage(self):
-
-        return self.node_info.cap(self.services_state.resource_requirements_sample, self.nodes_count)
 
     def step(self, time_budget : pd.Timedelta):
 
@@ -319,6 +260,63 @@ class HomogeneousNodeGroup(NodeGroup):
         self.services_state += services_group_delta
         self._node_groups_registry.register_node_group(self)
 
+    def __add__(self, other : 'NodeGroup'):
+
+        result = deepcopy(self)
+
+        result.nodes_count += other.nodes_count
+        result.services_state += other.services_state
+
+        #result._utilization += other._utilization# TODO: consider if it is needed?
+        result.uplink += other.uplink
+        result.downlink += other.downlink
+        result.shared_processor += other.shared_processor
+
+        if self.enforced:
+            self._node_groups_registry.deregister_node_group(self)
+
+        if other.enforced:
+            self._node_groups_registry.deregister_node_group(other)
+
+        return result
+
+    def __sub__(self, other):
+
+        result = deepcopy(self)
+
+        result.nodes_count = max(result.nodes_count - other.nodes_count, 0)
+        result.services_state -= other.services_state
+
+        #result._utilization -= other._utilization
+        result.uplink -= other.uplink
+        result.downlink -= other.downlink
+        result.shared_processor -= other.shared_processor
+
+        if self.enforced:
+            self._node_groups_registry.deregister_node_group(self)
+
+        if other.enforced:
+            self._node_groups_registry.deregister_node_group(other)
+
+        if result.is_empty:
+            if result.enforced:
+                self._node_groups_registry.deregister_node_group(result)
+            else:
+                self._node_groups_registry.block_for_scheduling(result)
+
+        return result
+
+    def enforce(self):
+
+        result = deepcopy(self)
+        result._enforced = True
+        self._node_groups_registry.register_node_group(result)
+        return result
+
+    def produce_virtual_copy(self):
+
+        return VirtualNodeGroup(self.id)
+
     def to_delta(self, direction : int = 1):
 
         import autoscalingsim.deltarepr.node_group_delta as n_grp_delta
@@ -347,6 +345,21 @@ class HomogeneousNodeGroup(NodeGroup):
         ng_copy._enforced = self._enforced
         memo[id(ng_copy)] = ng_copy
         return ng_copy
+
+    @property
+    def region_name(self):
+
+        return self._region_name
+
+    @property
+    def virtual(self):
+
+        return False
+
+    @property
+    def system_resources_usage(self):
+
+        return self.node_info.cap(self.services_state.resource_requirements_sample, self.nodes_count)
 
     @property
     def is_empty(self):

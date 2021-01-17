@@ -29,25 +29,12 @@ class DeltaTimeline:
         since the deltas before are already irreversably enforced.
         """
 
-        # Keeping only already enforced deltas. We also keep the deltas that fall
-        # between the timestamp of the last enforcement and the beginning of the update.
-
-        # Challenge:
-        # if the interval of time between when the enforced machine becomes available
-        # and the desired state that induced it is larger than the autoscalling periodicity
-        # then it will indefinitely overwrite the enforced state causing it to never have
-        # the enforced deltas being incorporated into the platform state
-        # todo: find timestamp of the latest enforcement
-        # and cut the merging timeline ending at it so that all the future states are intact
         other_timeline = other.timeline
         if not other_timeline.beginning is None:
-            #self.timeline.cut_starting_at(self.latest_state_update)
             self.timeline.cut_starting_at(self.latest_enforcement)
             borderline = max(self.latest_enforcement, other_timeline.beginning)
-            other_timeline.cut_ending_at(borderline) #?
+            other_timeline.cut_ending_at(borderline)
             self.timeline.merge(other_timeline)
-
-        # TODO: check borderline and cutting logic
 
     def add_state_delta(self, timestamp : pd.Timestamp, state_delta : PlatformStateDelta):
 
@@ -93,14 +80,8 @@ class DeltaTimeline:
 
         for timestamp, state_deltas in timeline_to_consider.items():
             for state_delta in state_deltas:
-
                 if state_delta.is_enforced:
                     self.actual_state += state_delta
-
-                    compensating_delta = self.actual_state.extract_compensating_deltas()
-                    if not compensating_delta is None:
-                        self._enforce_state_delta(timestamp, compensating_delta)
-
                     updates_applied = True
 
         return updates_applied
@@ -120,17 +101,17 @@ class DeltaTimeline:
 
         return OrderedDict(sorted(self.timeline.to_dict().items(), key = lambda elem: elem[0]))
 
+    @property
+    def updated_at_least_once(self):
+
+        return not self.timeline.is_empty
+
     def __deepcopy__(self, memo):
 
         copied_obj = self.__class__(self.scaling_model, deepcopy(self.actual_state, memo), deepcopy(self.timeline, memo), self.latest_state_update)
         memo[id(self)] = copied_obj
 
         return copied_obj
-
-    @property
-    def updated_at_least_once(self):
-
-        return not self.timeline.is_empty
 
     def __repr__(self):
 

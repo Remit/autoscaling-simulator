@@ -3,7 +3,7 @@ import pandas as pd
 from .service_state import ServiceState
 
 from autoscalingsim.load.request import Request
-from autoscalingsim.desired_state.node_group.node_group import HomogeneousNodeGroup
+from autoscalingsim.desired_state.node_group.node_group import NodeGroup
 from autoscalingsim.utils.requirements import ResourceRequirements
 
 class ServiceStateRegionalized:
@@ -58,12 +58,12 @@ class ServiceStateRegionalized:
         for service_state in self.region_states.values():
             service_state.step(cur_timestamp, simulation_step)
 
-    def force_remove_groups(self, region_name : str, node_group : HomogeneousNodeGroup):
+    def force_remove_groups(self, region_name : str, node_group : NodeGroup):
 
         if region_name in self.region_states:
             self.region_states[region_name].force_remove_group(node_group)
 
-    def update_placement(self, region_name : str, node_group : HomogeneousNodeGroup):
+    def update_placement(self, region_name : str, node_group : NodeGroup):
 
         self.region_states[region_name].update_placement(node_group)
 

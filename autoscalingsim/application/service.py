@@ -8,7 +8,7 @@ from autoscalingsim.scaling.policiesbuilder.scaling_policy_conf import ScalingPo
 from autoscalingsim.scaling.policiesbuilder.scaled.scaling_aggregation import ScalingEffectAggregationRule
 from autoscalingsim.scaling.state_reader import StateReader
 from autoscalingsim.load.request import Request
-from autoscalingsim.desired_state.node_group.node_group import HomogeneousNodeGroup
+from autoscalingsim.desired_state.node_group.node_group import NodeGroup
 from autoscalingsim.utils.requirements import ResourceRequirements
 from autoscalingsim.utils.metric_source import MetricSource
 
@@ -92,10 +92,10 @@ class Service(MetricSource):
 
         return self.get_placement_parameter(region_name, parameter)
 
-    def force_remove_groups_in_region(self, region_name : str, node_group : HomogeneousNodeGroup):
+    def force_remove_groups_in_region(self, region_name : str, node_group : NodeGroup):
 
         self.state.force_remove_groups(region_name, node_group)
 
-    def update_placement_in_region(self, region_name : str, node_group : HomogeneousNodeGroup):
+    def update_placement_in_region(self, region_name : str, node_group : NodeGroup):
 
         self.state.update_placement(region_name, node_group)

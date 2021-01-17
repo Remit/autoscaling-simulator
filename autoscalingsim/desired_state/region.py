@@ -2,8 +2,8 @@ from collections import OrderedDict
 from copy import deepcopy
 
 from .placement import Placement
-from .node_group.node_group import HomogeneousNodeGroup
-from .node_group.node_group_set import HomogeneousNodeGroupSet, NodeGroupSetFactory
+from .node_group.node_group import NodeGroup
+from .node_group.node_group_set import NodeGroupSet, NodeGroupSetFactory
 
 from autoscalingsim.deltarepr.regional_delta import RegionalDelta
 from autoscalingsim.deltarepr.node_group_delta import NodeGroupDelta
@@ -28,10 +28,10 @@ class Region:
 
         self.region_name = region_name
 
-        if isinstance(groups, HomogeneousNodeGroupSet):
+        if isinstance(groups, NodeGroupSet):
             self.homogeneous_groups = groups
         else:
-            self.homogeneous_groups = HomogeneousNodeGroupSet() if groups is None else HomogeneousNodeGroupSet(groups)
+            self.homogeneous_groups = NodeGroupSet() if groups is None else NodeGroupSet(groups)
 
     def __add__(self, regional_delta : RegionalDelta):
 
@@ -39,15 +39,6 @@ class Region:
         result.homogeneous_groups += regional_delta
 
         return result
-
-    def extract_compensating_deltas(self):
-
-        compensating_deltas = self.homogeneous_groups.extract_compensating_deltas()
-        return RegionalDelta(self.region_name, compensating_deltas) if len(compensating_deltas) > 0 else None
-
-    def extract_ids_removed_since_last_time(self):
-
-        return self.homogeneous_groups.extract_ids_removed_since_last_time()
 
     def compute_soft_adjustment(self, services_deltas_in_scaling_aspects : dict,
                                 scaled_service_instance_requirements_by_service : dict) -> tuple:

@@ -4,7 +4,7 @@ import pandas as pd
 from .scaling_aspects import ScalingAspect
 
 from autoscalingsim.desired_state.platform_state import PlatformState
-from autoscalingsim.desired_state.node_group.node_group import HomogeneousNodeGroup
+from autoscalingsim.desired_state.node_group.node_group import NodeGroup
 from autoscalingsim.desired_state.service_group.group_of_services_reg import GroupOfServicesRegionalized
 
 class ScalingManager:
@@ -41,7 +41,7 @@ class ScalingManager:
                     self.update_placement(service_name, region_name, node_group)
 
     def update_placement(self, service_name : str, region_name : str,
-                         node_group : HomogeneousNodeGroup):
+                         node_group : NodeGroup):
 
         self.services[service_name].update_placement_in_region(region_name, node_group)
 

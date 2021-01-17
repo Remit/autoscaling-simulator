@@ -8,7 +8,7 @@ from autoscalingsim.application.requests_buffer import RequestsBuffer
 from autoscalingsim.application import buffer_utilization
 from autoscalingsim.infrastructure_platform.node_information.system_resource_usage import SystemResourceUsage
 from autoscalingsim.scaling.scaling_aspects import ScalingAspect
-from autoscalingsim.desired_state.node_group.node_group import HomogeneousNodeGroup
+from autoscalingsim.desired_state.node_group.node_group import NodeGroup
 from autoscalingsim.utils.requirements import ResourceRequirements
 from autoscalingsim.utils.error_check import ErrorChecker
 
@@ -192,14 +192,14 @@ class ServiceState:
                     resources_taken = node_group.system_resources_usage + node_group.system_resources_taken_by_requests(self.service_name)
                     node_group.update_utilization(self.service_name, resources_taken, cur_timestamp, self.averaging_interval)
 
-    def force_remove_group(self, node_group : HomogeneousNodeGroup):
+    def force_remove_group(self, node_group : NodeGroup):
 
         self._check_out_system_resources_utilization_for_node_group(node_group)
 
         self.upstream_buf.detach_link(node_group.id)
         self.downstream_buf.detach_link(node_group.id)
 
-    def update_placement(self, node_group : HomogeneousNodeGroup):
+    def update_placement(self, node_group : NodeGroup):
 
         self.upstream_buf.add_link(node_group.id, node_group.uplink)
         self.downstream_buf.add_link(node_group.id, node_group.downlink)
@@ -256,7 +256,7 @@ class ServiceState:
 
         return self.service_utilizations
 
-    def _check_out_system_resources_utilization_for_node_group(self, node_group : 'HomogeneousNodeGroup'):
+    def _check_out_system_resources_utilization_for_node_group(self, node_group : 'NodeGroup'):
 
         """
         In contrast to getting the metric values on spot for scaling purposes,
