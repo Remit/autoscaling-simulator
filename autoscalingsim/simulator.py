@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import pandas as pd
+import numpy as np
 from datetime import datetime
 
 from . import conf_keys
@@ -22,7 +23,10 @@ class Simulator:
     def __init__(self,
                  simulation_step : pd.Timedelta = pd.Timedelta(10, unit = 'ms'),
                  starting_time : pd.Timestamp = pd.Timestamp.now(),
-                 time_to_simulate : pd.Timestamp = pd.Timedelta(1, unit = 'm')):
+                 time_to_simulate : pd.Timestamp = pd.Timedelta(1, unit = 'm'),
+                 random_seed : int = 1000):
+
+        np.random.seed(random_seed)
 
         self.simulation_step = simulation_step
         self.starting_time = starting_time

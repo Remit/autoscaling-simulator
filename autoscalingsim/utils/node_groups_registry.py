@@ -18,6 +18,7 @@ class NodeGroupsRegistry:
     def register_node_group_for_service(self, node_group : 'NodeGroup', service_name : str):
 
         if node_group._enforced:
+            print(f'registering node group {node_group.id} for service {service_name}')
             self._Node_groups_by_service[service_name][node_group.region_name][node_group.id] = node_group
             self._services[service_name].update_placement_in_region(node_group.region_name, node_group)
 
@@ -41,6 +42,7 @@ class NodeGroupsRegistry:
             if service_name in self._Node_groups_by_service:
                 if node_group.region_name in self._Node_groups_by_service[service_name]:
                     if node_group.id in self._Node_groups_by_service[service_name][node_group.region_name]:
+                        print(f'force removal of node group {node_group.id} for {service_name}')
                         self._services[service_name].force_remove_groups_in_region(node_group.region_name, node_group)
                         del self._Node_groups_by_service[service_name][node_group.region_name][node_group.id]
 

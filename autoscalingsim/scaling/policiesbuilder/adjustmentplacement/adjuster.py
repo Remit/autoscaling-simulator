@@ -52,7 +52,7 @@ class Adjuster(ABC):
         #unmet_change = {'eu': {'db': {'count': 14.0}, 'appserver': {'count': -6}}}
         #unmet_change = {'eu': {'db': {'count': 14.0}, 'appserver': {'count': -6}}}
         #ts_of_unmet_change = cur_timestamp
-        unmet_change = {'eu': {'service-75c4f5fa-4da4-11eb-a82c-d8cb8af1e959': {'count': 200.0}}}
+        #unmet_change = {'eu': {'service-75c4f5fa-4da4-11eb-a82c-d8cb8af1e959': {'count': 200.0}}}
         #unmet_change = {'eu': {'service-75c4f5fa-4da4-11eb-a82c-d8cb8af1e959': {'count': -12.0}, 'service-75c4f5fa-4da4-11eb-a82c-d8cb8af1e959': {'count': -8.0}}}
         #unmet_change = {'eu': {'service-75c4f5fa-4da4-11eb-a82c-d8cb8af1e959': {'count': -8.0}}}
 

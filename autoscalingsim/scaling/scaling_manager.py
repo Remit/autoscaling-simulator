@@ -44,14 +44,4 @@ class ScalingManager:
                          node_group : NodeGroup):
 
         self.services[service_name].update_placement_in_region(region_name, node_group)
-
-    def mark_groups_for_removal(self, service_name : str,
-                                node_groups_ids_mark_for_removal_regionalized : dict):
-
-        for region_name, node_group_ids in node_groups_ids_mark_for_removal_regionalized.items():
-            self.services[service_name].prepare_groups_for_removal_in_region(region_name, node_group_ids)
-
-    def remove_groups_for_region(self, region_name : str, node_groups_ids : list):
-
-        for service in self.services.values():
-            service.force_remove_groups_in_region(region_name, node_groups_ids)
+        

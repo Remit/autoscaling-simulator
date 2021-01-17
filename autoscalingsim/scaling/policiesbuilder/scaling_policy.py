@@ -43,11 +43,17 @@ class ScalingPolicy:
 
     def reconcile_state(self, cur_timestamp : pd.Timestamp):
 
-        if cur_timestamp - self.last_sync_timestamp > self.scaling_settings.sync_period:
+        #print(f'cur_timestamp: {cur_timestamp}')
+        #print(f'self.last_sync_timestamp: {self.last_sync_timestamp}')
+        #print(f'self.scaling_settings.sync_period: {self.scaling_settings.sync_period}')
 
+        if cur_timestamp - self.last_sync_timestamp > self.scaling_settings.sync_period:
+            
             desired_states_to_process = self.scaling_manager.compute_desired_state(cur_timestamp)
 
             if len(desired_states_to_process) > 0:
+
+                print('desired states to process ok!')
 
                 self.platform_model.adjust_platform_state(cur_timestamp, desired_states_to_process)
 

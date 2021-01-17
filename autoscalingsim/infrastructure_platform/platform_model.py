@@ -117,8 +117,8 @@ class PlatformModel:
 
         actual_state = self.state_deltas_timeline.roll_out_updates(cur_timestamp)
 
-        if not actual_state is None:
-            self.scaling_manager.set_deployments(actual_state)
+        #if not actual_state is None:
+        #    self.scaling_manager.set_deployments(actual_state)
 
     def get_node_info(self, provider : str, node_type : str) -> NodeInfo:
 

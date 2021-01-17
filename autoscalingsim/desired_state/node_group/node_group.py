@@ -185,6 +185,8 @@ class NodeGroup(NodeGroupBase):
 
     def nullify_services_state(self):
 
+        print('nullify_services_state')
+
         import autoscalingsim.desired_state.service_group.group_of_services as gos
 
         self.services_state = gos.GroupOfServices()
@@ -272,15 +274,14 @@ class NodeGroup(NodeGroupBase):
         result.downlink += other.downlink
         result.shared_processor += other.shared_processor
 
-        if self.enforced:
-            self._node_groups_registry.deregister_node_group(self)
-
         if other.enforced:
             self._node_groups_registry.deregister_node_group(other)
 
         return result
 
     def __sub__(self, other):
+
+        print('__sub__')
 
         result = deepcopy(self)
 
@@ -292,14 +293,13 @@ class NodeGroup(NodeGroupBase):
         result.downlink -= other.downlink
         result.shared_processor -= other.shared_processor
 
-        if self.enforced:
-            self._node_groups_registry.deregister_node_group(self)
-
         if other.enforced:
+            print('other->enforced')
             self._node_groups_registry.deregister_node_group(other)
 
         if result.is_empty:
             if result.enforced:
+                print('result->enforced')
                 self._node_groups_registry.deregister_node_group(result)
             else:
                 self._node_groups_registry.block_for_scheduling(result)
