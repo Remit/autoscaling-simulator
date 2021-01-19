@@ -185,8 +185,6 @@ class NodeGroup(NodeGroupBase):
 
     def nullify_services_state(self):
 
-        print('nullify_services_state')
-
         import autoscalingsim.desired_state.service_group.group_of_services as gos
 
         self.services_state = gos.GroupOfServices()
@@ -260,49 +258,25 @@ class NodeGroup(NodeGroupBase):
     def add_to_services_state(self, services_group_delta : 'GroupOfServicesDelta'):
 
         self.services_state += services_group_delta
-        self._node_groups_registry.register_node_group(self)
+        self._node_groups_registry.update_services_for_node_group(self, services_group_delta)
 
     def __add__(self, other : 'NodeGroup'):
 
         result = deepcopy(self)
 
         result.nodes_count += other.nodes_count
-        result.services_state += other.services_state
-
-        #result._utilization += other._utilization# TODO: consider if it is needed?
         result.uplink += other.uplink
         result.downlink += other.downlink
-        result.shared_processor += other.shared_processor
-
-        if other.enforced:
-            self._node_groups_registry.deregister_node_group(other)
 
         return result
 
     def __sub__(self, other):
 
-        print('__sub__')
-
         result = deepcopy(self)
 
         result.nodes_count = max(result.nodes_count - other.nodes_count, 0)
-        result.services_state -= other.services_state
-
-        #result._utilization -= other._utilization
         result.uplink -= other.uplink
         result.downlink -= other.downlink
-        result.shared_processor -= other.shared_processor
-
-        if other.enforced:
-            print('other->enforced')
-            self._node_groups_registry.deregister_node_group(other)
-
-        if result.is_empty:
-            if result.enforced:
-                print('result->enforced')
-                self._node_groups_registry.deregister_node_group(result)
-            else:
-                self._node_groups_registry.block_for_scheduling(result)
 
         return result
 
@@ -310,8 +284,20 @@ class NodeGroup(NodeGroupBase):
 
         result = deepcopy(self)
         result._enforced = True
-        self._node_groups_registry.register_node_group(result)
         return result
+
+    def register_self(self):
+
+        if self._enforced:
+            self._node_groups_registry.register_node_group(self)
+
+    def deregister_self(self):
+
+        if self.is_empty:
+            if self.enforced:
+                self._node_groups_registry.deregister_node_group(self)
+            else:
+                self._node_groups_registry.block_for_scheduling(self)
 
     def produce_virtual_copy(self):
 
@@ -368,8 +354,7 @@ class NodeGroup(NodeGroupBase):
 
     def __repr__(self):
 
-        return f'{self.__class__.__name__}( node_groups_registry = {self._node_groups_registry}, \
-                                            node_info = {self.node_info}, \
+        return f'{self.__class__.__name__}( node_info = {self.node_info}, \
                                             nodes_count = {self.nodes_count}, \
                                             services_instances_counts = {self.services_state.services_counts}, \
                                             requirements_by_service = {self.services_state.services_requirements}, \

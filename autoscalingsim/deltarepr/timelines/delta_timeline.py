@@ -47,7 +47,6 @@ class DeltaTimeline:
         enforcement_made = False
         actual_state_updated = False
 
-
         if borderline_ts_for_updates > self.latest_state_update:
 
             timeline_to_consider = self.timeline.between_with_beginning_excluded(self.latest_state_update, borderline_ts_for_updates)

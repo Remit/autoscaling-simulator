@@ -20,7 +20,7 @@ class GeneralizedDelta:
 
         self.node_group_delta = node_group_delta if not node_group_delta is None else None
         self.services_group_delta = services_group_delta if not services_group_delta is None else None
-        self._cached_enforcement = dict()
+        #self._cached_enforcement = dict()
         self.fault = fault
 
     def till_full_enforcement(self, scaling_model, delta_timestamp : pd.Timestamp):
@@ -44,16 +44,16 @@ class GeneralizedDelta:
         """
 
         result = Timeline()
-        result = self._cached_enforcement.get(delta_timestamp, Timeline())
-        if delta_timestamp in self._cached_enforcement:
-            self._cached_enforcement.pop(delta_timestamp)
+        #result = self._cached_enforcement.get(delta_timestamp, Timeline())
+        #if delta_timestamp in self._cached_enforcement:
+        #    self._cached_enforcement.pop(delta_timestamp)
 
         if self.node_group_delta.in_change and not self.node_group_delta.virtual:
 
             delayed_node_group_delta, delayed_services_groups_deltas = self._delay_deltas(scaling_model)
             result.merge(self._enforced_node_group_delta_timeline(delta_timestamp, delayed_node_group_delta))
             result.merge(self._enforced_services_groups_deltas_timeline(delta_timestamp, delayed_node_group_delta, delayed_services_groups_deltas))
-            self._cached_enforcement[delta_timestamp] = result
+            #self._cached_enforcement[delta_timestamp] = result
 
         if not self.services_group_delta is None:
             if self.services_group_delta.in_change and self.node_group_delta.virtual:
@@ -63,7 +63,7 @@ class GeneralizedDelta:
                 delayed_node_group_delta = {'delay': pd.Timedelta(0, unit = 'ms'), 'delta': self.node_group_delta}
 
                 result.merge(self._enforced_services_groups_deltas_timeline(delta_timestamp, delayed_node_group_delta, delayed_services_groups_deltas))
-                self._cached_enforcement[delta_timestamp] = result
+                #self._cached_enforcement[delta_timestamp] = result
 
         return result.to_dict()
 

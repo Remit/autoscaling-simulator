@@ -47,18 +47,14 @@ class Adjuster(ABC):
         ts_of_unmet_change, unmet_change = timeline_of_unmet_changes.next()
 
         # TODO: remove debug stuff below
-        #unmet_change = {'eu': {'appserver': {'count': -1}, 'frontend': {'count': 5}}}
-        #unmet_change = {'eu': {'appserver': {'count': -1}}}
-        #unmet_change = {'eu': {'db': {'count': 14.0}, 'appserver': {'count': -6}}}
-        #unmet_change = {'eu': {'db': {'count': 14.0}, 'appserver': {'count': -6}}}
-        #ts_of_unmet_change = cur_timestamp
-        #unmet_change = {'eu': {'service-75c4f5fa-4da4-11eb-a82c-d8cb8af1e959': {'count': 200.0}}}
         #unmet_change = {'eu': {'service-75c4f5fa-4da4-11eb-a82c-d8cb8af1e959': {'count': -12.0}, 'service-75c4f5fa-4da4-11eb-a82c-d8cb8af1e959': {'count': -8.0}}}
         #unmet_change = {'eu': {'service-75c4f5fa-4da4-11eb-a82c-d8cb8af1e959': {'count': -8.0}}}
+        unmet_change = {'eu': {'service-75c4f5fa-4da4-11eb-a82c-d8cb8af1e959': {'count': 100.0}}}
+        #unmet_change = {'eu': {'service-75c4f5fa-4da4-11eb-a82c-d8cb8af1e959': {'count': -2}}}
 
         in_work_state = current_state
 
-        while not unmet_change is None:
+        while not unmet_change is None and not ts_of_unmet_change is None:
 
             print(f'>> unmet_change BEFORE: {unmet_change}')
             unmet_change = self._attempt_to_use_existing_nodes_and_scale_down_if_needed(in_work_state, ts_of_unmet_change, unmet_change, timeline_of_deltas)
@@ -67,8 +63,7 @@ class Adjuster(ABC):
             if len(unmet_change) > 0:
 
                 # TODO: add test that ensures that timeline_of_deltas is unchanged
-                in_work_state, unmet_change_state, state_duration = self._roll_out_enforced_updates_temporarily(in_work_state, ts_of_unmet_change,
-                                                                                                                unmet_change, timeline_of_deltas, timeline_of_unmet_changes)
+                in_work_state, unmet_change_state, state_duration = self._roll_out_enforced_updates_temporarily(in_work_state, ts_of_unmet_change, unmet_change, timeline_of_deltas, timeline_of_unmet_changes)
 
                 state_addition_delta, state_score_addition = self._evaluate_nodes_addition_option(in_work_state, unmet_change_state, state_duration)
                 state_substitution_delta, state_score_substitution = self._evaluate_nodes_substitution_option(in_work_state, ts_of_unmet_change, unmet_change_state, state_duration)
@@ -134,6 +129,8 @@ class Adjuster(ABC):
         else:
             chosen_state_delta = state_addition_delta if state_score_addition.joint_score > state_score_substitution.joint_score else state_substitution_delta
             timeline_of_deltas_ref.add_state_delta(ts_of_unmet_change, chosen_state_delta)
+
+        #print(f'UPDATING TIMELINE WITH BEST OPTION: {chosen_state_delta}')
 
     @classmethod
     def register(cls, name : str):

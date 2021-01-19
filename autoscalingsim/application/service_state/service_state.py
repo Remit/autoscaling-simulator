@@ -1,6 +1,7 @@
 import operator
 import pandas as pd
 
+from copy import deepcopy
 from .service_metric import ServiceMetric, SumAggregator
 
 from autoscalingsim.load.request import Request

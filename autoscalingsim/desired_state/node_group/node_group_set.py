@@ -30,8 +30,6 @@ class NodeGroupSet:
             self._node_groups = dict() if node_groups is None else { group.id : group for group in node_groups }
 
         self._in_change_node_groups = dict() if node_groups_in_change is None else node_groups_in_change
-        self.removed_node_group_ids = list()
-        self.failures_compensating_deltas = list()
 
     def __add__(self, regional_delta : RegionalDelta):
 
@@ -57,7 +55,7 @@ class NodeGroupSet:
 
         if services_group_delta.in_change == node_group_delta.in_change:
             if node_group_delta.node_group.id in groups_to_change:
-                groups_to_change[node_group_delta.node_group.id].add_to_services_state(services_group_delta) # TODO: check if it can at all be allocated
+                groups_to_change[node_group_delta.node_group.id].add_to_services_state(services_group_delta)
             elif generalized_delta.fault:
                 self._issue_service_failure(services_group_delta, groups_to_change)
 
@@ -74,15 +72,21 @@ class NodeGroupSet:
 
         if node_group_delta.is_scale_up:
             if node_group_delta.node_group.id in groups_to_change:
+                print(f'_modify_node_groups_state ADDITION for {node_group_delta.node_group.id}: {node_group_delta.node_group.nodes_count}')
                 groups_to_change[node_group_delta.node_group.id] += node_group_delta.node_group
             else:
+                print(f'_modify_node_groups_state SUBSTITUTION for {node_group_delta.node_group.id}: {node_group_delta.node_group.nodes_count}')
                 groups_to_change[node_group_delta.node_group.id] = node_group_delta.node_group
+
+            groups_to_change[node_group_delta.node_group.id].register_self()
 
         elif node_group_delta.is_scale_down:
             if node_group_delta.node_group.id in groups_to_change:
                 groups_to_change[node_group_delta.node_group.id] -= node_group_delta.node_group
                 if groups_to_change[node_group_delta.node_group.id].is_empty:
-                    del groups_to_change[node_group_delta.node_group.id] # ??
+                    groups_to_change[node_group_delta.node_group.id].deregister_self()
+                else:
+                    groups_to_change[node_group_delta.node_group.id].register_self()
 
             elif generalized_delta.fault:
                 self._issue_node_group_failure(node_group_delta, groups_to_change)
@@ -143,9 +147,6 @@ class NodeGroupSet:
 
         for node_group_id, node_group in self._in_change_node_groups.items():
             copied_obj._in_change_node_groups[node_group_id] = deepcopy(node_group, memo)
-
-        copied_obj.removed_node_group_ids = deepcopy(self.removed_node_group_ids, memo)
-        copied_obj.failures_compensating_deltas = deepcopy(self.failures_compensating_deltas, memo)
 
         return copied_obj
 

@@ -14,54 +14,46 @@ class RequestsProcessor:
         self._stat = collections.defaultdict(lambda: collections.defaultdict(int))
         self._res_requirements_of_requests = collections.defaultdict(lambda: collections.defaultdict(ResourceRequirements))
 
-    def __deepcopy__(self, memo):
+    #def __add__(self, other : 'RequestsProcessor'):
 
-        proc_copy = self.__class__()
-        proc_copy.in_processing_simultaneous = deepcopy(self.in_processing_simultaneous, memo)
-        proc_copy._out = deepcopy(self._out, memo)
-        proc_copy._stat = deepcopy(self._stat, memo)
-        proc_copy._res_requirements_of_requests = deepcopy(self._res_requirements_of_requests, memo)
-        memo[id(proc_copy)] = proc_copy
-        return proc_copy
+    #    result = deepcopy(self)
+    #    for processing_service, other_reqs in other.in_processing_simultaneous.items():
+    #        result.in_processing_simultaneous[processing_service] += other_reqs
+    #    for processing_service, other_reqs in other._out.items():
+    #        result._out[processing_service] += other_reqs
+    #    for processing_service, stat_by_req_type in other._stat.items():
+    #        for req_type, cnt in stat_by_req_type.items():
+    #            result._stat[processing_service][req_type] += cnt
+    #    for processing_service, requirements_by_req_type in other._stat.items():
+    #        for req_type, requirements in requirements_by_req_type.items():
+    #            result._res_requirements_of_requests[processing_service][req_type] = requirements
 
-    def __add__(self, other : 'RequestsProcessor'):
+    #    return result
 
-        result = deepcopy(self)
-        for processing_service, other_reqs in other.in_processing_simultaneous.items():
-            result.in_processing_simultaneous[processing_service] += other_reqs
-        for processing_service, other_reqs in other._out.items():
-            result._out[processing_service] += other_reqs
-        for processing_service, stat_by_req_type in other._stat.items():
-            for req_type, cnt in stat_by_req_type.items():
-                result._stat[processing_service][req_type] += cnt
-        for processing_service, requirements_by_req_type in other._stat.items():
-            for req_type, requirements in requirements_by_req_type.items():
-                result._res_requirements_of_requests[processing_service][req_type] = requirements
+    #def __sub__(self, other : 'RequestsProcessor'):
 
-        return result
+    #    result = deepcopy(self)
+    #    for processing_service, other_reqs in other.in_processing_simultaneous.items():
+    #        result.in_processing_simultaneous[processing_service] = [ req for req in result.in_processing_simultaneous[processing_service] if not req in other_reqs ]
+    #    for processing_service, other_reqs in other._out.items():
+    #        result._out[processing_service] = [ req for req in result._out[processing_service] if not req in other_reqs ]
+    #    for processing_service, stat_by_req_type in other._stat.items():
+    #        for req_type, cnt in stat_by_req_type.items():
+    #            result._stat[processing_service][req_type] -= cnt
+    #    new_req_requirements_of_requests = collections.defaultdict(lambda: collections.defaultdict(ResourceRequirements))
+    #    for processing_service, requirements_by_req_type in result._res_requirements_of_requests.items():
+    #        for req_type, requirements in requirements_by_req_type.items():
+    #            if result._stat[processing_service][req_type] > 0:
+    #                new_req_requirements_of_requests[processing_service][req_type] = requirements
+    #    result._res_requirements_of_requests = new_req_requirements_of_requests
 
-    def __sub__(self, other : 'RequestsProcessor'):
+    #    return result
 
-        result = deepcopy(self)
-        for processing_service, other_reqs in other.in_processing_simultaneous.items():
-            result.in_processing_simultaneous[processing_service] = [ req for req in result.in_processing_simultaneous[processing_service] if not req in other_reqs ]
-        for processing_service, other_reqs in other._out.items():
-            result._out[processing_service] = [ req for req in result._out[processing_service] if not req in other_reqs ]
-        for processing_service, stat_by_req_type in other._stat.items():
-            for req_type, cnt in stat_by_req_type.items():
-                result._stat[processing_service][req_type] -= cnt
-        new_req_requirements_of_requests = collections.defaultdict(lambda: collections.defaultdict(ResourceRequirements))
-        for processing_service, requirements_by_req_type in result._res_requirements_of_requests.items():
-            for req_type, requirements in requirements_by_req_type.items():
-                if result._stat[processing_service][req_type] > 0:
-                    new_req_requirements_of_requests[processing_service][req_type] = requirements
-        result._res_requirements_of_requests = new_req_requirements_of_requests
+    def start_processing(self, req : Request):
 
-        return result
-
-    def _processing_goes_on_and_there_is_enough_time(self, advancing : bool, time_budget : pd.Timedelta):
-
-        return advancing and any([len(processing_list) for processing_list in self.in_processing_simultaneous.values()]) and time_budget > pd.Timedelta(0, unit ='ms')
+        self._stat[req.processing_service][req.request_type] += 1
+        self._res_requirements_of_requests[req.processing_service][req.request_type] = req.resource_requirements
+        self.in_processing_simultaneous[req.processing_service].append(req)
 
     def step(self, time_budget : pd.Timedelta):
 
@@ -98,11 +90,9 @@ class RequestsProcessor:
 
         return time_budget
 
-    def start_processing(self, req : Request):
+    def _processing_goes_on_and_there_is_enough_time(self, advancing : bool, time_budget : pd.Timedelta):
 
-        self._stat[req.processing_service][req.request_type] += 1
-        self._res_requirements_of_requests[req.processing_service][req.request_type] = req.resource_requirements
-        self.in_processing_simultaneous[req.processing_service].append(req)
+        return advancing and any([len(processing_list) for processing_list in self.in_processing_simultaneous.values()]) and time_budget > pd.Timedelta(0, unit ='ms')
 
     def processed_for_service(self, service_name : str):
 
@@ -129,10 +119,7 @@ class RequestsProcessor:
 
     def requests_counts_and_requirements_for_service(self, service_name : str):
 
-        if not service_name in self._stat:
-            return zip([], [])
-        else:
-            return zip(self._stat[service_name].values(), self._res_requirements_of_requests[service_name].values())
+        return zip(self._stat[service_name].values(), self._res_requirements_of_requests[service_name].values()) if service_name in self._stat else zip([], [])
 
     def in_processing_simultaneous_flat(self):
 
@@ -170,6 +157,16 @@ class RequestsProcessor:
     def services_ever_scheduled(self):
 
         return self._stat.keys()
+
+    def __deepcopy__(self, memo):
+
+        proc_copy = self.__class__()
+        proc_copy.in_processing_simultaneous = deepcopy(self.in_processing_simultaneous, memo)
+        proc_copy._out = deepcopy(self._out, memo)
+        proc_copy._stat = deepcopy(self._stat, memo)
+        proc_copy._res_requirements_of_requests = deepcopy(self._res_requirements_of_requests, memo)
+        memo[id(proc_copy)] = proc_copy
+        return proc_copy
 
 class InProcessingRequestsIterator:
 

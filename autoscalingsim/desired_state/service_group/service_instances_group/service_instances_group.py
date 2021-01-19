@@ -121,6 +121,11 @@ class ServiceInstancesGroup:
 
         return self.service_resource_reqs
 
+    @property
+    def count_value(self):
+
+        return self.scaling_aspects['count'].value
+
     def copy(self):
 
         return self.__class__(self.service_name, self.service_resource_reqs, self.scaling_aspects.copy())

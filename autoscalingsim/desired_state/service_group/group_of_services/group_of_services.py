@@ -62,6 +62,10 @@ class GroupOfServices:
                 if not insertable_group is None:
                     new_groups[service_name] = insertable_group
 
+        for service_name, service_group in self.services_groups.items():
+            if not service_name in new_groups:
+                new_groups[service_name] = service_group
+
         return self.__class__(new_groups)
 
     def _transform_into_insertable_group(self, service_name : str, service_delta : 'ServiceInstancesGroupDelta', sign : int):
@@ -180,7 +184,7 @@ class GroupOfServices:
     @property
     def resource_requirements_sample(self) -> ResourceRequirementsSample:
 
-        return sum([ group.resource_requirements.sample for group in self.services_groups.values() ], ResourceRequirementsSample())
+        return sum([ group.resource_requirements.sample * group.count_value for group in self.services_groups.values() ], ResourceRequirementsSample())
 
     @property
     def is_empty(self) -> bool:

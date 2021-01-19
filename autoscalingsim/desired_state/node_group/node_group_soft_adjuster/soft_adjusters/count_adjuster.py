@@ -7,6 +7,38 @@ from ..node_group_soft_adjuster import NodeGroupSoftAdjuster
 @NodeGroupSoftAdjuster.register('count')
 class CountBasedSoftAdjuster(NodeGroupSoftAdjuster):
 
+    def compute_downscale_adjustment(self, unmet_changes : dict, scaled_service_instance_requirements_by_service : dict,
+                                     node_sys_resource_usage_by_service_sorted : dict) -> tuple:
+
+        import autoscalingsim.desired_state.node_group as n_grp
+        import autoscalingsim.deltarepr.node_group_delta as n_grp_delta
+        import autoscalingsim.deltarepr.generalized_delta as g_delta
+        import autoscalingsim.deltarepr.group_of_services_delta as gos_delta
+
+        generalized_deltas = list()
+        scale_down_delta = None
+
+        node_sys_resource_usage = self.node_group_ref.system_resources_usage.copy()
+
+        # Starting with the largest service and proceeding to the smallest one in terms of
+        # resource usage requirements. This is made to reduce the resource usage fragmentation.
+        services_cnt_change = dict()
+        dynamic_services_instances_count = self.node_group_ref.services_state.raw_aspect_value_for_every_service('count')
+
+        if len([ True for service_name in dynamic_services_instances_count.keys() if service_name in unmet_changes ]) > 0:
+            for service_name, unmet_change_cnt in unmet_changes.items():
+                service_instance_resource_usage = node_sys_resource_usage_by_service_sorted.get(service_name, None)
+                if not service_instance_resource_usage is None:
+
+                    # Case of removing services from the existing nodes
+                    if service_name in dynamic_services_instances_count:
+                        while (unmet_change_cnt - services_cnt_change[service_name] < 0) and (dynamic_services_instances_count[service_name] > 0):
+                            node_sys_resource_usage -= service_instance_resource_usage
+                            dynamic_services_instances_count[service_name] -= 1
+                            services_cnt_change[service_name] -= 1
+
+        return (scale_down_delta, unmet_changes)
+
     def compute_soft_adjustment(self,
                                 unmet_changes : dict,
                                 scaled_service_instance_requirements_by_service : dict,
@@ -27,15 +59,16 @@ class CountBasedSoftAdjuster(NodeGroupSoftAdjuster):
         services_cnt_change = dict()
         dynamic_services_instances_count = self.node_group_ref.services_state.raw_aspect_value_for_every_service('count')
 
-        for service_name, service_instance_resource_usage in node_sys_resource_usage_by_service_sorted.items():
-            if service_name in unmet_changes:
+        for service_name, unmet_change_cnt in unmet_changes.items():
+            service_instance_resource_usage = node_sys_resource_usage_by_service_sorted.get(service_name, None)
+            if not service_instance_resource_usage is None:
 
                 # Case of adding services to the existing nodes
                 if not service_name in services_cnt_change:
                     services_cnt_change[service_name] = 0
 
-                if node_sys_resource_usage.can_accommodate_another_service_instance and unmet_changes[service_name] > 0:
-                    while (unmet_changes[service_name] - services_cnt_change[service_name] > 0) and node_sys_resource_usage.can_accommodate_another_service_instance:
+                if node_sys_resource_usage.can_accommodate_another_service_instance and unmet_change_cnt > 0:
+                    while (unmet_change_cnt - services_cnt_change[service_name] > 0) and node_sys_resource_usage.can_accommodate_another_service_instance:
                         node_sys_resource_usage += service_instance_resource_usage
                         services_cnt_change[service_name] += 1
 
@@ -45,7 +78,7 @@ class CountBasedSoftAdjuster(NodeGroupSoftAdjuster):
 
                 # Case of removing services from the existing nodes
                 if service_name in dynamic_services_instances_count:
-                    while (unmet_changes[service_name] - services_cnt_change[service_name] < 0) and (dynamic_services_instances_count[service_name] > 0):
+                    while (unmet_change_cnt - services_cnt_change[service_name] < 0) and (dynamic_services_instances_count[service_name] > 0):
                         node_sys_resource_usage -= service_instance_resource_usage
                         dynamic_services_instances_count[service_name] -= 1
                         services_cnt_change[service_name] -= 1
@@ -77,7 +110,7 @@ class CountBasedSoftAdjuster(NodeGroupSoftAdjuster):
 
             # scale down/up only for services, nodegroup remains unchanged
             services_cnt_change_count = { service_name : {'count': change_val} for service_name, change_val in services_cnt_change.items() if change_val != 0 }
-            node_group_delta = n_grp_delta.NodeGroupDelta(self.node_group_ref, sign = 1, virtual = True)
+            node_group_delta = n_grp_delta.NodeGroupDelta(self.node_group_ref, sign = 1, virtual = True)# ???
             services_group_delta = gos_delta.GroupOfServicesDelta(services_cnt_change_count, in_change = True, services_reqs = scaled_service_instance_requirements_by_service)
             generalized_deltas.append(g_delta.GeneralizedDelta(node_group_delta, services_group_delta))
 
