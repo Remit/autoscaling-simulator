@@ -10,8 +10,9 @@ class RequestsBuffer:
 
     """ Represents buffers where the requests wait to be served """
 
-    def __init__(self, capacity_by_request_type_base : dict, queuing_discipline : str = 'FIFO'):
+    def __init__(self, service_name : str, capacity_by_request_type_base : dict, queuing_discipline : str = 'FIFO'):
 
+        self.service_name = service_name
         self.capacity_by_request_type_base = capacity_by_request_type_base
         self.capacity_by_request_type = self.capacity_by_request_type_base.copy() # updatable
         self.discipline = QueuingDiscipline.get(queuing_discipline)()
@@ -31,7 +32,7 @@ class RequestsBuffer:
         self.discipline.drop_old_requests()
 
         for link in self.links:
-            ready_reqs = link.step()
+            ready_reqs = link.step(self.service_name)# TODO: BUG! the link is shared among multiple services, hence req should be taken only for this current service
 
             for req in ready_reqs:
                 if req.request_type in self.capacity_by_request_type:

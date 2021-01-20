@@ -67,7 +67,7 @@ class NodeGroupBase(ABC):
     @property
     def running_services(self):
 
-        return [] if self.services_state is None else self.services_state.services
+        return [] if self.services_state is None else self.services_state.running_services
 
     @property
     def enforced(self):
@@ -265,8 +265,8 @@ class NodeGroup(NodeGroupBase):
         result = deepcopy(self)
 
         result.nodes_count += other.nodes_count
-        result.uplink += other.uplink
-        result.downlink += other.downlink
+        #result.uplink += other.uplink
+        #result.downlink += other.downlink
 
         return result
 
@@ -275,8 +275,8 @@ class NodeGroup(NodeGroupBase):
         result = deepcopy(self)
 
         result.nodes_count = max(result.nodes_count - other.nodes_count, 0)
-        result.uplink -= other.uplink
-        result.downlink -= other.downlink
+        #result.uplink -= other.uplink
+        #result.downlink -= other.downlink
 
         return result
 
@@ -327,6 +327,7 @@ class NodeGroup(NodeGroupBase):
 
         ng_copy = self.__class__(self._node_groups_registry, self.node_info, self.nodes_count, self._region_name, deepcopy(self.services_state, memo))
         ng_copy.id = self.id
+        ng_copy.shared_processor = deepcopy(self.shared_processor, memo)
         ng_copy._utilization = deepcopy(self._utilization, memo)
         ng_copy._enforced = self._enforced
         memo[id(ng_copy)] = ng_copy

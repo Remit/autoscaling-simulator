@@ -62,13 +62,9 @@ class SharedPlacingStrategy(PlacingStrategy):
         service_instances_count = 0
 
         for service_name_to_consider, system_resources_to_consider in further_node_system_resources_taken.items():
-            while not cumulative_system_resources.is_full:
+            while cumulative_system_resources.can_accommodate_another_service_instance:
                 cumulative_system_resources += system_resources_to_consider
                 service_instances_count += 1
-
-            if cumulative_system_resources.is_full:
-                cumulative_system_resources -= system_resources_to_consider
-                service_instances_count -= 1
 
             if service_instances_count > 0:
                 single_placement_option_instances[service_name_to_consider]['count'] = service_instances_count

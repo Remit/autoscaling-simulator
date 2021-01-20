@@ -32,16 +32,7 @@ class ScalingManager:
 
         if not service_name in self.services: self.services[service_name] = service_ref
 
-    def set_deployments(self, platform_state : PlatformState):
-
-        scaling_infos = platform_state.node_groups_for_change_status(in_change = False)
-        for region_name, regional_node_groups in scaling_infos.items():
-            for node_group in regional_node_groups:
-                for service_name in node_group.running_services:
-                    self.update_placement(service_name, region_name, node_group)
-
     def update_placement(self, service_name : str, region_name : str,
                          node_group : NodeGroup):
 
         self.services[service_name].update_placement_in_region(region_name, node_group)
-        

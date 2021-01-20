@@ -49,16 +49,18 @@ class Adjuster(ABC):
         # TODO: remove debug stuff below
         #unmet_change = {'eu': {'service-75c4f5fa-4da4-11eb-a82c-d8cb8af1e959': {'count': -12.0}, 'service-75c4f5fa-4da4-11eb-a82c-d8cb8af1e959': {'count': -8.0}}}
         #unmet_change = {'eu': {'service-75c4f5fa-4da4-11eb-a82c-d8cb8af1e959': {'count': -8.0}}}
-        unmet_change = {'eu': {'service-75c4f5fa-4da4-11eb-a82c-d8cb8af1e959': {'count': 100.0}}}
-        #unmet_change = {'eu': {'service-75c4f5fa-4da4-11eb-a82c-d8cb8af1e959': {'count': -2}}}
+        #unmet_change = {'eu': {'service-75c4f5fa-4da4-11eb-a82c-d8cb8af1e959': {'count': 100.0}}}
+
 
         in_work_state = current_state
 
         while not unmet_change is None and not ts_of_unmet_change is None:
 
-            print(f'>> unmet_change BEFORE: {unmet_change}')
+            #unmet_change = {'eu': {'service-75c4f5fa-4da4-11eb-a82c-d8cb8af1e959': {'count': 0}}}
+
+            print(f'>>> UNMET CHANGE BEFORE: {unmet_change}')
             unmet_change = self._attempt_to_use_existing_nodes_and_scale_down_if_needed(in_work_state, ts_of_unmet_change, unmet_change, timeline_of_deltas)
-            print(f'>> unmet_change AFTER: {unmet_change}')
+            print(f'>>> UNMET CHANGE AFTER: {unmet_change}')
 
             if len(unmet_change) > 0:
 
@@ -129,8 +131,6 @@ class Adjuster(ABC):
         else:
             chosen_state_delta = state_addition_delta if state_score_addition.joint_score > state_score_substitution.joint_score else state_substitution_delta
             timeline_of_deltas_ref.add_state_delta(ts_of_unmet_change, chosen_state_delta)
-
-        #print(f'UPDATING TIMELINE WITH BEST OPTION: {chosen_state_delta}')
 
     @classmethod
     def register(cls, name : str):

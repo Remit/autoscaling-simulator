@@ -102,8 +102,8 @@ class ServiceState:
 
         queuing_discipline = ErrorChecker.key_check_and_load('discipline', buffers_config, 'service', service_name)
 
-        self.upstream_buf = RequestsBuffer(buffer_capacity_by_request_type, queuing_discipline)
-        self.downstream_buf = RequestsBuffer(buffer_capacity_by_request_type, queuing_discipline)
+        self.upstream_buf = RequestsBuffer(self.service_name, buffer_capacity_by_request_type, queuing_discipline)
+        self.downstream_buf = RequestsBuffer(self.service_name, buffer_capacity_by_request_type, queuing_discipline)
 
         self.service_metrics_and_sources = {
             'upstream_waiting_time': ServiceMetric(buffer_utilization.waiting_time_metric_name, [self.upstream_buf]),
@@ -140,42 +140,41 @@ class ServiceState:
             self.downstream_buf.step()
 
             for node_group in self.node_groups_registry.node_groups_for_service(self.service_name, self.region_name):
-                #if not node_group.id in self.unschedulable:
-                    time_budget = min(time_budget, node_group.step(time_budget))
-                    resources_taken = node_group.system_resources_usage + node_group.system_resources_taken_by_all_requests()
+                time_budget = min(time_budget, node_group.step(time_budget))
+                resources_taken = node_group.system_resources_usage + node_group.system_resources_taken_by_all_requests()
 
-                    if not resources_taken.is_full:
+                if not resources_taken.is_full:
 
-                        while time_budget > pd.Timedelta(0, unit = 'ms'):
-                            advancing = True
+                    while time_budget > pd.Timedelta(0, unit = 'ms'):
+                        advancing = True
 
-                            # Assumption: first we try to process the downstream reqs to
-                            # provide the response faster, but overall it is application-dependent
-                            while advancing and (self.downstream_buf.size() > 0 or self.upstream_buf.size() > 0):
-                                advancing = False
+                        # Assumption: first we try to process the downstream reqs to
+                        # provide the response faster, but overall it is application-dependent
+                        while advancing and (self.downstream_buf.size() > 0 or self.upstream_buf.size() > 0):
+                            advancing = False
 
-                                req = self.downstream_buf.attempt_fan_in()
-                                if not req is None:
-                                    if node_group.can_schedule_request(req):
-                                        req = self.downstream_buf.fan_in()
-                                        node_group.start_processing(req)
-                                        advancing = True
-                                    else:
-                                        self.downstream_buf.shuffle()
+                            req = self.downstream_buf.attempt_fan_in()
+                            if not req is None:
+                                if node_group.can_schedule_request(req):
+                                    req = self.downstream_buf.fan_in()
+                                    node_group.start_processing(req)
+                                    advancing = True
+                                else:
+                                    self.downstream_buf.shuffle()
 
-                                req = self.upstream_buf.attempt_take()
-                                if not req is None:
-                                    if node_group.can_schedule_request(req):
-                                        req = self.upstream_buf.take()
-                                        node_group.start_processing(req)
-                                        advancing = True
-                                    else:
-                                        self.upstream_buf.shuffle()
+                            req = self.upstream_buf.attempt_take()
+                            if not req is None:
+                                if node_group.can_schedule_request(req):
+                                    req = self.upstream_buf.take()
+                                    node_group.start_processing(req)
+                                    advancing = True
+                                else:
+                                    self.upstream_buf.shuffle()
 
-                                time_budget -= simulation_step
+                            time_budget -= simulation_step
 
-                            if (self.downstream_buf.size() == 0) and (self.upstream_buf.size() == 0):
-                                time_budget -= simulation_step
+                        if (self.downstream_buf.size() == 0) and (self.upstream_buf.size() == 0):
+                            time_budget -= simulation_step
 
             # Post-step maintenance actions
             # Increase the cumulative time for all the reqs left in the buffers waiting
@@ -228,13 +227,6 @@ class ServiceState:
         if metric_name in SystemResourceUsage.system_resources:
             for node_group in self.node_groups_registry.node_groups_for_service(self.service_name, self.region_name):
                 cur_util = node_group.utilization(self.service_name, metric_name, interval)
-
-                # Aligning the time series
-                #common_index = cur_util.index.union(service_metric_value.index).astype(cur_util.index.dtype)
-                #cur_util = cur_util.reindex(common_index, fill_value = 0)
-                #service_metric_value = service_metric_value.reindex(common_index, fill_value = 0)
-                #service_metric_value += cur_util
-
                 service_metric_value = service_metric_value.add(cur_util, fill_value = 0)
 
             service_metric_value /= sum([node_group.nodes_count for node_group in self.node_groups_registry.node_groups_for_service(self.service_name, self.region_name)]) # normalization
@@ -273,12 +265,6 @@ class ServiceState:
             node_group_util = node_group.utilization(self.service_name, system_resource_name, pd.Timedelta(0, unit = 'ms'))#self.averaging_interval)
 
             if not node_group_util is None:
-                # Aligning the time series
-                #common_index = node_group_util.index.union(self.service_utilizations[system_resource_name].index)
-                #node_group_util = node_group_util.reindex(common_index, fill_value = 0)
-                #self.service_utilizations[system_resource_name] = self.service_utilizations[system_resource_name].reindex(common_index, fill_value = 0)
-                #self.service_utilizations[system_resource_name] += node_group_util
-
                 self.service_utilizations[system_resource_name] = self.service_utilizations[system_resource_name].add(node_group_util, fill_value = 0)
 
     def _count_service_instances(self):

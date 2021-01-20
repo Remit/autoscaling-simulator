@@ -23,7 +23,7 @@
                       "name": "ratio",
                       "target": {
                         "metric_name": "vCPU",
-                        "value": 0.05,
+                        "value": 0.8,
                         "unit": "float"
                       },
                       "adjustment_heuristic_conf": {

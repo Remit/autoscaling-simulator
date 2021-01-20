@@ -110,7 +110,7 @@ class SystemResourceUsage:
         """ Checks whether the system resources are exhausted """
 
         for res_name, res_usage in self.system_resources_usage.items():
-            if res_usage >= self.instance_count * self.instance_max_usage[res_name]:
+            if res_usage >= self.instance_count * self.instance_max_usage[res_name]: 
                 return True
 
         return False

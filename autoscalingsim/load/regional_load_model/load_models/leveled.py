@@ -1,30 +1,31 @@
 import pandas as pd
 
-from .parsers.patterns_parsers.constant_load_parser import ConstantLoadPatternParser
+from .parsers.patterns_parsers.leveled_load_parser import LeveledLoadPatternParser
 from .parsers.reqs_ratios_parser import RatiosParser
 
 from autoscalingsim.load.regional_load_model.regional_load_model import RegionalLoadModel
 from autoscalingsim.load.request import Request
 from autoscalingsim.utils.error_check import ErrorChecker
 
-@RegionalLoadModel.register('constant')
-class ConstantLoadModel(RegionalLoadModel):
+@RegionalLoadModel.register('leveled')
+class LeveledLoadModel(RegionalLoadModel):
 
-    """ Load model that generates fixed amount of requests over time """
+    """ Load model that generates requests at certain levels """
 
     def __init__(self, region_name : str, pattern : dict, load_configs : dict,
-                 simulation_step : pd.Timedelta, reqs_processing_infos : dict):
+                 simulation_step : pd.Timedelta, simulation_start : pd.Timestamp, reqs_processing_infos : dict):
 
         super().__init__(region_name, simulation_step, reqs_processing_infos)
 
-        self.interval_of_time, self.load_distribution_in_steps_buckets = ConstantLoadPatternParser.get(ErrorChecker.key_check_and_load('type', pattern, 'region_name', self.region_name)).parse(pattern, simulation_step)
+        self.simulation_start = simulation_start
+        self.interval_of_time, self.load_distribution_in_steps_buckets = LeveledLoadPatternParser.get(ErrorChecker.key_check_and_load('type', pattern, 'region_name', self.region_name)).parse(pattern, simulation_step)
         self.reqs_types_ratios = RatiosParser.parse(load_configs)
 
     def generate_requests(self, timestamp : pd.Timestamp):
 
         # The count of requests to generate is taken from the bucket which
         # the provided timestamp falls into
-        bucket_id = ( (timestamp - pd.Timestamp(0) ) % self.interval_of_time ) // self.simulation_step
+        bucket_id = ( (timestamp - self.simulation_start ) % self.interval_of_time ) // self.simulation_step
 
         # Generating requests for the current simulation step using the ratios
         # by the request type

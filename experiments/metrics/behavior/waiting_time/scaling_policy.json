@@ -23,7 +23,7 @@
                       "name": "ratio",
                       "target": {
                         "metric_name": "waiting_time",
-                        "value": 50,
+                        "value": 150,
                         "unit": "ms"
                       },
                       "adjustment_heuristic_conf": {

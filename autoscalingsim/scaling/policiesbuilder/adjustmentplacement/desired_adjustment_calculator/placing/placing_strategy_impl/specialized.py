@@ -46,12 +46,8 @@ class SpecializedPlacingStrategy(PlacingStrategy):
         cumulative_system_resources = resources_taken
         service_instances_count = 1
 
-        while not cumulative_system_resources.is_full:
+        while cumulative_system_resources.can_accommodate_another_service_instance:
             cumulative_system_resources += resources_taken
             service_instances_count += 1
-
-        if cumulative_system_resources.is_full:
-            cumulative_system_resources -= resources_taken
-            service_instances_count -= 1
 
         return (cumulative_system_resources, service_instances_count)

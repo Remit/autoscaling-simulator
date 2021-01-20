@@ -15,7 +15,7 @@ class SeasonalLoadModel(RegionalLoadModel):
     SECONDS_IN_DAY = 86_400
 
     def __init__(self, region_name : str, pattern : dict, load_configs : dict,
-                 simulation_step : pd.Timedelta, reqs_processing_infos : dict):
+                 simulation_step : pd.Timedelta, simulation_start : pd.Timestamp, reqs_processing_infos : dict):
 
         super().__init__(region_name, simulation_step, reqs_processing_infos)
 

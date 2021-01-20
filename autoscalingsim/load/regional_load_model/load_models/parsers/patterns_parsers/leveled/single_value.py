@@ -1,10 +1,10 @@
 import pandas as pd
 
-from autoscalingsim.load.regional_load_model.load_models.parsers.patterns_parsers.constant_load_parser import ConstantLoadPatternParser
+from autoscalingsim.load.regional_load_model.load_models.parsers.patterns_parsers.leveled_load_parser import LeveledLoadPatternParser
 from autoscalingsim.utils.error_check import ErrorChecker
 
-@ConstantLoadPatternParser.register('single_value')
-class SingleValueConstantLoadPatternParser(ConstantLoadPatternParser):
+@LeveledLoadPatternParser.register('single_value')
+class SingleValueConstantLoadPatternParser(LeveledLoadPatternParser):
 
     @classmethod
     def parse(cls, pattern : dict, simulation_step : pd.Timedelta):

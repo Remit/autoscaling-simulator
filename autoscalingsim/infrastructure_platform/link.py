@@ -1,3 +1,4 @@
+import collections
 import pandas as pd
 
 from .node_information.node import NodeInfo
@@ -48,25 +49,25 @@ class NodeGroupLink:
         self.latency = latency
         self.single_link_network_bandwidth = single_link_network_bandwidth
         self.bandwidth = bandwidth
-        self.requests_in_transfer = list() if requests_in_transfer is None else requests_in_transfer
+        self.requests_in_transfer = collections.defaultdict(list) if requests_in_transfer is None else requests_in_transfer
         self.used_bandwidth = used_bandwidth
 
-    def __add__(self, other : 'NodeGroupLink'):
+    #def __add__(self, other : 'NodeGroupLink'):
 
-        return self.__class__(self.latency, self.single_link_network_bandwidth, self.bandwidth + other.bandwidth,
-                              self.requests_in_transfer + other.requests_in_transfer, self.used_bandwidth + other.used_bandwidth)
+    #    return self.__class__(self.latency, self.single_link_network_bandwidth, self.bandwidth + other.bandwidth,
+    #                          self.requests_in_transfer + other.requests_in_transfer, self.used_bandwidth + other.used_bandwidth)
 
-    def __sub__(self, other : 'NodeGroupLink'):
+    #def __sub__(self, other : 'NodeGroupLink'):
 
-        return self.__class__(self.latency, self.single_link_network_bandwidth, self.bandwidth - other.bandwidth,
-                              [ req for req in self.requests_in_transfer if not req in other.requests_in_transfer], self.used_bandwidth - other.used_bandwidth)
+    #    return self.__class__(self.latency, self.single_link_network_bandwidth, self.bandwidth - other.bandwidth,
+    #                          [ req for req in self.requests_in_transfer if not req in other.requests_in_transfer], self.used_bandwidth - other.used_bandwidth)
 
-    def step(self):
+    def step(self, service_name_to_extract_requests_for : str):
 
         """ Processing requests to bring them from the link into the buffer """
 
         requests_for_buffer = []
-        for req in self.requests_in_transfer:
+        for req in self.requests_in_transfer.get(service_name_to_extract_requests_for, list()):
             req.cumulative_time += req.simulation_step
             req.waiting_on_link_left -= req.simulation_step
             req.network_time += req.simulation_step
@@ -74,21 +75,9 @@ class NodeGroupLink:
             if req.waiting_on_link_left <= pd.Timedelta(0):
                 requests_for_buffer.append(req)
                 self.used_bandwidth -= self._req_occupied(req)
-                self.requests_in_transfer.remove(req)
+                self.requests_in_transfer[service_name_to_extract_requests_for].remove(req)
 
         return requests_for_buffer
-
-    def transfer_requests_to(self, target : 'NodeGroupLink'):
-
-        for req in self.requests_in_transfer:
-            if not target.can_accept_request(req):
-                break
-
-            target.put(req)
-
-        for req in target.requests_in_transfer:
-            if req in self.requests_in_transfer:
-                self.requests_in_transfer.remove(req)
 
     def can_accept_request(self, req : Request):
 
@@ -102,7 +91,7 @@ class NodeGroupLink:
 
             self.used_bandwidth += req_size
             req.waiting_on_link_left = self.latency
-            self.requests_in_transfer.append(req)
+            self.requests_in_transfer[req.processing_service].append(req)
 
     def update_bandwidth(self, new_nodes_count : int):
 

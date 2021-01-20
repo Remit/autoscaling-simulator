@@ -177,6 +177,11 @@ class GroupOfServices:
         return list(self.services_groups.keys())
 
     @property
+    def running_services(self) -> list:
+
+        return [ service_name for service_name, service_instances_group in self.services_groups.items() if not service_instances_group.is_empty ]
+
+    @property
     def services_requirements(self) -> dict:
 
         return { service_name : group.resource_requirements for service_name, group in self.services_groups.items() }
@@ -184,7 +189,7 @@ class GroupOfServices:
     @property
     def resource_requirements_sample(self) -> ResourceRequirementsSample:
 
-        return sum([ group.resource_requirements.sample * group.count_value for group in self.services_groups.values() ], ResourceRequirementsSample())
+        return sum([ group.resource_requirements.sample for group in self.services_groups.values() for i in range(group.count_value) ], ResourceRequirementsSample())
 
     @property
     def is_empty(self) -> bool:

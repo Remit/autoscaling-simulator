@@ -111,6 +111,7 @@ class RequestsProcessor:
 
         result = 0
         for req_type, req_cnt in self._stat.get(service_name, {None: 0}).items():
+
             if not req_type is None:
                 req_vCPU_usage = self._res_requirements_of_requests.get(service_name, dict()).get(req_type, ResourceRequirementsSample()).vCPU.value
                 result += req_cnt * req_vCPU_usage

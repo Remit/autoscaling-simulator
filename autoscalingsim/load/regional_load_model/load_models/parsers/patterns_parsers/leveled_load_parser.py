@@ -1,6 +1,6 @@
 from .pattern_parser import LoadPatternParser
 
-class ConstantLoadPatternParser(LoadPatternParser):
+class LeveledLoadPatternParser(LoadPatternParser):
 
     _Registry = {}
 
@@ -21,4 +21,4 @@ class ConstantLoadPatternParser(LoadPatternParser):
 
         return cls._Registry[name]
 
-from .constant import *
+from .leveled import *

@@ -72,10 +72,8 @@ class NodeGroupSet:
 
         if node_group_delta.is_scale_up:
             if node_group_delta.node_group.id in groups_to_change:
-                print(f'_modify_node_groups_state ADDITION for {node_group_delta.node_group.id}: {node_group_delta.node_group.nodes_count}')
                 groups_to_change[node_group_delta.node_group.id] += node_group_delta.node_group
             else:
-                print(f'_modify_node_groups_state SUBSTITUTION for {node_group_delta.node_group.id}: {node_group_delta.node_group.nodes_count}')
                 groups_to_change[node_group_delta.node_group.id] = node_group_delta.node_group
 
             groups_to_change[node_group_delta.node_group.id].register_self()
