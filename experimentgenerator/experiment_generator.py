@@ -40,21 +40,21 @@ class ExperimentGenerator:
 
     _Registry = dict()
 
-    vm_booting_durations_from_studies = { 'aws': {'value': 40, 'unit': 's' },
-                                          'google': {'value': 15, 'unit': 's'},
-                                          'azure': {'value': 150, 'unit': 's'}}
+    vm_booting_durations_from_studies = { 'aws': {'mean': 40, 'unit': 's' },
+                                          'google': {'mean': 15, 'unit': 's'},
+                                          'azure': {'mean': 150, 'unit': 's'}}
 
-    vm_termination_durations_from_studies = { 'aws': {'value': 120, 'unit': 's' },
-                                              'google': {'value': 30, 'unit': 's'},
-                                              'azure': {'value': 150, 'unit': 's'}}
+    vm_termination_durations_from_studies = { 'aws': {'mean': 120, 'unit': 's' },
+                                              'google': {'mean': 30, 'unit': 's'},
+                                              'azure': {'mean': 150, 'unit': 's'}}
 
-    instances_on_platforms_booting_durations = { 'aws': {'value': 250, 'unit': 'ms' },
-                                                 'google': {'value': 110, 'unit': 'ms'},
-                                                 'azure': {'value': 3640, 'unit': 'ms'}}
+    instances_on_platforms_booting_durations = { 'aws': {'mean': 250, 'unit': 'ms' },
+                                                 'google': {'mean': 110, 'unit': 'ms'},
+                                                 'azure': {'mean': 3640, 'unit': 'ms'}}
 
-    instances_on_platforms_termination_durations = { 'aws': {'value': 10, 'unit': 'ms' },
-                                                     'google': {'value': 10, 'unit': 'ms'},
-                                                     'azure': {'value': 10, 'unit': 'ms'}}
+    instances_on_platforms_termination_durations = { 'aws': {'mean': 10, 'unit': 'ms' },
+                                                     'google': {'mean': 10, 'unit': 'ms'},
+                                                     'azure': {'mean': 10, 'unit': 'ms'}}
 
     def __init__(self, generated_configuration_storage_path : str):
 
@@ -287,6 +287,13 @@ class ExperimentGenerator:
                     vm_termination_durations = ErrorChecker.key_check_and_load('termination_durations',
                                                                                experiment_generation_recipe['scaling_model_recipe']['platform'],
                                                                                default = self.__class__.vm_termination_durations_from_studies)
+
+                    std_to_mean_ratio = ErrorChecker.key_check_and_load('std_to_mean_ratio', experiment_generation_recipe['scaling_model_recipe']['platform'], default = 0.0)
+                    for provider_conf in vm_booting_durations.values():
+                        provider_conf['std'] = std_to_mean_ratio * provider_conf['mean']
+                    for provider_conf in vm_termination_durations.values():
+                        provider_conf['std'] = std_to_mean_ratio * provider_conf['mean']
+
                 if 'application' in experiment_generation_recipe['scaling_model_recipe']:
 
                     instances_on_platforms_booting_durations = ErrorChecker.key_check_and_load('booting_durations',
@@ -296,6 +303,12 @@ class ExperimentGenerator:
                     instances_on_platforms_termination_durations = ErrorChecker.key_check_and_load('termination_durations',
                                                                                                    experiment_generation_recipe['scaling_model_recipe']['application'],
                                                                                                    default = self.__class__.instances_on_platforms_termination_durations)
+
+                    std_to_mean_ratio = ErrorChecker.key_check_and_load('std_to_mean_ratio', experiment_generation_recipe['scaling_model_recipe']['application'], default = 0.0)
+                    for provider_conf in instances_on_platforms_booting_durations.values():
+                        provider_conf['std'] = std_to_mean_ratio * provider_conf['mean']
+                    for provider_conf in instances_on_platforms_termination_durations.values():
+                        provider_conf['std'] = std_to_mean_ratio * provider_conf['mean']
 
             scaling_model_config = { 'application': {}, 'platform': []}
             for provider, provider_config in providers_configs.items():
