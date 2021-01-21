@@ -140,6 +140,7 @@ class ExperimentGenerator:
                 app_config['services'].append(service_conf)
 
             # Requests types
+            std_to_mean_ratio = experiment_generation_recipe['requests_recipe'].get('std_to_mean_ratio', 0.0)
             requests_processing_durations = experiment_generation_recipe['requests_recipe']['duration']
             duration_percentiles_intervals = [ (beg, end) for beg, end in zip(requests_processing_durations['percentiles']['starts'],
                                                                               requests_processing_durations['percentiles']['ends']) ]
@@ -175,12 +176,13 @@ class ExperimentGenerator:
                 durations = list()
                 for service_id in range(services_count):
 
-                    # TODO: make adjustable distribution of time attribuution to up/downstream
                     # TODO: attempt to generalize beyond azure dataset -> azure dataset should only enrich what is provided in
                     # the original configuration
-                    upstream_processing_time = int(round(random.uniform(0, 0.9 * (processing_duration_by_request / services_count)), -1))
+                    sampled_upstream_processing_time_mean = int(round(random.uniform(0, 0.9 * (processing_duration_by_request / services_count)), -1))
+                    upstream_processing_time = { 'mean': sampled_upstream_processing_time_mean, 'std': std_to_mean_ratio * sampled_upstream_processing_time_mean }
                     durations.append(upstream_processing_time)
-                    downstream_processing_time = int(round(random.uniform(0, 0.1 * (processing_duration_by_request / services_count)), -1))
+                    sampled_downstream_processing_time_mean = int(round(random.uniform(0, 0.9 * (processing_duration_by_request / services_count)), -1))
+                    downstream_processing_time = { 'mean': sampled_downstream_processing_time_mean, 'std': std_to_mean_ratio * sampled_downstream_processing_time_mean }
                     durations.append(downstream_processing_time)
 
                     processing_times['values'].append({ 'service': self._service_name(service_id),

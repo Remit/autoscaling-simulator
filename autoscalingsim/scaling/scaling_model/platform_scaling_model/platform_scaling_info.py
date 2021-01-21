@@ -34,7 +34,7 @@ class NodeScalingInfo:
 
     def _sample_duration(self, distribution_parameters : dict):
 
-        duration_value = np.random.normal(distribution_parameters['mean'], distribution_parameters['std'])
+        duration_value = max(np.random.normal(distribution_parameters['mean'], distribution_parameters['std']), 0)
         return pd.Timedelta(duration_value, unit = distribution_parameters['unit'])
 
 class PlatformScalingInfo:

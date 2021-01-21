@@ -5,16 +5,17 @@
       "app_name": "test",
     	"utilization_metrics_conf": {
     		"averaging_interval": {
-    			"value": 100,
+    			"value": 50,
     			"unit": "ms"
     		},
     		"sampling_interval": {
-    			"value": 200,
+    			"value": 50,
     			"unit": "ms"
     		}
     	},
       "structure_conf": { "parameter_set_name": "tree_with_multiple_centers_c" },
       "services" : {
+        "mean_to_std_ratio": 0.3,
         "buffers_config": { "discipline": "FIFO" },
         "system_requirements": {
           "disk": {
@@ -32,6 +33,7 @@
     },
     "requests_recipe": {
       "request_types_count": 1,
+      "std_to_mean_ratio": 0.3,
       "duration": { },
       "system_requirements": {
         "disk": { "mean": 0, "std": 0, "unit": "B" }

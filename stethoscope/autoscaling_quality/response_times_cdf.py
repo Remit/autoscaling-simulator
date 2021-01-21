@@ -87,7 +87,7 @@ class ResponseTimesCDF:
             ax.text(0, percentile + 0.001, f"{(int(percentile * 100))}th percentile", fontdict = font)
 
         plt.xlabel('Response time, ms')
-        plt.legend(loc = 'lower center', bbox_to_anchor = (0.5, -0.45))
+        plt.legend(loc = 'lower center', bbox_to_anchor = (0.5, -0.3))
 
         if not figures_dir is None:
             figure_path = os.path.join(figures_dir, plotting_constants.filename_format.format(region_name, cls.FILENAME))

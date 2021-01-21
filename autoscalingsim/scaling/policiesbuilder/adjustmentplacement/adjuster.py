@@ -46,21 +46,11 @@ class Adjuster(ABC):
 
         ts_of_unmet_change, unmet_change = timeline_of_unmet_changes.next()
 
-        # TODO: remove debug stuff below
-        #unmet_change = {'eu': {'service-75c4f5fa-4da4-11eb-a82c-d8cb8af1e959': {'count': -12.0}, 'service-75c4f5fa-4da4-11eb-a82c-d8cb8af1e959': {'count': -8.0}}}
-        #unmet_change = {'eu': {'service-75c4f5fa-4da4-11eb-a82c-d8cb8af1e959': {'count': -8.0}}}
-        #unmet_change = {'eu': {'service-75c4f5fa-4da4-11eb-a82c-d8cb8af1e959': {'count': 100.0}}}
-
-
         in_work_state = current_state
 
         while not unmet_change is None and not ts_of_unmet_change is None:
 
-            #unmet_change = {'eu': {'service-75c4f5fa-4da4-11eb-a82c-d8cb8af1e959': {'count': 0}}}
-
-            print(f'>>> UNMET CHANGE BEFORE: {unmet_change}')
             unmet_change = self._attempt_to_use_existing_nodes_and_scale_down_if_needed(in_work_state, ts_of_unmet_change, unmet_change, timeline_of_deltas)
-            print(f'>>> UNMET CHANGE AFTER: {unmet_change}')
 
             if len(unmet_change) > 0:
 

@@ -65,5 +65,5 @@ class ServiceScalingInfo:
 
     def _sample_duration(self, parameters_storage : dict, provider : str):
 
-        duration_value = np.random.normal(parameters_storage[provider]['mean'], parameters_storage[provider]['std'])
+        duration_value = max(np.random.normal(parameters_storage[provider]['mean'], parameters_storage[provider]['std']), 0)
         return pd.Timedelta(duration_value, unit = parameters_storage[provider]['unit'])
