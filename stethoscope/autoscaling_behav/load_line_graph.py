@@ -14,11 +14,6 @@ class LoadLineGraph:
              resolution : pd.Timedelta = pd.Timedelta(1000, unit = 'ms'),
              figures_dir = None):
 
-        """
-        Line graph (x axis - time) of the desired/current node count,
-        separately for each node type
-        """
-
         for region_name, load_ts_per_request_type in load_regionalized.items():
             plt.figure()
             for req_type, load_ts in load_ts_per_request_type.items():

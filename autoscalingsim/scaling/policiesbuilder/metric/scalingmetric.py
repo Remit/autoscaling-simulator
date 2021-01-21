@@ -110,7 +110,7 @@ class ScalingMetric:
             aggregated_metric_vals = self.values_aggregator.aggregate(forecasted_metric_vals)
             converted_metric_vals = self.metric_category.convert_df(aggregated_metric_vals)
 
-            return (converted_metric_vals, self.metric_category(metric_vals.value[-1]))
+            return (converted_metric_vals, self.metric_category.to_scaling_representation(metric_vals.value[-1])) 
 
         else:
             return (pd.DataFrame(), None)

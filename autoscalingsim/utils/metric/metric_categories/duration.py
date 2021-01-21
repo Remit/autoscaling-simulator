@@ -13,6 +13,22 @@ class Duration(MetricCategory):
 
         return cls(val, unit = unit)
 
+    @classmethod
+    def to_target_value(cls, config : dict):
+
+        return cls.to_metric(config)
+
+    @classmethod
+    def to_scaling_representation(cls, val : float):
+
+        return cls(val)
+
+    @classmethod
+    def convert_df(cls, df : pd.DataFrame):
+
+        df.value = [ cls(val) for val in df.value ]
+        return df
+
     def __init__(self, value : int = 0, unit : str = 'ms'):
 
         self._value = pd.Timedelta(value, unit = unit).microseconds / 1000

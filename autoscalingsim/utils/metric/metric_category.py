@@ -11,17 +11,29 @@ class MetricCategory(ABC):
 
         pass
 
+    @classmethod
     @abstractmethod
-    def __init__(self):
+    def to_target_value(cls, config : dict):
 
         pass
 
     @classmethod
+    @abstractmethod
     def convert_df(cls, df : pd.DataFrame):
 
-        df.value = [ cls(val) for val in df.value ]
-        return df
+        pass
 
+    @classmethod
+    @abstractmethod
+    def to_scaling_representation(cls, val : float):
+
+        pass
+
+    @abstractmethod
+    def __init__(self):
+
+        pass
+        
     @property
     def value(self):
 

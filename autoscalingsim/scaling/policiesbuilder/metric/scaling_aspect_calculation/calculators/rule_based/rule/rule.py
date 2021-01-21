@@ -13,7 +13,7 @@ class Rule(ABC):
         target_conf = ErrorChecker.key_check_and_load('target', config)
         self.metric_name = ErrorChecker.key_check_and_load('metric_name', target_conf)
         metric_category = MetricsRegistry.get(self.metric_name)
-        self.target_value = metric_category.to_metric(target_conf)
+        self.target_value = metric_category.to_target_value(target_conf)
 
     @abstractmethod
     def compute_desired(self, cur_aspect_val, metric_vals):

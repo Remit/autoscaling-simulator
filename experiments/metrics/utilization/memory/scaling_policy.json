@@ -23,8 +23,7 @@
                       "name": "ratio",
                       "target": {
                         "metric_name": "memory",
-                        "value": 1,
-                        "unit": "GB"
+                        "value": 0.5
                       },
                       "adjustment_heuristic_conf": {
                         "name": "rescale",

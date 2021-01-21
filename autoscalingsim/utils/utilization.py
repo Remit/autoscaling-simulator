@@ -34,9 +34,6 @@ class UtilizationMetric:
         using the moving average.
         """
 
-        if not isinstance(cur_ts, pd.Timestamp):
-            raise TypeError('Timestamp of unexpected type')
-
         util = self.tmp_state.update_and_get(cur_ts, cur_val, averaging_interval)
         self.utilization['datetime'].append(cur_ts)
         self.utilization['value'].append(util)

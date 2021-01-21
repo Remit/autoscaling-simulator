@@ -263,20 +263,14 @@ class NodeGroup(NodeGroupBase):
     def __add__(self, other : 'NodeGroup'):
 
         result = deepcopy(self)
-
         result.nodes_count += other.nodes_count
-        #result.uplink += other.uplink
-        #result.downlink += other.downlink
 
         return result
 
     def __sub__(self, other):
 
         result = deepcopy(self)
-
         result.nodes_count = max(result.nodes_count - other.nodes_count, 0)
-        #result.uplink -= other.uplink
-        #result.downlink -= other.downlink
 
         return result
 

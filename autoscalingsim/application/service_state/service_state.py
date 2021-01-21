@@ -1,4 +1,5 @@
 import operator
+import collections
 import pandas as pd
 
 from copy import deepcopy
@@ -80,6 +81,7 @@ class ServiceState:
                  node_groups_registry : 'NodeGroupsRegistry'):
 
         self.service_name = service_name
+        self.cur_timestamp = init_timestamp
         self.region_name = region_name
         self.averaging_interval = averaging_interval
         self.sampling_interval = sampling_interval
@@ -114,6 +116,8 @@ class ServiceState:
             'waiting_requests_count': ServiceMetric(buffer_utilization.waiting_requests_count_metric_name, [self.upstream_buf, self.downstream_buf], SumAggregator())
         }
 
+        self.node_groups_timelines = collections.defaultdict(lambda: {'start': None, 'end': None})
+
     def add_request(self, req : Request):
 
         self.upstream_buf.put(req) if req.upstream else self.downstream_buf.put(req)
@@ -133,6 +137,7 @@ class ServiceState:
         service utilization of the system resources is updated.
         """
 
+        self.cur_timestamp = cur_timestamp
         time_budget = simulation_step
 
         if self.node_groups_registry.is_deployed(self.service_name, self.region_name):
@@ -194,12 +199,16 @@ class ServiceState:
 
     def force_remove_group(self, node_group : NodeGroup):
 
+        self.node_groups_timelines[node_group.id]['end'] = self.cur_timestamp
+
         self._check_out_system_resources_utilization_for_node_group(node_group)
 
         self.upstream_buf.detach_link(node_group.id)
         self.downstream_buf.detach_link(node_group.id)
 
     def update_placement(self, node_group : NodeGroup):
+
+        self.node_groups_timelines[node_group.id]['start'] = self.cur_timestamp
 
         self.upstream_buf.add_link(node_group.id, node_group.uplink)
         self.downstream_buf.add_link(node_group.id, node_group.downlink)
@@ -229,10 +238,10 @@ class ServiceState:
                 cur_util = node_group.utilization(self.service_name, metric_name, interval)
                 service_metric_value = service_metric_value.add(cur_util, fill_value = 0)
 
-            service_metric_value /= sum([node_group.nodes_count for node_group in self.node_groups_registry.node_groups_for_service(self.service_name, self.region_name)]) # normalization
+            service_metric_value = service_metric_value.resample(self.averaging_interval).mean()
+            service_metric_value /= self._derive_normalization_time_series(service_metric_value)
 
         elif metric_name in self.service_metrics_and_sources:
-
             service_metric_value = self.service_metrics_and_sources[metric_name].get_metric_value(interval)
 
         return service_metric_value
@@ -246,6 +255,10 @@ class ServiceState:
 
         for node_group in self.node_groups_registry.node_groups_for_service(self.service_name, self.region_name):
             self._check_out_system_resources_utilization_for_node_group(node_group)
+
+        for system_resource_name in self.service_utilizations.keys():
+            self.service_utilizations[system_resource_name] = self.service_utilizations[system_resource_name].astype(float).resample(self.averaging_interval).mean()
+            self.service_utilizations[system_resource_name] /= self._derive_normalization_time_series(self.service_utilizations[system_resource_name])
 
         return self.service_utilizations
 
@@ -266,6 +279,31 @@ class ServiceState:
 
             if not node_group_util is None:
                 self.service_utilizations[system_resource_name] = self.service_utilizations[system_resource_name].add(node_group_util, fill_value = 0)
+
+    def _derive_normalization_time_series(self, metric_vals : pd.DataFrame):
+
+        if not metric_vals.empty:
+
+            metric_start = metric_vals.index.min()
+            metric_end = metric_vals.index.max()
+
+            node_groups_count = pd.DataFrame({'value': pd.Series([], dtype = 'float')}, index = pd.to_datetime([]))
+            for node_group_existence_intervals in self.node_groups_timelines.values():
+                ng_start = max(node_group_existence_intervals['start'], metric_start) if node_group_existence_intervals['start'] > metric_start else None
+                ng_end = node_group_existence_intervals['end'] if not node_group_existence_intervals['end'] is None else metric_end
+                if not ng_start is None:
+                    index_for_ng_counts = pd.date_range(ng_start, ng_end, freq = metric_vals.index.freq)
+                    node_group_count_ts = pd.DataFrame({'value': [1.0] * len(index_for_ng_counts)}, index = index_for_ng_counts)
+                    node_groups_count = node_groups_count.add(node_group_count_ts, fill_value = 0)
+
+            node_groups_normalization_ts = pd.DataFrame({'value': [1.0] * metric_vals.shape[0]},
+                                                        index = pd.date_range(metric_start, periods = metric_vals.shape[0], freq = metric_vals.index.freq))
+
+            return pd.DataFrame({'value': node_groups_normalization_ts.merge(node_groups_count, how = 'outer', left_index = True, right_index = True).max(axis = 1)})
+
+        else:
+
+            return 1.0
 
     def _count_service_instances(self):
 
