@@ -199,7 +199,8 @@ class ServiceState:
 
     def force_remove_group(self, node_group : NodeGroup):
 
-        self.node_groups_timelines[node_group.id]['end'] = self.cur_timestamp
+        if self.node_groups_timelines[node_group.id]['end'] is None:
+            self.node_groups_timelines[node_group.id]['end'] = self.cur_timestamp
 
         self._check_out_system_resources_utilization_for_node_group(node_group)
 
@@ -208,7 +209,8 @@ class ServiceState:
 
     def update_placement(self, node_group : NodeGroup):
 
-        self.node_groups_timelines[node_group.id]['start'] = self.cur_timestamp
+        if not node_group.id in self.node_groups_timelines:
+            self.node_groups_timelines[node_group.id]['start'] = self.cur_timestamp
 
         self.upstream_buf.add_link(node_group.id, node_group.uplink)
         self.downstream_buf.add_link(node_group.id, node_group.downlink)
@@ -281,7 +283,7 @@ class ServiceState:
                 self.service_utilizations[system_resource_name] = self.service_utilizations[system_resource_name].add(node_group_util, fill_value = 0)
 
     def _derive_normalization_time_series(self, metric_vals : pd.DataFrame):
-
+        
         if not metric_vals.empty:
 
             metric_start = metric_vals.index.min()
@@ -289,9 +291,12 @@ class ServiceState:
 
             node_groups_count = pd.DataFrame({'value': pd.Series([], dtype = 'float')}, index = pd.to_datetime([]))
             for node_group_existence_intervals in self.node_groups_timelines.values():
-                ng_start = max(node_group_existence_intervals['start'], metric_start) if node_group_existence_intervals['start'] > metric_start else None
-                ng_end = node_group_existence_intervals['end'] if not node_group_existence_intervals['end'] is None else metric_end
-                if not ng_start is None:
+                ng_start = max(node_group_existence_intervals['start'], metric_start) if node_group_existence_intervals['start'] <= metric_end else None
+                if node_group_existence_intervals['end'] is None:
+                    ng_end = metric_end
+                else:
+                    ng_end = min(node_group_existence_intervals['end'], metric_end) if node_group_existence_intervals['end'] >= metric_start else None
+                if not ng_start is None and not ng_end is None:
                     index_for_ng_counts = pd.date_range(ng_start, ng_end, freq = metric_vals.index.freq)
                     node_group_count_ts = pd.DataFrame({'value': [1.0] * len(index_for_ng_counts)}, index = index_for_ng_counts)
                     node_groups_count = node_groups_count.add(node_group_count_ts, fill_value = 0)

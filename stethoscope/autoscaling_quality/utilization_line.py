@@ -20,6 +20,8 @@ class UtilizationLineGraph:
     @classmethod
     def plot(cls : type,
              utilization_per_service : dict,
+             simulation_start : pd.Timestamp,
+             simulation_end : pd.Timestamp,
              resolution : pd.Timedelta = pd.Timedelta(1000, unit = 'ms'),
              figures_dir = None):
 
@@ -51,16 +53,19 @@ class UtilizationLineGraph:
                     j = 0
                     for resource_name, utilization_ts in utilization_per_resource.items():
 
+                        index_full = pd.date_range(simulation_start, simulation_end, freq = resolution)
+                        utilization_ts_full = pd.DataFrame({'value': [0.0] * len(index_full)}, index = index_full)
                         utilization_ts.index = pd.to_datetime(utilization_ts.index)
                         utilization_ts.value = pd.to_numeric(utilization_ts.value)
                         resampled_utilization = utilization_ts.resample(resolution).mean() * 100
-                        max_y_value = max(100, _roundup(resampled_utilization.value.max()))
+                        utilization_ts_full = utilization_ts_full.add(resampled_utilization, fill_value = 0)
+                        max_y_value = max(100, _roundup(utilization_ts_full.value.max()))
 
                         major_ticks_interval_raw = math.ceil(max_y_value / (plotting_constants.SQUARE_PLOT_SIDE_INCH * plotting_constants.MAJOR_TICKS_PER_INCH))
                         major_ticks_interval = round(major_ticks_interval_raw, -max(len(str(major_ticks_interval_raw)) - 1, 0))
                         minor_ticks_interval = major_ticks_interval // plotting_constants.MINOR_TICKS_PER_MAJOR_TICK_INTERVAL
 
-                        axs[j][i].plot(resampled_utilization, label = resource_name)
+                        axs[j][i].plot(utilization_ts_full, label = resource_name)
 
                         unit = resolution // pd.Timedelta(1000, unit = 'ms')
                         axs[j][i].set_ylabel(f'{resource_name} util.,\n% per {unit} s')

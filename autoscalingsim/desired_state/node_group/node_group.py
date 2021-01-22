@@ -244,7 +244,7 @@ class NodeGroup(NodeGroupBase):
                                                    system_resources_usage = { 'network_bandwidth': self.downlink.used_bandwidth})
 
         self._utilization.update_with_system_resources_usage(service_name, timestamp,
-                                                             system_resources_usage + uplink_utilization + downlink_utilization,
+                                                             (system_resources_usage + uplink_utilization + downlink_utilization).cap(),
                                                              averaging_interval)
 
     def utilization(self, service_name : str, resource_name : str, interval : pd.Timedelta):

@@ -68,7 +68,7 @@ class AnalysisFramework:
 
         FulfilledDroppedBarchart.plot(response_times_regionalized, load_regionalized, figures_dir = figures_dir_in_use)
 
-        UtilizationLineGraph.plot(utilization_per_service, resolution = pd.Timedelta(1, unit = 's'), figures_dir = figures_dir_in_use)
+        UtilizationLineGraph.plot(utilization_per_service, simulation.simulation_start, simulation.simulation_end, resolution = pd.Timedelta(1, unit = 's'), figures_dir = figures_dir_in_use)
 
         CostLineGraph.plot(infrastructure_cost_per_provider, resolution = pd.Timedelta(1, unit = 's'), figures_dir = figures_dir_in_use)
 

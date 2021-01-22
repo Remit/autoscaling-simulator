@@ -11,7 +11,7 @@ class FulfilledDroppedBarchart:
     FILENAME = 'bars_fulfilled_failed.png'
 
     @classmethod
-    def comparative_plot(cls: type, simulations_by_name : dict, bar_width : float = 0.15, figures_dir : str = None, names_converter = None):
+    def comparative_plot(cls: type, simulations_by_name : dict, bar_width : float = 0.25, figures_dir : str = None, names_converter = None):
 
         req_types = list()
         response_times_regionalized_aggregated = collections.defaultdict(lambda: collections.defaultdict(lambda: collections.defaultdict(int)))
@@ -67,7 +67,7 @@ class FulfilledDroppedBarchart:
             axs[i].set_yticks(y)
             axs[i].set_yticklabels(labels)
             axs[i].set_title(f'Request {req_type}')
-            axs[i].legend(loc = 'center right')
+            axs[i].legend(loc = 'center left', bbox_to_anchor = (1.05, 0.5))
             axs[i].set_xlabel('Requests in the category, %')
 
             i += 1

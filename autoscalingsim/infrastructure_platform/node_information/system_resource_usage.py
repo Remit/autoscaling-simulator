@@ -110,7 +110,7 @@ class SystemResourceUsage:
         """ Checks whether the system resources are exhausted """
 
         for res_name, res_usage in self.system_resources_usage.items():
-            if res_usage >= self.instance_count * self.instance_max_usage[res_name]: 
+            if res_usage >= self.instance_count * self.instance_max_usage[res_name]:
                 return True
 
         return False
@@ -129,6 +129,13 @@ class SystemResourceUsage:
     def to_dict(self):
 
         return self.system_resources_usage.copy()
+
+    def cap(self):
+
+        system_resources_usage = { res_name : min(res_usage, self.instance_count * self.instance_max_usage[res_name]) for res_name, res_usage in self.system_resources_usage.items() }
+
+        return self.__class__(self.node_info, self.instance_count, system_resources_usage)
+
 
     def normalized_usage(self, res_name : str):
 

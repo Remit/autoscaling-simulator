@@ -11,7 +11,7 @@ class DistributionRequestsTimesBarchart:
     FILENAME = 'bars_req_time_distribution_by_cat.png'
 
     @classmethod
-    def comparative_plot(cls: type, simulations_by_name : dict, bar_width : float = 0.15, figures_dir : str = None, names_converter = None):
+    def comparative_plot(cls: type, simulations_by_name : dict, bar_width : float = 0.25, figures_dir : str = None, names_converter = None):
 
         req_types = list()
         response_times_regionalized_aggregated = collections.defaultdict(lambda: collections.defaultdict(lambda: collections.defaultdict(list)))
@@ -82,7 +82,7 @@ class DistributionRequestsTimesBarchart:
             axs[i].set_yticks(y)
             axs[i].set_yticklabels(labels)
             axs[i].set_title(f'Request {req_type}')
-            axs[i].legend(loc = 'center right')
+            axs[i].legend(loc = 'center left', bbox_to_anchor = (1.05, 0.5))
             axs[i].set_xlabel('Time spent in status, %')
 
             i += 1
@@ -156,7 +156,7 @@ class DistributionRequestsTimesBarchart:
                                             + np.array(aggregated_network_time_per_req_type), label='Waiting')
 
                 ax.set_ylabel('Duration, ms')
-                ax.legend(loc = 'lower center', bbox_to_anchor=(0.5, -0.3), ncol = 3)
+                ax.legend(loc = 'lower center', bbox_to_anchor = (0.5, -0.3), ncol = 3)
 
                 major_ticks_interval_raw = int(ax.get_ylim()[1] / (plotting_constants.SQUARE_PLOT_SIDE_INCH * plotting_constants.MAJOR_TICKS_PER_INCH))
                 major_ticks_interval = round(major_ticks_interval_raw, -max(len(str(major_ticks_interval_raw)) - 2, 0))

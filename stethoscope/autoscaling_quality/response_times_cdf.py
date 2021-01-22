@@ -36,7 +36,7 @@ class ResponseTimesCDF:
                 simulation_name_as_label = names_converter(simulation_name)
                 resp_times_maximums.append(cls._internal_plot(ax, response_times_regionalized_per_sim[region_name], simulation_step, simulation_name_as_label))
 
-            cls._internal_post_processing(ax, region_name, max(resp_times_maximums), figures_dir)
+            cls._internal_post_processing(ax, region_name, max(resp_times_maximums), figures_dir, len(resp_times_maximums))
 
     @classmethod
     def plot(cls : type, response_times_regionalized : dict, simulation_step : pd.Timedelta, figures_dir : str = None):
@@ -78,7 +78,7 @@ class ResponseTimesCDF:
             return 0
 
     @classmethod
-    def _internal_post_processing(cls : type, ax, region_name : str, resp_times_maximum : float, figures_dir : str = None):
+    def _internal_post_processing(cls : type, ax, region_name : str, resp_times_maximum : float, figures_dir : str = None, ncol : int = 1):
 
         percentiles = [0.99, 0.95, 0.90, 0.80, 0.50]
         font = {'color':  'black', 'weight': 'normal', 'size': 8}
@@ -87,7 +87,7 @@ class ResponseTimesCDF:
             ax.text(0, percentile + 0.001, f"{(int(percentile * 100))}th percentile", fontdict = font)
 
         plt.xlabel('Response time, ms')
-        plt.legend(loc = 'lower center', bbox_to_anchor = (0.5, -0.3))
+        plt.legend(loc = 'upper center', ncol = min(ncol, 2), bbox_to_anchor = (0.5, -0.15))
 
         if not figures_dir is None:
             figure_path = os.path.join(figures_dir, plotting_constants.filename_format.format(region_name, cls.FILENAME))
