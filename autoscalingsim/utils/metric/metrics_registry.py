@@ -6,6 +6,7 @@ class MetricsRegistry:
         'buffer_time': Duration,
         'response_time': Duration,
         'network_time': Duration,
+        'waiting_time': Duration,
         'vCPU': Numeric,
         'memory': Size,
         'disk': Size,
