@@ -31,4 +31,4 @@ class Duration(MetricCategory):
 
     def __init__(self, value : int = 0, unit : str = 'ms'):
 
-        self._value = pd.Timedelta(value, unit = unit).microseconds / 1000
+        self._value = pd.Timedelta(value, unit = unit).total_seconds() * 1000

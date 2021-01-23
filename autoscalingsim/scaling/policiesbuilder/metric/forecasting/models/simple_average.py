@@ -26,7 +26,7 @@ class SimpleAverage(ForecastingModel):
 
         self._averaged_value = data[data.index >= data.index.max() - self._averaging_interval].value.mean()
 
-    def predict(self, metric_vals : pd.DataFrame, cur_timestamp : pd.Timestamp, future_adjustment_from_others : pd.DataFrame = None):
+    def _internal_predict(self, metric_vals : pd.DataFrame, cur_timestamp : pd.Timestamp, future_adjustment_from_others : pd.DataFrame = None):
 
         if not future_adjustment_from_others is None:
             metric_vals = metric_vals.append(future_adjustment_from_others)

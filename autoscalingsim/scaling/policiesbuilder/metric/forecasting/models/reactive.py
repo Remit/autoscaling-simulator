@@ -18,7 +18,7 @@ class Reactive(ForecastingModel):
 
         pass
 
-    def predict(self, metric_vals : pd.DataFrame, cur_timestamp : pd.Timestamp, future_adjustment_from_others : pd.DataFrame = None):
+    def _internal_predict(self, metric_vals : pd.DataFrame, cur_timestamp : pd.Timestamp, future_adjustment_from_others : pd.DataFrame = None):
 
         forecast_interval = self._construct_future_interval(cur_timestamp)
 

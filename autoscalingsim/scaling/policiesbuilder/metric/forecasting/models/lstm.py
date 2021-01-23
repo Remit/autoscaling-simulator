@@ -43,12 +43,12 @@ class LSTM(ForecastingModel):
             scaled_data = self._scale(differenced_data)
             self._fit_model(scaled_data)
 
-    def predict(self, metric_vals : pd.DataFrame, cur_timestamp : pd.Timestamp, future_adjustment_from_others : pd.DataFrame = None):
+    def _internal_predict(self, metric_vals : pd.DataFrame, cur_timestamp : pd.Timestamp, future_adjustment_from_others : pd.DataFrame = None):
 
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             forecast_interval = self._construct_future_interval(cur_timestamp)
-            forecast = self._forecast(metric_vals)
+            forecast = self._forecast(metric_vals, forecast_interval)
             forecast_unscaled = [ self._unscale(fc) for fc in forecast ]
             forecast_restored = self._undifference_timeseries(metric_vals, forecast_unscaled)
 
@@ -99,12 +99,12 @@ class LSTM(ForecastingModel):
             self._model_fitted.fit(X, y, epochs = 1, batch_size = 1, verbose=0, shuffle=False)
             self._model_fitted.reset_states()
 
-    def _forecast(self, measurements : pd.DataFrame):
+    def _forecast(self, measurements : pd.DataFrame, forecast_interval : pd.Series):
 
         last = measurements[-self.lags:]['value'].to_numpy().flatten().tolist()
 
         predicted = list()
-        for i in range(self.fhorizon_in_steps):
+        for i in range(len(forecast_interval)):
             X = np.asarray(last).astype('float32')
             X = X.reshape(1, 1, self.lags)
             yhat = self._model_fitted.predict(X, batch_size = 1).flatten()

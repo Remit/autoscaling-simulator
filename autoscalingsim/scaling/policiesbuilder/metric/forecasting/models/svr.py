@@ -70,12 +70,12 @@ class SupportVectorRegression(ForecastingModel):
             lagged_data = self._introduce_explicit_lags(data)
             self._fit_model(lagged_data)
 
-    def predict(self, metric_vals : pd.DataFrame, cur_timestamp : pd.Timestamp, future_adjustment_from_others : pd.DataFrame = None):
+    def _internal_predict(self, metric_vals : pd.DataFrame, cur_timestamp : pd.Timestamp, future_adjustment_from_others : pd.DataFrame = None):
 
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             forecast_interval = self._construct_future_interval(cur_timestamp)
-            forecast = self._forecast(metric_vals)
+            forecast = self._forecast(metric_vals, forecast_interval)
 
             return pd.DataFrame({ metric_vals.index.name : forecast_interval, 'value': forecast } ).set_index(metric_vals.index.name)
 
@@ -92,12 +92,12 @@ class SupportVectorRegression(ForecastingModel):
         X, y = train[train.columns[train.columns != 'value']].to_numpy(), train['value'].to_numpy()
         self._model_fitted.fit(X, y)
 
-    def _forecast(self, measurements : pd.DataFrame):
+    def _forecast(self, measurements : pd.DataFrame, forecast_interval : pd.Series):
 
         last = measurements[-self.lags:]['value'].to_numpy().flatten().tolist()
 
         predicted = list()
-        for i in range(self.fhorizon_in_steps):
+        for i in range(len(forecast_interval)):
             X = [np.asarray(last).astype('float32')]
             yhat = self._model_fitted.predict(X).flatten()
             predicted.extend(yhat)

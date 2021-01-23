@@ -41,4 +41,4 @@ class Rate(MetricCategory):
 
     def __init__(self, value : float = 0, time_interval : pd.Timedelta = pd.Timedelta(1, 's')):
 
-        self._value = value / ( time_interval.microseconds / 1_000_000 ) # per second
+        self._value = value / time_interval.total_seconds()

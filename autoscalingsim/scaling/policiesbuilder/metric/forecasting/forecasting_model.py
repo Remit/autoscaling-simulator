@@ -20,9 +20,14 @@ class ForecastingModel(ABC):
         pass
 
     @abstractmethod
-    def predict(self, metric_vals : pd.DataFrame, cur_timestamp : pd.Timestamp, future_adjustment_from_others : pd.DataFrame = None):
+    def _internal_predict(self, metric_vals : pd.DataFrame, cur_timestamp : pd.Timestamp, future_adjustment_from_others : pd.DataFrame = None):
 
         pass
+
+    def predict(self, metric_vals : pd.DataFrame, cur_timestamp : pd.Timestamp, future_adjustment_from_others : pd.DataFrame = None):
+
+        forecasted_vals = self._internal_predict(metric_vals, cur_timestamp, future_adjustment_from_others)
+        return forecasted_vals.shift(-self.fhorizon_in_steps).dropna() if not forecasted_vals is None else None
 
     def fit(self, data : pd.DataFrame):
 
@@ -33,7 +38,7 @@ class ForecastingModel(ABC):
 
         forecasting_interval_start = interval_start + pd.Timedelta(self.forecast_frequency)
 
-        return pd.date_range(forecasting_interval_start, periods = self.fhorizon_in_steps, freq = self.forecast_frequency)
+        return pd.date_range(forecasting_interval_start, periods = 2 * self.fhorizon_in_steps, freq = self.forecast_frequency)
 
     def _resample_data(self, time_series_data : pd.DataFrame, holes_filling_method : str = 'ffill'):
 

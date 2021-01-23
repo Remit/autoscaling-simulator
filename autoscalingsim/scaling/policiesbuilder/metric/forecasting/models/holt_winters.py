@@ -42,7 +42,7 @@ class HoltWinters(ForecastingModel):
                                                                                                 damping_trend = self.damping_trend,
                                                                                                 optimized = optimized)
 
-    def predict(self, metric_vals : pd.DataFrame, cur_timestamp : pd.Timestamp, future_adjustment_from_others : pd.DataFrame = None):
+    def _internal_predict(self, metric_vals : pd.DataFrame, cur_timestamp : pd.Timestamp, future_adjustment_from_others : pd.DataFrame = None):
 
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
