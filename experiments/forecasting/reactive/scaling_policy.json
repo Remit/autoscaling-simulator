@@ -68,7 +68,14 @@
                     "forecaster_conf": {
                           "name": "reactive",
                           "forecast_frequency": "500ms",
-                          "history_data_buffer_size": 200,
+                          "history_data_buffer_size": {
+                            "value": 10,
+                            "unit": "m"
+                          },
+                          "fit_model_when_history_amount_reached": {
+                            "value": 1,
+                            "unit": "s"
+                          },
                           "horizon_in_steps": 5
                       }
                   }

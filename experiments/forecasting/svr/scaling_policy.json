@@ -22,9 +22,9 @@
                     "config": {
                       "name": "ratio",
                       "target": {
-                        "metric_name": "load",
-                        "value": 1,
-                        "resolution": { "value": 1, "unit": "s" }
+                        "metric_name": "response_time",
+                        "value": 100,
+                        "unit": "ms"
                       },
                       "adjustment_heuristic_conf": {
                         "name": "rescale",
@@ -36,21 +36,18 @@
                     "name": "maxStabilizer",
                     "config": {
                       "resolution": {
-                        "value": 400,
-                        "unit": "ms"
+                        "value": 30,
+                        "unit": "s"
                       }
                     }
                   },
                   "metrics": [
                       {
-                        "metric_source_name": "Load",
-                        "metric_name": "load",
+                        "metric_source_name": "response_stats",
+                        "metric_name": "response_time",
                         "submetric_name": "*",
                         "metric_params": {
-                          "sampling_interval": {
-                            "value": 1,
-                            "unit": "s"
-                          }
+                          "duration_unit": "ms"
                         }
                       }
                   ],
@@ -60,18 +57,18 @@
                       "config": { "default_value": 0 }
                     },
                     "values_aggregator_conf": {
-                      "name": "medianAggregator",
+                      "name": "avgAggregator",
                       "config": {
                         "resolution": {
-                          "value": 400,
-                          "unit": "ms"
+                          "value": 1,
+                          "unit": "s"
                         }
                       }
                     },
                     "forecaster_conf": {
                           "name": "svr",
                           "config": {
-                              "lags": 25,
+                              "lags": 50,
                               "kernel": "rbf",
                               "degree": 2,
                               "gamma": 0.9,
@@ -82,8 +79,15 @@
                               "max_iter": -1
                           },
                           "forecast_frequency": "500ms",
-                          "history_data_buffer_size": 100,
-                          "horizon_in_steps": 100
+                          "history_data_buffer_size": {
+                            "value": 10,
+                            "unit": "m"
+                          },
+                          "fit_model_when_history_amount_reached": {
+                            "value": 1,
+                            "unit": "s"
+                          },
+                          "horizon_in_steps": 400
                       }
                   }
               }

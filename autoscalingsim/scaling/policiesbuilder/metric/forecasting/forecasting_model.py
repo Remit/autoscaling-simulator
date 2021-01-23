@@ -31,8 +31,7 @@ class ForecastingModel(ABC):
 
     def fit(self, data : pd.DataFrame):
 
-        self.fitted = True
-        self._internal_fit(data)
+        self.fitted = self._internal_fit(data)
 
     def _construct_future_interval(self, interval_start : pd.Timestamp):
 

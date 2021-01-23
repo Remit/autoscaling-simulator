@@ -25,6 +25,7 @@ class SingularSpectrumAnalysis(ForecastingModel):
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             self._model_fitted.fit(data.value.to_numpy().astype('float64'))
+            return True
 
     def _internal_predict(self, metric_vals : pd.DataFrame, cur_timestamp : pd.Timestamp, future_adjustment_from_others : pd.DataFrame = None):
 

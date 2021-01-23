@@ -16,7 +16,7 @@ class Reactive(ForecastingModel):
 
     def _internal_fit(self, data : pd.DataFrame):
 
-        pass
+        return True
 
     def _internal_predict(self, metric_vals : pd.DataFrame, cur_timestamp : pd.Timestamp, future_adjustment_from_others : pd.DataFrame = None):
 

@@ -25,6 +25,7 @@ class SimpleAverage(ForecastingModel):
     def _internal_fit(self, data : pd.DataFrame):
 
         self._averaged_value = data[data.index >= data.index.max() - self._averaging_interval].value.mean()
+        return True
 
     def _internal_predict(self, metric_vals : pd.DataFrame, cur_timestamp : pd.Timestamp, future_adjustment_from_others : pd.DataFrame = None):
 

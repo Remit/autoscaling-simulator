@@ -42,6 +42,7 @@ class LSTM(ForecastingModel):
             differenced_data = self._difference_timeseries(lagged_data)
             scaled_data = self._scale(differenced_data)
             self._fit_model(scaled_data)
+            return True
 
     def _internal_predict(self, metric_vals : pd.DataFrame, cur_timestamp : pd.Timestamp, future_adjustment_from_others : pd.DataFrame = None):
 

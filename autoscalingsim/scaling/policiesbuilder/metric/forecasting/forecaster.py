@@ -15,8 +15,17 @@ class MetricForecaster:
         self._model = ForecastingModel.get(ErrorChecker.key_check_and_load('name', config))(config, fhorizon_in_steps, forecast_frequency)
         self._fallback_model = ForecastingModel.get(ForecastingModel.FALLBACK_MODEL_NAME)(config, fhorizon_in_steps, forecast_frequency)
 
-        self._history_data_buffer_size = int(ErrorChecker.key_check_and_load('history_data_buffer_size', config))
-        self._history_data_buffer = pd.DataFrame(columns=['datetime', 'value']).set_index('datetime')
+        history_data_buffer_size_raw = ErrorChecker.key_check_and_load('history_data_buffer_size', config)
+        history_data_buffer_size_value = ErrorChecker.key_check_and_load('value', history_data_buffer_size_raw)
+        history_data_buffer_size_unit = ErrorChecker.key_check_and_load('unit', history_data_buffer_size_raw)
+        self._history_data_buffer_size = pd.Timedelta(history_data_buffer_size_value, unit = history_data_buffer_size_unit)
+
+        fit_model_when_history_amount_reached_raw = ErrorChecker.key_check_and_load('fit_model_when_history_amount_reached', config)
+        fit_model_when_history_amount_reached_value = ErrorChecker.key_check_and_load('value', fit_model_when_history_amount_reached_raw)
+        fit_model_when_history_amount_reached_unit = ErrorChecker.key_check_and_load('unit', fit_model_when_history_amount_reached_raw)
+        self._fit_model_when_history_amount_reached = pd.Timedelta(fit_model_when_history_amount_reached_value, unit = fit_model_when_history_amount_reached_unit)
+
+        self._history_data_buffer = pd.DataFrame(columns = ['datetime', 'value']).set_index('datetime')
 
     def forecast(self, metric_vals : pd.DataFrame, cur_timestamp : pd.Timestamp, lagged_correlation_per_service : dict, related_service_metric_vals : dict):
 
@@ -43,6 +52,6 @@ class MetricForecaster:
         """
 
         self._history_data_buffer = self._history_data_buffer.append(metric_vals)
-        self._history_data_buffer = self._history_data_buffer.iloc[-self._history_data_buffer_size:,]
-        if self._history_data_buffer.shape[0] >= self._history_data_buffer_size:
+        self._history_data_buffer = self._history_data_buffer[ self._history_data_buffer.index > (self._history_data_buffer.index.max() - self._history_data_buffer_size) ]
+        if self._history_data_buffer.index.max() - self._history_data_buffer.index.min() >= self._fit_model_when_history_amount_reached:
             self._model.fit(self._history_data_buffer)

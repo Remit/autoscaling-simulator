@@ -90,7 +90,11 @@ class SupportVectorRegression(ForecastingModel):
     def _fit_model(self, train : pd.DataFrame):
 
         X, y = train[train.columns[train.columns != 'value']].to_numpy(), train['value'].to_numpy()
-        self._model_fitted.fit(X, y)
+        if X.shape[0] > 0:
+            self._model_fitted.fit(X, y)
+            return True
+        else:
+            return False
 
     def _forecast(self, measurements : pd.DataFrame, forecast_interval : pd.Series):
 

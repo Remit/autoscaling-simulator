@@ -41,6 +41,7 @@ class HoltWinters(ForecastingModel):
                                                                                                 smoothing_seasonal = self.smoothing_seasonal,
                                                                                                 damping_trend = self.damping_trend,
                                                                                                 optimized = optimized)
+                return True
 
     def _internal_predict(self, metric_vals : pd.DataFrame, cur_timestamp : pd.Timestamp, future_adjustment_from_others : pd.DataFrame = None):
 
