@@ -15,12 +15,12 @@ class ArimaBase(ForecastingModel):
 
         self._model_fitted = None
 
-    def predict(self, metric_vals : pd.DataFrame, cur_timestamp : pd.Timestamp, future_adjustment_from_others : pd.DataFrame = None):
+    def _internal_predict(self, metric_vals : pd.DataFrame, cur_timestamp : pd.Timestamp, future_adjustment_from_others : pd.DataFrame = None):
 
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             forecast_interval = self._construct_future_interval(cur_timestamp)
             forecast = self._model_fitted.predict(start = min(forecast_interval), end = max(forecast_interval)) if not self._model_fitted is None else [metric_vals.tail(1).value.item()] * len(forecast_interval)
-            forecast = self._sanity_filter(forecast)
-
-            return pd.DataFrame({ metric_vals.index.name : forecast_interval, 'value': forecast } ).set_index(metric_vals.index.name)
+            forecast = pd.DataFrame({ metric_vals.index.name : forecast_interval, 'value': forecast } ).set_index(metric_vals.index.name)
+            
+            return self._sanity_filter(forecast)

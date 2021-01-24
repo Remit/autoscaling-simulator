@@ -39,6 +39,7 @@ class ARMA(ArimaBase):
                     ma_lags_to_use = 0
 
                 self._model_fitted = sm.tsa.arima.model.ARIMA(resampled_data.value, order=(ar_lags_to_use, self.d, ma_lags_to_use), trend = self.trend).fit()
+                return True
 
         except LinAlgError:
             pass

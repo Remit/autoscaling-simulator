@@ -16,8 +16,12 @@ class Stabilizer(ABC):
         resolution_unit = ErrorChecker.key_check_and_load('unit', resolution_raw, self.__class__.__name__)
         self.resolution = pd.Timedelta(resolution_value, unit = resolution_unit)
 
-    @abstractmethod
     def stabilize(self, values):
+
+        return self._internal_stabilize(values) if not values.empty else values
+
+    @abstractmethod
+    def _internal_stabilize(self, values):
 
         pass
 

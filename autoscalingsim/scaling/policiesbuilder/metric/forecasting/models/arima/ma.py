@@ -31,6 +31,10 @@ class MovingAverage(ArimaBase):
 
                 if len(lags_to_use) > 0:
                     self._model_fitted = sm.tsa.arima.model.ARIMA(resampled_data.value, order=(0, 0, lags_to_use), trend = self.trend).fit()
+                    return True
+
+                else:
+                    return False
 
         except LinAlgError:
             pass

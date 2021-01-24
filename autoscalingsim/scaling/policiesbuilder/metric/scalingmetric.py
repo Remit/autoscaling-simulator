@@ -107,6 +107,7 @@ class ScalingMetric:
             filtered_related_service_metric_vals = { service_name : self.values_filter.filter(metric_vals) for service_name, metric_vals in related_service_metric_vals.items() }
             lagged_correlation_per_service = self.correlator.get_lagged_correlation(filtered_metric_vals, filtered_related_service_metric_vals) if not self.correlator is None else dict()
             aggregated_metric_vals = self.values_aggregator.aggregate(filtered_metric_vals)
+            #print(aggregated_metric_vals)
             forecasted_metric_vals = self.forecaster.forecast(aggregated_metric_vals, cur_timestamp, lagged_correlation_per_service, filtered_related_service_metric_vals)
             print(forecasted_metric_vals)
             converted_metric_vals = self.metric_category.convert_df(forecasted_metric_vals)

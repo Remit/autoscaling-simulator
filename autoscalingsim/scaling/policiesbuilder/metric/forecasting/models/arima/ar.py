@@ -31,6 +31,10 @@ class Autoregressive(ArimaBase):
 
                 if len(lags_to_use) > 0:
                     self._model_fitted = AutoReg(resampled_data.value, lags = lags_to_use, trend = self.trend).fit()
+                    return True
+                    
+                else:
+                    return False
 
         except LinAlgError:
             pass

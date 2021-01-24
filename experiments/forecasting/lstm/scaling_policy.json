@@ -66,17 +66,12 @@
                       }
                     },
                     "forecaster_conf": {
-                          "name": "svr",
+                          "name": "lstm",
                           "config": {
-                              "lags": 50,
-                              "kernel": "rbf",
-                              "degree": 2,
-                              "gamma": 0.9,
-                              "coef0": 0.0,
-                              "tol": 0.001,
-                              "C": 0.3,
-                              "epsilon": 0.5,
-                              "max_iter": -1
+                              "lags": 10,
+                              "n_epochs": 10,
+                              "d": 0,
+                              "neurons_count": 25
                           },
                           "forecast_frequency": "500ms",
                           "history_data_buffer_size": {

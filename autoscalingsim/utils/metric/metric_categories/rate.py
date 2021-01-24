@@ -12,6 +12,7 @@ class Rate(MetricCategory):
 
         time_value, time_unit = 1, None
         resolution = ErrorChecker.key_check_and_load('resolution', config, default = None)
+
         if resolution is None:
             time_unit = ErrorChecker.key_check_and_load('unit', config)
         else:

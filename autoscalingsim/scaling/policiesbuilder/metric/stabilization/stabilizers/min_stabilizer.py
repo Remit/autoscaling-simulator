@@ -5,6 +5,6 @@ from autoscalingsim.scaling.policiesbuilder.metric.stabilization.stabilizer impo
 @Stabilizer.register('maxStabilizer')
 class MinStabilizer(Stabilizer):
 
-    def stabilize(self, values : pd.DataFrame):
+    def _internal_stabilize(self, values : pd.DataFrame):
 
         return values.resample(self.resolution).min().bfill()

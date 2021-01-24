@@ -40,6 +40,7 @@ class MetricForecaster:
         future_adjustment_from_others = sum(related_service_metric_vals.values()) / len(related_service_metric_vals) if len(related_service_metric_vals) > 0 else None
 
         if self._model.fitted:
+            print('using trained model')
             return self._model.predict(metric_vals, cur_timestamp, future_adjustment_from_others)
         else:
             return self._fallback_model.predict(metric_vals, cur_timestamp, future_adjustment_from_others)

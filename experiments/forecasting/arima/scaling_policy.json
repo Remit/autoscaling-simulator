@@ -66,17 +66,11 @@
                       }
                     },
                     "forecaster_conf": {
-                          "name": "svr",
+                          "name": "arima",
                           "config": {
-                              "lags": 50,
-                              "kernel": "rbf",
-                              "degree": 2,
-                              "gamma": 0.9,
-                              "coef0": 0.0,
-                              "tol": 0.001,
-                              "C": 0.3,
-                              "epsilon": 0.5,
-                              "max_iter": -1
+                              "p": 2,
+                              "d": 1,
+                              "q": 6
                           },
                           "forecast_frequency": "500ms",
                           "history_data_buffer_size": {

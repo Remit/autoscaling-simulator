@@ -42,6 +42,7 @@ class SARIMA(ArimaBase):
                 self._model_fitted = sm.tsa.arima.model.ARIMA(resampled_data.value,
                                                               seasonal_order = (ar_lags_to_use, self.D, ma_lags_to_use, self.s),
                                                               trend = self.trend).fit()
+                return True
 
         except LinAlgError:
             pass

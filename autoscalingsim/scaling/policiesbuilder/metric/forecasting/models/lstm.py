@@ -38,11 +38,15 @@ class LSTM(ForecastingModel):
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
 
-            lagged_data = self._introduce_explicit_lags(data)
-            differenced_data = self._difference_timeseries(lagged_data)
-            scaled_data = self._scale(differenced_data)
-            self._fit_model(scaled_data)
-            return True
+            if data.shape[0] > self.lags:
+                lagged_data = self._introduce_explicit_lags(data)
+                differenced_data = self._difference_timeseries(lagged_data)
+                scaled_data = self._scale(differenced_data)
+                self._fit_model(scaled_data)
+                return True
+
+            else:
+                return False
 
     def _internal_predict(self, metric_vals : pd.DataFrame, cur_timestamp : pd.Timestamp, future_adjustment_from_others : pd.DataFrame = None):
 
@@ -61,11 +65,11 @@ class LSTM(ForecastingModel):
         for lag in range(0, self.lags):
             result[f'value-{lag + 1}'] = result.value.shift(lag + 1)
 
-        return result.dropna()
+        return result.fillna(0)
 
     def _difference_timeseries(self, data : pd.DataFrame, d : int = 1):
 
-        return data.diff().dropna()
+        return data.diff().fillna(0)
 
     def _undifference_timeseries(self, historical_data : pd.DataFrame, forecasted_data : list):
 
