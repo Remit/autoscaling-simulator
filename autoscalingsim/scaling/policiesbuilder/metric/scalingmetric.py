@@ -109,7 +109,7 @@ class ScalingMetric:
             aggregated_metric_vals = self.values_aggregator.aggregate(filtered_metric_vals)
             #print(aggregated_metric_vals)
             forecasted_metric_vals = self.forecaster.forecast(aggregated_metric_vals, cur_timestamp, lagged_correlation_per_service, filtered_related_service_metric_vals)
-            print(forecasted_metric_vals)
+            #print(forecasted_metric_vals)
             converted_metric_vals = self.metric_category.convert_df(forecasted_metric_vals)
 
             return (converted_metric_vals, self.metric_category.to_scaling_representation(metric_vals.value[-1]))
