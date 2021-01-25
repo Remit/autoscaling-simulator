@@ -1,0 +1,8 @@
+{
+  "load_model": "load_model.json",
+  "scaling_model": "scaling_model.json",
+  "platform_model": "platform_model.json",
+  "application_model": "application_model.json",
+  "adjustment_policy": "adjustment_policy.json",
+  "deployment_model": "deployment_model.json"
+}

@@ -68,7 +68,8 @@ class StepLoadPatternParser(LeveledLoadPatternParser):
         step_values = ErrorChecker.key_check_and_load('values', params)
         total_percentage_up_until_now = 0
         for value_config in step_values:
-            requests_count_level = ErrorChecker.key_check_and_load('requests_count_level', value_config)
+            requests_count_level_raw = ErrorChecker.key_check_and_load('requests_count_level', value_config)
+            requests_count_level = int(np.floor(requests_count_level_raw) + np.random.choice([0, 1], p = [1 - round(requests_count_level_raw % 1, 2), round(requests_count_level_raw % 1, 2)]))
             percentage_of_interval = ErrorChecker.key_check_and_load('percentage_of_interval', value_config)
             pattern_for_rate = [0] * buckets_in_rate_unit
             for _ in range(requests_count_level):

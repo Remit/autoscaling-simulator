@@ -1,0 +1,104 @@
+{
+  "policy": {
+    "sync_period": {
+      "value": 15,
+      "unit": "s"
+    }
+  },
+  "application": {
+    "services": [
+      {
+        "service_name": "default",
+        "scaling_effect_aggregation_rule_name": "maxScale",
+        "scaled_aspect_name": "count",
+        "metrics_groups": [
+              {
+                  "name": "group1",
+                  "priority": 1,
+                  "initial_max_limit": 100,
+                  "initial_min_limit": 1,
+                  "desired_aspect_value_calculator_conf": {
+                    "category": "rule",
+                    "config": {
+                      "name": "ratio",
+                      "target": {
+                        "metric_name": "load",
+                        "value": 1,
+                        "resolution": {
+                          "value": 1,
+                          "unit": "s"
+                        }
+                      },
+                      "adjustment_heuristic_conf": {
+                        "name": "rescale",
+                        "scaling_factor": 1.15
+                      }
+                    }
+                  },
+                  "stabilizer_conf": {
+                    "name": "maxStabilizer",
+                    "config": {
+                      "resolution": {
+                        "value": 30,
+                        "unit": "s"
+                      }
+                    }
+                  },
+                  "metrics": [
+                      {
+                        "metric_source_name": "Load",
+                        "metric_name": "load",
+                        "submetric_name": "*",
+                        "metric_params": {
+                          "sampling_interval": {
+                            "value": 1,
+                            "unit": "s"
+                          }
+                        }
+                      }
+                  ],
+                  "default_metric_config" : {
+                    "values_filter_conf": {
+                      "name": "defaultNA",
+                      "config": { "default_value": 0 }
+                    },
+                    "values_aggregator_conf": {
+                      "name": "sumAggregator",
+                      "config": {
+                        "resolution": {
+                          "value": 500,
+                          "unit": "ms"
+                        }
+                      }
+                    },
+                    "forecaster_conf": {
+                          "name": "svr",
+                          "config": {
+                              "lags": [1, 2, 60],
+                              "kernel": "rbf",
+                              "degree": 3,
+                              "gamma": 0.7,
+                              "coef0": 1.0,
+                              "tol": 0.001,
+                              "C": 0.5,
+                              "epsilon": 0.5,
+                              "max_iter": -1
+                          },
+                          "forecast_frequency": "500ms",
+                          "history_data_buffer_size": {
+                            "value": 10,
+                            "unit": "m"
+                          },
+                          "fit_model_when_history_amount_reached": {
+                            "value": 30,
+                            "unit": "s"
+                          },
+                          "horizon_in_steps": 400
+                      }
+                  }
+              }
+        ]
+      }
+    ]
+  }
+}

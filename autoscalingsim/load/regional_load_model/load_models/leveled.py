@@ -25,7 +25,7 @@ class LeveledLoadModel(RegionalLoadModel):
 
         # The count of requests to generate is taken from the bucket which
         # the provided timestamp falls into
-        bucket_id = ( (timestamp - self.simulation_start ) % self.interval_of_time ) // self.simulation_step
+        bucket_id = min(( (timestamp - self.simulation_start ) % self.interval_of_time ) // self.simulation_step, len(self.load_distribution_in_steps_buckets) - 1)
 
         # Generating requests for the current simulation step using the ratios
         # by the request type

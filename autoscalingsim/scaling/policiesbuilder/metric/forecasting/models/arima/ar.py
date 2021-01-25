@@ -26,13 +26,16 @@ class Autoregressive(ArimaBase):
         try:
             with warnings.catch_warnings():
                 warnings.simplefilter('ignore')
-                resampled_data = self._resample_data(data)
-                lags_to_use = [ lag for lag in self.lags if lag < resampled_data.shape[0] ]
+                if data.shape[0] > 0:
+                    lags_to_use = [ lag for lag in self.lags if lag < data.shape[0] ]
 
-                if len(lags_to_use) > 0:
-                    self._model_fitted = AutoReg(resampled_data.value, lags = lags_to_use, trend = self.trend).fit()
-                    return True
-                    
+                    if len(lags_to_use) > 0:
+                        self._model_fitted = AutoReg(data.value, lags = lags_to_use, trend = self.trend).fit()
+                        return True
+
+                    else:
+                        return False
+
                 else:
                     return False
 

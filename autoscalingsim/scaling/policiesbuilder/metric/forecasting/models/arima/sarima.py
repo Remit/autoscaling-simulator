@@ -30,19 +30,22 @@ class SARIMA(ArimaBase):
         try:
             with warnings.catch_warnings():
                 warnings.simplefilter('ignore')
-                resampled_data = self._resample_data(data)
-                ar_lags_to_use = [ lag for lag in self.ar_lags if lag < resampled_data.shape[0] ]
-                ma_lags_to_use = [ lag for lag in self.ma_lags if lag < resampled_data.shape[0] ]
+                if data.shape[0] > 0:
+                    ar_lags_to_use = [ lag for lag in self.ar_lags if lag < data.shape[0] ]
+                    ma_lags_to_use = [ lag for lag in self.ma_lags if lag < data.shape[0] ]
 
-                if len(ar_lags_to_use) == 0:
-                    ar_lags_to_use = 0
-                if len(ma_lags_to_use) == 0:
-                    ma_lags_to_use = 0
+                    if len(ar_lags_to_use) == 0:
+                        ar_lags_to_use = 0
+                    if len(ma_lags_to_use) == 0:
+                        ma_lags_to_use = 0
 
-                self._model_fitted = sm.tsa.arima.model.ARIMA(resampled_data.value,
-                                                              seasonal_order = (ar_lags_to_use, self.D, ma_lags_to_use, self.s),
-                                                              trend = self.trend).fit()
-                return True
+                    self._model_fitted = sm.tsa.arima.model.ARIMA(data.value,
+                                                                  seasonal_order = (ar_lags_to_use, self.D, ma_lags_to_use, self.s),
+                                                                  trend = self.trend).fit()
+                    return True
+
+                else:
+                    return False
 
         except LinAlgError:
             pass

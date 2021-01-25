@@ -47,7 +47,7 @@ class SupportVectorRegression(ForecastingModel):
 
         forecasting_model_params = ErrorChecker.key_check_and_load('config', config)
 
-        self.lags = ErrorChecker.key_check_and_load('lags', forecasting_model_params, self.__class__.__name__, default = 1)
+        self.lags = ErrorChecker.key_check_and_load('lags', forecasting_model_params, self.__class__.__name__, default = [0])
 
         svr_params = {
                        'kernel' : ErrorChecker.key_check_and_load('kernel', forecasting_model_params, self.__class__.__name__, default = 'rbf'),
@@ -61,14 +61,21 @@ class SupportVectorRegression(ForecastingModel):
                      }
 
         self._model_fitted = make_pipeline(StandardScaler(), SVR(**svr_params))
+        self.observations_batches_lengths = [0]
 
     def _internal_fit(self, data : pd.DataFrame):
 
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
 
-            lagged_data = self._introduce_explicit_lags(data)
-            self._fit_model(lagged_data)
+            if data.shape[0] >= max(self.lags):
+                self.observations_batches_lengths.append(data.shape[0] - self.observations_batches_lengths[-1])
+                X, y = self._extract_features_and_output(data)
+                self._model_fitted.fit(X, y)
+                return True
+
+            else:
+                return False
 
     def _internal_predict(self, metric_vals : pd.DataFrame, cur_timestamp : pd.Timestamp, future_adjustment_from_others : pd.DataFrame = None):
 
@@ -79,33 +86,29 @@ class SupportVectorRegression(ForecastingModel):
 
             return pd.DataFrame({ metric_vals.index.name : forecast_interval, 'value': forecast } ).set_index(metric_vals.index.name)
 
-    def _introduce_explicit_lags(self, data : pd.DataFrame):
+    def _extract_features_and_output(self, data : pd.DataFrame):
 
-        result = data.copy()
-        for lag in range(0, self.lags):
-            result[f'value-{lag + 1}'] = result.value.shift(lag + 1)
+        X, y = [], []
+        i_batch_len = 0
+        i = 0
+        cumulative_size = 0
+        while max(self.lags) + cumulative_size <= data.shape[0]:
+            X.append([ data.value[-(lag + i_batch_len)] for lag in self.lags ])
+            y.append([ data.value[-(1 + i_batch_len)] ])
+            i_batch_len = self.observations_batches_lengths[-(i + 1)]
+            cumulative_size += i_batch_len
+            i += 1
 
-        return result.dropna()
-
-    def _fit_model(self, train : pd.DataFrame):
-
-        X, y = train[train.columns[train.columns != 'value']].to_numpy(), train['value'].to_numpy()
-        if X.shape[0] > 0:
-            self._model_fitted.fit(X, y)
-            return True
-        else:
-            return False
+        return (np.asarray(X), np.asarray(y))
 
     def _forecast(self, measurements : pd.DataFrame, forecast_interval : pd.Series):
 
-        last = measurements[-self.lags:]['value'].to_numpy().flatten().tolist()
-
+        measurements_raw = measurements.value.to_list()
         predicted = list()
         for i in range(len(forecast_interval)):
-            X = [np.asarray(last).astype('float32')]
+            X = np.asarray([[ measurements_raw[-lag] if len(measurements_raw) >= lag else 0 for lag in self.lags ]])
             yhat = self._model_fitted.predict(X).flatten()
             predicted.extend(yhat)
-            last = last[1:]
-            last.extend(yhat)
+            measurements_raw.extend(yhat)
 
         return predicted
