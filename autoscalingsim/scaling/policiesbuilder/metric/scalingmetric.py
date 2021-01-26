@@ -29,8 +29,10 @@ class ScalingMetricGroup:
 
         dav_calculator_category = ErrorChecker.key_check_and_load('category', desired_aspect_value_calculator_conf, 'region', region_name)
         dav_calculator_conf = ErrorChecker.key_check_and_load('config', desired_aspect_value_calculator_conf, 'region', region_name, default = dict())
-        dav_calculator_conf['region'] = region_name
-        dav_calculator_conf['state_reader'] = state_reader
+        dav_calculator_conf['region'] = self.region_name
+        dav_calculator_conf['state_reader'] = self.state_reader
+        dav_calculator_conf['service_name'] = self.service_name
+        dav_calculator_conf['metric_group'] = self.name
 
         self.desired_aspect_value_calculator = DesiredAspectValueCalculator.get(dav_calculator_category)(dav_calculator_conf)
 
@@ -64,6 +66,11 @@ class ScalingMetricGroup:
 
         if not self.limiter is None:
             self.limiter.update_limits(new_min, new_max)
+
+    @property
+    def service_model(self):
+
+        return self.desired_aspect_value_calculator.scaling_aspect_to_quality_metric_model
 
 class ScalingMetric:
 
@@ -107,9 +114,7 @@ class ScalingMetric:
             filtered_related_service_metric_vals = { service_name : self.values_filter.filter(metric_vals) for service_name, metric_vals in related_service_metric_vals.items() }
             lagged_correlation_per_service = self.correlator.get_lagged_correlation(filtered_metric_vals, filtered_related_service_metric_vals) if not self.correlator is None else dict()
             aggregated_metric_vals = self.values_aggregator.aggregate(filtered_metric_vals)
-            #print(aggregated_metric_vals)
             forecasted_metric_vals = self.forecaster.forecast(aggregated_metric_vals, cur_timestamp, lagged_correlation_per_service, filtered_related_service_metric_vals)
-            #print(forecasted_metric_vals)
             converted_metric_vals = self.metric_category.convert_df(forecasted_metric_vals)
 
             return (converted_metric_vals, self.metric_category.to_scaling_representation(metric_vals.value[-1]))

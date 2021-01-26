@@ -1,4 +1,5 @@
 import numpy as np
+import os
 import pandas as pd
 from sklearn.exceptions import NotFittedError
 
@@ -56,6 +57,14 @@ class LearningBasedCalculator(DesiredAspectValueCalculator):
         performance_metric_threshold = MetricsRegistry.get(self.performance_metric_config['metric_name']).to_metric(ErrorChecker.key_check_and_load('threshold', performance_metric_conf))
 
         model_config = ErrorChecker.key_check_and_load('model', config, default = dict())
+        model_root_folder = ErrorChecker.key_check_and_load('model_root_folder', config, default = None)
+        model_file_name = ErrorChecker.key_check_and_load('model_file_name', config, default = None)
+        if not model_root_folder is None and not model_file_name is None:
+            service_name = ErrorChecker.key_check_and_load('service_name', config, default = None)
+            metric_group = ErrorChecker.key_check_and_load('metric_group', config, default = None)
+            region_name = ErrorChecker.key_check_and_load('region', config, default = None)
+            model_config['model_path'] = os.path.join(model_root_folder, service_name, region_name, metric_group, model_file_name)
+
         self.model = ScalingAspectToQualityMetricModel.get(ErrorChecker.key_check_and_load('name', model_config, default = 'passive_aggressive'))(model_config)
 
         optimizer_config = ErrorChecker.key_check_and_load('optimizer_config', config, default = dict())
@@ -63,28 +72,37 @@ class LearningBasedCalculator(DesiredAspectValueCalculator):
 
         self.state_reader = ErrorChecker.key_check_and_load('state_reader', config)
 
+    @property
+    def scaling_aspect_to_quality_metric_model(self):
+
+        return self.model._model
+
     def _compute_internal(self, cur_aspect_val : 'ScalingAspect', forecasted_metric_vals : dict, current_metric_val : dict):
 
         current_performance_metric_vals = self.state_reader.get_metric_value(**self.performance_metric_config)
         current_performance_metric_val = current_performance_metric_vals.mean().value
 
         result = None
-        # TODO: check below
+
         use_fallback = self._should_use_fallback_calculator(cur_aspect_val, current_metric_val, current_performance_metric_val)
         if use_fallback:
             result = self.fallback_calculator._compute_internal(cur_aspect_val, forecasted_metric_vals)
 
         else:
             unique_aspect_vals_predictions = dict()
-            forecasted_metric_vals_prepared = np.asarray([vals for vals in forecasted_metric_vals.values()]).T
-            for forecasted_metric_val in forecasted_metric_vals_prepared:
-                x = self.scaling_aspect_value_derivator.solve(self.model, cur_aspect_val, forecasted_metric_val)
-                print(f'SOLVED: {x}')
-                unique_aspect_vals_predictions[forecasted_metric_val] = x
+            forecasts_joint = pd.DataFrame()
+            for metric_name, vals in forecasted_metric_vals.items():
+                forecasts_joint[metric_name] = vals.value
 
-            result = forecasted_metric_vals.copy()
-            for forecasted_metric_val, aspect_val_prediction in unique_aspect_vals_predictions.items():
-                result.value[result.value == forecasted_metric_val] = aspect_val_prediction
+            forecasts_joint = forecasts_joint.dropna()
+
+            timestamps = list()
+            aspect_vals = list()
+            for ts, row in forecasts_joint.iterrows():
+                timestamps.append(ts)
+                aspect_vals.append(self.scaling_aspect_value_derivator.solve(self.model, cur_aspect_val, row.to_dict()))
+
+            result = pd.DataFrame({'value': aspect_vals}, index = timestamps)
 
         if not np.isnan(current_performance_metric_val) and not hasnan(current_metric_val) and not cur_aspect_val.isnan:
             self.aspect_vals_buffer.put(cur_aspect_val)
@@ -106,7 +124,6 @@ class LearningBasedCalculator(DesiredAspectValueCalculator):
             if np.isnan(current_performance_metric_val):
                 return True
 
-            print(f'current_metric_val: {current_metric_val}')
             predicted_performance_metric_val = self.model.predict(cur_aspect_val, current_metric_val)
             if self.model_quality_metric([current_performance_metric_val], [predicted_performance_metric_val]) > self.model_quality_threshold:
                 return True

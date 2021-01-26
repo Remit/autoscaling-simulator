@@ -99,10 +99,6 @@ class ServiceInstancesGroup:
 
         return self.__class__(self.service_name, self.service_resource_reqs, {'count' : compensating_count})
 
-    def update_aspect(self, aspect : ScalingAspect):
-
-        self.scaling_aspects[aspect.name] = aspect
-
     def aspect_value(self, aspect_name : str):
 
         return self.scaling_aspects[aspect_name].copy()

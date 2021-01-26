@@ -1,5 +1,7 @@
 import warnings
 import numpy as np
+import os
+import pickle
 
 from abc import ABC, abstractmethod
 
@@ -11,7 +13,12 @@ class ScalingAspectToQualityMetricModel(ABC):
 
     def __init__(self, config):
 
+        self._model = None
         self.kind = ErrorChecker.key_check_and_load('kind', config, default = 'offline')
+        model_path = config.get('model_path', None)
+        if not model_path is None:
+            if os.path.exists(model_path):
+                self._model = pickle.load( open( model_path, 'rb' ) )
 
     def predict(self, cur_aspect_vals, cur_metric_vals):
 

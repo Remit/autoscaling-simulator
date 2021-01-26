@@ -193,3 +193,8 @@ class ApplicationModel:
     def infrastructure_cost(self):
 
         return self._infrastructure_cost.copy()
+
+    @property
+    def services_models(self):
+
+        return { service_name : service.metrics_groups_models for service_name, service in self.services.items() }

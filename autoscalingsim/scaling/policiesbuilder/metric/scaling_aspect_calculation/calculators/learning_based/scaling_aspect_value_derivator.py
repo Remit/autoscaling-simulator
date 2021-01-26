@@ -6,8 +6,7 @@ from autoscalingsim.utils.error_check import ErrorChecker
 
 def compute_discrepancy(scaling_aspect_val, model, forecasted_metric_val, performance_metric_threshold, compose_model_input):
 
-    model_input = compose_model_input(scaling_aspect_val, forecasted_metric_val)
-    predicted_performance_metric = model.predict(model_input)
+    predicted_performance_metric = model.predict(scaling_aspect_val, forecasted_metric_val)
 
     return predicted_performance_metric / performance_metric_threshold
 
@@ -16,8 +15,7 @@ def nonlinearConstraintFunctionBuilder(model, forecasted_metric_val, compose_mod
 
     def cons_f(scaling_aspect_val):
 
-        model_input = compose_model_input(scaling_aspect_val, forecasted_metric_val)
-        predicted_performance_metric = model.predict(model_input)
+        predicted_performance_metric = model.predict(scaling_aspect_val, forecasted_metric_val)
 
         return predicted_performance_metric
 
@@ -66,7 +64,7 @@ class ScalingAspectValueDerivator:
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             solution = opt.minimize(compute_discrepancy, cur_aspect_val.value,
-                                    args = (model, forecasted_metric_val, self.performance_metric_threshold, self.compose_model_input),
+                                    args = (model, forecasted_metric_val, self.performance_metric_threshold.value, self.compose_model_input),
                                     **current_config)
 
             return cur_aspect_val.__class__(solution.x)
@@ -75,7 +73,7 @@ class ScalingAspectValueDerivator:
 
         result = self.config.copy()
         result['constraints'] = [nonlinearConstraintBuilder(model, 0,
-                                                            self.performance_metric_threshold,
+                                                            self.performance_metric_threshold.value,
                                                             forecasted_metric_val,
                                                             self.compose_model_input)]
 

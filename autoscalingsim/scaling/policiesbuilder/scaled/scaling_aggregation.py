@@ -42,10 +42,19 @@ class ScalingEffectAggregationRule(ABC):
 
         self._scaled_aspect_name = scaling_setting_for_service.scaled_aspect_name
 
+    @property
+    def metrics_groups_models(self):
+
+        result = dict()
+        for region_name, metric_groups in self._metric_groups_by_region.items():
+            result[region_name] = { metric_group.name : metric_group.service_model for metric_group in metric_groups.values() }
+
+        return result
+
     @abstractmethod
     def __call__(self, cur_timestamp : pd.Timestamp):
 
-        pass        
+        pass
 
     @classmethod
     def register(cls, name : str):

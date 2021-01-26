@@ -72,6 +72,11 @@ class Service(MetricSource):
 
         return self.state.processed
 
+    @property
+    def metrics_groups_models(self):
+
+        return self.scaling_effect_aggregation_rule.metrics_groups_models
+
     def check_out_system_resources_utilization(self):
 
         return self.state.check_out_system_resources_utilization()

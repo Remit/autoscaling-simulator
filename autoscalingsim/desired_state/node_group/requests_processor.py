@@ -14,41 +14,6 @@ class RequestsProcessor:
         self._stat = collections.defaultdict(lambda: collections.defaultdict(int))
         self._res_requirements_of_requests = collections.defaultdict(lambda: collections.defaultdict(ResourceRequirements))
 
-    #def __add__(self, other : 'RequestsProcessor'):
-
-    #    result = deepcopy(self)
-    #    for processing_service, other_reqs in other.in_processing_simultaneous.items():
-    #        result.in_processing_simultaneous[processing_service] += other_reqs
-    #    for processing_service, other_reqs in other._out.items():
-    #        result._out[processing_service] += other_reqs
-    #    for processing_service, stat_by_req_type in other._stat.items():
-    #        for req_type, cnt in stat_by_req_type.items():
-    #            result._stat[processing_service][req_type] += cnt
-    #    for processing_service, requirements_by_req_type in other._stat.items():
-    #        for req_type, requirements in requirements_by_req_type.items():
-    #            result._res_requirements_of_requests[processing_service][req_type] = requirements
-
-    #    return result
-
-    #def __sub__(self, other : 'RequestsProcessor'):
-
-    #    result = deepcopy(self)
-    #    for processing_service, other_reqs in other.in_processing_simultaneous.items():
-    #        result.in_processing_simultaneous[processing_service] = [ req for req in result.in_processing_simultaneous[processing_service] if not req in other_reqs ]
-    #    for processing_service, other_reqs in other._out.items():
-    #        result._out[processing_service] = [ req for req in result._out[processing_service] if not req in other_reqs ]
-    #    for processing_service, stat_by_req_type in other._stat.items():
-    #        for req_type, cnt in stat_by_req_type.items():
-    #            result._stat[processing_service][req_type] -= cnt
-    #    new_req_requirements_of_requests = collections.defaultdict(lambda: collections.defaultdict(ResourceRequirements))
-    #    for processing_service, requirements_by_req_type in result._res_requirements_of_requests.items():
-    #        for req_type, requirements in requirements_by_req_type.items():
-    #            if result._stat[processing_service][req_type] > 0:
-    #                new_req_requirements_of_requests[processing_service][req_type] = requirements
-    #    result._res_requirements_of_requests = new_req_requirements_of_requests
-
-    #    return result
-
     def start_processing(self, req : Request):
 
         self._stat[req.processing_service][req.request_type] += 1

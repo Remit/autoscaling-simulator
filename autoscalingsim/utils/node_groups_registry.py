@@ -1,6 +1,7 @@
 import collections
 from copy import deepcopy
 import pandas as pd
+from autoscalingsim.scaling.scaling_aspects import ScalingAspect
 
 class NodeGroupsRegistry:
 
@@ -82,7 +83,7 @@ class NodeGroupsRegistry:
 
     def aspect_value_for_service(self, aspect_name : str, service_name : str, region_name : str):
 
-        return sum([node_group.aspect_value_of_services_state(service_name, aspect_name) for node_group in self._node_groups_by_service.get(service_name, dict()).get(region_name, dict()).values()])
+        return sum([node_group.aspect_value_of_services_state(service_name, aspect_name) for node_group in self._node_groups_by_service.get(service_name, dict()).get(region_name, dict()).values()], ScalingAspect.get(aspect_name)(0))
 
     def count_node_groups_for_service(self, service_name : str, region_name : str):
 

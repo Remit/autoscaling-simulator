@@ -97,26 +97,27 @@ class NeuralNet(NonlinearModel):
 
         super().__init__(config)
 
-        model_params = ErrorChecker.key_check_and_load('model_params', config, default = dict())
-        learning_params = ErrorChecker.key_check_and_load('learning', model_params, default = {'loss' : 'mean_squared_error', 'optimizer' : 'adam'})
-        default_layers_params = ErrorChecker.key_check_and_load('default_layers_params', model_params, default = dict())
+        if self._model is None:
+            model_params = ErrorChecker.key_check_and_load('model_params', config, default = dict())
+            learning_params = ErrorChecker.key_check_and_load('learning', model_params, default = {'loss' : 'mean_squared_error', 'optimizer' : 'adam'})
+            default_layers_params = ErrorChecker.key_check_and_load('default_layers_params', model_params, default = dict())
 
-        self._model = tf.keras.models.Sequential()
-        model_layers = ErrorChecker.key_check_and_load('layers', config, default = list())
-        for layer_conf in model_layers:
-            layer_type = ErrorChecker.key_check_and_load('type', layer_conf)
-            layer_template = self.__class__._LAYERS.get(layer_type, None) # TODO: class?
-            if layer_template is None:
-                raise ValueError(f'Undefined layer {layer_type}')
+            self._model = tf.keras.models.Sequential()
+            model_layers = ErrorChecker.key_check_and_load('layers', config, default = list())
+            for layer_conf in model_layers:
+                layer_type = ErrorChecker.key_check_and_load('type', layer_conf)
+                layer_template = self.__class__._LAYERS.get(layer_type, None) # TODO: class?
+                if layer_template is None:
+                    raise ValueError(f'Undefined layer {layer_type}')
 
-            mandatory_layer_params = dict()
-            for mandatory_param_name in layer_template['mandatory_params_names']:
-                mandatory_param_value = ErrorChecker.key_check_and_load(mandatory_param_name, layer_conf)
-                mandatory_layer_params[mandatory_param_name] = mandatory_param_value
+                mandatory_layer_params = dict()
+                for mandatory_param_name in layer_template['mandatory_params_names']:
+                    mandatory_param_value = ErrorChecker.key_check_and_load(mandatory_param_name, layer_conf)
+                    mandatory_layer_params[mandatory_param_name] = mandatory_param_value
 
-            optional_params = ErrorChecker.key_check_and_load('params', layer_conf, default = default_layers_params.get(layer_type, layer_template['default_params']))
-            layer_params = {**mandatory_layer_params, **optional_params}
+                optional_params = ErrorChecker.key_check_and_load('params', layer_conf, default = default_layers_params.get(layer_type, layer_template['default_params']))
+                layer_params = {**mandatory_layer_params, **optional_params}
 
-            self._model.add(layer_template['model'](**layer_params))
+                self._model.add(layer_template['model'](**layer_params))
 
-        self._model.compile(**learning_params)
+            self._model.compile(**learning_params)

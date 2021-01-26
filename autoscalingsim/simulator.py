@@ -31,8 +31,8 @@ class Simulator:
         self.simulation_step = simulation_step
         self.starting_time = starting_time
         self.time_to_simulate = time_to_simulate
-        self.simulations = {}
-        self.simulations_configs = {}
+        self.simulations = dict()
+        self.simulations_configs = dict()
 
     def add_simulation(self, configs_dir : str, results_dir : str = None, stat_updates_every_round : int = 0, simulation_name : str = None):
 
@@ -107,6 +107,11 @@ class Simulator:
         sim_confs = self.simulations_configs.copy()
         for simulation_config in sim_confs.values():
             self.add_simulation(**simulation_config)
+
+    def remove_all_simulations(self):
+
+        self.simulations = dict()
+        self.simulations_configs = dict()
 
     def __iter__(self):
 

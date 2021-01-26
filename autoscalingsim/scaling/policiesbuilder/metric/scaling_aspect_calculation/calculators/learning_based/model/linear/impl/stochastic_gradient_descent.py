@@ -73,15 +73,16 @@ class SGDRegressionModel(LinearModel):
 
         super().__init__(config)
 
-        model_params = ErrorChecker.key_check_and_load('model_params', config, default = dict())
-        model_config = { 'loss': ErrorChecker.key_check_and_load('loss', model_params, default = 'squared_loss'),
-                         'penalty': ErrorChecker.key_check_and_load('penalty', model_params, default = 'l2'),
-                         'alpha': ErrorChecker.key_check_and_load('alpha', model_params, default = 0.0001),
-                         'l1_ratio': ErrorChecker.key_check_and_load('l1_ratio', model_params, default = 0.15),
-                         'tol' : ErrorChecker.key_check_and_load('tol', model_params, default = 0.001),
-                         'validation_fraction' : ErrorChecker.key_check_and_load('validation_fraction', model_params, default = 0.1),
-                         'n_iter_no_change' : ErrorChecker.key_check_and_load('n_iter_no_change', model_params, default = 5),
-                         'loss' : ErrorChecker.key_check_and_load('loss', model_params, default = 'epsilon_insensitive'),
-                         'epsilon' : ErrorChecker.key_check_and_load('epsilon', model_params, default = 0.1) } # TODO: consider leftovers? non-oblig
+        if self._model is None:
+            model_params = ErrorChecker.key_check_and_load('model_params', config, default = dict())
+            model_config = { 'loss': ErrorChecker.key_check_and_load('loss', model_params, default = 'squared_loss'),
+                             'penalty': ErrorChecker.key_check_and_load('penalty', model_params, default = 'l2'),
+                             'alpha': ErrorChecker.key_check_and_load('alpha', model_params, default = 0.0001),
+                             'l1_ratio': ErrorChecker.key_check_and_load('l1_ratio', model_params, default = 0.15),
+                             'tol' : ErrorChecker.key_check_and_load('tol', model_params, default = 0.001),
+                             'validation_fraction' : ErrorChecker.key_check_and_load('validation_fraction', model_params, default = 0.1),
+                             'n_iter_no_change' : ErrorChecker.key_check_and_load('n_iter_no_change', model_params, default = 5),
+                             'loss' : ErrorChecker.key_check_and_load('loss', model_params, default = 'epsilon_insensitive'),
+                             'epsilon' : ErrorChecker.key_check_and_load('epsilon', model_params, default = 0.1) } # TODO: consider leftovers? non-oblig
 
-        self._model = SGDRegressor(**model_config)
+            self._model = SGDRegressor(**model_config)

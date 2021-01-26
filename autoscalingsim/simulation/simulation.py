@@ -125,3 +125,8 @@ class Simulation:
     def _step(self):
 
         self.application_model.step(self.cur_simulation_time, self.simulation_step)
+
+    @property
+    def services_models(self):
+
+        return self.application_model.services_models
