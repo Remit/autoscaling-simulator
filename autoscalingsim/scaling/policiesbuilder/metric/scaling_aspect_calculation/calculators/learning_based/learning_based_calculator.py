@@ -63,7 +63,7 @@ class LearningBasedCalculator(DesiredAspectValueCalculator):
 
         self.state_reader = ErrorChecker.key_check_and_load('state_reader', config)
 
-    def _compute_internal(self, cur_aspect_val, forecasted_metric_vals, current_metric_val):
+    def _compute_internal(self, cur_aspect_val : 'ScalingAspect', forecasted_metric_vals : dict, current_metric_val : dict):
 
         current_performance_metric_vals = self.state_reader.get_metric_value(**self.performance_metric_config)
         current_performance_metric_val = current_performance_metric_vals.mean().value
@@ -76,8 +76,11 @@ class LearningBasedCalculator(DesiredAspectValueCalculator):
 
         else:
             unique_aspect_vals_predictions = dict()
-            for forecasted_metric_val in pd.unique(forecasted_metric_vals.value):
-                unique_aspect_vals_predictions[forecasted_metric_val] = self.scaling_aspect_value_derivator.solve(self.model, cur_aspect_val, forecasted_metric_val)
+            forecasted_metric_vals_prepared = np.asarray([vals for vals in forecasted_metric_vals.values()]).T
+            for forecasted_metric_val in forecasted_metric_vals_prepared:
+                x = self.scaling_aspect_value_derivator.solve(self.model, cur_aspect_val, forecasted_metric_val)
+                print(f'SOLVED: {x}')
+                unique_aspect_vals_predictions[forecasted_metric_val] = x
 
             result = forecasted_metric_vals.copy()
             for forecasted_metric_val, aspect_val_prediction in unique_aspect_vals_predictions.items():
@@ -103,6 +106,7 @@ class LearningBasedCalculator(DesiredAspectValueCalculator):
             if np.isnan(current_performance_metric_val):
                 return True
 
+            print(f'current_metric_val: {current_metric_val}')
             predicted_performance_metric_val = self.model.predict(cur_aspect_val, current_metric_val)
             if self.model_quality_metric([current_performance_metric_val], [predicted_performance_metric_val]) > self.model_quality_threshold:
                 return True

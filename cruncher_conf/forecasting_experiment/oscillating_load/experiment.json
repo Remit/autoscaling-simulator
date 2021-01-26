@@ -1,7 +1,7 @@
 {
   "experiment_config": {
     "regime": "alternative_policies",
-    "repetitions_count_per_simulation": 10,
+    "repetitions_count_per_simulation": 5,
     "keep_evaluated_configs": false,
     "results_folder": "/home/ubuntu/experiments/oscillating_load",
     "regime_config": {
@@ -16,7 +16,7 @@
       "unit": "ms"
     },
     "time_to_simulate": {
-      "value": 10,
+      "value": 5,
       "unit": "m"
     }
   }

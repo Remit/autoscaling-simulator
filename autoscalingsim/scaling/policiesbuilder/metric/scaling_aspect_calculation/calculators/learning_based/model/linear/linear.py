@@ -1,5 +1,6 @@
 import warnings
 import collections
+import numpy as np
 
 from autoscalingsim.scaling.policiesbuilder.metric.scaling_aspect_calculation.calculators.learning_based.model.model import ScalingAspectToQualityMetricModel
 
@@ -16,6 +17,8 @@ class LinearModel(ScalingAspectToQualityMetricModel):
             if self.kind == 'offline':
                 self._model.fit(model_input, model_output)
             elif self.kind == 'online':
+                print(f'model_input: {model_input}')
+                print(f'model_output: {model_output}')
                 self._model.partial_fit(model_input, model_output)
 
     @property
@@ -27,6 +30,6 @@ class LinearModel(ScalingAspectToQualityMetricModel):
             for metric_vals in cur_metrics_vals.values():
                 joint_vals.append([ val.value for val in metric_vals ] if isinstance(metric_vals, collections.Iterable) else [metric_vals.value] )
 
-            return [joint_vals]
+            return np.asarray(joint_vals).T
 
         return formatter_function

@@ -13,7 +13,7 @@ class DesiredAspectValueCalculator(ABC):
         adjustment_heuristic_name = ErrorChecker.key_check_and_load('name', adjustment_heuristic_conf, default = 'none')
         self.post_processing_adjuster = AdjustmentHeuristic.get(adjustment_heuristic_name)(adjustment_heuristic_conf)
 
-    def compute(self, cur_aspect_val, metric_vals, current_metric_val = None):
+    def compute(self, cur_aspect_val : 'ScalingAspect', metric_vals : dict, current_metric_val : dict):
 
         return self.post_processing_adjuster.adjust(self._compute_internal(cur_aspect_val, metric_vals, current_metric_val))
 

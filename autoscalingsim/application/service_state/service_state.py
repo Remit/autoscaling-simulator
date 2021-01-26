@@ -276,14 +276,14 @@ class ServiceState:
 
         for system_resource_name in SystemResourceUsage.system_resources:
             if not system_resource_name in self.service_utilizations:
-                self.service_utilizations[system_resource_name] = pd.DataFrame(columns = ['datetime', 'value']).set_index('datetime')
+                self.service_utilizations[system_resource_name] = pd.DataFrame({'value': pd.Series([], dtype = 'float')}, index = pd.to_datetime([]))
             node_group_util = node_group.utilization(self.service_name, system_resource_name, pd.Timedelta(0, unit = 'ms'))#self.averaging_interval)
 
             if not node_group_util is None:
                 self.service_utilizations[system_resource_name] = self.service_utilizations[system_resource_name].add(node_group_util, fill_value = 0)
 
     def _derive_normalization_time_series(self, metric_vals : pd.DataFrame):
-        
+
         if not metric_vals.empty:
 
             metric_start = metric_vals.index.min()
