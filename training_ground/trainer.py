@@ -2,7 +2,6 @@ import glob
 import json
 import os
 import shutil
-import pickle
 import pandas as pd
 import numpy as np
 
@@ -69,7 +68,7 @@ class Trainer:
     def start_training(self):
 
         tmp_folder_for_cur_config = os.path.join(self.config_folder, '_______tmp______')
-        default_dav_model_name = 'dav_model.pickle'
+        default_dav_model_name = 'dav_model.mdl'
         shutil.rmtree(tmp_folder_for_cur_config, ignore_errors = True)
         load_patterns_filenames = list(filter( lambda x: x.endswith('.json'), os.listdir(self.load_patterns_folder) ))
         load_patterns_paths = [ os.path.join(self.load_patterns_folder, load_pattern_fname) for load_pattern_fname in load_patterns_filenames ]
@@ -121,6 +120,7 @@ class Trainer:
                             if desired_aspect_value_calculator_conf.get('category', None) == 'learning':
                                 desired_aspect_value_calculator_conf['config']['model_root_folder'] = self.model_folder
                                 desired_aspect_value_calculator_conf['config']['model_file_name'] = default_dav_model_name
+                                desired_aspect_value_calculator_conf['config']['training_mode'] = True
 
                 with open(scaling_policy_path, 'w') as f:
                     json.dump(scaling_policy, f)
@@ -135,7 +135,7 @@ class Trainer:
                             if not os.path.exists(cur_model_path):
                                 os.makedirs(cur_model_path)
                             cur_model_path = os.path.join(cur_model_path, default_dav_model_name)
-                            pickle.dump(model, open( cur_model_path, 'wb' ))
+                            model.save_to_location(cur_model_path)
 
                 self.simulator.remove_all_simulations()
                 shutil.rmtree(tmp_folder_for_cur_config, ignore_errors = True)

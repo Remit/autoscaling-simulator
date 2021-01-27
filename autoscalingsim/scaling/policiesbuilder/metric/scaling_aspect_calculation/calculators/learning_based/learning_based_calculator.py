@@ -1,4 +1,5 @@
 import numpy as np
+import numbers
 import os
 import pandas as pd
 from sklearn.exceptions import NotFittedError
@@ -15,7 +16,10 @@ from .model_quality_metric import ModelQualityMetric
 def hasnan(vals):
 
     for val in vals.values():
-        if val.isnan:
+        if isinstance(val, numbers.Number):
+            if np.isnan(val):
+                return True
+        elif val.isnan:
             return True
 
     return False
@@ -67,6 +71,7 @@ class LearningBasedCalculator(DesiredAspectValueCalculator):
 
         self.model = ScalingAspectToQualityMetricModel.get(ErrorChecker.key_check_and_load('name', model_config, default = 'passive_aggressive'))(model_config)
 
+        self.training_mode = ErrorChecker.key_check_and_load('training_mode', config, default = False)
         optimizer_config = ErrorChecker.key_check_and_load('optimizer_config', config, default = dict())
         self.scaling_aspect_value_derivator = ScalingAspectValueDerivator(optimizer_config, performance_metric_threshold, self.model.input_formatter)
 
@@ -75,7 +80,7 @@ class LearningBasedCalculator(DesiredAspectValueCalculator):
     @property
     def scaling_aspect_to_quality_metric_model(self):
 
-        return self.model._model
+        return self.model
 
     def _compute_internal(self, cur_aspect_val : 'ScalingAspect', forecasted_metric_vals : dict, current_metric_val : dict):
 
@@ -121,7 +126,7 @@ class LearningBasedCalculator(DesiredAspectValueCalculator):
     def _should_use_fallback_calculator(self, cur_aspect_val, current_metric_val, current_performance_metric_val):
 
         try:
-            if np.isnan(current_performance_metric_val):
+            if np.isnan(current_performance_metric_val) or self.training_mode:
                 return True
 
             predicted_performance_metric_val = self.model.predict(cur_aspect_val, current_metric_val)

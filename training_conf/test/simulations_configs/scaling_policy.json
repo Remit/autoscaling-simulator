@@ -20,20 +20,16 @@
                   "desired_aspect_value_calculator_conf": {
                         "category": "learning",
                         "config": {
-                            "fallback_calculator": {
-                              "category": "rule",
-                              "config": {
-                                "name": "ratio",
-                                "target": {
-                                  "metric_name": "load",
-                                  "value": 1,
-                                  "resolution": {
-                                    "value": 1,
-                                    "unit": "s"
-                                  }
-                                }
+                          "fallback_calculator": {
+                            "category": "rule",
+                            "config": {
+                              "name": "ratio",
+                              "target": {
+                                "metric_name": "memory",
+                                "value": 0.8
                               }
-                            },
+                            }
+                          },
                             "model": {
                                 "name": "stochastic_gradient_descent",
                                 "kind": "online",
@@ -94,6 +90,10 @@
                             "unit": "s"
                           }
                         }
+                      },
+                      {
+                          "metric_source_name": "Service",
+                          "metric_name": "memory"
                       }
                   ],
                   "default_metric_config" : {
@@ -111,13 +111,7 @@
                       }
                     },
                     "forecaster_conf": {
-                          "name": "holt_winters",
-                          "config": {
-                              "seasonal": "add",
-                              "smoothing_seasonal": 1.0,
-                              "seasonal_periods": 60,
-                              "smoothing_level": 0.7
-                          },
+                          "name": "reactive",
                           "forecast_frequency": "500ms",
                           "history_data_buffer_size": {
                             "value": 10,
@@ -127,7 +121,7 @@
                             "value": 30,
                             "unit": "s"
                           },
-                          "horizon_in_steps": 400
+                          "horizon_in_steps": 5
                       }
                   }
               }

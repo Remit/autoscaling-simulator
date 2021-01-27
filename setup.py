@@ -31,6 +31,7 @@ setup(
    scripts = [
                'autoscalingsim-cl.py',
                'cruncher-cl.py',
+               'trainer-cl.py',
                'analysis.ipynb'
              ]
 )

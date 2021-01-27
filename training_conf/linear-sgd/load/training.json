@@ -1,0 +1,20 @@
+{
+  "training_config": {
+    "repetitions": 5,
+    "load_patterns_cnt_in_repetition": 4,
+    "model_folder": "/home/ubuntu/models/sgd/load",
+    "load_patterns_folder": "load_patterns",
+    "simulation_configs_folder": "simulations_configs"
+  },
+  "simulation_config": {
+    "starting_time": "2020-09-17T10:00:00",
+    "simulation_step": {
+      "value": 50,
+      "unit": "ms"
+    },
+    "time_to_simulate": {
+      "value": 10,
+      "unit": "m"
+    }
+  }
+}

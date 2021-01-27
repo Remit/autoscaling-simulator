@@ -1,0 +1,75 @@
+{
+      "load_kind": "leveled",
+      "regions_configs": [
+        {
+          "region_name": "eu",
+          "pattern": {
+            "type": "step",
+            "params": {
+                        "step_duration": {
+                            "value": 5,
+                            "unit": "m"
+                        },
+                        "unit_of_time_for_requests_rate": {
+                            "value": 1,
+                            "unit": "s"
+                        },
+                        "values": [ {"requests_count_level": 1.1, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 1.2, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 1.3, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 1.4, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 1.5, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 1.6, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 1.7, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 1.8, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 1.9, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 2.0, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 2.1, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 2.2, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 2.3, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 2.4, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 2.5, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 2.6, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 2.7, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 2.8, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 2.9, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 3.0, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 3.1, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 3.2, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 3.3, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 3.4, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 3.5, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 3.4, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 3.3, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 3.2, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 3.1, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 3.0, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 2.9, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 2.8, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 2.7, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 2.6, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 2.5, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 2.4, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 2.3, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 2.2, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 2.1, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 2.0, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 1.9, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 1.8, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 1.7, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 1.6, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 1.5, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 1.4, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 1.3, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 1.2, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 1.1, "percentage_of_interval": 0.02},
+                                    {"requests_count_level": 1.0, "percentage_of_interval": 0.02}]
+                    }
+
+                },
+                "load_configs": [
+                  {"request_type": "req-75c4a762-4da4-11eb-bb92-d8cb8af1e959",
+                   "load_config": {"ratio": 1.0, "sliced_distribution": {"type": "normal", "params": {"sigma": 10}}}}]
+            }
+        ]
+  }

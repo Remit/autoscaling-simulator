@@ -1,4 +1,5 @@
 from autoscalingsim.scaling.policiesbuilder.metric.scaling_aspect_calculation.calculators.rule_based.rule.rule import Rule
+import pandas as pd
 
 @Rule.register('ratio')
 class RatioRule(Rule):
@@ -21,5 +22,9 @@ class RatioRule(Rule):
 
     def compute_desired(self, cur_aspect_val, metric_vals):
 
-        metric_ratio = metric_vals[self.metric_name] / self.target_value
-        return cur_aspect_val * metric_ratio
+        if self.metric_name in metric_vals:
+            metric_ratio = metric_vals[self.metric_name] / self.target_value
+            return cur_aspect_val * metric_ratio
+            
+        else:
+            return pd.DataFrame(columns = ['value'], index = pd.to_datetime([]))

@@ -1,3 +1,8 @@
+import logging, os
+
+logging.disable(logging.WARNING)
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
 import tensorflow as tf
 
 from autoscalingsim.scaling.policiesbuilder.metric.scaling_aspect_calculation.calculators.learning_based.model.model import ScalingAspectToQualityMetricModel
@@ -46,7 +51,7 @@ class NeuralNet(NonlinearModel):
                   },
                   {
                       "type": "Dense",
-                      "units": 5,
+                      "units": 1,
                       "params": {}
                   }
                 ],
@@ -121,3 +126,19 @@ class NeuralNet(NonlinearModel):
                 self._model.add(layer_template['model'](**layer_params))
 
             self._model.compile(**learning_params)
+
+    def save_to_location(self, path_to_model_file : str):
+
+        self._model.save(path_to_model_file)
+
+    def load_from_location(self, path_to_model_file : str):
+
+        if not path_to_model_file is None:
+            if os.path.exists(path_to_model_file):
+                self._model = tf.keras.models.load_model(path_to_model_file)
+
+    def _internal_fit(self, model_input, model_output):
+
+        model_input_t = tf.constant(model_input, dtype = tf.float32)
+        model_output_t = tf.constant(model_output, dtype = tf.float32)
+        self._model.fit(model_input_t, model_output_t, verbose = 0)

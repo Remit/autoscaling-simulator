@@ -2,6 +2,8 @@ import warnings
 import numbers
 import collections
 import numpy as np
+import pickle
+import os
 
 from autoscalingsim.scaling.policiesbuilder.metric.scaling_aspect_calculation.calculators.learning_based.model.model import ScalingAspectToQualityMetricModel
 
@@ -20,15 +22,12 @@ class LinearModel(ScalingAspectToQualityMetricModel):
             elif self.kind == 'online':
                 self._model.partial_fit(model_input, model_output)
 
-    @property
-    def input_formatter(self):
+    def save_to_location(self, path_to_model_file : str):
 
-        def formatter_function(cur_aspect_val, cur_metrics_vals):
+        pickle.dump(self._model, open(path_to_model_file, 'wb'))
 
-            joint_vals = [[ val if isinstance(val, numbers.Number) else val.value for val in cur_aspect_val ] if isinstance(cur_aspect_val, collections.Iterable) else [cur_aspect_val if isinstance(cur_aspect_val, numbers.Number) else cur_aspect_val.value]]
-            for metric_vals in cur_metrics_vals.values():
-                joint_vals.append([ val.value for val in metric_vals ] if isinstance(metric_vals, collections.Iterable) else [metric_vals.value] )
+    def load_from_location(self, path_to_model_file : str):
 
-            return np.asarray(joint_vals).T
-
-        return formatter_function
+        if not path_to_model_file is None:
+            if os.path.exists(path_to_model_file):
+                self._model = pickle.load( open( path_to_model_file, 'rb' ) )
