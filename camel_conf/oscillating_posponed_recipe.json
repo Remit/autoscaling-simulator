@@ -1,0 +1,30 @@
+{
+      "step_duration": { "value": 6, "unit": "s" },
+      "pieces": [
+          {
+              "pattern": "const",
+              "interval": { "value": 2, "unit": "m" },
+              "config": {
+                  "rps": 0
+              }
+          },
+          {
+              "pattern": "monotoneous",
+              "interval": { "value": 1, "unit": "m" },
+              "config": {
+                  "rps": { "start": 0, "end": 2 }
+              }
+          },
+          {
+              "pattern": "oscillating",
+              "interval": { "value": 7, "unit": "m" },
+              "config": {
+                  "period_as_percentage_of_interval": 0.07,
+                  "values": [
+                      { "percentage_of_period": 0.5, "rps": 2 },
+                      { "percentage_of_period": 0.5, "rps": 5 }
+                  ]
+              }
+          }
+      ]
+  }

@@ -3,7 +3,7 @@ from copy import deepcopy
 
 from autoscalingsim.deltarepr.group_of_services_delta import GroupOfServicesDelta
 from autoscalingsim.deltarepr.node_group_delta import NodeGroupDelta
-from autoscalingsim.utils.timeline import Timeline
+from autoscalingsim.utils.timeline import TimelineOfDeltas
 
 class GeneralizedDelta:
 
@@ -42,7 +42,7 @@ class GeneralizedDelta:
         it might get called by the till_full_enforcement method first.
         """
 
-        result = Timeline()
+        result = TimelineOfDeltas()
 
         if self.node_group_delta.in_change and not self.node_group_delta.virtual:
 
@@ -64,7 +64,7 @@ class GeneralizedDelta:
     def _enforced_node_group_delta_timeline(self, delta_timestamp : pd.Timestamp,
                                             delayed_node_group_delta : dict):
 
-        result = Timeline()
+        result = TimelineOfDeltas()
         new_timestamp = delta_timestamp + delayed_node_group_delta['delay']
         result.append_at_timestamp(new_timestamp, GeneralizedDelta(delayed_node_group_delta['delta'], None))
 
@@ -75,7 +75,7 @@ class GeneralizedDelta:
                                                   delayed_services_groups_deltas : list):
 
         node_group_delta_virtual = self._make_virtual(delayed_node_group_delta) if not delayed_node_group_delta['delta'].virtual else delayed_node_group_delta['delta']
-        result = Timeline()
+        result = TimelineOfDeltas()
         for delayed_services_group_delta in delayed_services_groups_deltas:
             new_timestamp = delta_timestamp + delayed_services_group_delta['delay']
             result.append_at_timestamp(new_timestamp, GeneralizedDelta(node_group_delta_virtual, delayed_services_group_delta['delta']))

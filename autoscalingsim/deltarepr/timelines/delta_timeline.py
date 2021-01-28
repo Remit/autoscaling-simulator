@@ -6,19 +6,19 @@ from autoscalingsim.desired_state.platform_state import PlatformState
 from autoscalingsim.scaling.scaling_model import ScalingModel
 from autoscalingsim.fault.fault_model import FaultModel
 from autoscalingsim.deltarepr.platform_state_delta import PlatformStateDelta
-from autoscalingsim.utils.timeline import Timeline
+from autoscalingsim.utils.timeline import TimelineOfDeltas
 
 class DeltaTimeline:
 
     """ Maintains all the generalized deltas as a solid timeline """
 
     def __init__(self, scaling_model : ScalingModel, current_state : PlatformState,
-                 timeline : Timeline = None, latest_state_update : pd.Timestamp = None):
+                 timeline : TimelineOfDeltas = None, latest_state_update : pd.Timestamp = None):
 
         self.scaling_model = scaling_model
         self.actual_state = current_state.copy()
 
-        self.timeline = Timeline() if timeline is None else timeline
+        self.timeline = TimelineOfDeltas() if timeline is None else timeline
         self.latest_state_update = pd.Timestamp(0) if latest_state_update is None else latest_state_update
         self.latest_enforcement = pd.Timestamp(0)
 
@@ -31,7 +31,7 @@ class DeltaTimeline:
 
         other_timeline = other.timeline
         if not other_timeline.beginning is None:
-            self.timeline.cut_starting_at(self.latest_enforcement)
+            #self.timeline.cut_starting_at(self.latest_enforcement, cut_enforced = True)
             borderline = max(self.latest_enforcement, other_timeline.beginning)
             other_timeline.cut_ending_at(borderline)
             self.timeline.merge(other_timeline)
@@ -56,11 +56,7 @@ class DeltaTimeline:
             actual_state_updated = self._update_actual_state_using_timeline(timeline_to_consider)
 
         updates_applied = enforcement_made or actual_state_updated
-        cur_platform_state = self.actual_state if updates_applied else None
-
         self.latest_state_update = borderline_ts_for_updates if updates_applied else self.latest_state_update
-
-        return cur_platform_state
 
     def _enforce_deltas_in_timeline(self, timeline_to_consider : dict):
 

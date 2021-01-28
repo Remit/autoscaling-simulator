@@ -115,10 +115,7 @@ class PlatformModel:
             if not fault_state_delta is None:
                 self.state_deltas_timeline.add_state_delta(cur_timestamp, fault_state_delta)
 
-        actual_state = self.state_deltas_timeline.roll_out_updates(cur_timestamp)
-
-        #if not actual_state is None:
-        #    self.scaling_manager.set_deployments(actual_state)
+        self.state_deltas_timeline.roll_out_updates(cur_timestamp)
 
     def get_node_info(self, provider : str, node_type : str) -> NodeInfo:
 
@@ -187,7 +184,12 @@ class PlatformModel:
 
         if len(interval_ends) > 0:
             while max(interval_ends) > simulation_end:
+                interval_ends = interval_ends[:-1]
+
+            while max(interval_begins) > simulation_end:
                 interval_begins = interval_begins[:-1]
+                
+            if interval_ends[-1] == interval_begins[-1]:
                 interval_ends = interval_ends[:-1]
 
             interval_ends.append(simulation_end)

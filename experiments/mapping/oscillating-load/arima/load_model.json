@@ -7,23 +7,32 @@
             "type": "step",
             "params": {
                         "step_duration": {
-                            "value": 30,
-                            "unit": "s"
+                            "value": 10,
+                            "unit": "m"
                         },
                         "unit_of_time_for_requests_rate": {
                             "value": 1,
                             "unit": "s"
                         },
-                        "values": [
-                            {
-                                "requests_count_level": 2,
-                                "percentage_of_interval": 0.5
-                            },
-                            {
-                                "requests_count_level": 4,
-                                "percentage_of_interval": 0.5
-                            }
-                        ]
+                        "values": [ {"requests_count_level": 0, "percentage_of_interval": 0.3},
+                                    {"requests_count_level": 5, "percentage_of_interval": 0.04},
+                                    {"requests_count_level": 10, "percentage_of_interval": 0.04},
+                                    {"requests_count_level": 5, "percentage_of_interval": 0.04},
+                                    {"requests_count_level": 10, "percentage_of_interval": 0.04},
+                                    {"requests_count_level": 5, "percentage_of_interval": 0.04},
+                                    {"requests_count_level": 10, "percentage_of_interval": 0.04},
+                                    {"requests_count_level": 5, "percentage_of_interval": 0.04},
+                                    {"requests_count_level": 10, "percentage_of_interval": 0.04},
+                                    {"requests_count_level": 5, "percentage_of_interval": 0.04},
+                                    {"requests_count_level": 10, "percentage_of_interval": 0.04},
+                                    {"requests_count_level": 5, "percentage_of_interval": 0.04},
+                                    {"requests_count_level": 10, "percentage_of_interval": 0.04},
+                                    {"requests_count_level": 5, "percentage_of_interval": 0.04},
+                                    {"requests_count_level": 10, "percentage_of_interval": 0.04},
+                                    {"requests_count_level": 5, "percentage_of_interval": 0.04},
+                                    {"requests_count_level": 10, "percentage_of_interval": 0.04},
+                                    {"requests_count_level": 5, "percentage_of_interval": 0.04},
+                                    {"requests_count_level": 10, "percentage_of_interval": 0.04}]
                     }
 
                 },

@@ -1,7 +1,7 @@
 {
   "policy": {
     "sync_period": {
-      "value": 15,
+      "value": 30,
       "unit": "s"
     }
   },
@@ -39,8 +39,8 @@
                     "name": "maxStabilizer",
                     "config": {
                       "resolution": {
-                        "value": 400,
-                        "unit": "ms"
+                        "value": 30,
+                        "unit": "s"
                       }
                     }
                   },

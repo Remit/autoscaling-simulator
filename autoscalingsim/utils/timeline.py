@@ -24,18 +24,6 @@ class Timeline:
         for timestamp, vals_list in other.timeline.items():
             self.timeline[timestamp].extend(vals_list)
 
-    def cut_starting_at(self, cutting_point : pd.Timestamp):
-
-        self.timeline = collections.defaultdict(list, { ts : vals for ts, vals in self.timeline.items() if ts <= cutting_point })
-
-    def cut_ending_at(self, cutting_point : pd.Timestamp):
-
-        self.timeline = collections.defaultdict(list, { ts : vals for ts, vals in self.timeline.items() if ts >= cutting_point })
-
-    def between_with_beginning_excluded(self, non_inc_begin : pd.Timestamp, inc_end : pd.Timestamp):
-
-        return { ts : vals for ts, vals in self.timeline.items() if (ts > non_inc_begin) and (ts <= inc_end) }
-
     def copy(self):
 
         return self.__class__(self.timeline.copy())
@@ -53,3 +41,31 @@ class Timeline:
     def __repr__(self):
 
         return f'{self.__class__.__name__}( timeline = {self.timeline})'
+
+class TimelineOfDeltas(Timeline):
+
+    def cut_starting_at(self, cutting_point : pd.Timestamp, cut_enforced : bool = None):
+
+        new_timeline = dict()
+        for ts, vals in self.timeline.items():
+            if ts <= cutting_point:
+                new_timeline[ts] = vals
+            else:
+                new_timeline[ts] = [val for val in vals if val.is_enforced != cut_enforced]
+
+        self.timeline = collections.defaultdict(list, new_timeline)
+
+    def cut_ending_at(self, cutting_point : pd.Timestamp, cut_enforced : bool = None):
+
+        new_timeline = dict()
+        for ts, vals in self.timeline.items():
+            if ts >= cutting_point:
+                new_timeline[ts] = vals
+            else:
+                new_timeline[ts] = [val for val in vals if val.is_enforced != cut_enforced]
+
+        self.timeline = collections.defaultdict(list, new_timeline)
+
+    def between_with_beginning_excluded(self, non_inc_begin : pd.Timestamp, inc_end : pd.Timestamp):
+
+        return { ts : vals for ts, vals in self.timeline.items() if (ts > non_inc_begin) and (ts <= inc_end) }

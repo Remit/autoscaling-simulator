@@ -2,7 +2,7 @@
   "training_config": {
     "repetitions": 5,
     "load_patterns_cnt_in_repetition": 4,
-    "model_folder": "/home/ubuntu/models/sgd/load-memutil",
+    "model_folder": "/home/ubuntu/models/nn/load-memutil",
     "load_patterns_folder": "load_patterns",
     "simulation_configs_folder": "simulations_configs"
   },

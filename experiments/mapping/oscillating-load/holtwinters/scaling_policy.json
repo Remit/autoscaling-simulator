@@ -37,16 +37,8 @@
                             "model": {
                                 "name": "stochastic_gradient_descent",
                                 "kind": "online",
-                                "model_params": {
-                                    "loss": "squared_loss",
-                                    "penalty": "l2",
-                                    "alpha": 0.0001,
-                                    "l1_ratio": 0.15,
-                                    "tol": 0.001,
-                                    "validation_fraction": 0.1,
-                                    "n_iter_no_change": 5,
-                                    "epsilon": 0.1
-                                }
+                                "model_root_folder": "D:/@TUM/PhD/FINAL/experiments/models/11_15_iterations/sgd/load",
+                                "model_file_name": "dav_model.mdl"
                             },
                             "performance_metric": {
                                 "metric_source_name": "response_stats",
@@ -127,7 +119,7 @@
                             "value": 30,
                             "unit": "s"
                           },
-                          "horizon_in_steps": 400
+                          "horizon_in_steps": 120
                       }
                   }
               }

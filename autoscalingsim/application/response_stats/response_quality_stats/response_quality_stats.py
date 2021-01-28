@@ -59,16 +59,6 @@ class ResponseQualityStats(ABC):
             cur_level = cur_level[level]
         cur_level.append_at_timestamp(cur_timestamp, value)
 
-        #cur_level = self.metric_by_request
-        #for level in levels[:-1]:
-        #    if not level in cur_level:
-        #        cur_level[level] = {}
-        #    cur_level = cur_level[level]
-
-        #if not isinstance(cur_level[levels[-1]], Timeline):
-        #    cur_level[levels[-1]] = Timeline()
-        #cur_level[levels[-1]].append_at_timestamp(cur_timestamp, value)
-
     def _mean_val(self, vals_lst : list):
 
         return sum(vals_lst) / len(vals_lst) if len(vals_lst) > 0 else 0
