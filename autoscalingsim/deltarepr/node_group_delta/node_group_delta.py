@@ -65,6 +65,11 @@ class NodeGroupDelta:
 
         return self.node_group.nodes_count == 0
 
+    @property
+    def nodes_change(self):
+
+        return self.node_group.nodes_count * self._sign
+
     def __repr__(self):
 
         return f'{self.__class__.__name__}( node_group = {self.node_group}, \

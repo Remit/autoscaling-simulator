@@ -50,18 +50,20 @@ class Adjuster(ABC):
 
         while not unmet_change is None and not ts_of_unmet_change is None:
 
-            unmet_change = self._attempt_to_use_existing_nodes_and_scale_down_if_needed(in_work_state, ts_of_unmet_change, unmet_change, timeline_of_deltas)
+            if ts_of_unmet_change >= cur_timestamp:
 
-            if len(unmet_change) > 0:
+                unmet_change = self._attempt_to_use_existing_nodes_and_scale_down_if_needed(in_work_state, ts_of_unmet_change, unmet_change, timeline_of_deltas)
 
-                # TODO: add test that ensures that timeline_of_deltas is unchanged
-                # TODO: bug --- the temp roll out ends up as used by others
-                in_work_state, unmet_change_state, state_duration = self._roll_out_enforced_updates_temporarily(in_work_state, ts_of_unmet_change, unmet_change, timeline_of_deltas, timeline_of_unmet_changes)
+                if len(unmet_change) > 0:
 
-                state_addition_delta, state_score_addition = self._evaluate_nodes_addition_option(in_work_state, unmet_change_state, state_duration)
-                state_substitution_delta, state_score_substitution = self._evaluate_nodes_substitution_option(in_work_state, ts_of_unmet_change, unmet_change_state, state_duration)
+                    # TODO: add test that ensures that timeline_of_deltas is unchanged
+                    # TODO: bug --- the temp roll out ends up as used by others
+                    in_work_state, unmet_change_state, state_duration = self._roll_out_enforced_updates_temporarily(in_work_state, ts_of_unmet_change, unmet_change, timeline_of_deltas, timeline_of_unmet_changes)
 
-                self._update_timeline_with_best_option(timeline_of_deltas, ts_of_unmet_change, state_addition_delta, state_score_addition, state_substitution_delta, state_score_substitution)
+                    state_addition_delta, state_score_addition = self._evaluate_nodes_addition_option(in_work_state, unmet_change_state, state_duration)
+                    state_substitution_delta, state_score_substitution = self._evaluate_nodes_substitution_option(in_work_state, ts_of_unmet_change, unmet_change_state, state_duration)
+
+                    self._update_timeline_with_best_option(timeline_of_deltas, ts_of_unmet_change, state_addition_delta, state_score_addition, state_substitution_delta, state_score_substitution)
 
             ts_of_unmet_change, unmet_change = timeline_of_unmet_changes.next()
 
@@ -78,10 +80,10 @@ class Adjuster(ABC):
     def _roll_out_enforced_updates_temporarily(self, in_work_state : PlatformState, ts_of_unmet_change : pd.Timestamp, unmet_change : dict,
                                                timeline_of_deltas_ref : DeltaTimeline, timeline_of_unmet_changes_ref : TimelineOfDesiredServicesChanges):
 
-        tmp_timeline_of_deltas = deepcopy(timeline_of_deltas_ref)
-        new_in_work_state = tmp_timeline_of_deltas.roll_out_updates(ts_of_unmet_change) # TODO: NONE!!
-        if not new_in_work_state is None:
-            in_work_state = new_in_work_state
+        #tmp_timeline_of_deltas = deepcopy(timeline_of_deltas_ref)
+        #new_in_work_state = tmp_timeline_of_deltas.roll_out_updates(ts_of_unmet_change) # TODO: NONE!!
+        #if not new_in_work_state is None:
+        #    in_work_state = new_in_work_state
 
         ts_next = timeline_of_unmet_changes_ref.peek(ts_of_unmet_change)
         state_duration = ts_next - ts_of_unmet_change

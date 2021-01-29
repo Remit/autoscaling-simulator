@@ -43,7 +43,7 @@ class ScalingPolicy:
 
     def reconcile_state(self, cur_timestamp : pd.Timestamp):
 
-        if cur_timestamp - self.last_sync_timestamp > self.scaling_settings.sync_period:
+        if cur_timestamp - self.last_sync_timestamp >= self.scaling_settings.sync_period:
 
             desired_states_to_process = self.scaling_manager.compute_desired_state(cur_timestamp)
 

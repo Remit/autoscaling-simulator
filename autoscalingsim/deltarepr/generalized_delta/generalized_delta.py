@@ -22,6 +22,21 @@ class GeneralizedDelta:
         self.services_group_delta = services_group_delta if not services_group_delta is None else None
         self.fault = fault
 
+    @property
+    def virtual(self):
+
+        return self.node_group_delta.virtual
+
+    @property
+    def node_type(self):
+
+        return self.node_group_delta.node_type
+
+    @property
+    def nodes_change(self):
+
+        return self.node_group_delta.nodes_change
+
     def till_full_enforcement(self, scaling_model, delta_timestamp : pd.Timestamp):
 
         """ Computes time required for the enforcement to finish at all the resource abstraction levels """

@@ -13,7 +13,7 @@ class DeltaTimeline:
     """ Maintains all the generalized deltas as a solid timeline """
 
     def __init__(self, scaling_model : ScalingModel, current_state : PlatformState,
-                 timeline : TimelineOfDeltas = None, latest_state_update : pd.Timestamp = None):
+                 timeline : TimelineOfDeltas = None, latest_state_update : pd.Timestamp = None, main_timeline : bool = False):
 
         self.scaling_model = scaling_model
         self.actual_state = current_state.copy()
@@ -21,6 +21,7 @@ class DeltaTimeline:
         self.timeline = TimelineOfDeltas() if timeline is None else timeline
         self.latest_state_update = pd.Timestamp(0) if latest_state_update is None else latest_state_update
         self.latest_enforcement = pd.Timestamp(0)
+        self.main_timeline = main_timeline
 
     def merge(self, other : 'DeltaTimeline'):
 
@@ -50,7 +51,7 @@ class DeltaTimeline:
         if borderline_ts_for_updates > self.latest_state_update:
 
             timeline_to_consider = self.timeline.between_with_beginning_excluded(self.latest_state_update, borderline_ts_for_updates)
-            enforcement_made = self._enforce_deltas_in_timeline(timeline_to_consider)
+            enforcement_made = self._enforce_deltas_in_timeline(timeline_to_consider, borderline_ts_for_updates)
 
             timeline_to_consider = self.timeline.between_with_beginning_excluded(self.latest_state_update, borderline_ts_for_updates)
             actual_state_updated = self._update_actual_state_using_timeline(timeline_to_consider)
@@ -58,7 +59,7 @@ class DeltaTimeline:
         updates_applied = enforcement_made or actual_state_updated
         self.latest_state_update = borderline_ts_for_updates if updates_applied else self.latest_state_update
 
-    def _enforce_deltas_in_timeline(self, timeline_to_consider : dict):
+    def _enforce_deltas_in_timeline(self, timeline_to_consider : dict, borderline_ts_for_updates):
 
         updates_applied = False
 

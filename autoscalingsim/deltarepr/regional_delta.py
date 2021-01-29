@@ -1,5 +1,5 @@
 import pandas as pd
-from collections import defaultdict
+import collections
 
 from autoscalingsim.scaling.scaling_model.scaling_model import ScalingModel
 
@@ -14,7 +14,7 @@ class RegionalDelta:
 
     def enforce(self, scaling_model : ScalingModel, delta_timestamp : pd.Timestamp):
 
-        new_timestamped_gd_ts = defaultdict(list)
+        new_timestamped_gd_ts = collections.defaultdict(list)
         for generalized_delta in self.generalized_deltas:
 
             new_timestamped_gd = generalized_delta.enforce(scaling_model, delta_timestamp)
@@ -49,18 +49,17 @@ class RegionalDelta:
         new_generalized_deltas = self.generalized_deltas.copy()
         new_generalized_deltas.extend(other.generalized_deltas)
 
-        return RegionalDelta(self.region_name, new_generalized_deltas)
+        return self.__class__(self.region_name, new_generalized_deltas)
 
     @property
-    def node_groups_ids_for_removal(self):
+    def nodes_change(self):
 
-        ids_for_removal_per_service = defaultdict(list)
-        for gen_delta in self.generalized_deltas:
-            if gen_delta.is_node_group_scale_down and gen_delta.is_full_delta:
-                for service_name in gen_delta.services_group_delta.services:
-                    ids_for_removal_per_service[service_name].append(gen_delta.node_group_delta.id)
+        result = collections.defaultdict(int)
+        for gd in self.generalized_deltas:
+            if not gd.virtual:
+                result[gd.node_type] += gd.nodes_change
 
-        return ids_for_removal_per_service
+        return result
 
     def __iter__(self):
 

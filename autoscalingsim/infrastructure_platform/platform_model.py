@@ -95,7 +95,7 @@ class PlatformModel:
 
         self._service_regions = deployment_model.regions
 
-        self.state_deltas_timeline = DeltaTimeline(self.scaling_model, PlatformState(self._service_regions))
+        self.state_deltas_timeline = DeltaTimeline(self.scaling_model, PlatformState(self._service_regions), main_timeline = True)
 
         self.state_deltas_timeline.add_state_delta(simulation_conf['starting_time'],
                                                    deployment_model.to_init_platform_state_delta())
@@ -188,7 +188,7 @@ class PlatformModel:
 
             while max(interval_begins) > simulation_end:
                 interval_begins = interval_begins[:-1]
-                
+
             if interval_ends[-1] == interval_begins[-1]:
                 interval_ends = interval_ends[:-1]
 

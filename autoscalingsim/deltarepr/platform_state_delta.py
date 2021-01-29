@@ -1,4 +1,5 @@
 import pandas as pd
+import collections
 from collections import defaultdict
 from copy import deepcopy
 
@@ -66,18 +67,17 @@ class PlatformStateDelta:
             else:
                 new_regional_deltas[region_name] += regional_delta
 
-        return PlatformStateDelta(new_regional_deltas)
+        return self.__class__(new_regional_deltas)
 
     @property
-    def node_groups_ids_for_removal(self):
+    def nodes_change(self):
 
-        regionalized_ids = defaultdict(lambda: defaultdict(list))
-        for region_name, regional_delta in self.deltas_per_region.items():
-            ids_for_removal_per_entity = regional_delta.node_groups_ids_for_removal
-            for entity_name, ids_for_removal in ids_for_removal_per_entity.items():
-                regionalized_ids[entity_name][region_name].extend(ids_for_removal)
+        result = collections.defaultdict(int)
+        for regional_delta in self.deltas_per_region.values():
+            for node_type, nodes_count in regional_delta.nodes_change.items():
+                result[node_type] += nodes_count
 
-        return regionalized_ids
+        return result
 
     def __iter__(self):
 
