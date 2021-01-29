@@ -13,9 +13,9 @@ class MonotoneousTrendLoadGenerator:
         start_rps = ErrorChecker.key_check_and_load('start', rps, default = dict())
         end_rps = ErrorChecker.key_check_and_load('end', rps, default = dict())
 
-        step_rps = (end_rps - start_rps) * step_percentage
+        step_rps = (end_rps - start_rps) * (step_percentage / interval_percentage)
         vals = list()
         for request_rate in np.arange(start_rps, end_rps, step_rps):
-            vals.append({ "requests_count_level": round(max(request_rate, 0), 5), "percentage_of_interval": round(interval_percentage * step_percentage, 5) })
+            vals.append({ "requests_count_level": round(max(request_rate, 0), 5), "percentage_of_interval": round(step_percentage, 5) })
 
         return vals

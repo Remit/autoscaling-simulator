@@ -18,23 +18,54 @@
                   "initial_max_limit": 100,
                   "initial_min_limit": 1,
                   "desired_aspect_value_calculator_conf": {
-                    "category": "rule",
-                    "config": {
-                      "name": "ratio",
-                      "target": {
-                        "metric_name": "load",
-                        "value": 1,
-                        "resolution": {
-                          "value": 1,
-                          "unit": "s"
+                        "category": "learning",
+                        "config": {
+                            "fallback_calculator": {
+                              "category": "rule",
+                              "config": {
+                                "name": "ratio",
+                                "target": {
+                                  "metric_name": "load",
+                                  "value": 1,
+                                  "resolution": {
+                                    "value": 1,
+                                    "unit": "s"
+                                  }
+                                }
+                              }
+                            },
+                            "model": {
+                                "name": "stochastic_gradient_descent",
+                                "kind": "online",
+                                "model_root_folder": "D:/@TUM/PhD/FINAL/experiments/models/11_15_iterations/sgd/load",
+                                "model_file_name": "dav_model.mdl"
+                            },
+                            "performance_metric": {
+                                "metric_source_name": "response_stats",
+                                "metric_name": "response_time",
+                                "submetric_name": "*",
+                                "metric_type": "duration",
+                                "threshold": {
+                                    "value": 100,
+                                    "unit": "ms"
+                                }
+                            },
+                            "model_quality_metric": {
+                                "name": "mean_squared_error",
+                                "threshold": 10
+                            },
+                            "minibatch_size": 2,
+                            "optimizer_config": {
+                                "method": "trust-constr",
+                                "jac": "2-point",
+                                "hess": "SR1",
+                                "verbose": 0,
+                                "maxiter": 100,
+                                "xtol": 0.1,
+                                "initial_tr_radius": 10
+                            }
                         }
-                      },
-                      "adjustment_heuristic_conf": {
-                        "name": "rescale",
-                        "scaling_factor": 1.15
-                      }
-                    }
-                  },
+                    },
                   "stabilizer_conf": {
                     "name": "maxStabilizer",
                     "config": {

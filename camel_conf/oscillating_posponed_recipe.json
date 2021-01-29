@@ -1,5 +1,5 @@
 {
-      "step_duration": { "value": 6, "unit": "s" },
+      "step_duration": { "value": 30, "unit": "s" },
       "pieces": [
           {
               "pattern": "const",
