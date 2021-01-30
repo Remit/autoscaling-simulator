@@ -3,26 +3,26 @@
       "pieces": [
           {
               "pattern": "const",
-              "interval": { "value": 2, "unit": "m" },
+              "interval": { "value": 1, "unit": "m" },
               "config": {
                   "rps": 0
               }
           },
           {
               "pattern": "monotoneous",
-              "interval": { "value": 1, "unit": "m" },
+              "interval": { "value": 4, "unit": "m" },
               "config": {
-                  "rps": { "start": 0, "end": 2 }
+                  "rps": { "start": 0, "end": 4 }
               }
           },
           {
               "pattern": "oscillating",
-              "interval": { "value": 7, "unit": "m" },
+              "interval": { "value": 16, "unit": "m" },
               "config": {
-                  "period_as_percentage_of_interval": 0.07,
+                  "period_as_percentage_of_interval": 0.125,
                   "values": [
-                      { "percentage_of_period": 0.5, "rps": 2 },
-                      { "percentage_of_period": 0.5, "rps": 5 }
+                      { "percentage_of_period": 0.5, "rps": 4 },
+                      { "percentage_of_period": 0.5, "rps": 2 }
                   ]
               }
           }

@@ -1,3 +1,5 @@
+import math
+
 from camel.camel import Camel
 from autoscalingsim.utils.error_check import ErrorChecker
 
@@ -12,7 +14,7 @@ class OscillatingLoadGenerator:
         vals = list()
         period_as_percentage_of_interval = ErrorChecker.key_check_and_load('period_as_percentage_of_interval', config, default = 1.0)
         level_vals = ErrorChecker.key_check_and_load('values', config, default = list())
-        for i in range(int(interval_percentage // period_as_percentage_of_interval)):
+        for i in range(math.ceil(interval_percentage / period_as_percentage_of_interval)):
             for level_value in level_vals:
                 percentage_of_period = ErrorChecker.key_check_and_load('percentage_of_period', level_value, default = 1.0)
                 rps = ErrorChecker.key_check_and_load('rps', level_value, default = 0)
