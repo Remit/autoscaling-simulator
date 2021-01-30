@@ -72,15 +72,12 @@
                       }
                     },
                     "forecaster_conf": {
-                          "name": "sarima",
+                          "name": "holt_winters",
                           "config": {
-                              "p": 0,
-                              "d": 0,
-                              "q": 0,
-                              "s": 240,
-                              "P": 1,
-                              "D": 0,
-                              "Q": 0
+                              "seasonal": "add",
+                              "smoothing_seasonal": 1.0,
+                              "seasonal_periods": 240,
+                              "smoothing_level": 0.7
                           },
                           "forecast_frequency": "500ms",
                           "history_data_buffer_size": {
