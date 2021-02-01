@@ -134,7 +134,7 @@ class ScalingMetric:
             forecasted_metric_vals = self.forecaster.forecast(aggregated_metric_vals, cur_timestamp, lagged_correlation_per_service, filtered_related_service_metric_vals)
             converted_metric_vals = self.metric_category.convert_df(forecasted_metric_vals)
 
-            return (converted_metric_vals, self.metric_category.to_scaling_representation(metric_vals.value[-1]))
+            return (converted_metric_vals, self.metric_category.to_scaling_representation(aggregated_metric_vals.value[-1]))
 
         else:
             return (pd.DataFrame(), None)
