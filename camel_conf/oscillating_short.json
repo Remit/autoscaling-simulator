@@ -3,7 +3,7 @@
       "pieces": [
           {
               "pattern": "const",
-              "interval": { "value": 2, "unit": "m" },
+              "interval": { "value": 1, "unit": "m" },
               "config": {
                   "rps": 0
               }
@@ -14,9 +14,16 @@
               "config": {
                   "period_as_percentage_of_interval": 0.25,
                   "values": [
-                      { "percentage_of_period": 0.5, "rps": 0 },
-                      { "percentage_of_period": 0.5, "rps": 4 }
+                      { "percentage_of_period": 0.5, "rps": 2 },
+                      { "percentage_of_period": 0.5, "rps": 1 }
                   ]
+              }
+          },
+          {
+              "pattern": "const",
+              "interval": { "value": 2, "unit": "m" },
+              "config": {
+                  "rps": 0
               }
           }
       ]

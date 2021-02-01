@@ -61,9 +61,9 @@ class Ensemble(ForecastingModel):
         'quantile' : pd.DataFrame.quantile
     }
 
-    def __init__(self, config : dict, fhorizon_in_steps : int, forecast_frequency : str):
+    def __init__(self, config : dict):
 
-        super().__init__(fhorizon_in_steps, forecast_frequency)
+        super().__init__(config)
 
         combination_conf_raw = ErrorChecker.key_check_and_load('combination', config, default = {'type': 'mean'})
         self.combinator = self.__class__._COMBINATORS[ErrorChecker.key_check_and_load('type', combination_conf_raw, default = 'mean')]
@@ -77,7 +77,7 @@ class Ensemble(ForecastingModel):
             weight = ErrorChecker.key_check_and_load('weight', model_conf, default = 1.0)
             total_weight += weight
             if model_name != 'ensemble':
-                self._models[model_name] = { 'model' : ForecastingModel.get(model_name)(model_conf, fhorizon_in_steps, forecast_frequency), 'weight' : weight } # TODO: class?
+                self._models[model_name] = { 'model' : ForecastingModel.get(model_name)(model_conf), 'weight' : weight } # TODO: class?
 
         if total_weight > 0:
             for model_descr in self._models.values():

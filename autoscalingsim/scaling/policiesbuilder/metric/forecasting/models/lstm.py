@@ -2,6 +2,7 @@ import warnings
 import tensorflow as tf
 import numpy as np
 import pandas as pd
+import os
 from sklearn.preprocessing import StandardScaler
 
 from autoscalingsim.scaling.policiesbuilder.metric.forecasting.forecasting_model import ForecastingModel
@@ -12,26 +13,44 @@ class LSTM(ForecastingModel):
 
     """ Long short-term memory (LSTM) recurrent neural network (RNN) for time series forecasting """
 
-    def __init__(self, config : dict, fhorizon_in_steps : int, forecast_frequency : str):
+    def __init__(self, config : dict):
 
-        super().__init__(fhorizon_in_steps, forecast_frequency)
+        super().__init__(config)
 
-        forecasting_model_params = ErrorChecker.key_check_and_load('config', config)
-        self.lags = ErrorChecker.key_check_and_load('lags', forecasting_model_params, self.__class__.__name__, default = 1)
-        self.n_epochs = ErrorChecker.key_check_and_load('n_epochs', forecasting_model_params, self.__class__.__name__, default = 10)
-        self.d = ErrorChecker.key_check_and_load('differencing_order', forecasting_model_params, self.__class__.__name__, default = 0)
+        if self._model_fitted is None:
 
-        neurons_count = ErrorChecker.key_check_and_load('neurons_count', forecasting_model_params, self.__class__.__name__)
-        loss_function = ErrorChecker.key_check_and_load('loss_function', forecasting_model_params, self.__class__.__name__, default = 'mean_squared_error')
-        optimizer = ErrorChecker.key_check_and_load('optimizer', forecasting_model_params, self.__class__.__name__, default = 'adam')
+            forecasting_model_params = ErrorChecker.key_check_and_load('config', config)
+            self.lags = ErrorChecker.key_check_and_load('lags', forecasting_model_params, self.__class__.__name__, default = 1)
+            self.n_epochs = ErrorChecker.key_check_and_load('n_epochs', forecasting_model_params, self.__class__.__name__, default = 10)
+            self.d = ErrorChecker.key_check_and_load('differencing_order', forecasting_model_params, self.__class__.__name__, default = 0)
 
-        self.scaler = StandardScaler()
+            neurons_count = ErrorChecker.key_check_and_load('neurons_count', forecasting_model_params, self.__class__.__name__)
+            loss_function = ErrorChecker.key_check_and_load('loss_function', forecasting_model_params, self.__class__.__name__, default = 'mean_squared_error')
+            optimizer = ErrorChecker.key_check_and_load('optimizer', forecasting_model_params, self.__class__.__name__, default = 'adam')
 
-        self._model_fitted = tf.keras.models.Sequential([
-            tf.keras.layers.LSTM(neurons_count, batch_input_shape = (1, 1, self.lags), stateful = True),
-            tf.keras.layers.Dense(units = 1)
-        ])
-        self._model_fitted.compile(loss = loss_function, optimizer = optimizer)
+            self.scaler = StandardScaler()
+
+            self._model_fitted = tf.keras.models.Sequential([
+                tf.keras.layers.LSTM(neurons_count, batch_input_shape = (1, 1, self.lags), stateful = True),
+                tf.keras.layers.Dense(units = 1)
+            ])
+            self._model_fitted.compile(loss = loss_function, optimizer = optimizer)
+
+    def load_from_location(self, path_to_models_dir : str):
+
+        path_to_model_file = os.path.join(path_to_models_dir, self._construct_model_filepath())
+        if os.path.isfile(path_to_model_file):
+            self._model_fitted = tf.keras.models.model_load( path_to_model_file )
+
+    def save_to_location(self):
+
+        if not self.dir_to_store_models is None:
+            if not os.path.exists(self.dir_to_store_models):
+                os.makedirs(self.dir_to_store_models)
+
+            path_to_model_file = os.path.join(self.dir_to_store_models, self._construct_model_filepath())
+            if not self._model_fitted is None:
+                self._model_fitted.save( path_to_model_file )
 
     def _internal_fit(self, data : pd.DataFrame):
 

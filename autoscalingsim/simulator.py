@@ -24,13 +24,15 @@ class Simulator:
                  simulation_step : pd.Timedelta = pd.Timedelta(10, unit = 'ms'),
                  starting_time : pd.Timestamp = pd.Timestamp.now(),
                  time_to_simulate : pd.Timestamp = pd.Timedelta(1, unit = 'm'),
-                 random_seed : int = 1000):
+                 random_seed : int = 1000,
+                 models_refresh_period : pd.Timedelta = None):
 
         np.random.seed(random_seed)
 
         self.simulation_step = simulation_step
         self.starting_time = starting_time
         self.time_to_simulate = time_to_simulate
+        self. models_refresh_period =  models_refresh_period
         self.simulations = dict()
         self.simulations_configs = dict()
 
@@ -71,6 +73,8 @@ class Simulator:
                 simulation_conf = {'starting_time'    : self.starting_time,
                                    'time_to_simulate' : self.time_to_simulate,
                                    'simulation_step'  : self.simulation_step}
+                if not self.models_refresh_period is None:
+                    simulation_conf['models_refresh_period'] = self.models_refresh_period
 
                 application_model = ApplicationModel(simulation_conf, configs_contents_table)
 

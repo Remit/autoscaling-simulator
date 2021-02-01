@@ -115,11 +115,29 @@
                             "value": 1,
                             "unit": "s"
                           }
+                        },
+                        "values_aggregator_conf": {
+                          "name": "sumAggregator",
+                          "config": {
+                            "resolution": {
+                              "value": 1,
+                              "unit": "m"
+                            }
+                          }
                         }
                       },
                       {
                           "metric_source_name": "Service",
-                          "metric_name": "memory"
+                          "metric_name": "memory",
+                          "values_aggregator_conf": {
+                            "name": "medianAggregator",
+                            "config": {
+                              "resolution": {
+                                "value": 1,
+                                "unit": "m"
+                              }
+                            }
+                          }
                       }
                   ],
                   "default_metric_config" : {
@@ -127,18 +145,12 @@
                       "name": "defaultNA",
                       "config": { "default_value": 0 }
                     },
-                    "values_aggregator_conf": {
-                      "name": "sumAggregator",
-                      "config": {
-                        "resolution": {
-                          "value": 500,
-                          "unit": "ms"
-                        }
-                      }
-                    },
                     "forecaster_conf": {
                           "name": "reactive",
-                          "forecast_frequency": "500ms",
+                          "forecast_frequency": {
+                            "value": 1,
+                            "unit": "m"
+                          },
                           "history_data_buffer_size": {
                             "value": 10,
                             "unit": "m"

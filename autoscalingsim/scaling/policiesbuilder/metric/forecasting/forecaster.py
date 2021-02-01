@@ -10,10 +10,8 @@ class MetricForecaster:
 
     def __init__(self, config : dict):
 
-        fhorizon_in_steps = ErrorChecker.key_check_and_load('horizon_in_steps', config, default = 60)
-        forecast_frequency = ErrorChecker.key_check_and_load('forecast_frequency', config, default = '1s')
-        self._model = ForecastingModel.get(ErrorChecker.key_check_and_load('name', config))(config, fhorizon_in_steps, forecast_frequency)
-        self._fallback_model = ForecastingModel.get(ForecastingModel.FALLBACK_MODEL_NAME)(config, fhorizon_in_steps, forecast_frequency)
+        self._model = ForecastingModel.get(ErrorChecker.key_check_and_load('name', config))(config)
+        self._fallback_model = ForecastingModel.get(ForecastingModel.FALLBACK_MODEL_NAME)(config)
 
         history_data_buffer_size_raw = ErrorChecker.key_check_and_load('history_data_buffer_size', config)
         history_data_buffer_size_value = ErrorChecker.key_check_and_load('value', history_data_buffer_size_raw)

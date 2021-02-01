@@ -1,6 +1,10 @@
 import pandas as pd
+import pickle
+import os
 
 from abc import ABC, abstractmethod
+
+from autoscalingsim.utils.error_check import ErrorChecker
 
 class ForecastingModel(ABC):
 
@@ -8,11 +12,46 @@ class ForecastingModel(ABC):
 
     FALLBACK_MODEL_NAME = 'reactive'
 
-    def __init__(self, fhorizon_in_steps : int, forecast_frequency : str):
+    def __init__(self, config : dict):
 
-        self.fhorizon_in_steps = fhorizon_in_steps
-        self.forecast_frequency = forecast_frequency
-        self.fitted = False
+        self.service_name = ErrorChecker.key_check_and_load('service_name', config)
+        self.region_name = ErrorChecker.key_check_and_load('region', config)
+        self.metric_name = ErrorChecker.key_check_and_load('metric_name', config)
+
+        self.fhorizon_in_steps = ErrorChecker.key_check_and_load('horizon_in_steps', config, default = 60)
+        forecast_frequency_raw = ErrorChecker.key_check_and_load('forecast_frequency', config, default = {'value': 1,'unit': 's'})
+        forecast_frequency_val = ErrorChecker.key_check_and_load('value', forecast_frequency_raw)
+        forecast_frequency_unit = ErrorChecker.key_check_and_load('unit', forecast_frequency_raw)
+        self.forecast_frequency = pd.Timedelta(forecast_frequency_val, unit = forecast_frequency_unit)
+
+        self._model_fitted = None
+        dir_with_pretrained_models = ErrorChecker.key_check_and_load('dir_with_pretrained_models', config, default = None)
+        self.use_pretrained = False if dir_with_pretrained_models is None else True
+        self.fitted = self.use_pretrained
+        if self.use_pretrained:
+            self.load_from_location(dir_with_pretrained_models)
+
+        self.dir_to_store_models = ErrorChecker.key_check_and_load('dir_to_store_models', config, default = None)
+
+    def _construct_model_filepath(self):
+
+        return f'{self.service_name}-{self.region_name}-{self.metric_name}.mdl'
+
+    def save_to_location(self):
+
+        if not self.dir_to_store_models is None:
+            if not os.path.exists(self.dir_to_store_models):
+                os.makedirs(self.dir_to_store_models)
+
+            path_to_model_file = os.path.join(self.dir_to_store_models, self._construct_model_filepath())
+            if not self._model_fitted is None:
+                pickle.dump(self._model_fitted, open( path_to_model_file, 'wb' ))
+
+    def load_from_location(self, path_to_models_dir : str):
+
+        path_to_model_file = os.path.join(path_to_models_dir, self._construct_model_filepath())
+        if os.path.isfile(path_to_model_file):
+            self._model_fitted = pickle.load( open(path_to_model_file, 'rb') )
 
     @abstractmethod
     def _internal_fit(self, data : pd.DataFrame):
@@ -31,12 +70,14 @@ class ForecastingModel(ABC):
 
     def fit(self, data : pd.DataFrame):
 
-        data_pruned = self._resample_data(data[~data.index.duplicated(keep = 'first')])
-        self.fitted = self._internal_fit(data_pruned)
+        if not self.use_pretrained:
+            data_pruned = self._resample_data(data[~data.index.duplicated(keep = 'first')])
+            self.fitted = self._internal_fit(data_pruned)
+            self.save_to_location()
 
     def _construct_future_interval(self, interval_start : pd.Timestamp):
 
-        forecasting_interval_start = interval_start + pd.Timedelta(self.forecast_frequency)
+        forecasting_interval_start = interval_start + self.forecast_frequency
 
         return pd.date_range(forecasting_interval_start, periods = 2 * self.fhorizon_in_steps, freq = self.forecast_frequency)
 

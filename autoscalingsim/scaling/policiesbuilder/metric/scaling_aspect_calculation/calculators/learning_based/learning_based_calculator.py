@@ -109,6 +109,13 @@ class LearningBasedCalculator(DesiredAspectValueCalculator):
 
             result = pd.DataFrame({'value': aspect_vals}, index = timestamps)
 
+        return result
+
+    def update_model(self, cur_aspect_val : 'ScalingAspect', current_metric_val : dict):
+
+        current_performance_metric_vals = self.state_reader.get_metric_value(**self.performance_metric_config)
+        current_performance_metric_val = current_performance_metric_vals.mean().value
+
         if not np.isnan(current_performance_metric_val) and not hasnan(current_metric_val) and not cur_aspect_val.isnan:
             self.aspect_vals_buffer.put(cur_aspect_val)
             self.performance_metric_vals_buffer.put(current_performance_metric_val)
@@ -120,8 +127,6 @@ class LearningBasedCalculator(DesiredAspectValueCalculator):
 
         if not cur_aspect_vals is None and not cur_performance_metric_vals is None and not cur_metric_vals is None:
             self.model.fit(cur_aspect_vals, cur_metric_vals, cur_performance_metric_vals)
-
-        return result
 
     def _should_use_fallback_calculator(self, cur_aspect_val, current_metric_val, current_performance_metric_val):
 

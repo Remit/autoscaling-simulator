@@ -56,9 +56,11 @@ class Trainer:
 
                 simulation_config_raw = ErrorChecker.key_check_and_load('simulation_config', config)
                 self.simulation_step = pd.Timedelta(**ErrorChecker.key_check_and_load('simulation_step', simulation_config_raw))
+
                 simulation_config = { 'simulation_step': self.simulation_step,
                                       'starting_time': pd.Timestamp(ErrorChecker.key_check_and_load('starting_time', simulation_config_raw)),
-                                      'time_to_simulate': pd.Timedelta(**ErrorChecker.key_check_and_load('time_to_simulate', simulation_config_raw)) }
+                                      'time_to_simulate': pd.Timedelta(**ErrorChecker.key_check_and_load('time_to_simulate', simulation_config_raw)),
+                                      'models_refresh_period': pd.Timedelta(**ErrorChecker.key_check_and_load('models_refresh_period', simulation_config_raw)) }
 
                 self.simulator = Simulator(**simulation_config)
 

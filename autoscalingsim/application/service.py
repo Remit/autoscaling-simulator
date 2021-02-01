@@ -59,6 +59,10 @@ class Service(MetricSource):
 
         return self.scaling_effect_aggregation_rule(cur_timestamp)
 
+    def refresh_models(self):
+
+        self.scaling_effect_aggregation_rule.refresh_models()
+
     def add_request(self, req : Request):
 
         self.state.add_request(req)

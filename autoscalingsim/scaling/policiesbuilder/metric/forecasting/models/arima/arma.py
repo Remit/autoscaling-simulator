@@ -14,9 +14,9 @@ class ARMA(ArimaBase):
 
     """ Forecasts using ARMA(p, q) model """
 
-    def __init__(self, config : dict, fhorizon_in_steps : int, forecast_frequency : str):
+    def __init__(self, config : dict):
 
-        super().__init__(config, fhorizon_in_steps, forecast_frequency)
+        super().__init__(config)
         forecasting_model_params = ErrorChecker.key_check_and_load('config', config)
         ar_lags = ErrorChecker.key_check_and_load('p', forecasting_model_params, default = [0])
         self.ar_lags = [ar_lags] if isinstance(ar_lags, numbers.Number) else ar_lags

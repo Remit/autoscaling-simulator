@@ -1,7 +1,7 @@
 {
   "policy": {
     "sync_period": {
-      "value": 15,
+      "value": 30,
       "unit": "s"
     }
   },
@@ -66,20 +66,18 @@
                       "name": "sumAggregator",
                       "config": {
                         "resolution": {
-                          "value": 500,
-                          "unit": "ms"
+                          "value": 1,
+                          "unit": "m"
                         }
                       }
                     },
                     "forecaster_conf": {
                           "name": "holt_winters",
-                          "config": {
-                              "seasonal": "add",
-                              "smoothing_seasonal": 1.0,
-                              "seasonal_periods": 240,
-                              "smoothing_level": 0.7
+                          "dir_with_pretrained_models": "D:/AutoscalingSim/autoscaling-simulator/trained_models/forecasting/0-2-oscillating-1min-postponed/holtwinters",
+                          "forecast_frequency": {
+                            "value": 1,
+                            "unit": "m"
                           },
-                          "forecast_frequency": "500ms",
                           "history_data_buffer_size": {
                             "value": 10,
                             "unit": "m"
@@ -88,7 +86,7 @@
                             "value": 30,
                             "unit": "s"
                           },
-                          "horizon_in_steps": 480
+                          "horizon_in_steps": 5
                       }
                   }
               }

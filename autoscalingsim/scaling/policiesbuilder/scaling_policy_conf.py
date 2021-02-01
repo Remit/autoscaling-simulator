@@ -34,6 +34,7 @@ class ScalingPolicyConfiguration:
                 sync_period_value = ErrorChecker.key_check_and_load('value', sync_period_raw, self.__class__.__name__)
                 sync_period_unit = ErrorChecker.key_check_and_load('unit', sync_period_raw, self.__class__.__name__)
                 self._sync_period = pd.Timedelta(sync_period_value, sync_period_unit)
+                self._models_refresh_period = self._sync_period
 
                 services_config = ErrorChecker.key_check_and_load('services', app_config, self.__class__.__name__)
 
@@ -63,6 +64,16 @@ class ScalingPolicyConfiguration:
     def sync_period(self):
 
         return self._sync_period
+
+    @property
+    def models_refresh_period(self):
+
+        return self._models_refresh_period
+
+    @models_refresh_period.setter
+    def models_refresh_period(self, new_period : pd.Timedelta):
+
+        self._models_refresh_period = new_period
 
     @property
     def services_scaling_config(self):

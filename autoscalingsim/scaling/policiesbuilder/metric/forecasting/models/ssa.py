@@ -10,15 +10,17 @@ class SingularSpectrumAnalysis(ForecastingModel):
 
     """ Singular spectrum analysis (SSA) procedure for decomposing the time series """
 
-    def __init__(self, config : dict, fhorizon_in_steps : int, forecast_frequency : str):
+    def __init__(self, config : dict):
 
-        super().__init__(fhorizon_in_steps, forecast_frequency)
+        super().__init__(config)
 
-        forecasting_model_params = ErrorChecker.key_check_and_load('config', config)
-        self.n_components = ErrorChecker.key_check_and_load('n_components', forecasting_model_params, self.__class__.__name__, default = 10)
-        self.window_size = ErrorChecker.key_check_and_load('window_size', forecasting_model_params, self.__class__.__name__, default = None)
+        if self._model_fitted is None:
 
-        self._model_fitted = pymssa.MSSA(n_components = self.n_components, window_size = self.window_size, verbose = False)
+            forecasting_model_params = ErrorChecker.key_check_and_load('config', config)
+            self.n_components = ErrorChecker.key_check_and_load('n_components', forecasting_model_params, self.__class__.__name__, default = 10)
+            self.window_size = ErrorChecker.key_check_and_load('window_size', forecasting_model_params, self.__class__.__name__, default = None)
+
+            self._model_fitted = pymssa.MSSA(n_components = self.n_components, window_size = self.window_size, verbose = False)
 
     def _internal_fit(self, data : pd.DataFrame):
 

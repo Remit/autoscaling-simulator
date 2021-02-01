@@ -16,3 +16,7 @@ class RuleBasedCalculator(DesiredAspectValueCalculator):
     def _compute_internal(self, cur_aspect_val : 'ScalingAspect', metric_vals : dict, current_metric_val : dict = None):
 
         return self.rule.compute_desired(cur_aspect_val, metric_vals)
+
+    def update_model(self, cur_aspect_val, cur_metric_vals):
+
+        pass

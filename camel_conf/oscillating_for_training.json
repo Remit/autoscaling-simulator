@@ -1,0 +1,23 @@
+{
+      "step_duration": { "value": 30, "unit": "s" },
+      "pieces": [
+          {
+              "pattern": "const",
+              "interval": { "value": 1, "unit": "m" },
+              "config": {
+                  "rps": 0
+              }
+          },
+          {
+              "pattern": "oscillating",
+              "interval": { "value": 10, "unit": "m" },
+              "config": {
+                  "period_as_percentage_of_interval": 0.2,
+                  "values": [
+                      { "percentage_of_period": 0.5, "rps": 2 },
+                      { "percentage_of_period": 0.5, "rps": 1 }
+                  ]
+              }
+          }
+      ]
+  }

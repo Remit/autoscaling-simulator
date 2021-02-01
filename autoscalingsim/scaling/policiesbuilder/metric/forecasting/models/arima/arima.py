@@ -10,8 +10,8 @@ class ARIMA(ARMA):
 
     """ Forecasts using ARIMA(p, d, q) model """
 
-    def __init__(self, config : dict, fhorizon_in_steps : int, forecast_frequency : str):
+    def __init__(self, config : dict):
 
-        super().__init__(config, fhorizon_in_steps, forecast_frequency)
+        super().__init__(config)
         forecasting_model_params = ErrorChecker.key_check_and_load('config', config)
         self.d = ErrorChecker.key_check_and_load('d', forecasting_model_params, 0)

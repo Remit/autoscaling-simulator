@@ -34,14 +34,22 @@ class ScalingPolicy:
 
         self.scaling_manager = scaling_manager
         self.last_sync_timestamp = simulation_conf['starting_time']
+        self.last_models_refresh_timestamp = simulation_conf['starting_time']
 
         self.scaling_settings = ScalingPolicyConfiguration(configs_contents_table[conf_keys.CONF_SCALING_POLICY_KEY])
+        if 'models_refresh_period' in simulation_conf:
+            self.scaling_settings.models_refresh_period = simulation_conf['models_refresh_period']
 
         self.platform_model = PlatformModel(state_reader, scaling_manager,
                                             service_instance_requirements, self.scaling_settings.services_scaling_config,
                                             simulation_conf, configs_contents_table, node_groups_registry)
 
     def reconcile_state(self, cur_timestamp : pd.Timestamp):
+
+        if cur_timestamp - self.last_models_refresh_timestamp >= self.scaling_settings.models_refresh_period:
+
+            self.scaling_manager.refresh_models()
+            self.last_models_refresh_timestamp = cur_timestamp
 
         if cur_timestamp - self.last_sync_timestamp >= self.scaling_settings.sync_period:
 

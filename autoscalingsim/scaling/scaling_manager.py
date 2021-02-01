@@ -36,3 +36,8 @@ class ScalingManager:
                          node_group : NodeGroup):
 
         self.services[service_name].update_placement_in_region(region_name, node_group)
+
+    def refresh_models(self):
+
+        for service in self.services.values():
+            service.refresh_models()

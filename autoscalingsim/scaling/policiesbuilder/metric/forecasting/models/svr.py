@@ -41,26 +41,28 @@ class SupportVectorRegression(ForecastingModel):
 
     """
 
-    def __init__(self, config : dict, fhorizon_in_steps : int, forecast_frequency : str):
+    def __init__(self, config : dict):
 
-        super().__init__(fhorizon_in_steps, forecast_frequency)
+        super().__init__(config)
 
-        forecasting_model_params = ErrorChecker.key_check_and_load('config', config)
+        if self._model_fitted is None:
 
-        self.lags = ErrorChecker.key_check_and_load('lags', forecasting_model_params, self.__class__.__name__, default = [0])
+            forecasting_model_params = ErrorChecker.key_check_and_load('config', config)
 
-        svr_params = {
-                       'kernel' : ErrorChecker.key_check_and_load('kernel', forecasting_model_params, self.__class__.__name__, default = 'rbf'),
-                       'degree' : ErrorChecker.key_check_and_load('degree', forecasting_model_params, self.__class__.__name__, default = 3),
-                       'gamma'  : ErrorChecker.key_check_and_load('degree', forecasting_model_params, self.__class__.__name__, default = 'scale'),
-                       'coef0'  : ErrorChecker.key_check_and_load('coef0', forecasting_model_params, self.__class__.__name__, default = 0.0),
-                       'tol'  : ErrorChecker.key_check_and_load('tol', forecasting_model_params, self.__class__.__name__, default = 0.001),
-                       'C'  : ErrorChecker.key_check_and_load('C', forecasting_model_params, self.__class__.__name__, default = 1.0),
-                       'epsilon'  : ErrorChecker.key_check_and_load('epsilon', forecasting_model_params, self.__class__.__name__, default = 0.1),
-                       'max_iter'  : ErrorChecker.key_check_and_load('max_iter', forecasting_model_params, self.__class__.__name__, default = -1)
-                     }
+            self.lags = ErrorChecker.key_check_and_load('lags', forecasting_model_params, self.__class__.__name__, default = [0])
 
-        self._model_fitted = make_pipeline(StandardScaler(), SVR(**svr_params))
+            svr_params = {
+                           'kernel' : ErrorChecker.key_check_and_load('kernel', forecasting_model_params, self.__class__.__name__, default = 'rbf'),
+                           'degree' : ErrorChecker.key_check_and_load('degree', forecasting_model_params, self.__class__.__name__, default = 3),
+                           'gamma'  : ErrorChecker.key_check_and_load('degree', forecasting_model_params, self.__class__.__name__, default = 'scale'),
+                           'coef0'  : ErrorChecker.key_check_and_load('coef0', forecasting_model_params, self.__class__.__name__, default = 0.0),
+                           'tol'  : ErrorChecker.key_check_and_load('tol', forecasting_model_params, self.__class__.__name__, default = 0.001),
+                           'C'  : ErrorChecker.key_check_and_load('C', forecasting_model_params, self.__class__.__name__, default = 1.0),
+                           'epsilon'  : ErrorChecker.key_check_and_load('epsilon', forecasting_model_params, self.__class__.__name__, default = 0.1),
+                           'max_iter'  : ErrorChecker.key_check_and_load('max_iter', forecasting_model_params, self.__class__.__name__, default = -1)
+                         }
+
+            self._model_fitted = make_pipeline(StandardScaler(), SVR(**svr_params))
         self.observations_batches_lengths = [0]
 
     def _internal_fit(self, data : pd.DataFrame):

@@ -11,9 +11,9 @@ class SimpleAverage(ForecastingModel):
     and uses the resulting value as the forecast.
     """
 
-    def __init__(self, config : dict, fhorizon_in_steps : int, forecast_frequency : str):
+    def __init__(self, config : dict):
 
-        super().__init__(fhorizon_in_steps, forecast_frequency)
+        super().__init__(config)
 
         forecasting_model_params = ErrorChecker.key_check_and_load('config', config)
         averaging_interval_raw = ErrorChecker.key_check_and_load('averaging_interval', forecasting_model_params)

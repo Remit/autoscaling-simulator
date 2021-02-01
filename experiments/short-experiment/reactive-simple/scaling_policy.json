@@ -1,7 +1,7 @@
 {
   "policy": {
     "sync_period": {
-      "value": 15,
+      "value": 30,
       "unit": "s"
     }
   },
@@ -28,6 +28,10 @@
                           "value": 1,
                           "unit": "s"
                         }
+                      },
+                      "adjustment_heuristic_conf": {
+                        "name": "rescale",
+                        "scaling_factor": 1.15
                       }
                     }
                     },
@@ -62,14 +66,17 @@
                       "name": "sumAggregator",
                       "config": {
                         "resolution": {
-                          "value": 500,
-                          "unit": "ms"
+                          "value": 1,
+                          "unit": "m"
                         }
                       }
                     },
                     "forecaster_conf": {
                           "name": "reactive",
-                          "forecast_frequency": "500ms",
+                          "forecast_frequency": {
+                            "value": 1,
+                            "unit": "m"
+                          },
                           "history_data_buffer_size": {
                             "value": 10,
                             "unit": "m"
@@ -78,7 +85,7 @@
                             "value": 30,
                             "unit": "s"
                           },
-                          "horizon_in_steps": 5
+                          "horizon_in_steps": 2
                       }
                   }
               }

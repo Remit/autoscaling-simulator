@@ -18,6 +18,11 @@ class DesiredAspectValueCalculator(ABC):
         return self.post_processing_adjuster.adjust(self._compute_internal(cur_aspect_val, metric_vals, current_metric_val))
 
     @abstractmethod
+    def update_model(self, cur_aspect_val, cur_metric_vals):
+
+        pass
+
+    @abstractmethod
     def _compute_internal(self, cur_aspect_val, metric_vals, current_metric_val):
 
         pass

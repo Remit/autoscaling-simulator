@@ -62,6 +62,19 @@ class ScalingMetricGroup:
         else:
             return pd.DataFrame()
 
+    def refresh_models(self):
+
+        cur_metric_vals = dict()
+        for metric in self.metrics:
+            cur_metric_val = metric.get_current_value()
+            if not cur_metric_val is None:
+                cur_metric_vals[metric.name] = cur_metric_val
+
+        if len(cur_metric_vals) > 0:
+            cur_aspect_val = self.state_reader.get_aspect_value(self.service_name, self.region_name, self.aspect_name)
+            self.desired_aspect_value_calculator.update_model(cur_aspect_val, cur_metric_vals)
+
+
     def update_limits(self, new_min, new_max):
 
         if not self.limiter is None:
@@ -77,6 +90,7 @@ class ScalingMetric:
     def __init__(self, service_name : str, region_name : str, metric_source_name : str, metric_name : str, submetric_name : str, state_reader : StateReader,
                  accessor_to_related_service_class : type, values_filter_conf : dict, values_aggregator_conf : dict, forecaster_conf : dict, correlator_conf : dict):
 
+        self.service_name = service_name
         self.region_name = region_name
         self.metric_source_name = metric_source_name
         self.name = metric_name
@@ -84,6 +98,9 @@ class ScalingMetric:
         self.state_reader = state_reader
         self.accessor_to_related_service = accessor_to_related_service_class(state_reader, service_name, metric_name, submetric_name) if not accessor_to_related_service_class is None else None
 
+        forecaster_conf['region'] = self.region_name
+        forecaster_conf['service_name'] = self.service_name
+        forecaster_conf['metric_name'] = self.name
         self.forecaster = MetricForecaster(forecaster_conf)
 
         if len(correlator_conf) > 0:
@@ -121,3 +138,15 @@ class ScalingMetric:
 
         else:
             return (pd.DataFrame(), None)
+
+    def get_current_value(self):
+
+        metric_vals = self.state_reader.get_metric_value(self.metric_source_name, self.region_name, self.name, self.submetric_name)
+        if metric_vals.shape[0] > 0:
+
+            filtered_metric_vals = self.values_filter.filter(metric_vals)
+            aggregated_metric_vals = self.values_aggregator.aggregate(filtered_metric_vals)
+            return self.metric_category.to_scaling_representation(aggregated_metric_vals.value[-1])
+
+        else:
+            return None

@@ -1,12 +1,16 @@
 {
   "training_config": {
-    "repetitions": 20,
+    "repetitions": 10,
     "load_patterns_cnt_in_repetition": 2,
     "model_folder": "/home/ubuntu/models-short-oscillations/nn-1layer-50ms/load-memutil",
     "load_patterns_folder": "load_patterns",
     "simulation_configs_folder": "simulations_configs"
   },
   "simulation_config": {
+    "models_refresh_period": {
+      "value": 3,
+      "unit": "s"
+    },
     "starting_time": "2020-09-17T10:00:00",
     "simulation_step": {
       "value": 50,

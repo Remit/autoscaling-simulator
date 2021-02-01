@@ -8,9 +8,9 @@ class Reactive(ForecastingModel):
 
     """ Repeats the last observed metric value into the future, used in reactive autoscaling """
 
-    def __init__(self, config : dict, fhorizon_in_steps : int, forecast_frequency : str):
+    def __init__(self, config : dict):
 
-        super().__init__(fhorizon_in_steps, forecast_frequency)
+        super().__init__(config)
 
         self.fitted = True
 
