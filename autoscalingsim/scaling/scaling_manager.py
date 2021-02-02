@@ -37,7 +37,7 @@ class ScalingManager:
 
         self.services[service_name].update_placement_in_region(region_name, node_group)
 
-    def refresh_models(self):
+    def refresh_models(self, cur_timestamp : pd.Timestamp):
 
         for service in self.services.values():
-            service.refresh_models()
+            service.refresh_models(cur_timestamp)

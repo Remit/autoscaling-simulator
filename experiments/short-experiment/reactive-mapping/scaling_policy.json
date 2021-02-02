@@ -55,8 +55,8 @@
                                 }
                             },
                             "model_quality_metric": {
-                                "name": "mean_squared_error",
-                                "threshold": 10
+                                "name": "scaled_error",
+                                "threshold": 0.15
                             },
                             "minibatch_size": 2,
                             "optimizer_config": {

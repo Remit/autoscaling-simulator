@@ -48,7 +48,7 @@ class ScalingPolicy:
 
         if cur_timestamp - self.last_models_refresh_timestamp >= self.scaling_settings.models_refresh_period:
 
-            self.scaling_manager.refresh_models()
+            self.scaling_manager.refresh_models(cur_timestamp)
             self.last_models_refresh_timestamp = cur_timestamp
 
         if cur_timestamp - self.last_sync_timestamp >= self.scaling_settings.sync_period:

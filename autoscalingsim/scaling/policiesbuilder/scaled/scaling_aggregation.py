@@ -42,11 +42,11 @@ class ScalingEffectAggregationRule(ABC):
 
         self._scaled_aspect_name = scaling_setting_for_service.scaled_aspect_name
 
-    def refresh_models(self):
+    def refresh_models(self, cur_timestamp : pd.Timestamp):
 
         for metric_groups in self._metric_groups_by_region.values():
             for metric_group in metric_groups.values():
-                metric_group.refresh_models()
+                metric_group.refresh_models(cur_timestamp)
 
     @property
     def metrics_groups_models(self):

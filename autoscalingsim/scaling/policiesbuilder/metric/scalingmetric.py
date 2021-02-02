@@ -62,7 +62,7 @@ class ScalingMetricGroup:
         else:
             return pd.DataFrame()
 
-    def refresh_models(self):
+    def refresh_models(self, cur_timestamp : pd.Timestamp):
 
         cur_metric_vals = dict()
         for metric in self.metrics:
@@ -72,7 +72,7 @@ class ScalingMetricGroup:
 
         if len(cur_metric_vals) > 0:
             cur_aspect_val = self.state_reader.get_aspect_value(self.service_name, self.region_name, self.aspect_name)
-            self.desired_aspect_value_calculator.update_model(cur_aspect_val, cur_metric_vals)
+            self.desired_aspect_value_calculator.update_model(cur_aspect_val, cur_metric_vals, cur_timestamp)
 
 
     def update_limits(self, new_min, new_max):

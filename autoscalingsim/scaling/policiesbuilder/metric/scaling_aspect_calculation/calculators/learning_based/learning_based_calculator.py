@@ -27,6 +27,8 @@ def hasnan(vals):
 @DesiredAspectValueCalculator.register('learning')
 class LearningBasedCalculator(DesiredAspectValueCalculator):
 
+    LOG_FILENAME = 'training_log.csv'
+
     _Registry = {}
 
     def __init__(self, config):
@@ -61,13 +63,13 @@ class LearningBasedCalculator(DesiredAspectValueCalculator):
         performance_metric_threshold = MetricsRegistry.get(self.performance_metric_config['metric_name']).to_metric(ErrorChecker.key_check_and_load('threshold', performance_metric_conf))
 
         model_config = ErrorChecker.key_check_and_load('model', config, default = dict())
-        model_root_folder = ErrorChecker.key_check_and_load('model_root_folder', config, default = None)
+        self.model_root_folder = ErrorChecker.key_check_and_load('model_root_folder', config, default = None)
         model_file_name = ErrorChecker.key_check_and_load('model_file_name', config, default = None)
-        if not model_root_folder is None and not model_file_name is None:
-            service_name = ErrorChecker.key_check_and_load('service_name', config, default = None)
-            metric_group = ErrorChecker.key_check_and_load('metric_group', config, default = None)
-            region_name = ErrorChecker.key_check_and_load('region', config, default = None)
-            model_config['model_path'] = os.path.join(model_root_folder, service_name, region_name, metric_group, model_file_name)
+        if not self.model_root_folder is None and not model_file_name is None:
+            self.service_name = ErrorChecker.key_check_and_load('service_name', config, default = None)
+            self.metric_group = ErrorChecker.key_check_and_load('metric_group', config, default = None)
+            self.region_name = ErrorChecker.key_check_and_load('region', config, default = None)
+            model_config['model_path'] = os.path.join(self.model_root_folder, self.service_name, self.region_name, self.metric_group, model_file_name)
 
         self.model = ScalingAspectToQualityMetricModel.get(ErrorChecker.key_check_and_load('name', model_config, default = 'passive_aggressive'))(model_config)
 
@@ -111,7 +113,7 @@ class LearningBasedCalculator(DesiredAspectValueCalculator):
 
         return result
 
-    def update_model(self, cur_aspect_val : 'ScalingAspect', current_metric_val : dict):
+    def update_model(self, cur_aspect_val : 'ScalingAspect', current_metric_val : dict, cur_timestamp : pd.Timestamp):
 
         current_performance_metric_vals = self.state_reader.get_metric_value(**self.performance_metric_config)
         current_performance_metric_val = current_performance_metric_vals.mean().value
@@ -128,6 +130,15 @@ class LearningBasedCalculator(DesiredAspectValueCalculator):
         if not cur_aspect_vals is None and not cur_performance_metric_vals is None and not cur_metric_vals is None:
             self.model.fit(cur_aspect_vals, cur_metric_vals, cur_performance_metric_vals)
 
+            if not self.model_root_folder is None:
+
+                predicted_performance_metric_val = self.model.predict(cur_aspect_val, current_metric_val)
+                mdl_quality_metric_val = self.model_quality_metric.compute(predicted_performance_metric_val, current_performance_metric_val)
+
+                with open(os.path.join(self.model_root_folder, self.__class__.LOG_FILENAME), 'a+') as f:
+                    string_to_write = f'{cur_timestamp};{self.service_name};{self.metric_group};{self.region_name};{mdl_quality_metric_val}\n'
+                    f.write(string_to_write)
+
     def _should_use_fallback_calculator(self, cur_aspect_val, current_metric_val, current_performance_metric_val):
 
         try:
@@ -136,7 +147,7 @@ class LearningBasedCalculator(DesiredAspectValueCalculator):
 
             predicted_performance_metric_val = self.model.predict(cur_aspect_val, current_metric_val)
             print(f'f(cur_aspect_val = {cur_aspect_val}, current_metric_val = {current_metric_val}) = {predicted_performance_metric_val} | ORIGINAL: {current_performance_metric_val}')
-            mdl_quality_metric_val = self.model_quality_metric([current_performance_metric_val], predicted_performance_metric_val)
+            mdl_quality_metric_val = self.model_quality_metric.compute(predicted_performance_metric_val, current_performance_metric_val)
 
             if mdl_quality_metric_val > self.model_quality_threshold:
                 print(f'Using fallback calculator! Quality metric: {mdl_quality_metric_val}')
