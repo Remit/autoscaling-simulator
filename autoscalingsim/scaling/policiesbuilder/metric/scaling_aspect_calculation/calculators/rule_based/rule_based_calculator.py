@@ -17,6 +17,6 @@ class RuleBasedCalculator(DesiredAspectValueCalculator):
 
         return self.rule.compute_desired(cur_aspect_val, metric_vals)
 
-    def update_model(self, cur_aspect_val, cur_metric_vals):
+    def update_model(self, cur_aspect_val, cur_metric_vals, cur_timestamp = None):
 
         pass

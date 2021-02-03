@@ -109,6 +109,9 @@ class NeuralNet(NonlinearModel):
 
             self._model = tf.keras.models.Sequential()
             model_layers = ErrorChecker.key_check_and_load('layers', config, default = list())
+            if len(model_layers) == 0:
+                raise ValueError('No layers specified for the model')
+
             for layer_conf in model_layers:
                 layer_type = ErrorChecker.key_check_and_load('type', layer_conf)
                 layer_template = self.__class__._LAYERS.get(layer_type, None) # TODO: class?

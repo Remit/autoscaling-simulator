@@ -39,9 +39,9 @@
                               }
                             },
                             "model": {
-                                "name": "stochastic_gradient_descent",
+                                "name": "neural_net",
                                 "kind": "online",
-                                "model_root_folder": "D:/AutoscalingSim/autoscaling-simulator/results/models-short-oscillations/neuralnets/test",
+                                "model_root_folder": "D:/AutoscalingSim/autoscaling-simulator/results/models-short-oscillations/neuralnets/5layer",
                                 "model_file_name": "dav_model.mdl"
                             },
                             "performance_metric": {
@@ -56,9 +56,9 @@
                             },
                             "model_quality_metric": {
                                 "name": "scaled_error",
-                                "threshold": 0.15
+                                "threshold": 0.25
                             },
-                            "minibatch_size": 2,
+                            "minibatch_size": 10,
                             "optimizer_config": {
                                 "method": "trust-constr",
                                 "jac": "2-point",
@@ -133,7 +133,7 @@
                             "value": 30,
                             "unit": "s"
                           },
-                          "horizon_in_steps": 5
+                          "horizon_in_steps": 1
                       }
                   }
               }

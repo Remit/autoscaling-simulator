@@ -25,11 +25,13 @@ class ForecastingModel(ABC):
         self.forecast_frequency = pd.Timedelta(forecast_frequency_val, unit = forecast_frequency_unit)
 
         self._model_fitted = None
+        self.fitted = False
         dir_with_pretrained_models = ErrorChecker.key_check_and_load('dir_with_pretrained_models', config, default = None)
-        self.use_pretrained = False if dir_with_pretrained_models is None else True
-        self.fitted = self.use_pretrained
-        if self.use_pretrained:
+        if not dir_with_pretrained_models is None:
             self.load_from_location(dir_with_pretrained_models)
+            self.fitted = True
+
+        self.do_not_adjust_model = ErrorChecker.key_check_and_load('do_not_adjust_model', config, default = False)
 
         self.dir_to_store_models = ErrorChecker.key_check_and_load('dir_to_store_models', config, default = None)
 
@@ -70,16 +72,16 @@ class ForecastingModel(ABC):
 
     def fit(self, data : pd.DataFrame):
 
-        if not self.use_pretrained:
+        if not self.do_not_adjust_model:
             data_pruned = self._resample_data(data[~data.index.duplicated(keep = 'first')])
             self.fitted = self._internal_fit(data_pruned)
             self.save_to_location()
 
     def _construct_future_interval(self, interval_start : pd.Timestamp):
 
-        forecasting_interval_start = interval_start + self.forecast_frequency
+        #forecasting_interval_start = interval_start + self.forecast_frequency
 
-        return pd.date_range(forecasting_interval_start, periods = 2 * self.fhorizon_in_steps, freq = self.forecast_frequency)
+        return pd.date_range(interval_start, periods = 2 * self.fhorizon_in_steps, freq = self.forecast_frequency)
 
     def _resample_data(self, time_series_data : pd.DataFrame, holes_filling_method : str = 'ffill'):
 

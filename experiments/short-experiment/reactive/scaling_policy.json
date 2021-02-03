@@ -85,7 +85,7 @@
                             "value": 30,
                             "unit": "s"
                           },
-                          "horizon_in_steps": 2
+                          "horizon_in_steps": 1
                       }
                   }
               }

@@ -27,7 +27,17 @@ class HoltWinters(ForecastingModel):
             self.smoothing_seasonal = ErrorChecker.key_check_and_load('smoothing_seasonal', forecasting_model_params, self.__class__.__name__, default = None)
             self.damping_trend = ErrorChecker.key_check_and_load('damping_trend', forecasting_model_params, self.__class__.__name__, default = None)
 
-            self._model_fitted = None
+        else:
+
+            self.init_conf = { 'trend': self._model_fitted.model.trend,
+                               'damped_trend': self._model_fitted.model.damped_trend,
+                               'seasonal': self._model_fitted.model.seasonal,
+                               'seasonal_periods': self._model_fitted.model.seasonal_periods }
+
+            self.smoothing_level = self._model_fitted.params['smoothing_level']
+            self.smoothing_trend = self._model_fitted.params['smoothing_trend']
+            self.smoothing_seasonal = self._model_fitted.params['smoothing_seasonal']
+            self.damping_trend = self._model_fitted.params['damping_trend']
 
     def _internal_fit(self, data : pd.DataFrame):
 
@@ -39,18 +49,25 @@ class HoltWinters(ForecastingModel):
 
             if data.shape[0] > 0:
                 if self.init_conf['seasonal_periods'] is None or data.shape[0] >= self.init_conf['seasonal_periods']:
-                    self._model_fitted = ExponentialSmoothing(data.value.to_list(), **self.init_conf).fit(smoothing_level = self.smoothing_level, smoothing_trend = self.smoothing_trend,
-                                                                                                          smoothing_seasonal = self.smoothing_seasonal,
-                                                                                                          damping_trend = self.damping_trend,
-                                                                                                          optimized = optimized)
+                    self._model_fitted = ExponentialSmoothing(data.value, **self.init_conf).fit(smoothing_level = self.smoothing_level, smoothing_trend = self.smoothing_trend,
+                                                                                                smoothing_seasonal = self.smoothing_seasonal,
+                                                                                                damping_trend = self.damping_trend,
+                                                                                                optimized = optimized)
                     return True
+
+    def _time_adjustment(self, ts_original : pd.Timestamp, ts_to_adjust : pd.Timestamp):
+
+        time_adjustment = (ts_to_adjust - ts_original) % pd.Timedelta(1, unit = ts_original.freqstr)
+        return ts_to_adjust + time_adjustment
 
     def _internal_predict(self, metric_vals : pd.DataFrame, cur_timestamp : pd.Timestamp, future_adjustment_from_others : pd.DataFrame = None):
 
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             forecast_interval = self._construct_future_interval(cur_timestamp)
-            forecast = self._model_fitted.forecast(len(forecast_interval)) if not self._model_fitted is None else [metric_vals.tail(1).value.item()] * len(forecast_interval)
+            forecast_start = self._time_adjustment(self._model_fitted.fittedvalues.index[-1], min(forecast_interval))
+            forecast_end = self._time_adjustment(self._model_fitted.fittedvalues.index[-1], max(forecast_interval))
+            forecast = self._model_fitted.predict(start = forecast_start, end = forecast_end) if not self._model_fitted is None else [metric_vals.tail(1).value.item()] * len(forecast_interval)
             forecast = pd.DataFrame({ metric_vals.index.name : forecast_interval, 'value': forecast } ).set_index(metric_vals.index.name)
             forecast = self._sanity_filter(forecast)
 

@@ -35,9 +35,9 @@
                               }
                             },
                             "model": {
-                                "name": "stochastic_gradient_descent",
+                                "name": "neural_net",
                                 "kind": "online",
-                                "model_root_folder": "D:/@TUM/PhD/FINAL/experiments/models/16_20_iterations/sgd/load",
+                                "model_root_folder": "D:/AutoscalingSim/autoscaling-simulator/results/models-short-oscillations/neuralnets/5layer",
                                 "model_file_name": "dav_model.mdl"
                             },
                             "performance_metric": {
@@ -51,10 +51,10 @@
                                 }
                             },
                             "model_quality_metric": {
-                                "name": "mean_squared_error",
-                                "threshold": 10
+                              "name": "scaled_error",
+                              "threshold": 0.25
                             },
-                            "minibatch_size": 2,
+                            "minibatch_size": 10,
                             "optimizer_config": {
                                 "method": "trust-constr",
                                 "jac": "2-point",
@@ -85,7 +85,29 @@
                             "value": 1,
                             "unit": "s"
                           }
+                        },
+                        "values_aggregator_conf": {
+                          "name": "sumAggregator",
+                          "config": {
+                            "resolution": {
+                              "value": 1,
+                              "unit": "m"
+                            }
+                          }
                         }
+                      },
+                      {
+                          "metric_source_name": "Service",
+                          "metric_name": "memory",
+                          "values_aggregator_conf": {
+                            "name": "medianAggregator",
+                            "config": {
+                              "resolution": {
+                                "value": 1,
+                                "unit": "m"
+                              }
+                            }
+                          }
                       }
                   ],
                   "default_metric_config" : {
@@ -93,24 +115,14 @@
                       "name": "defaultNA",
                       "config": { "default_value": 0 }
                     },
-                    "values_aggregator_conf": {
-                      "name": "sumAggregator",
-                      "config": {
-                        "resolution": {
-                          "value": 500,
-                          "unit": "ms"
-                        }
-                      }
-                    },
                     "forecaster_conf": {
                           "name": "holt_winters",
-                          "config": {
-                              "seasonal": "add",
-                              "smoothing_seasonal": 1.0,
-                              "seasonal_periods": 240,
-                              "smoothing_level": 0.7
+                          "dir_with_pretrained_models": "D:/AutoscalingSim/autoscaling-simulator/trained_models/forecasting/1-3-oscillating-1min-postponed/holtwinters",
+                          "do_not_adjust_model": true,
+                          "forecast_frequency": {
+                            "value": 1,
+                            "unit": "m"
                           },
-                          "forecast_frequency": "500ms",
                           "history_data_buffer_size": {
                             "value": 10,
                             "unit": "m"
@@ -119,7 +131,7 @@
                             "value": 30,
                             "unit": "s"
                           },
-                          "horizon_in_steps": 480
+                          "horizon_in_steps": 5
                       }
                   }
               }

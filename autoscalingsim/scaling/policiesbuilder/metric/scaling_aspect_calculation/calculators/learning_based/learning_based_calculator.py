@@ -63,8 +63,8 @@ class LearningBasedCalculator(DesiredAspectValueCalculator):
         performance_metric_threshold = MetricsRegistry.get(self.performance_metric_config['metric_name']).to_metric(ErrorChecker.key_check_and_load('threshold', performance_metric_conf))
 
         model_config = ErrorChecker.key_check_and_load('model', config, default = dict())
-        self.model_root_folder = ErrorChecker.key_check_and_load('model_root_folder', config, default = None)
-        model_file_name = ErrorChecker.key_check_and_load('model_file_name', config, default = None)
+        self.model_root_folder = ErrorChecker.key_check_and_load('model_root_folder', model_config, default = None)
+        model_file_name = ErrorChecker.key_check_and_load('model_file_name', model_config, default = None)
         if not self.model_root_folder is None and not model_file_name is None:
             self.service_name = ErrorChecker.key_check_and_load('service_name', config, default = None)
             self.metric_group = ErrorChecker.key_check_and_load('metric_group', config, default = None)
