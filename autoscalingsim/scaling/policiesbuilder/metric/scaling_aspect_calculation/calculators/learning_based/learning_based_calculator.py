@@ -63,6 +63,7 @@ class LearningBasedCalculator(DesiredAspectValueCalculator):
         performance_metric_threshold = MetricsRegistry.get(self.performance_metric_config['metric_name']).to_metric(ErrorChecker.key_check_and_load('threshold', performance_metric_conf))
 
         model_config = ErrorChecker.key_check_and_load('model', config, default = dict())
+        self.training_mode = ErrorChecker.key_check_and_load('training_mode', model_config, default = False)
         self.model_root_folder = ErrorChecker.key_check_and_load('model_root_folder', model_config, default = None)
         model_file_name = ErrorChecker.key_check_and_load('model_file_name', model_config, default = None)
         if not self.model_root_folder is None and not model_file_name is None:
@@ -73,7 +74,6 @@ class LearningBasedCalculator(DesiredAspectValueCalculator):
 
         self.model = ScalingAspectToQualityMetricModel.get(ErrorChecker.key_check_and_load('name', model_config, default = 'passive_aggressive'))(model_config)
 
-        self.training_mode = ErrorChecker.key_check_and_load('training_mode', config, default = False)
         optimizer_config = ErrorChecker.key_check_and_load('optimizer_config', config, default = dict())
         self.scaling_aspect_value_derivator = ScalingAspectValueDerivator(optimizer_config, performance_metric_threshold, self.model.input_formatter)
 
@@ -96,12 +96,13 @@ class LearningBasedCalculator(DesiredAspectValueCalculator):
             result = self.fallback_calculator._compute_internal(cur_aspect_val, forecasted_metric_vals)
 
         else:
-            unique_aspect_vals_predictions = dict()
-            forecasts_joint = pd.DataFrame()
+            #unique_aspect_vals_predictions = dict()
+            forecasts_joint_lst = list()
             for metric_name, vals in forecasted_metric_vals.items():
-                forecasts_joint[metric_name] = vals.value
+                forecasts_joint_lst.append(vals.value)
+                forecasts_joint_lst[-1].name = metric_name
 
-            forecasts_joint = forecasts_joint.dropna()
+            forecasts_joint = pd.concat(forecasts_joint_lst, axis = 1).fillna(0) if len(forecasts_joint_lst) > 0 else pd.DataFrame([])
 
             timestamps = list()
             aspect_vals = list()
@@ -128,7 +129,9 @@ class LearningBasedCalculator(DesiredAspectValueCalculator):
         cur_metric_vals = self.metrics_vals_buffer.get_if_full()
 
         if not cur_aspect_vals is None and not cur_performance_metric_vals is None and not cur_metric_vals is None:
+
             self.model.fit(cur_aspect_vals, cur_metric_vals, cur_performance_metric_vals)
+            print(f'[{cur_timestamp}] Fitting: f({cur_aspect_vals}, {cur_metric_vals}) = {cur_performance_metric_vals}')
 
             if not self.model_root_folder is None:
 
@@ -140,6 +143,8 @@ class LearningBasedCalculator(DesiredAspectValueCalculator):
                     f.write(string_to_write)
 
     def _should_use_fallback_calculator(self, cur_aspect_val, current_metric_val, current_performance_metric_val):
+
+        print(f'current_performance_metric_val: {current_performance_metric_val}')
 
         try:
             if np.isnan(current_performance_metric_val) or self.training_mode:

@@ -33,8 +33,13 @@ class ScalingPolicyConfiguration:
                 sync_period_raw = ErrorChecker.key_check_and_load('sync_period', policy_config, self.__class__.__name__)
                 sync_period_value = ErrorChecker.key_check_and_load('value', sync_period_raw, self.__class__.__name__)
                 sync_period_unit = ErrorChecker.key_check_and_load('unit', sync_period_raw, self.__class__.__name__)
-                self._sync_period = pd.Timedelta(sync_period_value, sync_period_unit)
+                self._sync_period = pd.Timedelta(sync_period_value, unit = sync_period_unit)
                 self._models_refresh_period = self._sync_period
+
+                warm_up_raw = ErrorChecker.key_check_and_load('warm_up', policy_config, self.__class__.__name__)
+                warm_up_value = ErrorChecker.key_check_and_load('value', warm_up_raw, self.__class__.__name__)
+                warm_up_unit = ErrorChecker.key_check_and_load('unit', warm_up_raw, self.__class__.__name__)
+                self._warm_up = pd.Timedelta(warm_up_value, unit = warm_up_unit)
 
                 services_config = ErrorChecker.key_check_and_load('services', app_config, self.__class__.__name__)
 
@@ -59,6 +64,11 @@ class ScalingPolicyConfiguration:
             return self._services_scaling_config[service_name]
         else:
             return self._services_scaling_config[self.__class__.DEFAULT_SERVICE_NAME]
+
+    @property
+    def warm_up(self):
+
+        return self._warm_up
 
     @property
     def sync_period(self):

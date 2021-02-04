@@ -35,12 +35,12 @@ class Size(MetricCategory):
         return val
 
     @classmethod
-    def to_scaling_representation(cls, val : float):
+    def to_scaling_representation(cls, val : float, time_interval : pd.Timedelta = None):
 
         return val
 
     @classmethod
-    def convert_df(cls, df : pd.DataFrame):
+    def convert_df(cls, df : pd.DataFrame, time_interval : pd.Timedelta = None):
 
         return df
 

@@ -25,6 +25,6 @@ class RatioRule(Rule):
         if self.metric_name in metric_vals:
             metric_ratio = metric_vals[self.metric_name] / self.target_value
             return cur_aspect_val * metric_ratio
-            
+
         else:
             return pd.DataFrame(columns = ['value'], index = pd.to_datetime([]))

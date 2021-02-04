@@ -19,12 +19,12 @@ class Duration(MetricCategory):
         return cls.to_metric(config)
 
     @classmethod
-    def to_scaling_representation(cls, val : float):
+    def to_scaling_representation(cls, val : float, time_interval : pd.Timedelta = None):
 
         return cls(val)
 
     @classmethod
-    def convert_df(cls, df : pd.DataFrame):
+    def convert_df(cls, df : pd.DataFrame, time_interval : pd.Timedelta = None):
 
         df.value = [ cls(val) for val in df.value ]
         return df

@@ -55,19 +55,14 @@ class HoltWinters(ForecastingModel):
                                                                                                 optimized = optimized)
                     return True
 
-    def _time_adjustment(self, ts_original : pd.Timestamp, ts_to_adjust : pd.Timestamp):
 
-        time_adjustment = (ts_to_adjust - ts_original) % pd.Timedelta(1, unit = ts_original.freqstr)
-        return ts_to_adjust + time_adjustment
 
     def _internal_predict(self, metric_vals : pd.DataFrame, cur_timestamp : pd.Timestamp, future_adjustment_from_others : pd.DataFrame = None):
 
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             forecast_interval = self._construct_future_interval(cur_timestamp)
-            forecast_start = self._time_adjustment(self._model_fitted.fittedvalues.index[-1], min(forecast_interval))
-            forecast_end = self._time_adjustment(self._model_fitted.fittedvalues.index[-1], max(forecast_interval))
-            forecast = self._model_fitted.predict(start = forecast_start, end = forecast_end) if not self._model_fitted is None else [metric_vals.tail(1).value.item()] * len(forecast_interval)
+            forecast = self._model_fitted.predict(start = min(forecast_interval), end = max(forecast_interval)) if not self._model_fitted is None else [metric_vals.tail(1).value.item()] * len(forecast_interval)
             forecast = pd.DataFrame({ metric_vals.index.name : forecast_interval, 'value': forecast } ).set_index(metric_vals.index.name)
             forecast = self._sanity_filter(forecast)
 

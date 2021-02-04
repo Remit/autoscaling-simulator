@@ -120,9 +120,11 @@ class Trainer:
                                 raise ValueError(f'No desired aspect value calculator config found in {scaling_policy_path}')
 
                             if desired_aspect_value_calculator_conf.get('category', None) == 'learning':
-                                desired_aspect_value_calculator_conf['config']['model_root_folder'] = self.model_folder
-                                desired_aspect_value_calculator_conf['config']['model_file_name'] = default_dav_model_name
-                                desired_aspect_value_calculator_conf['config']['training_mode'] = True
+                                if not 'model' in desired_aspect_value_calculator_conf:
+                                    desired_aspect_value_calculator_conf['model'] = dict()
+                                desired_aspect_value_calculator_conf['config']['model']['model_root_folder'] = self.model_folder
+                                desired_aspect_value_calculator_conf['config']['model']['model_file_name'] = default_dav_model_name
+                                desired_aspect_value_calculator_conf['config']['model']['training_mode'] = True
 
                 with open(scaling_policy_path, 'w') as f:
                     json.dump(scaling_policy, f)

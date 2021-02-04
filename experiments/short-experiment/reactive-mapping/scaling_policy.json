@@ -3,6 +3,10 @@
     "sync_period": {
       "value": 30,
       "unit": "s"
+    },
+    "warm_up": {
+      "value": 180,
+      "unit": "s"
     }
   },
   "application": {

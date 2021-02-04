@@ -30,14 +30,14 @@ class Rate(MetricCategory):
         return cls.to_metric(config)
 
     @classmethod
-    def to_scaling_representation(cls, val : float):
+    def to_scaling_representation(cls, val : float, time_interval : pd.Timedelta):
 
-        return cls(val)
+        return cls(val, time_interval)
 
     @classmethod
-    def convert_df(cls, df : pd.DataFrame):
+    def convert_df(cls, df : pd.DataFrame, time_interval : pd.Timedelta):
 
-        df.value = [ cls(val) for val in df.value ]
+        df.value = [ cls(val, time_interval) for val in df.value ]
         return df
 
     def __init__(self, value : float = 0, time_interval : pd.Timedelta = pd.Timedelta(1, 's')):

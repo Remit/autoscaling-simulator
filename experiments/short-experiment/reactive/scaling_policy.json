@@ -3,6 +3,10 @@
     "sync_period": {
       "value": 30,
       "unit": "s"
+    },
+    "warm_up": {
+      "value": 180,
+      "unit": "s"
     }
   },
   "application": {
@@ -22,19 +26,15 @@
                     "config": {
                       "name": "ratio",
                       "target": {
-                        "metric_name": "load",
-                        "value": 2,
-                        "resolution": {
-                          "value": 1,
-                          "unit": "s"
-                        }
+                        "metric_name": "memory",
+                        "value": 0.8
                       },
                       "adjustment_heuristic_conf": {
                         "name": "rescale",
                         "scaling_factor": 1.15
                       }
                     }
-                    },
+                  },
                   "stabilizer_conf": {
                     "name": "maxStabilizer",
                     "config": {
@@ -45,31 +45,44 @@
                     }
                   },
                   "metrics": [
-                      {
-                        "metric_source_name": "Load",
-                        "metric_name": "load",
-                        "submetric_name": "*",
-                        "metric_params": {
-                          "sampling_interval": {
+                    {
+                      "metric_source_name": "Load",
+                      "metric_name": "load",
+                      "submetric_name": "*",
+                      "metric_params": {
+                        "sampling_interval": {
+                          "value": 1,
+                          "unit": "s"
+                        }
+                      },
+                      "values_aggregator_conf": {
+                        "name": "sumAggregator",
+                        "config": {
+                          "resolution": {
                             "value": 1,
-                            "unit": "s"
+                            "unit": "m"
                           }
                         }
                       }
+                    },
+                    {
+                        "metric_source_name": "Service",
+                        "metric_name": "memory",
+                        "values_aggregator_conf": {
+                          "name": "medianAggregator",
+                          "config": {
+                            "resolution": {
+                              "value": 1,
+                              "unit": "m"
+                            }
+                          }
+                        }
+                    }
                   ],
                   "default_metric_config" : {
                     "values_filter_conf": {
                       "name": "defaultNA",
                       "config": { "default_value": 0 }
-                    },
-                    "values_aggregator_conf": {
-                      "name": "sumAggregator",
-                      "config": {
-                        "resolution": {
-                          "value": 1,
-                          "unit": "m"
-                        }
-                      }
                     },
                     "forecaster_conf": {
                           "name": "reactive",

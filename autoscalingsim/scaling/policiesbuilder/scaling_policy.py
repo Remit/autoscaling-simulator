@@ -33,6 +33,7 @@ class ScalingPolicy:
                  configs_contents_table : dict, node_groups_registry : 'NodeGroupsRegistry'):
 
         self.scaling_manager = scaling_manager
+        self.simulation_start_time = simulation_conf['starting_time']
         self.last_sync_timestamp = simulation_conf['starting_time']
         self.last_models_refresh_timestamp = simulation_conf['starting_time']
 
@@ -51,7 +52,8 @@ class ScalingPolicy:
             self.scaling_manager.refresh_models(cur_timestamp)
             self.last_models_refresh_timestamp = cur_timestamp
 
-        if cur_timestamp - self.last_sync_timestamp >= self.scaling_settings.sync_period:
+        if (cur_timestamp - self.simulation_start_time >= self.scaling_settings.warm_up) and \
+            (cur_timestamp - self.last_sync_timestamp >= self.scaling_settings.sync_period):
 
             desired_states_to_process = self.scaling_manager.compute_desired_state(cur_timestamp)
 

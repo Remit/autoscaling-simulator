@@ -1,7 +1,11 @@
 {
   "policy": {
     "sync_period": {
-      "value": 15,
+      "value": 30,
+      "unit": "s"
+    },
+    "warm_up": {
+      "value": 30,
       "unit": "s"
     }
   },
@@ -25,12 +29,12 @@
                               "config": {
                                 "name": "ratio",
                                 "target": {
-                                  "metric_name": "load",
-                                  "value": 1,
-                                  "resolution": {
-                                    "value": 1,
-                                    "unit": "s"
-                                  }
+                                  "metric_name": "memory",
+                                  "value": 0.8
+                                },
+                                "adjustment_heuristic_conf": {
+                                  "name": "rescale",
+                                  "scaling_factor": 1.15
                                 }
                               }
                             },
@@ -54,7 +58,7 @@
                               "name": "scaled_error",
                               "threshold": 0.25
                             },
-                            "minibatch_size": 10,
+                            "minibatch_size": 2,
                             "optimizer_config": {
                                 "method": "trust-constr",
                                 "jac": "2-point",
@@ -86,6 +90,24 @@
                             "unit": "s"
                           }
                         },
+                        "forecaster_conf": {
+                              "name": "holt_winters",
+                              "dir_with_pretrained_models": "D:/AutoscalingSim/autoscaling-simulator/trained_models/forecasting/1-3-oscillating-1min-postponed/holtwinters",
+                              "do_not_adjust_model": true,
+                              "forecast_frequency": {
+                                "value": 1,
+                                "unit": "m"
+                              },
+                              "history_data_buffer_size": {
+                                "value": 10,
+                                "unit": "m"
+                              },
+                              "fit_model_when_history_amount_reached": {
+                                "value": 30,
+                                "unit": "s"
+                              },
+                              "horizon_in_steps": 2
+                        },
                         "values_aggregator_conf": {
                           "name": "sumAggregator",
                           "config": {
@@ -107,32 +129,30 @@
                                 "unit": "m"
                               }
                             }
-                          }
+                          },
+                          "forecaster_conf": {
+                                "name": "reactive",
+                                "forecast_frequency": {
+                                  "value": 1,
+                                  "unit": "m"
+                                },
+                                "history_data_buffer_size": {
+                                  "value": 10,
+                                  "unit": "m"
+                                },
+                                "fit_model_when_history_amount_reached": {
+                                  "value": 30,
+                                  "unit": "s"
+                                },
+                                "horizon_in_steps": 2
+                            }
                       }
                   ],
                   "default_metric_config" : {
                     "values_filter_conf": {
                       "name": "defaultNA",
                       "config": { "default_value": 0 }
-                    },
-                    "forecaster_conf": {
-                          "name": "holt_winters",
-                          "dir_with_pretrained_models": "D:/AutoscalingSim/autoscaling-simulator/trained_models/forecasting/1-3-oscillating-1min-postponed/holtwinters",
-                          "do_not_adjust_model": true,
-                          "forecast_frequency": {
-                            "value": 1,
-                            "unit": "m"
-                          },
-                          "history_data_buffer_size": {
-                            "value": 10,
-                            "unit": "m"
-                          },
-                          "fit_model_when_history_amount_reached": {
-                            "value": 30,
-                            "unit": "s"
-                          },
-                          "horizon_in_steps": 5
-                      }
+                    }
                   }
               }
         ]

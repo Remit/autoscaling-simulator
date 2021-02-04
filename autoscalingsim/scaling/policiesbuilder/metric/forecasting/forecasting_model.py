@@ -79,9 +79,9 @@ class ForecastingModel(ABC):
 
     def _construct_future_interval(self, interval_start : pd.Timestamp):
 
-        #forecasting_interval_start = interval_start + self.forecast_frequency
+        adjustment = (interval_start - pd.Timestamp(0)) % self.forecast_frequency
 
-        return pd.date_range(interval_start, periods = 2 * self.fhorizon_in_steps, freq = self.forecast_frequency)
+        return pd.date_range(interval_start + adjustment, periods = 2 * self.fhorizon_in_steps, freq = self.forecast_frequency)
 
     def _resample_data(self, time_series_data : pd.DataFrame, holes_filling_method : str = 'ffill'):
 

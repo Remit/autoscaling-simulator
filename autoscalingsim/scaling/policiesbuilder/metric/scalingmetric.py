@@ -50,11 +50,15 @@ class ScalingMetricGroup:
             if not cur_metric_val is None:
                 future_metric_vals[metric.name], cur_metric_vals[metric.name] = future_metric_val, cur_metric_val
 
-        if len(future_metric_vals) > 0:
+        if len(future_metric_vals) == len(self.metrics):
             cur_aspect_val = self.state_reader.get_aspect_value(self.service_name, self.region_name, self.aspect_name)
 
+            print(f'future_metric_vals: {future_metric_vals}')
+
             desired_scaling_aspect = self.desired_aspect_value_calculator.compute(cur_aspect_val, future_metric_vals, cur_metric_vals)
+            print(f'desired_scaling_aspect [RAW]: {desired_scaling_aspect}')
             desired_scaling_aspect_stabilized = self.stabilizer.stabilize(desired_scaling_aspect)
+            print(f'desired_scaling_aspect [STABILIZED]: {desired_scaling_aspect_stabilized}')
             desired_scaling_aspect_stabilized_limited = self.limiter.cut(desired_scaling_aspect_stabilized)
 
             return desired_scaling_aspect_stabilized_limited
@@ -70,7 +74,7 @@ class ScalingMetricGroup:
             if not cur_metric_val is None:
                 cur_metric_vals[metric.name] = cur_metric_val
 
-        if len(cur_metric_vals) > 0:
+        if len(cur_metric_vals) == len(self.metrics):
             cur_aspect_val = self.state_reader.get_aspect_value(self.service_name, self.region_name, self.aspect_name)
             self.desired_aspect_value_calculator.update_model(cur_aspect_val, cur_metric_vals, cur_timestamp)
 
@@ -132,9 +136,9 @@ class ScalingMetric:
             lagged_correlation_per_service = self.correlator.get_lagged_correlation(filtered_metric_vals, filtered_related_service_metric_vals) if not self.correlator is None else dict()
             aggregated_metric_vals = self.values_aggregator.aggregate(filtered_metric_vals)
             forecasted_metric_vals = self.forecaster.forecast(aggregated_metric_vals, cur_timestamp, lagged_correlation_per_service, filtered_related_service_metric_vals)
-            converted_metric_vals = self.metric_category.convert_df(forecasted_metric_vals)
+            converted_metric_vals = self.metric_category.convert_df(forecasted_metric_vals, self.values_aggregator.resolution)
 
-            return (converted_metric_vals, self.metric_category.to_scaling_representation(aggregated_metric_vals.value[-1]))
+            return (converted_metric_vals, self.metric_category.to_scaling_representation(aggregated_metric_vals.value[-1], self.values_aggregator.resolution))
 
         else:
             return (pd.DataFrame(), None)
@@ -146,7 +150,7 @@ class ScalingMetric:
 
             filtered_metric_vals = self.values_filter.filter(metric_vals)
             aggregated_metric_vals = self.values_aggregator.aggregate(filtered_metric_vals)
-            return self.metric_category.to_scaling_representation(aggregated_metric_vals.value[-1])
+            return self.metric_category.to_scaling_representation(aggregated_metric_vals.value[-1], self.values_aggregator.resolution)
 
         else:
             return None
