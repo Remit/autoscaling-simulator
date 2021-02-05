@@ -53,12 +53,8 @@ class ScalingMetricGroup:
         if len(future_metric_vals) == len(self.metrics):
             cur_aspect_val = self.state_reader.get_aspect_value(self.service_name, self.region_name, self.aspect_name)
 
-            print(f'future_metric_vals: {future_metric_vals}')
-
             desired_scaling_aspect = self.desired_aspect_value_calculator.compute(cur_aspect_val, future_metric_vals, cur_metric_vals)
-            print(f'desired_scaling_aspect [RAW]: {desired_scaling_aspect}')
             desired_scaling_aspect_stabilized = self.stabilizer.stabilize(desired_scaling_aspect)
-            print(f'desired_scaling_aspect [STABILIZED]: {desired_scaling_aspect_stabilized}')
             desired_scaling_aspect_stabilized_limited = self.limiter.cut(desired_scaling_aspect_stabilized)
 
             return desired_scaling_aspect_stabilized_limited

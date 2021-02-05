@@ -131,7 +131,6 @@ class LearningBasedCalculator(DesiredAspectValueCalculator):
         if not cur_aspect_vals is None and not cur_performance_metric_vals is None and not cur_metric_vals is None:
 
             self.model.fit(cur_aspect_vals, cur_metric_vals, cur_performance_metric_vals)
-            print(f'[{cur_timestamp}] Fitting: f({cur_aspect_vals}, {cur_metric_vals}) = {cur_performance_metric_vals}')
 
             if not self.model_root_folder is None:
 
@@ -144,21 +143,19 @@ class LearningBasedCalculator(DesiredAspectValueCalculator):
 
     def _should_use_fallback_calculator(self, cur_aspect_val, current_metric_val, current_performance_metric_val):
 
-        print(f'current_performance_metric_val: {current_performance_metric_val}')
-
         try:
             if np.isnan(current_performance_metric_val) or self.training_mode:
                 return True
 
             predicted_performance_metric_val = self.model.predict(cur_aspect_val, current_metric_val)
-            print(f'f(cur_aspect_val = {cur_aspect_val}, current_metric_val = {current_metric_val}) = {predicted_performance_metric_val} | ORIGINAL: {current_performance_metric_val}')
+            #print(f'f(cur_aspect_val = {cur_aspect_val}, current_metric_val = {current_metric_val}) = {predicted_performance_metric_val} | ORIGINAL: {current_performance_metric_val}')
             mdl_quality_metric_val = self.model_quality_metric.compute(predicted_performance_metric_val, current_performance_metric_val)
 
             if mdl_quality_metric_val > self.model_quality_threshold:
-                print(f'Using fallback calculator! Quality metric: {mdl_quality_metric_val}')
+                #print(f'Using fallback calculator! Quality metric: {mdl_quality_metric_val}')
                 return True
             else:
-                print(f'Using original calculator! Quality metric: {mdl_quality_metric_val}')
+                #print(f'Using original calculator! Quality metric: {mdl_quality_metric_val}')
                 return False
 
         except NotFittedError:
