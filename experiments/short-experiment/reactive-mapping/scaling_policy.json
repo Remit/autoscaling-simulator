@@ -5,8 +5,8 @@
       "unit": "s"
     },
     "warm_up": {
-      "value": 180,
-      "unit": "s"
+      "value": 2,
+      "unit": "m"
     }
   },
   "application": {
@@ -24,6 +24,10 @@
                   "desired_aspect_value_calculator_conf": {
                         "category": "learning",
                         "config": {
+                            "adjustment_heuristic_conf": {
+                              "name": "rescale",
+                              "scaling_factor": 1.15
+                            },
                             "fallback_calculator": {
                               "category": "rule",
                               "config": {
@@ -78,8 +82,8 @@
                     "name": "maxStabilizer",
                     "config": {
                       "resolution": {
-                        "value": 30,
-                        "unit": "s"
+                        "value": 2,
+                        "unit": "m"
                       }
                     }
                   },

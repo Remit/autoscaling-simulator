@@ -68,7 +68,12 @@ class ForecastingModel(ABC):
     def predict(self, metric_vals : pd.DataFrame, cur_timestamp : pd.Timestamp, future_adjustment_from_others : pd.DataFrame = None):
 
         forecasted_vals = self._internal_predict(self._resample_data(metric_vals), cur_timestamp, future_adjustment_from_others)
-        return forecasted_vals.shift(-self.fhorizon_in_steps).dropna() if not forecasted_vals is None else None
+        if not forecasted_vals is None:
+            forecasted_vals.index -= pd.Timedelta(1, unit = 'm')
+            forecasted_vals = forecasted_vals[forecasted_vals.index >= cur_timestamp]
+            return forecasted_vals
+        else:
+            return None
 
     def fit(self, data : pd.DataFrame):
 

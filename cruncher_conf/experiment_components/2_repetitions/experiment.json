@@ -1,0 +1,23 @@
+{
+  "experiment_config": {
+    "regime": "alternative_policies",
+    "repetitions_count_per_simulation": 2,
+    "keep_evaluated_configs": false,
+    "results_folder": "/home/ubuntu/experiments/components_2_repetitions",
+    "regime_config": {
+      "unchanged_configs_folder": "constant_configs",
+      "alternatives_folder": "alternatives"
+    }
+  },
+  "simulation_config": {
+    "starting_time": "2020-09-17T10:00:00",
+    "simulation_step": {
+      "value": 50,
+      "unit": "ms"
+    },
+    "time_to_simulate": {
+      "value": 27,
+      "unit": "m"
+    }
+  }
+}
