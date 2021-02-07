@@ -117,6 +117,14 @@ class Simulator:
         self.simulations = dict()
         self.simulations_configs = dict()
 
+    def remove_simulation(self, name : str):
+
+        if name in self.simulations:
+            del self.simulations[name]
+
+        if name in self.simulations_configs:
+            del self.simulations_configs[name]
+
     def __iter__(self):
 
         return SimulationsIterator(self)

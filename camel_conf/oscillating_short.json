@@ -17,7 +17,7 @@
               "config": {
                   "period_as_percentage_of_interval": 0.1,
                   "values": [
-                      { "percentage_of_period": 0.5, "rps": 3 },
+                      { "percentage_of_period": 0.5, "rps": 5 },
                       { "percentage_of_period": 0.5, "rps": 1 }
                   ]
               }

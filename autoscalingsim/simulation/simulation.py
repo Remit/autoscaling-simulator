@@ -6,6 +6,8 @@ from tqdm import tqdm
 
 from autoscalingsim.application.application_model import ApplicationModel
 
+from .simulation_results_for_plotting import SimulationResultsForPlotting
+
 class Simulation:
     """
     Manages the high-level simulation process and stores all the simulation-relevant variables.
@@ -130,3 +132,51 @@ class Simulation:
     def services_models(self):
 
         return self.application_model.services_models
+
+    @property
+    def results_for_plotting(self):
+
+        return SimulationResultsForPlotting(self.application_model.infrastructure_cost, self.application_model.response_stats.get_response_times_by_request(),
+                                            self.application_model.response_stats.get_buffer_times_by_request(), self.application_model.response_stats.get_network_times_by_request(),
+                                            self.application_model.load_model.get_generated_load(), self.application_model.utilization,
+                                            self.application_model.desired_node_count, self.application_model.actual_node_count)
+
+    @property
+    def infrastructure_cost(self):
+
+        return self.application_model.infrastructure_cost
+
+    @property
+    def response_times(self):
+
+        return self.application_model.response_stats.get_response_times_by_request()
+
+    @property
+    def network_times(self):
+
+        return self.application_model.response_stats.get_network_times_by_request()
+
+    @property
+    def buffer_times(self):
+
+        return self.application_model.response_stats.get_buffer_times_by_request()
+
+    @property
+    def load(self):
+
+        return self.application_model.load_model.get_generated_load()
+
+    @property
+    def utilization(self):
+
+        return self.application_model.utilization
+
+    @property
+    def desired_node_count(self):
+
+        return self.application_model.desired_node_count
+
+    @property
+    def actual_node_count(self):
+
+        return self.application_model.actual_node_count

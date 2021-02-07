@@ -19,14 +19,12 @@ class FulfilledDroppedBarchart:
         for simulation_name, simulation_instances in simulations_by_name.items():
 
             for simulation in simulation_instances:
-                response_times_regionalized = simulation.application_model.response_stats.get_response_times_by_request()
 
-                for region_name, response_times_per_request_type in response_times_regionalized.items():
+                for region_name, response_times_per_request_type in simulation.response_times.items():
                     for req_type, response_times in response_times_per_request_type.items():
                         response_times_regionalized_aggregated[region_name][req_type][simulation_name] += len(response_times)
 
-                load_regionalized = simulation.application_model.load_model.get_generated_load()
-                for region_name, load_ts_per_request_type in load_regionalized.items():
+                for region_name, load_ts_per_request_type in simulation.load.items():
                     for req_type, load_timeline in load_ts_per_request_type.items():
                         if len(load_timeline.value) > 0:
                             generated_req_cnt = sum(load_timeline.value)

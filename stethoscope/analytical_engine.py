@@ -51,14 +51,14 @@ class AnalysisFramework:
 
         # Getting the data into the unified representation for processing
         # either from the simulation or from the results_dir
-        response_times_regionalized = simulation.application_model.response_stats.get_response_times_by_request() if not simulation is None else dict()
-        load_regionalized = simulation.application_model.load_model.get_generated_load() if not simulation is None else dict()
-        buffer_times_regionalized = simulation.application_model.response_stats.get_buffer_times_by_request() if not simulation is None else dict()
-        network_times_regionalized = simulation.application_model.response_stats.get_network_times_by_request() if not simulation is None else dict()
-        desired_node_count_per_provider = simulation.application_model.desired_node_count if not simulation is None else dict()
-        actual_node_count_per_provider = simulation.application_model.actual_node_count if not simulation is None else dict()
-        utilization_per_service = simulation.application_model.utilization if not simulation is None else dict()
-        infrastructure_cost_per_provider = simulation.application_model.infrastructure_cost if not simulation is None else dict()
+        response_times_regionalized = simulation.response_times if not simulation is None else dict()
+        load_regionalized = simulation.load if not simulation is None else dict()
+        buffer_times_regionalized = simulation.buffer_times if not simulation is None else dict()
+        network_times_regionalized = simulation.network_times if not simulation is None else dict()
+        desired_node_count_per_provider = simulation.desired_node_count if not simulation is None else dict()
+        actual_node_count_per_provider = simulation.actual_node_count if not simulation is None else dict()
+        utilization_per_service = simulation.utilization if not simulation is None else dict()
+        infrastructure_cost_per_provider = simulation.infrastructure_cost if not simulation is None else dict()
 
         # Building figures with the internal functions
         # Autoscaling quality evaluation category

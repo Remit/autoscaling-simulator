@@ -25,6 +25,7 @@ class AlternativePoliciesExperimentalRegime(ExperimentalRegime):
             raise ValueError(f'Folder {self.alternatives_folder} for the evaluated alternative configs of the experiments does not exist')
 
         self.config_folder = config_folder
+        self.simulations_results = collections.defaultdict(list)
 
     def populate_subfolders(self):
 
@@ -99,10 +100,13 @@ class AlternativePoliciesExperimentalRegime(ExperimentalRegime):
 
         for configs_folder in paths_with_configs_for_experiments:
             for sim_id in range(self.repetitions_count_per_simulation):
-                self.simulator.add_simulation(configs_folder,
-                                              simulation_name = f'{os.path.basename(os.path.normpath(configs_folder))}{ExperimentalRegime._simulation_instance_delimeter}{sim_id}')
+                sim_name_pure = os.path.basename(os.path.normpath(configs_folder))
+                sim_name_full = f'{sim_name_pure}{ExperimentalRegime._simulation_instance_delimeter}{sim_id}'
+                self.simulator.add_simulation(configs_folder, simulation_name = sim_name_full)
+                self.simulator.start_simulation()
 
-        self.simulator.start_simulation()
+                self.simulations_results[sim_name_pure].append(self.simulator.simulations[sim_name_full].results_for_plotting)
+                self.simulator.remove_simulation(sim_name_full)
 
         if not self.keep_evaluated_configs:
             shutil.rmtree(tmp_folder_for_evaluated_configs, ignore_errors = True)

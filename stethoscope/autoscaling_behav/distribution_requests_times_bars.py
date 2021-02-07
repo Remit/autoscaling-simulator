@@ -20,19 +20,16 @@ class DistributionRequestsTimesBarchart:
         for simulation_name, simulation_instances in simulations_by_name.items():
 
             for simulation in simulation_instances:
-                response_times_regionalized = simulation.application_model.response_stats.get_response_times_by_request()
-                for region_name, response_times_per_request_type in response_times_regionalized.items():
+                for region_name, response_times_per_request_type in simulation.response_times.items():
                     for req_type, response_times in response_times_per_request_type.items():
                         req_types.append(req_type)
                         response_times_regionalized_aggregated[region_name][req_type][simulation_name].extend(response_times)
 
-                network_times_regionalized = simulation.application_model.response_stats.get_network_times_by_request()
-                for region_name, network_times_per_request_type in network_times_regionalized.items():
+                for region_name, network_times_per_request_type in simulation.network_times.items():
                     for req_type, network_times in network_times_per_request_type.items():
                         network_times_regionalized_aggregated[region_name][req_type][simulation_name].extend(network_times)
 
-                buffer_times_regionalized = simulation.application_model.response_stats.get_buffer_times_by_request()
-                for region_name, buffer_times_per_request_type in buffer_times_regionalized.items():
+                for region_name, buffer_times_per_request_type in simulation.buffer_times.items():
                     for req_type, buffer_times_per_service in buffer_times_per_request_type.items():
                         for service_name, buffer_times in buffer_times_per_service.items():
                             buffer_times_regionalized_aggregated[region_name][req_type][simulation_name].extend(buffer_times)

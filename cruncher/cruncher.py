@@ -48,6 +48,7 @@ class Cruncher:
                 config = json.load(f)
 
                 experiment_config = ErrorChecker.key_check_and_load('experiment_config', config)
+                self.persist_plots_for_individual_experiments = ErrorChecker.key_check_and_load('persist_plots_for_individual_experiments', experiment_config, default = False)
                 regime = ErrorChecker.key_check_and_load('regime', experiment_config, default = None)
                 if regime is None:
                     raise ValueError('You should specify the experimental regime: alternative_policies or building_blocks')
@@ -78,27 +79,24 @@ class Cruncher:
 
         af = AnalysisFramework(self.simulation_step)
 
-        # Collect the data from all the simulations, aggregate it and put into the self.results_folder
-        simulations_by_name = collections.defaultdict(list)
-        for simulation_name, simulation in self.regime.simulator.simulations.items():
-            sim_name_parts = simulation_name.split(ExperimentalRegime._simulation_instance_delimeter)
-            sim_name_pure, sim_id = sim_name_parts[0], sim_name_parts[1]
+        for sim_id, sim_info in enumerate(self.regime.simulations_results.items()):
+            simulation_name, simulation_instances_results = sim_info[0], sim_info[1]
 
-            simulation_figures_folder = os.path.join(self.results_folder, sim_name_pure, sim_id)
-            if not os.path.exists(simulation_figures_folder):
-                os.makedirs(simulation_figures_folder)
+            for simulation_instance_results in simulation_instances_results:
+                if self.persist_plots_for_individual_experiments:
+                    simulation_figures_folder = os.path.join(self.results_folder, simulation_name, sim_id)
+                    if not os.path.exists(simulation_figures_folder):
+                        os.makedirs(simulation_figures_folder)
 
-            af.build_figures_for_single_simulation(simulation, figures_dir = simulation_figures_folder)
+                    af.build_figures_for_single_simulation(simulation_instance_results, figures_dir = simulation_figures_folder)
 
-            simulations_by_name[sim_name_pure].append(simulation)
-
-        af.build_comparative_figures(simulations_by_name, figures_dir = self.results_folder, names_converter = convert_name_of_considered_alternative_to_label)
+        af.build_comparative_figures(self.regime.simulations_results, figures_dir = self.results_folder, names_converter = convert_name_of_considered_alternative_to_label)
 
         summary_filepath = os.path.join(self.results_folder, 'summary.txt')
         header = ''.join(['-'] * 20) + ' SUMMARY CHARACTERISTICS OF EVALUATED ALTERNATIVES ' + ''.join(['-'] * 20)
         report_text = ''.join(['-'] * len(header)) + '\n' + header + '\n' + ''.join(['-'] * len(header)) + '\n\n'
-        for idx, sim in enumerate(simulations_by_name.items(), 1):
-            simulation_name, simulation_instances = sim[0], sim[1]
+        for idx, sim in enumerate(self.regime.simulations_results.items(), 1):
+            simulation_name, simulation_instances_results_results = sim[0], sim[1]
 
             total_cost_for_alternative = collections.defaultdict(lambda: collections.defaultdict(float))
             response_times_regionalized_aggregated = collections.defaultdict(lambda: collections.defaultdict(int))
@@ -106,45 +104,41 @@ class Cruncher:
             utilization_aggregated = collections.defaultdict(lambda: collections.defaultdict(lambda: collections.defaultdict(float)))
             node_count_aggregated = collections.defaultdict(lambda: collections.defaultdict(lambda: collections.defaultdict(lambda: {'avg': {'desired': 0.0, 'actual': 0.0}, 'std': {'desired': 0.0, 'actual': 0.0}})))
             resource_names = list()
-            for simulation in simulation_instances:
-                for provider_name, cost_per_region in simulation.application_model.infrastructure_cost.items():
+            for simulation_instance_results in simulation_instances_results:
+                for provider_name, cost_per_region in simulation_instance_results.infrastructure_cost.items():
                     for region_name, cost_in_time in cost_per_region.items():
-                        total_cost_for_alternative[provider_name][region_name] += (cost_in_time[-1] / len(simulation_instances))
+                        total_cost_for_alternative[provider_name][region_name] += (cost_in_time[-1] / len(simulation_instances_results))
 
-                response_times_regionalized = simulation.application_model.response_stats.get_response_times_by_request()
-                for region_name, response_times_per_request_type in response_times_regionalized.items():
+                for region_name, response_times_per_request_type in simulation_instance_results.response_times.items():
                     for req_type, response_times in response_times_per_request_type.items():
                         response_times_regionalized_aggregated[region_name][req_type] += len(response_times)
 
-                load_regionalized = simulation.application_model.load_model.get_generated_load()
-                for region_name, load_ts_per_request_type in load_regionalized.items():
+                for region_name, load_ts_per_request_type in simulation_instance_results.load.items():
                     for req_type, load_timeline in load_ts_per_request_type.items():
                         if len(load_timeline.value) > 0:
                             generated_req_cnt = sum(load_timeline.value)
                             if generated_req_cnt > 0:
                                 load_regionalized_aggregated[region_name][req_type] += generated_req_cnt
 
-                for service_name, utilization_per_region in simulation.application_model.utilization.items():
+                for service_name, utilization_per_region in simulation_instance_results.utilization.items():
                     for region_name, utilization_per_resource in utilization_per_region.items():
                         for resource_name, utilization_ts in utilization_per_resource.items():
                             resource_names.append(resource_name)
-                            utilization_aggregated[service_name][region_name][resource_name] += (utilization_ts.value.mean() / len(simulation_instances))
+                            utilization_aggregated[service_name][region_name][resource_name] += (utilization_ts.value.mean() / len(simulation_instances_results))
 
-                desired_node_count_per_provider = simulation.application_model.desired_node_count
-                actual_node_count_per_provider = simulation.application_model.actual_node_count
-                for provider_name, desired_node_count_per_region in desired_node_count_per_provider.items():
+                for provider_name, desired_node_count_per_region in simulation_instance_results.desired_node_count.items():
                     for region_name, desired_node_count_per_node_type in desired_node_count_per_region.items():
                         for node_type, desired_counts_raw in desired_node_count_per_node_type.items():
                             desired_count_avg = np.mean(desired_counts_raw[PlatformModel.node_count_key])
                             desired_count_std = np.std(desired_counts_raw[PlatformModel.node_count_key])
-                            node_count_aggregated[provider_name][region_name][node_type]['avg']['desired'] += (desired_count_avg / len(simulation_instances))
-                            node_count_aggregated[provider_name][region_name][node_type]['std']['desired'] += (desired_count_std / len(simulation_instances))
+                            node_count_aggregated[provider_name][region_name][node_type]['avg']['desired'] += (desired_count_avg / len(simulation_instances_results))
+                            node_count_aggregated[provider_name][region_name][node_type]['std']['desired'] += (desired_count_std / len(simulation_instances_results))
 
-                            actual_counts_raw = actual_node_count_per_provider.get(provider_name, dict()).get(region_name, dict()).get(node_type, dict())
+                            actual_counts_raw = simulation_instance_results.actual_node_count.get(provider_name, dict()).get(region_name, dict()).get(node_type, dict())
                             actual_count_avg = np.mean(actual_counts_raw[PlatformModel.node_count_key])
                             actual_count_std = np.std(actual_counts_raw[PlatformModel.node_count_key])
-                            node_count_aggregated[provider_name][region_name][node_type]['avg']['actual'] += (desired_count_avg / len(simulation_instances))
-                            node_count_aggregated[provider_name][region_name][node_type]['std']['actual'] += (desired_count_std / len(simulation_instances))
+                            node_count_aggregated[provider_name][region_name][node_type]['avg']['actual'] += (desired_count_avg / len(simulation_instances_results))
+                            node_count_aggregated[provider_name][region_name][node_type]['std']['actual'] += (desired_count_std / len(simulation_instances_results))
 
 
             report_text += f'Alternative {idx}: {convert_name_of_considered_alternative_to_label(simulation_name)}\n\n'
