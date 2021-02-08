@@ -17,6 +17,18 @@ from autoscalingsim.deltarepr.timelines.delta_timeline import DeltaTimeline
 from autoscalingsim.simulator import conf_keys
 from autoscalingsim.fault.fault_model import FaultModel
 
+def innermost_dict():
+
+    return { PlatformModel.timestamps_key: list(), PlatformModel.node_count_key: list() }
+
+def second_order_dict():
+
+    return collections.defaultdict(innermost_dict)
+
+def third_order_dict():
+
+    return collections.defaultdict(second_order_dict)
+
 class PlatformModel:
 
     """
@@ -174,7 +186,7 @@ class PlatformModel:
         nodes per regions and per node type.
         """
 
-        joint_node_count = collections.defaultdict(lambda: collections.defaultdict(lambda: collections.defaultdict(lambda: { self.__class__.timestamps_key: list(), self.__class__.node_count_key: list() })))
+        joint_node_count = collections.defaultdict(third_order_dict)#collections.defaultdict(lambda: collections.defaultdict(lambda: collections.defaultdict(innermost_dict)))
         timeline_of_deltas_raw = self.state_deltas_timeline.to_dict()
 
         cur_state = PlatformState()

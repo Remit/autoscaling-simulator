@@ -18,3 +18,4 @@ if args.config_dir is None:
 
 c = Cruncher(args.config_dir)
 c.run_experiment()
+c.visualize()

@@ -4,6 +4,7 @@ import collections
 import itertools
 import json
 import glob
+import pickle
 
 from cruncher.experimental_regime.experimental_regime import ExperimentalRegime
 from autoscalingsim import conf_keys
@@ -34,7 +35,7 @@ class AlternativePoliciesExperimentalRegime(ExperimentalRegime):
             if not os.path.exists(policy_folder_name_full):
                 os.makedirs(policy_folder_name_full)
 
-    def run_experiment(self):
+    def run_experiment(self, path_to_store_data : str = None):
 
         tmp_folder_for_evaluated_configs = os.path.join(self.config_folder, '_______tmp______')
         if not os.path.exists(tmp_folder_for_evaluated_configs):
@@ -105,7 +106,13 @@ class AlternativePoliciesExperimentalRegime(ExperimentalRegime):
                 self.simulator.add_simulation(configs_folder, simulation_name = sim_name_full)
                 self.simulator.start_simulation()
 
-                self.simulations_results[sim_name_pure].append(self.simulator.simulations[sim_name_full].results_for_plotting)
+                results_of_sim = self.simulator.simulations[sim_name_full].results_for_plotting
+                if path_to_store_data is None:
+                    self.simulations_results[sim_name_pure].append(results_of_sim)
+                else:
+                    file_with_data = os.path.join(path_to_store_data, f'{sim_name_full}.p')
+                    pickle.dump(results_of_sim, open(file_with_data, 'wb'))
+
                 self.simulator.remove_simulation(sim_name_full)
 
         if not self.keep_evaluated_configs:

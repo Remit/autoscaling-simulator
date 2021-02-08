@@ -5,6 +5,7 @@ import collections
 import pandas as pd
 import numpy as np
 import prettytable
+import pickle
 from prettytable import PrettyTable
 
 from stethoscope.analytical_engine import AnalysisFramework
@@ -59,6 +60,13 @@ class Cruncher:
                 self.results_folder = ErrorChecker.key_check_and_load('results_folder', experiment_config)
                 if not self.results_folder is None and not os.path.exists(self.results_folder):
                     os.makedirs(self.results_folder)
+
+                store_raw_data = ErrorChecker.key_check_and_load('store_raw_data', experiment_config, default = True)
+                self.path_to_store_data = os.path.join(self.results_folder, 'data') if store_raw_data is True else None
+                if not self.path_to_store_data is None:
+                    if not os.path.exists(self.path_to_store_data):
+                        os.makedirs(self.path_to_store_data)
+                        
                 keep_evaluated_configs = ErrorChecker.key_check_and_load('keep_evaluated_configs', experiment_config)
 
                 simulation_config_raw = ErrorChecker.key_check_and_load('simulation_config', config)
@@ -75,11 +83,23 @@ class Cruncher:
 
     def run_experiment(self):
 
-        self.regime.run_experiment()
+        self.regime.run_experiment(self.path_to_store_data)
+
+    def visualize(self):
 
         af = AnalysisFramework(self.simulation_step)
 
-        for sim_id, sim_info in enumerate(self.regime.simulations_results.items()):
+        simulations_results = collections.defaultdict(list)
+        if self.path_to_store_data is None:
+            simulations_results = self.regime.simulations_results
+
+        else:
+            for filename in os.listdir(self.path_to_store_data):
+                sim_name_full = filename.split('.')[0]
+                sim_name_pure = sim_name_full.split(ExperimentalRegime._simulation_instance_delimeter)[0]
+                simulations_results[sim_name_pure].append(pickle.load(open(os.path.join(self.path_to_store_data, filename), 'rb')))
+
+        for sim_id, sim_info in enumerate(simulations_results.items()):
             simulation_name, simulation_instances_results = sim_info[0], sim_info[1]
 
             for simulation_instance_results in simulation_instances_results:
@@ -90,12 +110,12 @@ class Cruncher:
 
                     af.build_figures_for_single_simulation(simulation_instance_results, figures_dir = simulation_figures_folder)
 
-        af.build_comparative_figures(self.regime.simulations_results, figures_dir = self.results_folder, names_converter = convert_name_of_considered_alternative_to_label)
+        af.build_comparative_figures(simulations_results, figures_dir = self.results_folder, names_converter = convert_name_of_considered_alternative_to_label)
 
         summary_filepath = os.path.join(self.results_folder, 'summary.txt')
         header = ''.join(['-'] * 20) + ' SUMMARY CHARACTERISTICS OF EVALUATED ALTERNATIVES ' + ''.join(['-'] * 20)
         report_text = ''.join(['-'] * len(header)) + '\n' + header + '\n' + ''.join(['-'] * len(header)) + '\n\n'
-        for idx, sim in enumerate(self.regime.simulations_results.items(), 1):
+        for idx, sim in enumerate(simulations_results.items(), 1):
             simulation_name, simulation_instances_results_results = sim[0], sim[1]
 
             total_cost_for_alternative = collections.defaultdict(lambda: collections.defaultdict(float))

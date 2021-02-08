@@ -27,7 +27,7 @@ class ExperimentalRegime(ABC):
         self.keep_evaluated_configs = keep_evaluated_configs
 
     @abstractmethod
-    def run_experiment(self):
+    def run_experiment(self, path_to_store_data : str):
         pass
 
     @classmethod
