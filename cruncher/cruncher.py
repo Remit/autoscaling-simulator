@@ -66,7 +66,7 @@ class Cruncher:
                 if not self.path_to_store_data is None:
                     if not os.path.exists(self.path_to_store_data):
                         os.makedirs(self.path_to_store_data)
-                        
+
                 keep_evaluated_configs = ErrorChecker.key_check_and_load('keep_evaluated_configs', experiment_config)
 
                 simulation_config_raw = ErrorChecker.key_check_and_load('simulation_config', config)
@@ -84,6 +84,10 @@ class Cruncher:
     def run_experiment(self):
 
         self.regime.run_experiment(self.path_to_store_data)
+
+    def set_data_dir(self, path_to_store_data : str):
+
+        self.path_to_store_data = path_to_store_data
 
     def visualize(self):
 

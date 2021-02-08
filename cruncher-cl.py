@@ -11,11 +11,20 @@ parser.add_argument('--confdir', dest = 'config_dir',
                     action = 'store', default = None,
                     help = 'directory with the configuration files for the experiments')
 
+parser.add_argument('--datadir', dest = 'data_dir',
+                    action = 'store', default = None,
+                    help = 'directory with the data to visualize')
+
 args = parser.parse_args()
 
 if args.config_dir is None:
     sys.exit('No configuration directory specified.')
 
 c = Cruncher(args.config_dir)
-c.run_experiment()
+
+if args.data_dir is None:
+    c.run_experiment()
+else:
+    c.set_data_dir(args.data_dir)
+
 c.visualize()
