@@ -63,7 +63,7 @@ class ResponseTimesCDF:
                 reqs_count_binned = [0] * len(x_axis)
 
                 for response_time in response_times:
-                    reqs_count_binned[int(response_time // simulation_step_ms)] += 1
+                    reqs_count_binned[int(response_time // x_axis_step)] += 1
 
                 cdfs_per_req_type[req_type] = np.cumsum(reqs_count_binned) / sum(reqs_count_binned)
 
