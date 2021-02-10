@@ -57,16 +57,27 @@ class FulfilledDroppedBarchart:
                 succeeded_reqs.append((fulfilled_cnt / generated_reqs_cnt) * 100)
                 failed_reqs.append((failed_cnt / generated_reqs_cnt) * 100)
 
-            labels = [ names_converter(simulation_name, split_policies = True) for simulation_name in gen_requests_per_simulation.keys() ]
+            zipped = zip(succeeded_reqs, failed_reqs, gen_requests_per_simulation.keys())
+            zipped_sorted = sorted(zipped, key = lambda t: t[1], reverse = True)
+
+            succeeded_reqs_sorted = [ zipped_val[0] for zipped_val in zipped_sorted ]
+            failed_reqs_sorted = [ zipped_val[1] for zipped_val in zipped_sorted ]
+            simulation_names_sorted = [ zipped_val[2] for zipped_val in zipped_sorted ]
+
+            labels = [ names_converter(simulation_name, split_policies = True) for simulation_name in simulation_names_sorted ]
             y = np.arange(len(labels))
 
-            axs[i].barh(y, succeeded_reqs, bar_width, label = 'Fulfilled')
-            axs[i].barh(y, failed_reqs, bar_width, left = succeeded_reqs, label = 'Failed')
+            axs[i].barh(y, succeeded_reqs_sorted, bar_width, label = 'Fulfilled')
+            axs[i].barh(y, failed_reqs_sorted, bar_width, left = succeeded_reqs_sorted, label = 'Failed')
             axs[i].set_yticks(y)
             axs[i].set_yticklabels(labels)
             axs[i].set_title(f'Request {req_type}')
             axs[i].legend(loc = 'center left', bbox_to_anchor = (1.05, 0.5))
             axs[i].set_xlabel('Requests in the category, %')
+
+            font = {'color':  'black', 'weight': 'normal', 'size': 10}
+            for idx, succeeded_reqs_pct in enumerate(succeeded_reqs_sorted):
+                axs[i].text(succeeded_reqs_pct + 0.2, idx, f'{round(succeeded_reqs_pct, 2)}%', va = 'center', fontdict = font)
 
             i += 1
 

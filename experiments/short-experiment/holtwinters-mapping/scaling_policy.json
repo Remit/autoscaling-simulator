@@ -1,11 +1,11 @@
 {
   "policy": {
     "sync_period": {
-      "value": 1,
-      "unit": "m"
+      "value": 30,
+      "unit": "s"
     },
     "warm_up": {
-      "value": 2,
+      "value": 1,
       "unit": "m"
     }
   },

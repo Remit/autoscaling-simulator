@@ -32,6 +32,10 @@
                                     {"requests_count_level": 1, "percentage_of_interval": 0.03704},
                                     {"requests_count_level": 3, "percentage_of_interval": 0.03704},
                                     {"requests_count_level": 1, "percentage_of_interval": 0.03704},
+                                    {"requests_count_level": 3, "percentage_of_interval": 0.03704},
+                                    {"requests_count_level": 1, "percentage_of_interval": 0.03704},
+                                    {"requests_count_level": 3, "percentage_of_interval": 0.03704},
+                                    {"requests_count_level": 1, "percentage_of_interval": 0.03704},
                                     {"requests_count_level": 0, "percentage_of_interval": 0.03704}]
                     }
 

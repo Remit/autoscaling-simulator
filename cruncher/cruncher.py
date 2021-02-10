@@ -120,7 +120,7 @@ class Cruncher:
         header = ''.join(['-'] * 20) + ' SUMMARY CHARACTERISTICS OF EVALUATED ALTERNATIVES ' + ''.join(['-'] * 20)
         report_text = ''.join(['-'] * len(header)) + '\n' + header + '\n' + ''.join(['-'] * len(header)) + '\n\n'
         for idx, sim in enumerate(simulations_results.items(), 1):
-            simulation_name, simulation_instances_results_results = sim[0], sim[1]
+            simulation_name, simulation_instances_results = sim[0], sim[1]
 
             total_cost_for_alternative = collections.defaultdict(lambda: collections.defaultdict(float))
             response_times_regionalized_aggregated = collections.defaultdict(lambda: collections.defaultdict(int))
