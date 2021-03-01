@@ -70,4 +70,8 @@ ax.plot(X, Y)
 ax.set_xlabel(f'Load, invocations per minute.\nNot included {zero_invocations_count} cases of 0 invocations per minute.')
 
 plt.savefig(os.path.join(args.figuresdir, 'cdf.png'), dpi = 600, bbox_inches='tight')
+plt.xlim(0, 10000)
+plt.savefig(os.path.join(args.figuresdir, 'cdf-zoomed-10000.png'), dpi = 600, bbox_inches='tight')
+plt.xlim(0, 5000)
+plt.savefig(os.path.join(args.figuresdir, 'cdf-zoomed-5000.png'), dpi = 600, bbox_inches='tight')
 plt.close()
