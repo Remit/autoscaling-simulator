@@ -69,3 +69,15 @@ class TimelineOfDeltas(Timeline):
     def between_with_beginning_excluded(self, non_inc_begin : pd.Timestamp, inc_end : pd.Timestamp):
 
         return { ts : vals for ts, vals in self.timeline.items() if (ts > non_inc_begin) and (ts <= inc_end) }
+
+    @property
+    def latest_scheduled_platform_enforcement(self):
+        latest_scheduled_platform_enforcement = pd.Timestamp(0)
+
+        for timestamp, state_deltas in self.timeline.items():
+            for state_delta in state_deltas:
+                if state_delta.contains_platform_scale_up:#contains_platform_state_change
+                    if timestamp > latest_scheduled_platform_enforcement:
+                        latest_scheduled_platform_enforcement = timestamp
+
+        return latest_scheduled_platform_enforcement

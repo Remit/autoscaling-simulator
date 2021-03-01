@@ -1,0 +1,5 @@
+[
+  {"service_name": "cpu-intensive",
+   "deployment": {"eu": {"init_aspects": {"count": 1},
+                         "platform": {"provider": "aws", "node_type": "t2.small", "count": 1}}}}
+]

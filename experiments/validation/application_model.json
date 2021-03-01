@@ -1,0 +1,37 @@
+{
+  "app_name": "validation_app",
+  "utilization_metrics_conf":
+    {
+      "averaging_interval": {"value": 50, "unit": "ms"},
+      "sampling_interval": {"value": 50, "unit": "ms"}
+    },
+  "services": [
+    {
+      "name": "cpu-intensive",
+      "buffers_config": {"discipline": "FIFO", "buffer_capacity_by_request_type": [{"request_type": "compute", "capacity": 0}]},
+      "system_requirements": {"vCPU": {"mean": 0.001, "std": 0.01},
+                              "memory": {"mean": 100, "std": 0, "unit": "MB"},
+                              "disk": {"mean": 0, "std": 0, "unit": "GB"}},
+                              "next": [], "prev": []
+    }],
+  "requests": [
+    {
+      "request_type": "compute",
+      "entry_service": "cpu-intensive",
+      "processing_times": { "unit": "s",
+                            "values": [{
+                                        "service": "cpu-intensive",
+                                        "upstream": { "mean": 0.8, "std": 0 },
+                                        "downstream": { "mean": 0, "std": 0 }}
+                                      ]},
+      "timeout": {"value": 6500, "unit": "ms"},
+      "request_size": {"mean": 31, "std": 1, "unit": "KB"},
+      "response_size": {"mean": 1, "std": 1, "unit": "KB"},
+      "operation_type": "r",
+      "processing_requirements": {
+        "vCPU": {"mean": 0.0016, "std": 0.00001},
+        "memory": {"mean": 0.5, "std": 0.001, "unit": "MB"},
+        "disk": {"mean": 0, "std": 0, "unit": "B"}
+      }
+    }]
+}

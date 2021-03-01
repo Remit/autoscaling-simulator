@@ -62,7 +62,7 @@ class SharedPlacingStrategy(PlacingStrategy):
         service_instances_count = 0
 
         for service_name_to_consider, system_resources_to_consider in further_node_system_resources_taken.items():
-            while cumulative_system_resources.can_accommodate_another_service_instance:
+            while cumulative_system_resources.can_accommodate_another_service_instance and service_instances_count <= cumulative_system_resources.max_threads:
                 cumulative_system_resources += system_resources_to_consider
                 service_instances_count += 1
 

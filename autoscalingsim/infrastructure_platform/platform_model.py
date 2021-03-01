@@ -136,7 +136,8 @@ class PlatformModel:
     def adjust_platform_state(self, cur_timestamp : pd.Timestamp, desired_states_to_process : dict):
 
         adjusted_timeline_of_deltas = self.adjustment_policy.adjust_platform_state(cur_timestamp, desired_states_to_process,
-                                                                                   deepcopy(self.state_deltas_timeline.actual_state))
+                                                                                   deepcopy(self.state_deltas_timeline.actual_state),
+                                                                                   self.state_deltas_timeline.latest_scheduled_platform_enforcement)
 
         if not adjusted_timeline_of_deltas is None:
             self.state_deltas_timeline.merge(adjusted_timeline_of_deltas)

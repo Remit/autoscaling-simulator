@@ -20,7 +20,7 @@ class Adjuster(ABC):
 
     _Registry = {}
 
-    def __init__(self, adjustment_horizon : dict, scaling_model : ScalingModel,
+    def __init__(self, adjustment_horizon : dict, cooldown_period : dict, scaling_model : ScalingModel,
                  services_resource_requirements : dict, combiner_settings : dict,
                  calc_conf : 'DesiredPlatformAdjustmentCalculatorConfig', score_calculator_class : ScoreCalculator, node_groups_registry : 'NodeGroupsRegistry'):
 
@@ -32,13 +32,20 @@ class Adjuster(ABC):
         adjustment_horizon_unit = ErrorChecker.key_check_and_load('unit', adjustment_horizon, self.__class__.__name__)
         self.adjustment_horizon = pd.Timedelta(adjustment_horizon_value, unit = adjustment_horizon_unit)
 
+        cooldown_period_value = ErrorChecker.key_check_and_load('value', cooldown_period, self.__class__.__name__)
+        cooldown_period_unit = ErrorChecker.key_check_and_load('unit', cooldown_period, self.__class__.__name__)
+        self.cooldown_period = pd.Timedelta(cooldown_period_value, unit = cooldown_period_unit)
+
         combiner_type = ErrorChecker.key_check_and_load('type', combiner_settings, self.__class__.__name__)
         combiner_conf = ErrorChecker.key_check_and_load('conf', combiner_settings, self.__class__.__name__)
         self.combiner = Combiner.get(combiner_type)(combiner_conf)
 
         self.desired_change_calculator = DesiredPlatformAdjustmentCalculator(self.scorer, services_resource_requirements, calc_conf, node_groups_registry)
 
-    def adjust_platform_state(self, cur_timestamp : pd.Timestamp, services_scaling_events : dict, current_state : PlatformState):
+    def adjust_platform_state(self, cur_timestamp : pd.Timestamp, services_scaling_events : dict,
+                              current_state : PlatformState, last_scheduled_scaling_action_ts : pd.Timestamp):
+
+        print(f'cur_timestamp: {cur_timestamp}')
 
         timeline_of_deltas = DeltaTimeline(self.scaling_model, current_state)
 
@@ -52,27 +59,35 @@ class Adjuster(ABC):
 
             if ts_of_unmet_change >= cur_timestamp:
 
-                unmet_change = self._attempt_to_use_existing_nodes_and_scale_down_if_needed(in_work_state, ts_of_unmet_change, unmet_change, timeline_of_deltas)
+                unmet_change = self._attempt_to_use_existing_nodes_and_scale_down_if_needed(in_work_state, ts_of_unmet_change, unmet_change, timeline_of_deltas, last_scheduled_scaling_action_ts)
 
                 if len(unmet_change) > 0:
 
                     # TODO: add test that ensures that timeline_of_deltas is unchanged
-                    # TODO: bug --- the temp roll out ends up as used by others
                     in_work_state, unmet_change_state, state_duration = self._roll_out_enforced_updates_temporarily(in_work_state, ts_of_unmet_change, unmet_change, timeline_of_deltas, timeline_of_unmet_changes)
 
                     state_addition_delta, state_score_addition = self._evaluate_nodes_addition_option(in_work_state, unmet_change_state, state_duration)
                     state_substitution_delta, state_score_substitution = self._evaluate_nodes_substitution_option(in_work_state, ts_of_unmet_change, unmet_change_state, state_duration)
 
-                    self._update_timeline_with_best_option(timeline_of_deltas, ts_of_unmet_change, state_addition_delta, state_score_addition, state_substitution_delta, state_score_substitution)
+                    self._update_timeline_with_best_option(timeline_of_deltas, ts_of_unmet_change, state_addition_delta, state_score_addition, state_substitution_delta, state_score_substitution, last_scheduled_scaling_action_ts)
 
             ts_of_unmet_change, unmet_change = timeline_of_unmet_changes.next()
 
         return timeline_of_deltas if timeline_of_deltas.updated_at_least_once else None
 
     def _attempt_to_use_existing_nodes_and_scale_down_if_needed(self, in_work_state : PlatformState, ts_of_unmet_change : pd.Timestamp,
-                                                                unmet_change : dict, timeline_of_deltas_ref : DeltaTimeline):
+                                                                unmet_change : dict, timeline_of_deltas_ref : DeltaTimeline, last_scheduled_scaling_action_ts : pd.Timestamp):
 
         in_work_state_delta, unmet_change = in_work_state.compute_soft_adjustment(unmet_change, self.services_resource_requirements)
+
+        if self.cooldown_period > pd.Timedelta(0, unit = 's'):
+            if last_scheduled_scaling_action_ts > ts_of_unmet_change:
+                ts_of_unmet_change = last_scheduled_scaling_action_ts + self.cooldown_period
+            else:
+                time_to_be_elapsed_since_last_platform_update = ts_of_unmet_change - last_scheduled_scaling_action_ts
+                if time_to_be_elapsed_since_last_platform_update > self.cooldown_period:
+                    ts_of_unmet_change += (time_to_be_elapsed_since_last_platform_update - self.cooldown_period)
+
         timeline_of_deltas_ref.add_state_delta(ts_of_unmet_change, in_work_state_delta)
 
         return unmet_change
@@ -115,10 +130,20 @@ class Adjuster(ABC):
 
     def _update_timeline_with_best_option(self, timeline_of_deltas_ref : DeltaTimeline, ts_of_unmet_change : pd.Timestamp,
                                           state_addition_delta, state_score_addition,
-                                          state_substitution_delta, state_score_substitution):
+                                          state_substitution_delta, state_score_substitution, last_scheduled_scaling_action_ts : pd.Timestamp):
 
+        print(f'ts_of_unmet_change BEFORE: {ts_of_unmet_change}')
+        print(f'last_scaling_action_ts: {last_scheduled_scaling_action_ts}')
+        if self.cooldown_period > pd.Timedelta(0, unit = 's'):
+            if last_scheduled_scaling_action_ts > ts_of_unmet_change:
+                ts_of_unmet_change = last_scheduled_scaling_action_ts + self.cooldown_period
+            else:
+                time_to_be_elapsed_since_last_platform_update = ts_of_unmet_change - last_scheduled_scaling_action_ts
+                if time_to_be_elapsed_since_last_platform_update > self.cooldown_period:
+                    ts_of_unmet_change += (time_to_be_elapsed_since_last_platform_update - self.cooldown_period)
+        print(f'ts_of_unmet_change AFTER: {ts_of_unmet_change}')
         if state_score_addition.is_worst:
-            timeline_of_deltas_ref.add_state_delta(ts_of_unmet_change, state_substitution_delta)
+            timeline_of_deltas_ref.add_state_delta(ts_of_unmet_change, state_substitution_delta) # TODO: add cooldown
         elif state_score_substitution.is_worst:
             timeline_of_deltas_ref.add_state_delta(ts_of_unmet_change, state_addition_delta)
         else:

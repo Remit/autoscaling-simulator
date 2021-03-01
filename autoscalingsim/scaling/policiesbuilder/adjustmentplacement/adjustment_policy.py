@@ -25,6 +25,7 @@ class AdjustmentPolicy:
             config = json.load(f)
 
             adjustment_horizon = ErrorChecker.key_check_and_load('adjustment_horizon', config, self.__class__.__name__)
+            cooldown_period = ErrorChecker.key_check_and_load('cooldown_period', config, self.__class__.__name__, default = {"value": 0, "unit": "s"})
             optimizer_type = ErrorChecker.key_check_and_load('optimizer_type', config, self.__class__.__name__)
             placement_hint = ErrorChecker.key_check_and_load('placement_hint', config, self.__class__.__name__)
             combiner_settings = ErrorChecker.key_check_and_load('combiner', config, self.__class__.__name__)
@@ -34,16 +35,17 @@ class AdjustmentPolicy:
 
             calc_conf = DesiredPlatformAdjustmentCalculatorConfig(placement_hint, optimizer_type, node_for_scaled_services_types, state_reader)
 
-            self.adjuster = adjuster_class(adjustment_horizon, self.scaling_model,
+            self.adjuster = adjuster_class(adjustment_horizon, cooldown_period, self.scaling_model,
                                            service_instance_requirements, combiner_settings, calc_conf, node_groups_registry)
 
     def adjust_platform_state(self, cur_timestamp : pd.Timestamp,
-                              desired_states_timeline : dict, platform_state : PlatformState):
+                              desired_states_timeline : dict, platform_state : PlatformState,
+                              last_scaling_action_ts : pd.Timestamp):
 
         services_scaling_events = self._convert_desired_services_states_to_scaling_events(platform_state, desired_states_timeline)
         services_scaling_events = self._convert_scaling_events_to_dataframes(services_scaling_events)
 
-        return self.adjuster.adjust_platform_state(cur_timestamp, services_scaling_events, platform_state)
+        return self.adjuster.adjust_platform_state(cur_timestamp, services_scaling_events, platform_state, last_scaling_action_ts)
 
     def _convert_desired_services_states_to_scaling_events(self, platform_state : PlatformState, desired_states_timeline : dict):
 

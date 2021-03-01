@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import collections
 from collections import defaultdict
 from copy import deepcopy
@@ -78,6 +79,16 @@ class PlatformStateDelta:
                 result[node_type] += nodes_count
 
         return result
+
+    @property
+    def contains_platform_state_change(self):
+
+        return np.any([regional_delta.contains_platform_state_change for regional_delta in self.deltas_per_region.values()])
+
+    @property
+    def contains_platform_scale_up(self):
+
+        return np.any([regional_delta.contains_platform_scale_up for regional_delta in self.deltas_per_region.values()])
 
     def __iter__(self):
 

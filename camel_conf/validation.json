@@ -1,0 +1,26 @@
+{
+      "step_duration": { "value": 15, "unit": "s" },
+      "pieces": [
+          {
+              "pattern": "const",
+              "interval": { "value": 1, "unit": "m" },
+              "config": {
+                  "rps": 0
+              }
+          },
+          {
+              "pattern": "monotoneous",
+              "interval": { "value": 20, "unit": "m" },
+              "config": {
+                  "rps": { "start": 0, "end": 1200 }
+              }
+          },
+          {
+              "pattern": "const",
+              "interval": { "value": 9, "unit": "m" },
+              "config": {
+                  "rps": 0
+              }
+          }
+      ]
+  }

@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import collections
 
 from autoscalingsim.scaling.scaling_model.scaling_model import ScalingModel
@@ -60,6 +61,16 @@ class RegionalDelta:
                 result[gd.node_type] += gd.nodes_change
 
         return result
+
+    @property
+    def contains_platform_state_change(self):
+
+        return np.any([not gd.virtual for gd in self.generalized_deltas])
+
+    @property
+    def contains_platform_scale_up(self):
+
+        return np.any([gd.is_platform_scale_up and not gd.virtual for gd in self.generalized_deltas])
 
     def __iter__(self):
 

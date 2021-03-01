@@ -75,6 +75,6 @@ class PlatformModelConfigurationParser:
                                                                   latency, requests_acceleration_factor)
 
             except json.JSONDecodeError:
-                raise ValueError(f'An invalid JSON when parsing for {self.__class__.__name__}')
+                raise ValueError(f'An invalid JSON when parsing for {cls.__name__}')
 
         return providers_configs

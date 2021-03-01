@@ -52,16 +52,6 @@ class NodeGroupLink:
         self.requests_in_transfer = collections.defaultdict(list) if requests_in_transfer is None else requests_in_transfer
         self.used_bandwidth = used_bandwidth
 
-    #def __add__(self, other : 'NodeGroupLink'):
-
-    #    return self.__class__(self.latency, self.single_link_network_bandwidth, self.bandwidth + other.bandwidth,
-    #                          self.requests_in_transfer + other.requests_in_transfer, self.used_bandwidth + other.used_bandwidth)
-
-    #def __sub__(self, other : 'NodeGroupLink'):
-
-    #    return self.__class__(self.latency, self.single_link_network_bandwidth, self.bandwidth - other.bandwidth,
-    #                          [ req for req in self.requests_in_transfer if not req in other.requests_in_transfer], self.used_bandwidth - other.used_bandwidth)
-
     def step(self, service_name_to_extract_requests_for : str):
 
         """ Processing requests to bring them from the link into the buffer """

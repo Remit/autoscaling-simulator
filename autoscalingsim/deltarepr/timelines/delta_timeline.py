@@ -20,6 +20,7 @@ class DeltaTimeline:
 
         self.timeline = TimelineOfDeltas() if timeline is None else timeline
         self.latest_state_update = pd.Timestamp(0) if latest_state_update is None else latest_state_update
+        self.last_scaling_action_ts = pd.Timestamp(0)
         self.latest_enforcement = pd.Timestamp(0)
         self.main_timeline = main_timeline
 
@@ -47,6 +48,8 @@ class DeltaTimeline:
 
         enforcement_made = False
         actual_state_updated = False
+        platform_state_updated = False
+        platform_state_update_scheduled = False
 
         if borderline_ts_for_updates > self.latest_state_update:
 
@@ -54,10 +57,13 @@ class DeltaTimeline:
             enforcement_made = self._enforce_deltas_in_timeline(timeline_to_consider, borderline_ts_for_updates)
 
             timeline_to_consider = self.timeline.between_with_beginning_excluded(self.latest_state_update, borderline_ts_for_updates)
-            actual_state_updated = self._update_actual_state_using_timeline(timeline_to_consider)
+            actual_state_updated, platform_state_updated = self._update_actual_state_using_timeline(timeline_to_consider)
 
         updates_applied = enforcement_made or actual_state_updated
-        self.latest_state_update = borderline_ts_for_updates if updates_applied else self.latest_state_update
+        if updates_applied:
+            self.latest_state_update = borderline_ts_for_updates
+        #if platform_state_updated:
+        #    self.last_scaling_action_ts = borderline_ts_for_updates
 
     def _enforce_deltas_in_timeline(self, timeline_to_consider : dict, borderline_ts_for_updates):
 
@@ -74,14 +80,18 @@ class DeltaTimeline:
     def _update_actual_state_using_timeline(self, timeline_to_consider : dict):
 
         updates_applied = False
+        platform_state_updated = False
 
         for timestamp, state_deltas in timeline_to_consider.items():
             for state_delta in state_deltas:
                 if state_delta.is_enforced:
-                    self.actual_state += state_delta
                     updates_applied = True
+                    if state_delta.contains_platform_state_change:
+                        platform_state_updated = True
 
-        return updates_applied
+                    self.actual_state += state_delta
+
+        return (updates_applied, platform_state_updated)
 
     def _enforce_state_delta(self, timestamp : pd.Timestamp, state_delta : PlatformStateDelta):
 
@@ -97,6 +107,11 @@ class DeltaTimeline:
     def to_dict(self):
 
         return OrderedDict(sorted(self.timeline.to_dict().items(), key = lambda elem: elem[0]))
+
+    @property
+    def latest_scheduled_platform_enforcement(self):
+
+        return self.timeline.latest_scheduled_platform_enforcement
 
     @property
     def updated_at_least_once(self):

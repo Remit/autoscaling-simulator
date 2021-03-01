@@ -40,6 +40,9 @@ class ApplicationStructure:
 
     def _add_services(self, source_service_name : str, dest_services : list, direction : str):
 
+        if not self.app_graph.has_node(source_service_name):
+            self.app_graph.add_node(source_service_name)
+            
         edges_to_add = list()
         for dest_service_name in dest_services:
             edges_to_add.append((source_service_name,

@@ -1,0 +1,13 @@
+{
+  "application":
+  {
+    "services": [{"name": "cpu-intensive",
+                 "booting_duration": {"aws": {"value": 250, "unit": "ms"}},
+                 "termination_duration": {"aws": {"value": 10, "unit": "ms"}}
+                 }]
+  },
+  "platform": [{"provider": "aws", "nodes":
+                [{"type": "t2.small",
+                  "booting_duration": {"value": 30, "unit": "s"},
+                  "termination_duration": {"value": 120, "unit": "s"}}]}]
+}

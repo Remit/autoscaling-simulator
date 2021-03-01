@@ -28,6 +28,11 @@ class GeneralizedDelta:
         return self.node_group_delta.virtual
 
     @property
+    def is_platform_scale_up(self):
+
+        return self.node_group_delta.is_scale_up
+
+    @property
     def node_type(self):
 
         return self.node_group_delta.node_type

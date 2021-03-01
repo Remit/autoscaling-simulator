@@ -16,6 +16,7 @@ class SystemResourceUsage:
     """
 
     MAX_ALLOWED_SYSTEM_RESOURCE_USAGE_BY_SERVICES = 0.3
+    MAX_ALLOWED_VCPU_SHARING_FACTOR = 4
 
     system_resources = {
         'vCPU'              : Numeric,
@@ -94,6 +95,11 @@ class SystemResourceUsage:
         new_instances_count = max(new_instances_count_by_resource.values()) if len(new_instances_count_by_resource) > 0 else self.instance_count
 
         return self.__class__(self.node_info, min(new_instances_count, self.instance_count), deepcopy(self.system_resources_usage))
+
+    @property
+    def max_threads(self):
+
+        return self.instance_count * self.__class__.MAX_ALLOWED_VCPU_SHARING_FACTOR * self.node_info.vCPU_count
 
     @property
     def can_accommodate_another_service_instance(self):

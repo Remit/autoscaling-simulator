@@ -1,5 +1,6 @@
 import os
 import math
+import numpy as np
 import collections
 import pandas as pd
 
@@ -45,7 +46,7 @@ class UtilizationLineGraph:
                 if not isinstance(axs, Iterable):
                     axs = [axs]
                 if len(utilization_per_service) == 1:
-                    axs = [axs]
+                    axs = np.asarray([axs]).T
 
                 i = 0
                 for service_name, utilization_per_resource in utilization_per_service.items():

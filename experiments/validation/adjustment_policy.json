@@ -1,0 +1,22 @@
+{
+  "adjustment_goal": "cost_minimization",
+  "optimizer_type": "OptimizerScoreMaximizer",
+  "adjustment_horizon": {
+    "value": 10,
+    "unit": "m"
+  },
+  "cooldown_period": {
+    "value": 300,
+    "unit": "s"
+  },
+  "placement_hint": "shared",
+  "combiner": {
+    "type": "windowed",
+    "conf": {
+      "resolution": {
+        "value": 50,
+        "unit": "ms"
+      }
+    }
+  }
+}

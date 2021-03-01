@@ -3,7 +3,7 @@
     "regime": "alternative_policies",
     "repetitions_count_per_simulation": 5,
     "keep_evaluated_configs": false,
-    "results_folder": "D:/AutoscalingSim/autoscaling-simulator/results_thesis/THIRD ATTEMPT/components/components_7_repetitions/new",
+    "results_folder": "/home/ubuntu/experiments/components_5_repetitions",
     "regime_config": {
       "unchanged_configs_folder": "constant_configs",
       "alternatives_folder": "alternatives"

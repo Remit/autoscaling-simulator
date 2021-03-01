@@ -8,6 +8,7 @@ class CostMinimizer(Adjuster):
 
     def __init__(self,
                  adjustment_horizon : dict,
+                 cooldown_period : dict,
                  scaling_model : ScalingModel,
                  scaled_service_instance_requirements_by_service : dict,
                  combiner_settings : dict,
@@ -16,6 +17,7 @@ class CostMinimizer(Adjuster):
 
         score_calculator_class = ScoreCalculator.get(self.__class__.__name__)
         super().__init__(adjustment_horizon,
+                         cooldown_period,
                          scaling_model,
                          scaled_service_instance_requirements_by_service,
                          combiner_settings,

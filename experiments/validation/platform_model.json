@@ -1,0 +1,27 @@
+[
+		{
+			"provider": "aws",
+			"node_types": [
+				{
+					"type": "t2.small",
+					"vCPU": 1,
+					"cpu_credits": 12,
+					"memory": {
+						"value": 2,
+						"unit": "GB"
+					},
+					"disk": {
+						"value": 30,
+						"unit": "GB"
+					},
+					"network_bandwidth": {
+						"value": 625,
+						"unit": "Mb"
+					},
+					"price": 0.023,
+					"latency_ms": 20,
+					"requests_acceleration_factor": 1.5
+				}
+			]
+		}
+]

@@ -130,6 +130,11 @@ class NodeInfo:
         return {'vCPU': self._vCPU, 'memory': self._memory,
                 'disk': self._disk, 'network_bandwidth': self._network_bandwidth}
 
+    @property
+    def vCPU_count(self):
+
+        return self._vCPU.value
+
     def __repr__(self):
 
         return f'{self.__class__.__name__}(provider = {self._provider}, \
