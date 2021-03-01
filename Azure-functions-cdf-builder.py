@@ -52,9 +52,9 @@ for file_id in range(start_idx, args.number_of_files + 1):
 data_collected = data_collected.groupby(['HashApp', 'minute_in_day']).max()
 
 non_zero_invocations = data_collected[data_collected.invocations > 0]
-X = sorted(non_zero_invocations.invocations.unique())
+X = [0] + sorted(non_zero_invocations.invocations.unique())
 
-Y = non_zero_invocations.groupby('invocations')['invocations'].count().sort_index().cumsum()
+Y = pd.Series({0: 0}).append(non_zero_invocations.groupby('invocations')['invocations'].count().sort_index().cumsum())
 Y /= max(Y)
 
 zero_invocations_count = len(data_collected[data_collected.invocations == 0])
@@ -65,10 +65,11 @@ percentiles = [0.99, 0.95, 0.90, 0.80, 0.50]
 font = {'color':  'black', 'weight': 'normal', 'size': 8}
 for percentile in percentiles:
     ax.axhline(percentile, 0, 1.0, color = 'k', linestyle = 'dashed', lw = 0.5)
-    ax.text(0, percentile + 0.002, f"{(int(percentile * 100))}th percentile", fontdict = font)
+    load_at_percentile = Y.index[abs(Y - percentile).argmin()]
+    ax.text(0, percentile + 0.002, f"{(int(percentile * 100))}th percentile (~{int(load_at_percentile)} ipm)", fontdict = font)
 
 ax.plot(X, Y)
-ax.set_xlabel(f'Load, invocations per minute.\nNot included {zero_invocations_count} cases of 0 invocations per minute.')
+ax.set_xlabel(f'Load, invocations per minute (ipm).\nNot included {zero_invocations_count} cases of 0 invocations per minute.')
 
 plt.ylim(0, 1.02)
 for max_x in [math.ceil(max(X)), 10000, 5000, 2500, 2000, 1000]:
