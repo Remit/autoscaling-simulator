@@ -1,6 +1,7 @@
 import sys
 import argparse
 import os
+import math
 import pandas as pd
 from matplotlib import pyplot as plt
 
@@ -69,9 +70,9 @@ for percentile in percentiles:
 ax.plot(X, Y)
 ax.set_xlabel(f'Load, invocations per minute.\nNot included {zero_invocations_count} cases of 0 invocations per minute.')
 
-plt.savefig(os.path.join(args.figuresdir, 'cdf.png'), dpi = 600, bbox_inches='tight')
-plt.xlim(0, 10000)
-plt.savefig(os.path.join(args.figuresdir, 'cdf-zoomed-10000.png'), dpi = 600, bbox_inches='tight')
-plt.xlim(0, 5000)
-plt.savefig(os.path.join(args.figuresdir, 'cdf-zoomed-5000.png'), dpi = 600, bbox_inches='tight')
+plt.ylim(0, 1.02)
+for max_x in [math.ceil(max(X)), 10000, 5000, 2500, 2000, 1000]:
+    plt.xlim(-2, max_x)
+    plt.savefig(os.path.join(args.figuresdir, f'cdf-zoomed-{max_x}.png'), dpi = 600, bbox_inches='tight')
+
 plt.close()
