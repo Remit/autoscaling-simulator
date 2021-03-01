@@ -46,7 +46,7 @@ for file_id in range(start_idx, args.number_of_files + 1):
 
     invocations_data.set_index(['HashApp', 'HashFunction', 'minute_in_day'], inplace = True)
 
-    data_collected = data_collected.add(invocations_data / number_of_files, fill_value = 0)
+    data_collected = data_collected.add(invocations_data / args.number_of_files, fill_value = 0)
 
 data_collected = data_collected.groupby(['HashApp', 'minute_in_day']).max()
 
