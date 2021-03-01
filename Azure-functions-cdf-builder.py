@@ -18,8 +18,8 @@ parser.add_argument('--figuresdir', dest = 'figuresdir',
                     help = 'directory to store the plots with resulting CDF')
 
 parser.add_argument('--n', dest = 'number_of_files',
-                    action = 'store', default = 12,
-                    help = 'number of files to use from the dataset')
+                    action = 'store', default = 14, type = int,
+                    help = 'number of files to use from the dataset (default: 14)')
 
 args = parser.parse_args()
 
