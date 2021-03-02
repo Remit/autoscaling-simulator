@@ -15,9 +15,10 @@ class SeasonalLoadModel(RegionalLoadModel):
     SECONDS_IN_DAY = 86_400
 
     def __init__(self, region_name : str, pattern : dict, load_configs : dict,
-                 simulation_step : pd.Timedelta, simulation_start : pd.Timestamp, reqs_processing_infos : dict):
+                 generation_bucket : pd.Timedelta, simulation_start : pd.Timestamp, simulation_step : pd.Timedelta,
+                 reqs_processing_infos : dict, batch_size : int):
 
-        super().__init__(region_name, simulation_step, reqs_processing_infos)
+        super().__init__(region_name, generation_bucket, simulation_step, reqs_processing_infos, batch_size)
 
         self.monthly_vals = SeasonalLoadPatternParser.get(ErrorChecker.key_check_and_load('type', pattern, 'region_name', self.region_name)).parse(pattern)
         self.reqs_types_ratios = RatiosParser.parse(load_configs)
@@ -26,7 +27,7 @@ class SeasonalLoadModel(RegionalLoadModel):
         self.current_means_split_across_seconds = dict()
         self.current_req_split_across_simulation_steps = dict()
         for req_type in self.reqs_types_ratios:
-            self.current_req_split_across_simulation_steps[req_type] = { ms_bucket_id : 0 for ms_bucket_id in range(pd.Timedelta(1000, unit = 'ms') // self.simulation_step) }
+            self.current_req_split_across_simulation_steps[req_type] = { ms_bucket_id : 0 for ms_bucket_id in range(pd.Timedelta(1000, unit = 'ms') // self.generation_bucket) }
 
         self.current_month = -1
         self.current_time_unit = -1
@@ -77,7 +78,7 @@ class SeasonalLoadModel(RegionalLoadModel):
 
         gen_reqs = []
         for req_type, ratio in self.reqs_types_ratios.items():
-            ms_bucket_picked = pd.Timedelta(timestamp.microsecond / 1000, unit = 'ms') // self.simulation_step
+            ms_bucket_picked = pd.Timedelta(timestamp.microsecond / 1000, unit = 'ms') // self.generation_bucket
 
             tmp_series_of_buckets = pd.Series(list(self.current_req_split_across_simulation_steps[req_type].keys()))
             ms_bucket_picked = tmp_series_of_buckets[abs(tmp_series_of_buckets - ms_bucket_picked).idxmin()]

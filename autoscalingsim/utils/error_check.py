@@ -1,4 +1,5 @@
 import collections
+import pandas as pd
 
 class ErrorChecker:
 
@@ -22,6 +23,13 @@ class ErrorChecker:
             return default
 
         return structure[key] if key in structure else default
+
+    @staticmethod
+    def parse_duration(raw_duration : dict):
+
+        duration_value = raw_duration.get("value", 0)
+        duration_unit = raw_duration.get("unit", "s")
+        return pd.Timedelta(duration_value, unit = duration_unit)
 
     @staticmethod
     def value_check(parameter_name,

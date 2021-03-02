@@ -13,7 +13,9 @@ class Request:
     flag is dropped.
     """
 
-    def __init__(self, region_name : str, request_type : str, request_processing_info : RequestProcessingInfo, simulation_step : pd.Timedelta, request_id = None):
+    def __init__(self, region_name : str, request_type : str,
+                 request_processing_info : RequestProcessingInfo,
+                 simulation_step : pd.Timedelta, request_id = None, batch_size : int = 1):
 
         self.region_name = region_name
         self.request_type = request_type # TODO: consider removing since this info is in request_requirement
@@ -34,6 +36,8 @@ class Request:
         self._upstream = True
         self.replies_expected = 1
 
+        self._batch_size = batch_size
+
     def set_downstream(self):
 
         self._upstream = False
@@ -50,6 +54,10 @@ class Request:
 
         self.processing_time_left = self.request_processing_info.get_upstream_processing_time(self.processing_service)
 
+    @property
+    def batch_size(self):
+        return self._batch_size
+        
     @property
     def processing_service(self):
 
@@ -70,17 +78,17 @@ class Request:
     @property
     def resource_requirements(self):
 
-        return self._cur_resource_requirements
+        return self._cur_resource_requirements * self._batch_size
 
     @property
     def request_size(self):
 
-        return self._size
+        return self._size * self._batch_size
 
     @property
     def response_size(self):
 
-        return self._size
+        return self._size * self._batch_size
 
     @property
     def timeout(self):
@@ -123,6 +131,7 @@ class Request:
         req_copy._size = self._size
         req_copy._upstream = self._upstream
         req_copy.replies_expected = self.replies_expected
+        req_copy._batch_size = self._batch_size
         memo[id(req_copy)] = req_copy
         return req_copy
 

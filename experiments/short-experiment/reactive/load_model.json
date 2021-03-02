@@ -1,5 +1,10 @@
 {
       "load_kind": "leveled",
+      "batch_size": 100,
+      "generation_bucket": {
+        "value": 1,
+        "unit": "s"
+      },
       "regions_configs": [
         {
           "region_name": "eu",
@@ -7,36 +12,18 @@
             "type": "step",
             "params": {
                         "step_duration": {
-                            "value": 27,
+                            "value": 10,
                             "unit": "m"
                         },
                         "unit_of_time_for_requests_rate": {
                             "value": 1,
                             "unit": "s"
                         },
-                        "values": [ {"requests_count_level": 0, "percentage_of_interval": 0.03704},
-                                    {"requests_count_level": 1, "percentage_of_interval": 0.18519},
-                                    {"requests_count_level": 3, "percentage_of_interval": 0.03704},
-                                    {"requests_count_level": 1, "percentage_of_interval": 0.03704},
-                                    {"requests_count_level": 3, "percentage_of_interval": 0.03704},
-                                    {"requests_count_level": 1, "percentage_of_interval": 0.03704},
-                                    {"requests_count_level": 3, "percentage_of_interval": 0.03704},
-                                    {"requests_count_level": 1, "percentage_of_interval": 0.03704},
-                                    {"requests_count_level": 3, "percentage_of_interval": 0.03704},
-                                    {"requests_count_level": 1, "percentage_of_interval": 0.03704},
-                                    {"requests_count_level": 3, "percentage_of_interval": 0.03704},
-                                    {"requests_count_level": 1, "percentage_of_interval": 0.03704},
-                                    {"requests_count_level": 3, "percentage_of_interval": 0.03704},
-                                    {"requests_count_level": 1, "percentage_of_interval": 0.03704},
-                                    {"requests_count_level": 3, "percentage_of_interval": 0.03704},
-                                    {"requests_count_level": 1, "percentage_of_interval": 0.03704},
-                                    {"requests_count_level": 3, "percentage_of_interval": 0.03704},
-                                    {"requests_count_level": 1, "percentage_of_interval": 0.03704},
-                                    {"requests_count_level": 3, "percentage_of_interval": 0.03704},
-                                    {"requests_count_level": 1, "percentage_of_interval": 0.03704},
-                                    {"requests_count_level": 3, "percentage_of_interval": 0.03704},
-                                    {"requests_count_level": 1, "percentage_of_interval": 0.03704},
-                                    {"requests_count_level": 0, "percentage_of_interval": 0.03704}]
+                        "values": [ {"requests_count_level": 0, "percentage_of_interval": 0.2},
+                                    {"requests_count_level": 2000, "percentage_of_interval": 0.2},
+                                    {"requests_count_level": 1000, "percentage_of_interval": 0.2},
+                                    {"requests_count_level": 2000, "percentage_of_interval": 0.2},
+                                    {"requests_count_level": 1000, "percentage_of_interval": 0.2}]
                     }
 
                 },

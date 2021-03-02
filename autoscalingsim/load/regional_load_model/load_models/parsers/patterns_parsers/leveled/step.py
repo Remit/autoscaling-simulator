@@ -10,7 +10,7 @@ class StepLoadPatternParser(LeveledLoadPatternParser):
     """ Implements repeated step load change pattern over step_total_duration of time """
 
     @classmethod
-    def parse(cls, pattern : dict, simulation_step : pd.Timedelta):
+    def parse(cls, pattern : dict, generation_bucket : pd.Timedelta):
 
         """
         {
@@ -54,7 +54,7 @@ class StepLoadPatternParser(LeveledLoadPatternParser):
         step_total_duration_unit = ErrorChecker.key_check_and_load('unit', step_total_duration_raw)
         step_total_duration = pd.Timedelta(step_total_duration_value, unit = step_total_duration_unit)
 
-        if simulation_step > step_total_duration:
+        if generation_bucket > step_total_duration:
             raise ValueError('The simulation step should be smaller or equal to the interval of time, for which the requests are generated')
 
         unit_of_time_for_requests_rate_raw = ErrorChecker.key_check_and_load('unit_of_time_for_requests_rate', params, default = {'value': 1, 'unit': 's'})
@@ -62,7 +62,7 @@ class StepLoadPatternParser(LeveledLoadPatternParser):
         unit_of_time_for_requests_rate_unit = ErrorChecker.key_check_and_load('unit', unit_of_time_for_requests_rate_raw)
         unit_of_time_for_requests_rate = pd.Timedelta(unit_of_time_for_requests_rate_value, unit = unit_of_time_for_requests_rate_unit)
 
-        buckets_in_rate_unit = unit_of_time_for_requests_rate // simulation_step
+        buckets_in_rate_unit = unit_of_time_for_requests_rate // generation_bucket
 
         load_distribution_in_steps_buckets = list()
         step_values = ErrorChecker.key_check_and_load('values', params)

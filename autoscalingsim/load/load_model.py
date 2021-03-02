@@ -22,13 +22,17 @@ class LoadModel(MetricSource):
                 try:
                     config = json.load(f)
                     load_kind = ErrorChecker.key_check_and_load('load_kind', config)
+                    batch_size = ErrorChecker.key_check_and_load('batch_size', config, default = 1)
+                    generation_bucket_raw = ErrorChecker.key_check_and_load('generation_bucket', config, default = None)
+                    generation_bucket = ErrorChecker.parse_duration(generation_bucket_raw) if not generation_bucket_raw is None else simulation_step
                     regions_configs = ErrorChecker.key_check_and_load('regions_configs', config)
 
                     for region_config in regions_configs:
                         region_name = ErrorChecker.key_check_and_load('region_name', region_config)
                         pattern = ErrorChecker.key_check_and_load('pattern', region_config, 'region_name', region_name)
                         load_configs = ErrorChecker.key_check_and_load('load_configs', region_config, 'region_name', region_name)
-                        self.region_models[region_name] = RegionalLoadModel.get(load_kind)(region_name, pattern, load_configs, simulation_step, simulation_start, reqs_processing_infos)
+                        self.region_models[region_name] = RegionalLoadModel.get(load_kind)(region_name, pattern, load_configs, generation_bucket,
+                                                                                           simulation_start, simulation_step, reqs_processing_infos, batch_size)
 
                 except json.JSONDecodeError:
                     raise ValueError(f'An invalid JSON when parsing for {self.__class__.__name__}')

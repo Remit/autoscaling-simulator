@@ -10,7 +10,7 @@ class LoadLineGraph:
     FILENAME = 'ts_line_load.png'
 
     @classmethod
-    def plot(cls : type, load_regionalized : dict,
+    def plot(cls : type, load_regionalized : dict, simulation_start : pd.Timestamp, simulation_end : pd.Timestamp,
              resolution : pd.Timedelta = pd.Timedelta(1000, unit = 'ms'),
              figures_dir = None):
 
@@ -18,11 +18,14 @@ class LoadLineGraph:
             plt.figure()
             for req_type, load_ts in load_ts_per_request_type.items():
 
+                index_full = pd.date_range(simulation_start, simulation_end, freq = resolution)
+                load_ts_full = pd.DataFrame({'value': [0.0] * len(index_full)}, index = index_full)
                 load_ts.index = pd.to_datetime(load_ts.index)
                 load_ts.value = pd.to_numeric(load_ts.value)
                 resampled_load = load_ts.resample(resolution).sum()
+                load_ts_full = load_ts_full.add(resampled_load, fill_value = 0)
 
-                _ = plt.plot(resampled_load, label = req_type)
+                _ = plt.plot(load_ts_full, label = req_type)
 
                 unit = resolution // pd.Timedelta(1000, unit = 'ms')
                 plt.ylabel(f'load, requests per {unit} s')

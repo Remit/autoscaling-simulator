@@ -75,7 +75,16 @@ class QueuingDiscipline(ABC):
 
     def drop_old_requests(self):
 
+        len_before = len(self.requests)
+        sample_service = ""
+        upstream = None
+        if len_before > 0:
+            sample_service = self.requests[0].processing_service
+            upstream = self.requests[0].upstream
         self.requests = deque([req for req in self.requests if req.cumulative_time < req.timeout])
+        dropped = len_before - len(self.requests)
+        if dropped > 0:
+            print(f'>> Dropped {dropped} for service {sample_service} [direction upstream? {upstream}]')
 
     def shuffle(self):
 

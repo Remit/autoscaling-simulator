@@ -73,7 +73,7 @@ class AnalysisFramework:
         CostLineGraph.plot(infrastructure_cost_per_provider, resolution = pd.Timedelta(1, unit = 's'), figures_dir = figures_dir_in_use)
 
         # Autoscaling behaviour characterization category
-        LoadLineGraph.plot(load_regionalized, resolution = pd.Timedelta(1, unit = 's'), figures_dir = figures_dir_in_use)
+        LoadLineGraph.plot(load_regionalized, simulation.simulation_start, simulation.simulation_end, resolution = pd.Timedelta(1, unit = 's'), figures_dir = figures_dir_in_use)
 
         GeneratedRequestsByType.plot(load_regionalized, figures_dir = figures_dir_in_use)
 

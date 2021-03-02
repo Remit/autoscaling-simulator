@@ -105,6 +105,9 @@ class ApplicationModel:
 
         new_requests = self.load_model.generate_requests(cur_timestamp)
 
+        if len(new_requests) > 0:
+            print(f'>> Application Model new reqs batch at [{cur_timestamp}]: {len(new_requests)}')
+
         self._put_incoming_requests_into_entry_service(new_requests)
 
         for service_name, service in self.services.items():

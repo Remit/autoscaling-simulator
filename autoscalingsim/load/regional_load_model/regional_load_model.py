@@ -27,11 +27,14 @@ class RegionalLoadModel(ABC):
 
         return cls._Registry[name]
 
-    def __init__(self, region_name : str, simulation_step : pd.Timedelta, reqs_processing_infos : dict):
+    def __init__(self, region_name : str, generation_bucket : pd.Timedelta,
+                 simulation_step : pd.Timedelta, reqs_processing_infos : dict, batch_size : int):
 
         self.region_name = region_name
+        self.generation_bucket = generation_bucket
         self.simulation_step = simulation_step
         self.reqs_processing_infos = reqs_processing_infos
+        self.batch_size = batch_size
         self.load = {}
 
     @abstractmethod

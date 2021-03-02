@@ -13,4 +13,5 @@ class ResponseTimeStats (ResponseQualityStats):
 
     def add_request(self, cur_timestamp : pd.Timestamp, req : Request):
 
-        self._add_request_stats(cur_timestamp, req.cumulative_time.value / 1_000_000, [req.request_type])
+        for i in range(req.batch_size):
+            self._add_request_stats(cur_timestamp, req.cumulative_time.value / 1_000_000, [req.request_type])
