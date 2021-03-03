@@ -9,7 +9,7 @@ class BalancedPlacingStrategy(PlacingStrategy):
               dynamic_performance = None,
               dynamic_resource_utilization = None):
 
-        balanced_placements = list()
+        balanced_placements = dict()
         for node_name, placements_per_node in shared_placement_options.items():
 
             best_placement_option_so_far, balanced_placements_per_node = \
@@ -17,22 +17,22 @@ class BalancedPlacingStrategy(PlacingStrategy):
 
             self._enrich_with_fallback_best_solution_found_so_far(balanced_placements_per_node, best_placement_option_so_far)
 
-            balanced_placements.extend(balanced_placements_per_node)
+            balanced_placements[node_name] = balanced_placements_per_node
 
-        return balanced_placements_per_node
+        return balanced_placements
 
     def _attempt_to_find_balanced_placements_for_node(self, placer, placements_per_node):
 
-        best_placement_option_so_far = None
+        best_placement_option_so_far = placements_per_node[0] if len(placements_per_node) > 0 else None
         balanced_placements_per_node = list()
 
         for single_placement_option in placements_per_node:
 
-            if abs(single_placement_option.system_resources_taken.as_fraction() - 1) <= placer.balancing_threshold:
+            if abs(single_placement_option.system_resource_usage.as_fraction() - 1) <= placer.balancing_threshold:
                 balanced_placements_per_node.append(single_placement_option)
 
-            if abs(single_placement_option.system_resources_taken.as_fraction() - 1) < \
-             abs(best_placement_option_so_far.system_resources_taken.as_fraction() - 1):
+            if abs(single_placement_option.system_resource_usage.as_fraction() - 1) < \
+             abs(best_placement_option_so_far.system_resource_usage.as_fraction() - 1):
                 best_placement_option_so_far = single_placement_option
 
         return (best_placement_option_so_far, balanced_placements_per_node)

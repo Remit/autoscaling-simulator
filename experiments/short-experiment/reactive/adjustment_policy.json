@@ -5,7 +5,7 @@
     "value": 10,
     "unit": "m"
   },
-  "placement_hint": "shared",
+  "placement_hint": "balanced",
   "combiner": {
     "type": "windowed",
     "conf": {
