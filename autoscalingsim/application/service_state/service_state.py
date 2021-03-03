@@ -138,48 +138,46 @@ class ServiceState:
         """
 
         self.cur_timestamp = cur_timestamp
-        time_budget = simulation_step
 
         if self.node_groups_registry.is_deployed(self.service_name, self.region_name):
             self.upstream_buf.step()
             self.downstream_buf.step()
 
             for node_group in self.node_groups_registry.node_groups_for_service(self.service_name, self.region_name):
-                time_budget = min(time_budget, node_group.step(time_budget))
+                node_group.step(simulation_step)
                 resources_taken = node_group.system_resources_usage + node_group.system_resources_taken_by_all_requests()
 
                 if not resources_taken.is_full:
 
-                    while time_budget > pd.Timedelta(0, unit = 'ms'):
-                        advancing = True
+                    advancing = True
+                    # Assumption: first we try to process the downstream reqs to
+                    # provide the response faster, but overall it is application-dependent
+                    downstream_attempts_counter = 0
+                    while advancing and (self.downstream_buf.size() > 0 or self.upstream_buf.size() > 0):
+                        advancing = False
 
-                        # Assumption: first we try to process the downstream reqs to
-                        # provide the response faster, but overall it is application-dependent
-                        while advancing and (self.downstream_buf.size() > 0 or self.upstream_buf.size() > 0):
-                            advancing = False
+                        req = self.downstream_buf.attempt_fan_in()
+                        if not req is None:
+                            if node_group.can_schedule_request(req):
+                                req = self.downstream_buf.fan_in()
+                                node_group.start_processing(req)
+                                advancing = True
+                            else:
+                                self.downstream_buf.shuffle()
 
-                            req = self.downstream_buf.attempt_fan_in()
-                            if not req is None:
-                                if node_group.can_schedule_request(req):
-                                    req = self.downstream_buf.fan_in()
-                                    node_group.start_processing(req)
-                                    advancing = True
-                                else:
-                                    self.downstream_buf.shuffle()
+                        else:
+                            downstream_attempts_counter += 1
+                            advancing = downstream_attempts_counter <= self.downstream_buf.size()
+                            self.downstream_buf.shuffle()
 
-                            req = self.upstream_buf.attempt_take()
-                            if not req is None:
-                                if node_group.can_schedule_request(req):
-                                    req = self.upstream_buf.take()
-                                    node_group.start_processing(req)
-                                    advancing = True
-                                else:
-                                    self.upstream_buf.shuffle()
-
-                            time_budget -= simulation_step
-
-                        if (self.downstream_buf.size() == 0) and (self.upstream_buf.size() == 0):
-                            time_budget -= simulation_step
+                        req = self.upstream_buf.attempt_take()
+                        if not req is None:
+                            if node_group.can_schedule_request(req):
+                                req = self.upstream_buf.take()
+                                node_group.start_processing(req)
+                                advancing = True
+                            else:
+                                self.upstream_buf.shuffle()
 
             # Post-step maintenance actions
             # Increase the cumulative time for all the reqs left in the buffers waiting

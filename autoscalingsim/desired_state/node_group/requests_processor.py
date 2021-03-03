@@ -32,6 +32,7 @@ class RequestsProcessor:
             if min_time_to_subtract > pd.Timedelta(0, unit ='ms'): advancing = True
 
             for service_name, processing_list in self.in_processing_simultaneous.items():
+
                 new_in_processing_simultaneous = []
                 for req in processing_list:
                     new_time_left = req.processing_time_left - min_time_to_subtract
@@ -42,7 +43,6 @@ class RequestsProcessor:
                         new_in_processing_simultaneous.append(req)
 
                     else:
-                        advancing = True # advancing on the processing of a request being done
                         req.processing_time_left = pd.Timedelta(0, unit = 'ms')
                         self._stat[service_name][req.request_type] -= 1
                         self._out[service_name].append(req)
@@ -52,8 +52,6 @@ class RequestsProcessor:
                 self.in_processing_simultaneous[service_name] = new_in_processing_simultaneous
 
             time_budget -= min_time_to_subtract
-
-        return time_budget
 
     def _processing_goes_on_and_there_is_enough_time(self, advancing : bool, time_budget : pd.Timedelta):
 

@@ -139,7 +139,7 @@ class NodeGroup(NodeGroupBase):
 
     def step(self, time_budget : pd.Timedelta):
 
-        return self.shared_processor.step(time_budget)
+        self.shared_processor.step(time_budget)
 
     def start_processing(self, req : Request):
 
@@ -155,15 +155,8 @@ class NodeGroup(NodeGroupBase):
 
         system_resources_for_req = self.node_info.system_resources_to_take_from_requirements(req.resource_requirements)
         system_resources_to_be_taken = self.system_resources_taken_by_all_requests() + self.system_resources_usage + system_resources_for_req
-
-        resource_cond = not system_resources_to_be_taken.is_full
-        if not resource_cond:
-            print('Resources full!')
-        service_instances_cond = self._has_enough_free_service_instances(req)
-        if not service_instances_cond:
-            print('Not enough service instances!')
-
-        return resource_cond and service_instances_cond
+        
+        return not system_resources_to_be_taken.is_full and self._has_enough_free_service_instances(req)
 
     def _has_enough_free_service_instances(self, req : Request):
 

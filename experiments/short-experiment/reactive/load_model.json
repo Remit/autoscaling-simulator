@@ -1,6 +1,6 @@
 {
       "load_kind": "leveled",
-      "batch_size": 100,
+      "batch_size": 2000,
       "generation_bucket": {
         "value": 1,
         "unit": "s"
@@ -20,10 +20,10 @@
                             "unit": "s"
                         },
                         "values": [ {"requests_count_level": 0, "percentage_of_interval": 0.2},
-                                    {"requests_count_level": 2000, "percentage_of_interval": 0.2},
-                                    {"requests_count_level": 1000, "percentage_of_interval": 0.2},
-                                    {"requests_count_level": 2000, "percentage_of_interval": 0.2},
-                                    {"requests_count_level": 1000, "percentage_of_interval": 0.2}]
+                                    {"requests_count_level": 40000, "percentage_of_interval": 0.2},
+                                    {"requests_count_level": 16000, "percentage_of_interval": 0.2},
+                                    {"requests_count_level": 40000, "percentage_of_interval": 0.2},
+                                    {"requests_count_level": 16000, "percentage_of_interval": 0.2}]
                     }
 
                 },
