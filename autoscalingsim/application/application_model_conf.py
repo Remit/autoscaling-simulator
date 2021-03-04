@@ -123,6 +123,8 @@ class ApplicationModelConfiguration:
                         rpi = RequestProcessingInfo.build_from_config(request_info)
                         self.reqs_processing_infos[rpi.request_type] = rpi
 
+                    self.structure.set_entry_services(self.reqs_processing_infos)
+
                     ##############################################################################
                     # Parsing the configuration of services and creating the Service objects
                     ##############################################################################
@@ -157,3 +159,7 @@ class ApplicationModelConfiguration:
     def get_prev_services(self, service_name : str) -> list:
 
         return self.structure.get_prev_services(service_name)
+
+    def draw_application_structure(self, path_to_store_figure : str):
+
+        self.structure.plot_structure_as_graph(self.name, path_to_store_figure)

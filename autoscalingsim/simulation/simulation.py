@@ -128,6 +128,10 @@ class Simulation:
 
         self.application_model.step(self.cur_simulation_time, self.simulation_step)
 
+    def draw_application_structure(self, dir_for_figure : str):
+
+        self.application_model.draw_application_structure(dir_for_figure)
+
     @property
     def services_models(self):
 

@@ -174,6 +174,10 @@ class ApplicationModel:
         self._desired_node_count = self.scaling_policy.compute_desired_node_count(simulation_start, simulation_step, simulation_end)
         self._actual_node_count, self._infrastructure_cost = self.scaling_policy.compute_actual_node_count_and_cost(simulation_start, simulation_step, simulation_end)
 
+    def draw_application_structure(self, path_to_store_figure : str):
+
+        self.application_model_conf.draw_application_structure(path_to_store_figure)
+
     @property
     def utilization(self):
 

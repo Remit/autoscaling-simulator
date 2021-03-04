@@ -60,6 +60,9 @@ class AnalysisFramework:
         utilization_per_service = simulation.utilization if not simulation is None else dict()
         infrastructure_cost_per_provider = simulation.infrastructure_cost if not simulation is None else dict()
 
+        # Draws application structure
+        simulation.draw_application_structure(figures_dir_in_use)
+
         # Building figures with the internal functions
         # Autoscaling quality evaluation category
         ResponseTimesCDF.plot(response_times_regionalized, self.simulation_step, figures_dir = figures_dir_in_use)
