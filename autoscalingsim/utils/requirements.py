@@ -1,5 +1,6 @@
 import numbers
 import numpy as np
+import collections
 from copy import deepcopy
 
 from .metric.metric_categories.numeric import Numeric
@@ -10,7 +11,7 @@ class CountableResourceRequirement:
 
     """ Represents countable system resource requirement generating samples of resource requirement from the normal distribution """
 
-    _countable_requirements = {
+    countable_requirements = {
         'vCPU' : Numeric,
         'memory' : Size,
         'disk' : Size,
@@ -22,7 +23,7 @@ class CountableResourceRequirement:
     @classmethod
     def get_resource_class(cls, resource_name : str):
 
-        return cls._countable_requirements[resource_name]
+        return cls.countable_requirements[resource_name]
 
     @classmethod
     def vCPU_from_dict(cls, config : dict = None):
@@ -52,6 +53,34 @@ class CountableResourceRequirement:
         unit = ErrorChecker.key_check_and_load('unit', config, default = resource_class.default_unit)
 
         return cls(resource_class, mean, std, unit)
+
+    @classmethod
+    def lim_vCPU_from_dict(cls, config : dict = None):
+
+        return cls.limit_from_dict(cls.get_resource_class('vCPU'), config)
+
+    @classmethod
+    def lim_memory_from_dict(cls, config : dict = None):
+
+        return cls.limit_from_dict(cls.get_resource_class('memory'), config)
+
+    @classmethod
+    def lim_disk_from_dict(cls, config : dict = None):
+
+        return cls.limit_from_dict(cls.get_resource_class('disk'), config)
+
+    @classmethod
+    def lim_network_bandwidth_from_dict(cls, config : dict = None):
+
+        return cls.limit_from_dict(cls.get_resource_class('network_bandwidth'), config)
+
+    @classmethod
+    def limit_from_dict(cls, resource_class : type, config : dict = None):
+
+        val = ErrorChecker.key_check_and_load('value', config, default = 0)
+        unit = ErrorChecker.key_check_and_load('unit', config, default = resource_class.default_unit)
+
+        return resource_class(val, unit = unit)
 
     def __init__(self, resource_class : type, mean : float = 0, std : float = 0, unit : str = ''):
 
@@ -126,26 +155,60 @@ class ResourceRequirements:
         except AttributeError:
             network_bandwidth = CountableResourceRequirement.network_bandwidth_from_dict()
 
+        limits = ErrorChecker.key_check_and_load('limits', requirements_raw, default = dict())
+        lim_vCPU, lim_memory, lim_disk, lim_network_bandwidth = None, None, None, None
+        if isinstance(limits, collections.Mapping):
+            if len(limits) > 0:
+                lim_vCPU = CountableResourceRequirement.lim_vCPU_from_dict(ErrorChecker.key_check_and_load('vCPU', limits))
+                lim_memory = CountableResourceRequirement.lim_memory_from_dict(ErrorChecker.key_check_and_load('memory', limits))
+                lim_disk = CountableResourceRequirement.lim_disk_from_dict(ErrorChecker.key_check_and_load('disk', limits))
+                try:
+                    lim_network_bandwidth = CountableResourceRequirement.lim_network_bandwidth_from_dict(ErrorChecker.key_check_and_load('network_bandwidth', limits))
+                except AttributeError:
+                    lim_network_bandwidth = CountableResourceRequirement.lim_network_bandwidth_from_dict()
+
+        else: # Coefficient case
+            lim_vCPU = vCPU.mean * limits
+            lim_memory = memory.mean * limits
+            lim_disk = disk.mean * limits
+            lim_network_bandwidth = network_bandwidth.mean * limits
+
         try:
             labels = ErrorChecker.key_check_and_load('labels', requirements_raw)
         except ValueError:
             labels = []
 
-        return cls(vCPU, memory, disk, network_bandwidth, labels)
+        return cls(vCPU, memory, disk, network_bandwidth, lim_vCPU, lim_memory, lim_disk, lim_network_bandwidth, labels)
 
-    def __init__(self, vCPU : CountableResourceRequirement = None, memory : CountableResourceRequirement = None,
-                 disk : CountableResourceRequirement = None, network_bandwidth : CountableResourceRequirement = None, labels : list = None):
+    def __init__(self,
+                 vCPU : CountableResourceRequirement = None, memory : CountableResourceRequirement = None,
+                 disk : CountableResourceRequirement = None, network_bandwidth : CountableResourceRequirement = None,
+                 lim_vCPU : Numeric = None, lim_memory : Size = None, lim_disk : Size = None, lim_network_bandwidth : Size = None,
+                 labels : list = None):
 
         self._vCPU = vCPU if not vCPU is None else CountableResourceRequirement.vCPU_from_dict()
         self._memory = memory if not memory is None else CountableResourceRequirement.memory_from_dict()
         self._disk = disk if not disk is None else CountableResourceRequirement.disk_from_dict()
         self._network_bandwidth = network_bandwidth if not network_bandwidth is None else CountableResourceRequirement.network_bandwidth_from_dict()
+
+        self._lim_vCPU = lim_vCPU if not lim_vCPU is None else CountableResourceRequirement.lim_vCPU_from_dict()
+        self._lim_memory = lim_memory if not lim_memory is None else CountableResourceRequirement.lim_memory_from_dict()
+        self._lim_disk = lim_disk if not lim_disk is None else CountableResourceRequirement.lim_disk_from_dict()
+        self._lim_network_bandwidth = lim_network_bandwidth if not lim_network_bandwidth is None else CountableResourceRequirement.lim_network_bandwidth_from_dict()
+
         self._labels = labels if not labels is None else list()
 
     @property
     def labels(self):
 
         return self._labels.copy()
+
+    @property
+    def limits(self):
+
+        return {'vCPU': self._lim_vCPU, 'memory': self._lim_memory,
+                'disk': self._lim_disk, 'network_bandwidth': self._lim_network_bandwidth,
+                'labels': self._labels}
 
     @property
     def average_representation(self):
@@ -166,12 +229,14 @@ class ResourceRequirements:
 
     def tracked_resources(self):
 
-        return list(self.__class__._countable_requirements.keys())
+        return list(self.__class__.countable_requirements.keys())
 
     def __add__(self, other : 'ResourceRequirements'):
 
         return self.__class__(self._vCPU + other._vCPU, self._memory + other._memory,
                               self._disk + other._disk, self._network_bandwidth + other._network_bandwidth,
+                              self._lim_vCPU + other._lim_vCPU, self._lim_memory + other._lim_memory,
+                              self._lim_disk + other._lim_disk, self._lim_network_bandwidth + other._lim_network_bandwidth,
                               self._labels + other._labels)
 
     def __radd__(self, other : 'ResourceRequirements'):
@@ -185,6 +250,8 @@ class ResourceRequirements:
 
         return self.__class__(self._vCPU * factor, self._memory * factor,
                               self._disk * factor, self._network_bandwidth * factor,
+                              self._lim_vCPU * factor, self._lim_memory * factor,
+                              self._lim_disk * factor, self._lim_network_bandwidth * factor,
                               self._labels.copy())
 
     def __rmul__(self, factor : numbers.Number):
@@ -197,6 +264,10 @@ class ResourceRequirements:
                                            memory = {self._memory},\
                                            disk = {self._disk}, \
                                            network_bandwidth = {self._network_bandwidth},\
+                                           lim_vCPU = {self._lim_vCPU},\
+                                           lim_memory = {self._lim_memory},\
+                                           lim_disk = {self._lim_disk}, \
+                                           lim_network_bandwidth = {self._lim_network_bandwidth},\
                                            labels = {self._labels})'
 
 class ResourceRequirementsSample:

@@ -1,6 +1,6 @@
 {
       "load_kind": "leveled",
-      "batch_size": 2000,
+      "batch_size": 100,
       "generation_bucket": {
         "value": 1,
         "unit": "s"
@@ -9,27 +9,20 @@
         {
           "region_name": "eu",
           "pattern": {
-            "type": "step",
+            "type": "arima",
             "params": {
-                        "step_duration": {
-                            "value": 10,
-                            "unit": "m"
-                        },
-                        "unit_of_time_for_requests_rate": {
-                            "value": 1,
-                            "unit": "s"
-                        },
-                        "values": [ {"requests_count_level": 0, "percentage_of_interval": 0.2},
-                                    {"requests_count_level": 40000, "percentage_of_interval": 0.2},
-                                    {"requests_count_level": 16000, "percentage_of_interval": 0.2},
-                                    {"requests_count_level": 40000, "percentage_of_interval": 0.2},
-                                    {"requests_count_level": 16000, "percentage_of_interval": 0.2}]
-                    }
-
-                },
-                "load_configs": [
-                  {"request_type": "req-75c4a762-4da4-11eb-bb92-d8cb8af1e959",
-                   "load_config": {"ratio": 1.0, "sliced_distribution": {"type": "normal", "params": {"sigma": 10}}}}]
+              "duration": { "value": 10, "unit": "m" },
+              "resolution": { "value": 1, "unit": "s" },
+              "scale_per_resolution": 1000,
+              "model": { "period": { "value": 2, "unit": "m" },
+                         "trend": "c",
+                         "parameters": { "p": 2, "d": 0, "q": 1, "P": 0, "D": 0, "Q": 1 },
+                         "coefficients": [0, 0.8, 0.01, 0.5, 0.01, 0.01] }
             }
-        ]
+          },
+          "load_configs": [
+              {"request_type": "req-75c4a762-4da4-11eb-bb92-d8cb8af1e959",
+              "load_config": {"ratio": 1.0, "sliced_distribution": {"type": "normal", "params": {"sigma": 10}}}}]
+        }
+      ]
   }

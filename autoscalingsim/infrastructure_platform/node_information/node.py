@@ -89,7 +89,7 @@ class NodeInfo:
             if not label in self._labels:
                 return (False, 0.0)
 
-        system_resource_usage = SystemResourceUsage(self, instances_count, joint_resource_requirements.average_representation)
+        system_resource_usage = SystemResourceUsage(self, instances_count, joint_resource_requirements.limits) # was average_representation
         allocated = not system_resource_usage.is_full
 
         return (allocated, system_resource_usage)
