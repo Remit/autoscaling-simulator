@@ -56,7 +56,7 @@ class ARIMALoadPatternParser(LeveledLoadPatternParser):
         """
 
         params = ErrorChecker.key_check_and_load('params', pattern)
-
+        head_start = ErrorChecker.parse_duration(ErrorChecker.key_check_and_load('head_start', params, default = {'value': 0, 'unit': 'm'}))
         duration = ErrorChecker.parse_duration(ErrorChecker.key_check_and_load('duration', params, default = {'value': 1, 'unit': 'm'}))
         if generation_bucket > duration:
             raise ValueError('The simulation step should be smaller or equal to the interval of time, for which the requests are generated')
@@ -105,29 +105,8 @@ class ARIMALoadPatternParser(LeveledLoadPatternParser):
 
             load_distribution_in_steps_buckets += pattern_for_rate
 
-        return (duration, load_distribution_in_steps_buckets)
+        zero_nobs_to_generate = head_start // generation_resolution
+        head_start_pattern = [0] * zero_nobs_to_generate * buckets_in_rate_unit
+        load_distribution_in_steps_buckets = head_start_pattern + load_distribution_in_steps_buckets + head_start_pattern
 
-        # unit_of_time_for_requests_rate_raw = ErrorChecker.key_check_and_load('unit_of_time_for_requests_rate', params, default = {'value': 1, 'unit': 's'})
-        # unit_of_time_for_requests_rate_value = ErrorChecker.key_check_and_load('value', unit_of_time_for_requests_rate_raw)
-        # unit_of_time_for_requests_rate_unit = ErrorChecker.key_check_and_load('unit', unit_of_time_for_requests_rate_raw)
-        # unit_of_time_for_requests_rate = pd.Timedelta(unit_of_time_for_requests_rate_value, unit = unit_of_time_for_requests_rate_unit)
-        #
-        # buckets_in_rate_unit = unit_of_time_for_requests_rate // generation_bucket
-        #
-        # load_distribution_in_steps_buckets = list()
-        # step_values = ErrorChecker.key_check_and_load('values', params)
-        # total_percentage_up_until_now = 0
-        # for value_config in step_values:
-        #     requests_count_level_raw = ErrorChecker.key_check_and_load('requests_count_level', value_config)
-        #     requests_count_level = int(np.floor(requests_count_level_raw) + np.random.choice([0, 1], p = [1 - round(requests_count_level_raw % 1, 2), round(requests_count_level_raw % 1, 2)]))
-        #     percentage_of_interval = ErrorChecker.key_check_and_load('percentage_of_interval', value_config)
-        #     pattern_for_rate = [0] * buckets_in_rate_unit
-        #     for _ in range(requests_count_level):
-        #         selected_bucket = np.random.randint(0, buckets_in_rate_unit)
-        #         pattern_for_rate[selected_bucket] += 1
-        #
-        #     rate_pattern_repeats_count = step_total_duration * max(min(percentage_of_interval, 1 - total_percentage_up_until_now), 0) // unit_of_time_for_requests_rate
-        #     total_percentage_up_until_now += percentage_of_interval
-        #     load_distribution_in_steps_buckets += pattern_for_rate * rate_pattern_repeats_count
-        #
-        # return (step_total_duration, load_distribution_in_steps_buckets)
+        return (duration + 2 * head_start, load_distribution_in_steps_buckets)

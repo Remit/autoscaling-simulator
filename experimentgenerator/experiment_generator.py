@@ -126,7 +126,7 @@ class ExperimentGenerator:
 
                 disk_mean_options, disk_std_options = services_system_requirements['disk']['mean'], services_system_requirements['disk']['std']
                 system_requirements['disk'] = { 'mean': self._randomly_choose_one(disk_mean_options), 'std': self._randomly_choose_one(disk_std_options), 'unit': services_system_requirements['disk']['unit'] }
-
+                system_requirements['limits'] = services_system_requirements.get('limits', 1.0)
                 services_resource_requirements[self._service_name(service_id)] = ResourceRequirements.from_dict(system_requirements)
 
                 service_conf = {
@@ -193,7 +193,7 @@ class ExperimentGenerator:
                 resp_size_conf = experiment_generation_recipe['requests_recipe']['response_size'] # TODO: as distr
 
                 timeout_network_adj = pd.Timedelta(2 * 10 * services_count, unit = 'ms')
-                timeout_raw = pd.Timedelta(int(round((1 + experiment_generation_recipe['requests_recipe']['timeout_headroom']) * sum(durations), -1)), requests_processing_durations['unit'])
+                timeout_raw = pd.Timedelta(int(round((1 + experiment_generation_recipe['requests_recipe']['timeout_headroom']) * sum([dur['mean'] for dur in durations]), -1)), requests_processing_durations['unit'])
                 timeout = (timeout_raw + timeout_network_adj) // pd.Timedelta(1, unit = 'ms')
 
                 request_conf = {
@@ -250,7 +250,12 @@ class ExperimentGenerator:
             # Generate the load configuration
             load_metaconfig = experiment_generation_recipe['load_recipe']['load_configs']['sliced_distributions']
 
-            load_config = {'load_kind': experiment_generation_recipe['load_recipe']['load_kind'], 'regions_configs': []}
+            load_config = {
+                'load_kind': experiment_generation_recipe['load_recipe']['load_kind'],
+                'batch_size': experiment_generation_recipe['load_recipe'].get('batch_size', 1),
+                'generation_bucket': experiment_generation_recipe['load_recipe'].get('generation_bucket', {'value': 1, 'unit': 's'}),
+                'regions_configs': []
+            }
             load_configs_per_request_type = list()
             for region in regions:
 

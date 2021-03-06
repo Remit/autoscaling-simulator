@@ -85,7 +85,9 @@ class AzureFunctionsExperimentGenerator(ExperimentGenerator):
         # TODO: below two lines take a lot of time to run -- think about optimizing/caching
         invocations_data_selected = invocations_data.loc[list(apps_in_diapazone)]
         #averaged_load_per_minute = invocations_data_selected.groupby(['datetime']).mean().round().astype({'invocations': 'int32'})
-        services_count = int(invocations_data_selected.reset_index().groupby(['HashApp'])['HashFunction'].nunique().quantile(app_size_quantile))
+        services_count = experiment_generation_recipe['application_recipe']['services'].get('services_count', None)
+        if services_count is None:
+            services_count = int(invocations_data_selected.reset_index().groupby(['HashApp'])['HashFunction'].nunique().quantile(app_size_quantile))
 
         memory_data_aggregated = memory_data.groupby(['HashApp']).mean()
         memory_data_selected = memory_data_aggregated.reindex(apps_in_diapazone).dropna()
@@ -113,13 +115,14 @@ class AzureFunctionsExperimentGenerator(ExperimentGenerator):
         #                                                                                     'probabilities': [0.01, 0.04, 0.20, 0.25, 0.25, 0.20, 0.04, 0.01],
         #                                                                                     'unit': 'MB'}
 
-        invocations_data_per_app = invocations_data.groupby(['HashApp', 'datetime']).max()
-        invocations_data_per_hour_per_app = invocations_data_per_app.groupby(['HashApp', pd.Grouper(freq='60T', level='datetime')]).sum().fillna(0).rename(columns = {'invocations': 'Load'})
-        invocations_data_per_hour = list(invocations_data_per_hour_per_app.groupby('datetime').mean().fillna(0)['Load'].astype(int))[:24]
+        if experiment_generation_recipe['load_recipe']['load_kind'] == 'seasonal':
+            invocations_data_per_app = invocations_data.groupby(['HashApp', 'datetime']).max()
+            invocations_data_per_hour_per_app = invocations_data_per_app.groupby(['HashApp', pd.Grouper(freq='60T', level='datetime')]).sum().fillna(0).rename(columns = {'invocations': 'Load'})
+            invocations_data_per_hour = list(invocations_data_per_hour_per_app.groupby('datetime').mean().fillna(0)['Load'].astype(int))[:24]
 
-        experiment_generation_recipe['load_recipe']['pattern'] = {'type': 'values', 'params': [
-                                                                    { 'month': 'all', 'day_of_week': 'all',
-                                                                      'values' : invocations_data_per_hour } ]}
+            experiment_generation_recipe['load_recipe']['pattern'] = {'type': 'values', 'params': [
+                                                                        { 'month': 'all', 'day_of_week': 'all',
+                                                                          'values' : invocations_data_per_hour } ]}
 
     @classmethod
     def _file_id_to_str(cls, file_id : int):

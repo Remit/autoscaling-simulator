@@ -125,8 +125,10 @@ class AzureVMsExperimentGenerator(ExperimentGenerator):
             vm_mem = int(vm_data['vm_memory_bucket'].iloc[0])
 
             service_cpu_util_mean, service_cpu_util_std = vm_cpu_data['min_cpu'].mean() / 100, vm_cpu_data['min_cpu'].std() / 100
-            service_cpu_util_means.append( (service_cpu_util_mean, vm_cores, vm_mem) )
-            service_cpu_util_stds.append( (service_cpu_util_std, vm_cores, vm_mem) )
+            if not np.isnan(service_cpu_util_mean):
+                service_cpu_util_means.append( (service_cpu_util_mean, vm_cores, vm_mem) )
+            if not np.isnan(service_cpu_util_std):
+                service_cpu_util_stds.append( (service_cpu_util_std, vm_cores, vm_mem) )
 
             vm_max_cpu, vm_avg_cpu = vm_cpu_data['max_cpu'], vm_cpu_data['avg_cpu']
             # to allow for arbitrary gap, percentage_gap_to_be_considered_single_req should be >= 100
@@ -135,8 +137,10 @@ class AzureVMsExperimentGenerator(ExperimentGenerator):
                 req_cpu_util_raw = vm_max_cpu_selected - service_cpu_util_mean
                 if req_cpu_util_raw.shape[0] > 0:
                     req_cpu_util_mean, req_cpu_util_std = req_cpu_util_raw.mean() / 100, req_cpu_util_raw.std() / 100
-                    req_cpu_util_means.append( (req_cpu_util_mean, vm_cores, vm_mem) )
-                    req_cpu_util_stds.append( (req_cpu_util_std, vm_cores, vm_mem) )
+                    if not np.isnan(req_cpu_util_mean):
+                        req_cpu_util_means.append( (req_cpu_util_mean, vm_cores, vm_mem) )
+                    if not np.isnan(req_cpu_util_std):
+                        req_cpu_util_stds.append( (req_cpu_util_std, vm_cores, vm_mem) )
 
         bins_cnt = ErrorChecker.key_check_and_load('bins_for_empirical_distribution_count', specialized_generator_config, default = 10)
         rescaling_factor_requests_memory_requirements = ErrorChecker.key_check_and_load('rescaling_factor_requests_memory_requirements', specialized_generator_config, default = 1.0)
@@ -146,6 +150,7 @@ class AzureVMsExperimentGenerator(ExperimentGenerator):
         dual_service_cpu_mem_util_stds_distr = ParametersDistribution.from_empirical_data(service_cpu_util_stds, bins_cnt, cpu_to_memory_correlation * rescaling_factor_requests_memory_requirements)
 
         dual_req_cpu_mem_util_means_distr = ParametersDistribution.from_empirical_data(req_cpu_util_means, bins_cnt, cpu_to_memory_correlation * rescaling_factor_requests_memory_requirements)
+        #print(f'req_cpu_util_stds: {req_cpu_util_stds}')
         dual_req_cpu_mem_util_stds_distr = ParametersDistribution.from_empirical_data(req_cpu_util_stds, bins_cnt, cpu_to_memory_correlation * rescaling_factor_requests_memory_requirements)
 
         # Enriching the recipe

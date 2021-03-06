@@ -11,7 +11,8 @@
           "pattern": {
             "type": "arima",
             "params": {
-              "duration": { "value": 10, "unit": "m" },
+              "head_start": { "value": 2, "unit": "m"},
+              "duration": { "value": 5, "unit": "m" },
               "resolution": { "value": 1, "unit": "s" },
               "scale_per_resolution": 1000,
               "model": { "period": { "value": 2, "unit": "m" },
