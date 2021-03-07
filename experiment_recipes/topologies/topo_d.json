@@ -2,7 +2,7 @@
   "general": {
     "platform_config_file": "experiments/test/platform_model.json",
     "application_recipe": {
-      "app_name": "topology_a",
+      "app_name": "topology_d",
     	"utilization_metrics_conf": {
     		"averaging_interval": {
     			"value": 50,
@@ -13,7 +13,7 @@
     			"unit": "ms"
     		}
     	},
-      "structure_conf": { "parameter_set_name": "tiered_with_single_center_a" },
+      "structure_conf": { "parameter_set_name": "pipeline_with_multiple_centers_d" },
       "services" : {
         "services_count": 10,
         "mean_to_std_ratio": 0.3,
@@ -31,7 +31,8 @@
     "deployment_recipe": {
       "providers": {"aws": 1.0},
       "regions": {"aws": { "eu": 1.0 }},
-      "init_aspects": { "count": {"min": 150, "max": 300} }
+      "init_aspects": { "count": {"min": 160, "max": 160} },
+      "service_instances_per_node_cap": 1
     },
     "requests_recipe": {
       "request_types_count": 1,
@@ -47,7 +48,7 @@
     },
     "load_recipe": {
       "load_configs": {"sliced_distributions": [ {"type": "normal", "params": {"sigma": 10}} ]},
-      "batch_size": 2000,
+      "batch_size": 1000,
       "generation_bucket": {
         "value": 1,
         "unit": "s"
@@ -56,10 +57,10 @@
       "pattern": {
         "type": "arima",
         "params": {
-          "head_start": { "value": 2, "unit": "m"},
-          "duration": { "value": 30, "unit": "m" },
+          "head_start": { "value": 1, "unit": "m"},
+          "duration": { "value": 30, "unit": "s" },
           "resolution": { "value": 1, "unit": "s" },
-          "scale_per_resolution": 25000,
+          "scale_per_resolution": 30000,
           "model": { "period": { "value": 2, "unit": "m" },
                      "trend": "c",
                      "parameters": { "p": 2, "d": 0, "q": 1, "P": 0, "D": 0, "Q": 1 },

@@ -1,0 +1,115 @@
+{
+  "general": {
+    "platform_config_file": "experiments/test/platform_model.json",
+    "application_recipe": {
+      "app_name": "topology_a",
+    	"utilization_metrics_conf": {
+    		"averaging_interval": {
+    			"value": 50,
+    			"unit": "ms"
+    		},
+    		"sampling_interval": {
+    			"value": 50,
+    			"unit": "ms"
+    		}
+    	},
+      "structure_conf": { "parameter_set_name": "tiered_with_single_center_a" },
+      "services" : {
+        "services_count": 10,
+        "mean_to_std_ratio": 0.3,
+        "buffers_config": { "discipline": "FIFO" },
+        "system_requirements": {
+          "limits": 1.5,
+          "disk": {
+            "mean": [0, 1, 2],
+            "std": [0.1, 0.2, 0.3],
+            "unit": "GB"
+          }
+        }
+      }
+    },
+    "deployment_recipe": {
+      "providers": {"aws": 1.0},
+      "regions": {"aws": { "eu": 1.0 }},
+      "init_aspects": { "count": {"min": 150, "max": 150} },
+      "service_instances_per_node_cap": 1
+    },
+    "requests_recipe": {
+      "request_types_count": 1,
+      "std_to_mean_ratio": 0.3,
+      "duration": { },
+      "system_requirements": {
+        "disk": { "mean": 0, "std": 0, "unit": "B" }
+      },
+      "timeout_headroom": 0.1,
+      "request_size": { "mean": { "min" : 1, "max" : 100 }, "std": {"min" : 1, "max" : 2}, "unit": "KB" },
+      "response_size": { "mean": { "min" : 1, "max" : 1 }, "std": {"min" : 0.1, "max" : 0.2}, "unit": "KB" },
+      "operation_type": { "r" : 0.9, "rw" : 0.1}
+    },
+    "load_recipe": {
+      "load_configs": {"sliced_distributions": [ {"type": "normal", "params": {"sigma": 10}} ]},
+      "batch_size": 1000,
+      "generation_bucket": {
+        "value": 1,
+        "unit": "s"
+      },
+      "load_kind": "leveled",
+      "pattern": {
+        "type": "arima",
+        "params": {
+          "head_start": { "value": 2, "unit": "m"},
+          "duration": { "value": 30, "unit": "m" },
+          "resolution": { "value": 1, "unit": "s" },
+          "scale_per_resolution": 30000,
+          "model": { "period": { "value": 2, "unit": "m" },
+                     "trend": "c",
+                     "parameters": { "p": 2, "d": 0, "q": 1, "P": 0, "D": 0, "Q": 1 },
+                     "coefficients": [0, 0.8, 0.01, 0.5, 0.01, 0.01] }
+        }
+      }
+    },
+    "scaling_model_recipe": {
+      "platform": {
+        "booting_durations":
+          { "aws": {"mean": 40, "unit": "s" },
+            "google": {"mean": 15, "unit": "s"},
+            "azure": {"mean": 150, "unit": "s"}},
+
+        "termination_durations":
+          { "aws": {"mean": 120, "unit": "s" },
+            "google": {"mean": 30, "unit": "s"},
+            "azure": {"mean": 150, "unit": "s"}},
+
+        "std_to_mean_ratio": 0.3
+      }
+    }
+  },
+  "specific": [
+    {
+      "name": "azurefunctions",
+      "config" : {
+        "data_path": "D:/@TUM/PhD/FINAL/traces/azurefunctions/",
+        "file_id": 1,
+        "consider_applications_with_invocations_quantiles": {
+          "left_quantile": 0.9,
+          "right_quantile": 0.95
+        },
+        "app_size_quantile_among_selected_based_on_invocations": 0.9
+      }
+    },
+    {
+      "name": "azure-vms",
+      "config": {
+        "data_path": "D:/@TUM/PhD/FINAL/traces/azuredata-resourceutil/",
+        "file_ids": [1],
+        "vm_category": ["Interactive"],
+        "unique_vms_selected_in_each_cpu_readings_file": 100,
+        "percentage_gap_to_be_considered_single_req": 3,
+        "bins_for_empirical_distribution_count": 10,
+        "cpu_to_memory_correlation": 0.9,
+        "rescaling_factor_requests_memory_requirements": 0.1,
+        "csv_reading_batch_size": 100000
+      }
+    }
+  ]
+}

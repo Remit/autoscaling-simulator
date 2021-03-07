@@ -211,6 +211,11 @@ class ResourceRequirements:
                 'labels': self._labels}
 
     @property
+    def limits_sample(self):
+
+        return ResourceRequirementsSample(**self.limits)
+
+    @property
     def average_representation(self):
 
         return {'vCPU': self._vCPU.mean, 'memory': self._memory.mean,

@@ -214,6 +214,7 @@ class ExperimentGenerator:
             deployment_confs = list()
             providers_configs = PlatformModelConfigurationParser.parse(experiment_generation_recipe['platform_config_file'])
             deployment_configuration = experiment_generation_recipe['deployment_recipe']
+            service_instances_per_node_cap = deployment_configuration.get('service_instances_per_node_cap', 0)
 
             regions = set()
             for service_id in range(services_count):
@@ -227,12 +228,12 @@ class ExperimentGenerator:
 
                 for node_type, node_info in providers_configs[provider]:
 
-                    sys_resources_to_occupy = node_info.system_resources_to_take_from_requirements(services_resource_requirements[self._service_name(service_id)].average_sample)
+                    sys_resources_to_occupy = node_info.system_resources_to_take_from_requirements(services_resource_requirements[self._service_name(service_id)].limits_sample)
                     if not sys_resources_to_occupy.is_full:
 
                         total_resources_occupied_on_node = sys_resources_to_occupy.copy()
                         accommodated_service_instances_count = 1
-                        while not total_resources_occupied_on_node.is_full:
+                        while not total_resources_occupied_on_node.is_full and accommodated_service_instances_count < service_instances_per_node_cap:
                             accommodated_service_instances_count += 1
                             total_resources_occupied_on_node += sys_resources_to_occupy
 
