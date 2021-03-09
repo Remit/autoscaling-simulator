@@ -1,5 +1,7 @@
 # Multilayered Autoscaling Policies Simulation Toolbox
 
+## General Information
+
 Multilayered autoscaling is a process of automatic adaptation of both the deployed application and the virtual infrastructure that it is running on. A real-world example of multilayered autoscaling is the combination of Horizontal Pod Autoscaler (HPA) with Cluster Autoscaler (CA) in Kubernetes.
 
 The simulation toolbox in this repository is a **work-in-progress** set of tools to simulate the multilayered autoscaling policies and analyze them. The toolbox is written in Python and includes the following consider_applications_with_invocations_quantiles:
@@ -17,7 +19,9 @@ The simulation toolbox in this repository is a **work-in-progress** set of tools
 ## References
 <a id="1">[1]</a>
 Eli Cortez, Anand Bonde, Alexandre Muzio, Mark Russinovich, Marcus Fontoura, and Ricardo Bianchini. 2017. Resource Central: Understanding and Predicting Workloads for Improved Resource Management in Large Cloud Platforms. In Proceedings of the 26th Symposium on Operating Systems Principles (SOSP '17). Association for Computing Machinery, New York, NY, USA, 153–167. DOI:https://doi.org/10.1145/3132747.3132772
+
 <a id="2">[2]</a>
 Mohammad Shahrad, Rodrigo Fonseca, Inigo Goiri, Gohar Chaudhry, Paul Batum, Jason Cooke, Eduardo Laureano, Colby Tresness, Mark Russinovich, & Ricardo Bianchini (2020). Serverless in the Wild: Characterizing and Optimizing the Serverless Workload at a Large Cloud Provider. In 2020 USENIX Annual Technical Conference (USENIX ATC 20) (pp. 205–218). USENIX Association.
+
 <a id="3">[3]</a>
 Podolskiy, V., Patrou, M., Patros, P., Gerndt, M., & Kent, K. B. (2020). The weakest link: Revealing and modeling the architectural patterns of microservice applications. In CASCON ’20: Proceedings of the 30th Annual International Conference on Computer Science and Software Engineering (pp. 113–122). New York, NY, USA: ACM. https://doi.org/10.5555/3432601.3432616
