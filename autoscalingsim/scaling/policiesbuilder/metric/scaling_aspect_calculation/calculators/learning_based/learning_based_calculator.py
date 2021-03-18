@@ -112,6 +112,8 @@ class LearningBasedCalculator(DesiredAspectValueCalculator):
 
             result = pd.DataFrame({'value': aspect_vals}, index = timestamps)
 
+        print(f'>> Desired replicas counts: {result}')
+
         return result
 
     def update_model(self, cur_aspect_val : 'ScalingAspect', current_metric_val : dict, cur_timestamp : pd.Timestamp):
