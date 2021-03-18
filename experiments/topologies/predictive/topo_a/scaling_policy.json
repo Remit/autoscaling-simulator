@@ -74,7 +74,7 @@
                     "name": "maxStabilizer",
                     "config": {
                       "resolution": {
-                        "value": 1,
+                        "value": 2,
                         "unit": "m"
                       }
                     }
