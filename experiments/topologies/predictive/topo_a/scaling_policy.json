@@ -29,8 +29,8 @@
                               "config": {
                                 "name": "ratio",
                                 "target": {
-                                  "metric_name": "vCPU",
-                                  "value": 0.1
+                                  "metric_name": "memory",
+                                  "value": 0.2
                                 },
                                 "adjustment_heuristic_conf": {
                                   "name": "rescale",
@@ -56,7 +56,7 @@
                             },
                             "model_quality_metric": {
                               "name": "scaled_error",
-                              "threshold": 0.3
+                              "threshold": 0.35
                             },
                             "minibatch_size": 2,
                             "optimizer_config": {

@@ -91,8 +91,6 @@ class LearningBasedCalculator(DesiredAspectValueCalculator):
 
         result = None
 
-        print(f'forecasted_metric_vals: {forecasted_metric_vals}')
-
         use_fallback = self._should_use_fallback_calculator(cur_aspect_val, current_metric_val, current_performance_metric_val)
         if use_fallback:
             result = self.fallback_calculator._compute_internal(cur_aspect_val, forecasted_metric_vals)
