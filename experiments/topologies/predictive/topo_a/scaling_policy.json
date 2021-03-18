@@ -30,7 +30,7 @@
                                 "name": "ratio",
                                 "target": {
                                   "metric_name": "vCPU",
-                                  "value": 0.2
+                                  "value": 0.1
                                 },
                                 "adjustment_heuristic_conf": {
                                   "name": "rescale",
@@ -50,7 +50,7 @@
                                 "submetric_name": "*",
                                 "metric_type": "duration",
                                 "threshold": {
-                                    "value": 200,
+                                    "value": 100,
                                     "unit": "ms"
                                 }
                             },
