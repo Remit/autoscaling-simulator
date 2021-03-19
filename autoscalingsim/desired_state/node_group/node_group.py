@@ -165,7 +165,12 @@ class NodeGroup(NodeGroupBase):
 
     def _has_enough_free_service_instances(self, req : Request):
 
-        return self.services_state.instances_count_for_service(req.processing_service) > self.shared_processor.service_instances_fraction_in_use_for_service(req.processing_service)
+        res = self.services_state.instances_count_for_service(req.processing_service) > self.shared_processor.service_instances_fraction_in_use_for_service(req.processing_service)
+
+        if res is False:
+            print(f'Instances count {self.services_state.instances_count_for_service(req.processing_service)} is smaller or equal to {self.shared_processor.service_instances_fraction_in_use_for_service(req.processing_service)}')
+
+        return res
 
     def system_resources_to_take_from_requirements(self, res_reqs : ResourceRequirementsSample):
 
