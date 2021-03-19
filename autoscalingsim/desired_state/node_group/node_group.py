@@ -155,8 +155,13 @@ class NodeGroup(NodeGroupBase):
 
         system_resources_for_req = self.node_info.system_resources_to_take_from_requirements(req.resource_requirements)
         system_resources_to_be_taken = self.system_resources_taken_by_all_requests() + self.system_resources_usage + system_resources_for_req
-        
-        return not system_resources_to_be_taken.is_full and self._has_enough_free_service_instances(req)
+
+        no_sys_resources = system_resources_to_be_taken.is_full
+        enough_free_service_instances = self._has_enough_free_service_instances(req)
+        if no_sys_resources or not enough_free_service_instances:
+            print(f'Enough sys resources: {not no_sys_resources} | enough service instances: {enough_free_service_instances}')
+
+        return not no_sys_resources and enough_free_service_instances
 
     def _has_enough_free_service_instances(self, req : Request):
 
