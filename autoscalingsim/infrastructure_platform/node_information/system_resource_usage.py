@@ -16,7 +16,7 @@ class SystemResourceUsage:
     """
 
     MAX_ALLOWED_SYSTEM_RESOURCE_USAGE_BY_SERVICES = 0.3
-    MAX_ALLOWED_VCPU_SHARING_FACTOR = 4
+    MAX_ALLOWED_VCPU_SHARING_FACTOR = 2
 
     system_resources = {
         'vCPU'              : Numeric,
