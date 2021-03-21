@@ -57,6 +57,7 @@ class ARIMALoadPatternParser(LeveledLoadPatternParser):
 
         params = ErrorChecker.key_check_and_load('params', pattern)
         head_start = ErrorChecker.parse_duration(ErrorChecker.key_check_and_load('head_start', params, default = {'value': 0, 'unit': 'm'}))
+        cooldown_end = ErrorChecker.parse_duration(ErrorChecker.key_check_and_load('cooldown_end', params, default = {'value': 0, 'unit': 'm'}))
         duration = ErrorChecker.parse_duration(ErrorChecker.key_check_and_load('duration', params, default = {'value': 1, 'unit': 'm'}))
         if generation_bucket > duration:
             raise ValueError('The simulation step should be smaller or equal to the interval of time, for which the requests are generated')
@@ -107,6 +108,8 @@ class ARIMALoadPatternParser(LeveledLoadPatternParser):
 
         zero_nobs_to_generate = head_start // generation_resolution
         head_start_pattern = [0] * zero_nobs_to_generate * buckets_in_rate_unit
-        load_distribution_in_steps_buckets = head_start_pattern + load_distribution_in_steps_buckets + head_start_pattern
+        zero_nobs_to_generate = cooldown_end // generation_resolution
+        cooldown_end_pattern = [0] * zero_nobs_to_generate * buckets_in_rate_unit
+        load_distribution_in_steps_buckets = head_start_pattern + load_distribution_in_steps_buckets + cooldown_end_pattern
 
-        return (duration + 2 * head_start, load_distribution_in_steps_buckets)
+        return (duration + head_start + cooldown_end, load_distribution_in_steps_buckets)

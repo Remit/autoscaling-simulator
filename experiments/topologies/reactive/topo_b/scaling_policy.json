@@ -5,7 +5,7 @@
       "unit": "s"
     },
     "warm_up": {
-      "value": 180,
+      "value": 120,
       "unit": "s"
     }
   },
@@ -26,12 +26,12 @@
                     "config": {
                       "name": "ratio",
                       "target": {
-                        "metric_name": "memory",
-                        "value": 0.55
+                        "metric_name": "vCPU",
+                        "value": 0.3
                       },
                       "adjustment_heuristic_conf": {
                         "name": "rescale",
-                        "scaling_factor": 1.15
+                        "scaling_factor": 1.5
                       }
                     }
                   },
@@ -39,8 +39,8 @@
                     "name": "maxStabilizer",
                     "config": {
                       "resolution": {
-                        "value": 30,
-                        "unit": "s"
+                        "value": 1,
+                        "unit": "m"
                       }
                     }
                   },
@@ -69,12 +69,27 @@
                         "metric_source_name": "Service",
                         "metric_name": "memory",
                         "values_aggregator_conf": {
-                          "name": "medianAggregator",
+                          "name": "quantileAggregator",
                           "config": {
                             "resolution": {
-                              "value": 1,
-                              "unit": "m"
-                            }
+                              "value": 30,
+                              "unit": "s"
+                            },
+                            "quantile": 0.8
+                          }
+                        }
+                    },
+                    {
+                        "metric_source_name": "Service",
+                        "metric_name": "vCPU",
+                        "values_aggregator_conf": {
+                          "name": "quantileAggregator",
+                          "config": {
+                            "resolution": {
+                              "value": 30,
+                              "unit": "s"
+                            },
+                            "quantile": 0.9
                           }
                         }
                     }
