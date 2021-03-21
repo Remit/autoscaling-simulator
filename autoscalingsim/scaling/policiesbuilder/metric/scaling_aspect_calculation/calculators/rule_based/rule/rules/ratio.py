@@ -30,6 +30,6 @@ class RatioRule(Rule):
         else:
             res = pd.DataFrame(columns = ['value'], index = pd.to_datetime([]))
 
-        print(f'Ratio-based scaling wants: {res}')
+        #print(f'Ratio-based scaling wants: {res}')
 
         return res

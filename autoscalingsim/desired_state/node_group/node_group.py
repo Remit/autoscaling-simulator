@@ -158,8 +158,8 @@ class NodeGroup(NodeGroupBase):
 
         no_sys_resources = system_resources_to_be_taken.is_full
         enough_free_service_instances = self._has_enough_free_service_instances(req)
-        if no_sys_resources or not enough_free_service_instances:
-            print(f'Enough sys resources: {not no_sys_resources} | enough service instances: {enough_free_service_instances}')
+        #if no_sys_resources or not enough_free_service_instances:
+        #    print(f'Enough sys resources: {not no_sys_resources} | enough service instances: {enough_free_service_instances}')
 
         return not no_sys_resources and enough_free_service_instances
 
@@ -167,8 +167,8 @@ class NodeGroup(NodeGroupBase):
 
         res = self.services_state.instances_count_for_service(req.processing_service) > self.shared_processor.service_instances_fraction_in_use_for_service(req.processing_service)
 
-        if res is False:
-            print(f'Instances count {self.services_state.instances_count_for_service(req.processing_service)} is smaller or equal to {self.shared_processor.service_instances_fraction_in_use_for_service(req.processing_service)}')
+        #if res is False:
+        #    print(f'Instances count {self.services_state.instances_count_for_service(req.processing_service)} is smaller or equal to {self.shared_processor.service_instances_fraction_in_use_for_service(req.processing_service)}')
 
         return res
 
