@@ -77,7 +77,7 @@ class ApplicationModelConfiguration:
 
     """
 
-    def __init__(self, config_file : str, simulation_step : pd.Timedelta):
+    def __init__(self, config_file : str):
 
         self.name = None
         self.regions = []

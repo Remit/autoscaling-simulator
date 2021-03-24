@@ -15,7 +15,7 @@ class SystemResourceUsage:
     operands have the matching node types.
     """
 
-    MAX_ALLOWED_SYSTEM_RESOURCE_USAGE_BY_SERVICES = 0.3
+    MAX_ALLOWED_SYSTEM_RESOURCE_USAGE_BY_SERVICES = 0.35
     MAX_ALLOWED_VCPU_SHARING_FACTOR = 2
 
     system_resources = {

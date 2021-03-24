@@ -44,15 +44,17 @@ class Size(MetricCategory):
 
         return df
 
-    def __init__(self, value : float = 0.0, unit : str = 'B'):
+    def __init__(self, value : float = 0.0, unit : str = None):
 
-        if not unit in self.__class__.sizes_bytes and not unit.upper() in self.__class__.sizes_bytes:
-            raise ValueError(f'Unknown unit {unit}')
+        unit_internal = unit if not unit is None else 'B'
+
+        if not unit_internal in self.__class__.sizes_bytes and not unit_internal.upper() in self.__class__.sizes_bytes:
+            raise ValueError(f'Unknown unit {unit_internal}')
 
         #if value < 0: value = 0
 
-        normalizer = 1 if unit in self.__class__.sizes_bytes else 8 # handles the case of *bit unit
-        self._value = (value / normalizer) * self.__class__.sizes_bytes[unit.upper()]
+        normalizer = 1 if unit_internal in self.__class__.sizes_bytes else 8 # handles the case of *bit unit
+        self._value = (value / normalizer) * self.__class__.sizes_bytes[unit_internal.upper()]
 
     def to_bytes(self): return self.to_unit('B')
 

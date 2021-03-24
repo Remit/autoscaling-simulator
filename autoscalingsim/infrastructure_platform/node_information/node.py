@@ -94,6 +94,22 @@ class NodeInfo:
 
         return (allocated, system_resource_usage)
 
+    def fits_service_instance(self, instance_res_reqs : ResourceRequirements):
+
+        if instance_res_reqs.limits['vCPU'] > self._vCPU * SystemResourceUsage.MAX_ALLOWED_VCPU_SHARING_FACTOR * SystemResourceUsage.MAX_ALLOWED_SYSTEM_RESOURCE_USAGE_BY_SERVICES:
+            return False
+
+        if instance_res_reqs.limits['memory'] > self._memory * SystemResourceUsage.MAX_ALLOWED_SYSTEM_RESOURCE_USAGE_BY_SERVICES:
+            return False
+
+        if instance_res_reqs.limits['disk'] > self._disk * SystemResourceUsage.MAX_ALLOWED_SYSTEM_RESOURCE_USAGE_BY_SERVICES:
+            return False
+
+        if instance_res_reqs.limits['network_bandwidth'] > self._network_bandwidth * SystemResourceUsage.MAX_ALLOWED_SYSTEM_RESOURCE_USAGE_BY_SERVICES:
+            return False
+
+        return True
+
     @property
     def unique_id(self) -> str:
 

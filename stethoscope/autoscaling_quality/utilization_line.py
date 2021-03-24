@@ -44,7 +44,7 @@ class UtilizationLineGraph:
                                                    plotting_constants.SYSTEM_RESOURCES_CNT * plotting_constants.SQUARE_PLOT_SIDE_INCH))
                 font = {'color': 'black', 'weight': 'bold', 'size': 12}
                 if not isinstance(axs, Iterable):
-                    axs = [axs]
+                    axs = np.asarray([axs])
                 if len(utilization_per_service) == 1:
                     axs = np.asarray([axs]).T
 

@@ -82,12 +82,11 @@ class CountableResourceRequirement:
 
         return resource_class(val, unit = unit)
 
-    def __init__(self, resource_class : type, mean : float = 0, std : float = 0, unit : str = ''):
+    def __init__(self, resource_class : type, mean : float = 0, std : float = 0, unit : str = None):
 
         self._resource_class = resource_class
-        self._mean = mean
-        self._std = std
-        self._unit = unit
+        self._mean = self._resource_class(mean, unit)
+        self._std = self._resource_class(std, unit)
 
     def __add__(self, other : 'CountableResourceRequirement'):
 
@@ -102,28 +101,27 @@ class CountableResourceRequirement:
             else:
 
                 return self.__class__(self._resource_class,
-                                      self._mean + other._mean._to_unit(self._unit) / 2.0,
-                                      self._std + other._std._to_unit(self._unit) / 2.0,
-                                      self._unit)
+                                      self._mean.value + other._mean.value / 2.0,
+                                      self._std.value + other._std.value / 2.0)
 
     def __mul__(self, factor : numbers.Number):
 
-        return self.__class__(self._resource_class, self._mean * factor, self._std * factor, self._unit)
+        return self.__class__(self._resource_class, self._mean.value * factor, self._std.value * factor)
 
     @property
     def mean(self):
 
-        return self._resource_class(self._mean, unit = self._unit)
+        return self._mean
 
     @property
     def is_empty(self):
 
-        return self._mean == 0 and self._std == 0
+        return self._mean.value == 0 and self._std.value == 0
 
     @property
     def sample(self):
 
-        return self._resource_class(max(np.random.normal(self._mean, self._std), self.__class__._sanity_coef * self._mean), unit = self._unit)
+        return self._resource_class(max(np.random.normal(self._mean.value, self._std.value), self.__class__._sanity_coef * self._mean.value))
 
     def _has_comparable_resource_class_with(self, other : 'CountableResourceRequirement'):
 
@@ -135,9 +133,8 @@ class CountableResourceRequirement:
     def __repr__(self):
 
         return f'{self.__class__.__name__}(resource_class = {self._resource_class}, \
-                                           mean = {self._mean}, \
-                                           std = {self._std}, \
-                                           unit = {self._unit})'
+                                           mean = {self._mean.value}, \
+                                           std = {self._std.value})'
 
 class ResourceRequirements:
 
@@ -262,6 +259,17 @@ class ResourceRequirements:
     def __rmul__(self, factor : numbers.Number):
 
         return self.__mul__(factor)
+
+    def how_many_nodes_needed(self, node_info : 'NodeInfo', service_inst_cnt : int, vCPU_sharing_coef : int = 1):
+
+        res_estimate = max(np.floor(self._vCPU.mean / (node_info._vCPU * vCPU_sharing_coef)),
+                           np.floor(self._memory.mean / node_info._memory),
+                           np.floor(self._disk.mean / node_info._disk),
+                           np.floor(self._network_bandwidth.mean / node_info._network_bandwidth))
+
+        service_instances_estimate = np.ceil(service_inst_cnt / (node_info._vCPU * vCPU_sharing_coef).value)
+
+        return int(max(res_estimate, service_instances_estimate))
 
     def __repr__(self):
 

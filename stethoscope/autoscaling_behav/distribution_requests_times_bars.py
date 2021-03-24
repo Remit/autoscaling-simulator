@@ -37,7 +37,7 @@ class DistributionRequestsTimesBarchart:
         for region_name, response_times_per_request_type in response_times_regionalized_aggregated.items():
             fig, axs = plt.subplots(1, len(set(req_types)), figsize = (4, 3), sharey = True)
             if not isinstance(axs, collections.Iterable):
-                axs = [axs]
+                axs = np.asarray([axs])
 
             network_times_per_request_type = network_times_regionalized_aggregated[region_name] if region_name in network_times_regionalized_aggregated else dict()
             buffer_times_per_request_type = buffer_times_regionalized_aggregated[region_name] if region_name in buffer_times_regionalized_aggregated else dict()
@@ -47,42 +47,40 @@ class DistributionRequestsTimesBarchart:
     @classmethod
     def _internal_plot(cls : type, axs, response_times_per_request_type : dict, network_times_per_request_type : dict, buffer_times_per_request_type : dict, bar_width : float, names_converter = None):
 
-        i = 0
-        for req_type, response_times_per_alternative in response_times_per_request_type.items():
+        for ax in axs.flatten():
+            for req_type, response_times_per_alternative in response_times_per_request_type.items():
 
-            processing_times_per_alternative_sum = list()
-            network_times_per_alternative_sum = list()
-            buffer_times_per_alternative_sum = list()
+                processing_times_per_alternative_sum = list()
+                network_times_per_alternative_sum = list()
+                buffer_times_per_alternative_sum = list()
 
-            for simulation_name, response_times in response_times_per_alternative.items():
-                total_response_time = sum(response_times) if len(response_times) > 0 else 0
+                for simulation_name, response_times in response_times_per_alternative.items():
+                    total_response_time = sum(response_times) if len(response_times) > 0 else 0
 
-                network_times_per_alternative = network_times_per_request_type[req_type] if req_type in network_times_per_request_type else dict()
-                network_times = network_times_per_alternative[simulation_name] if simulation_name in network_times_per_alternative else list()
-                total_network_time = sum(network_times) if len(network_times) > 0 else 0
+                    network_times_per_alternative = network_times_per_request_type[req_type] if req_type in network_times_per_request_type else dict()
+                    network_times = network_times_per_alternative[simulation_name] if simulation_name in network_times_per_alternative else list()
+                    total_network_time = sum(network_times) if len(network_times) > 0 else 0
 
-                buffer_times_per_alternative = buffer_times_per_request_type[req_type] if req_type in buffer_times_per_request_type else dict()
-                buffer_times = buffer_times_per_alternative[simulation_name] if simulation_name in buffer_times_per_alternative else list()
-                total_buffer_time = sum(buffer_times) if len(buffer_times) > 0 else 0
+                    buffer_times_per_alternative = buffer_times_per_request_type[req_type] if req_type in buffer_times_per_request_type else dict()
+                    buffer_times = buffer_times_per_alternative[simulation_name] if simulation_name in buffer_times_per_alternative else list()
+                    total_buffer_time = sum(buffer_times) if len(buffer_times) > 0 else 0
 
-                network_times_per_alternative_sum.append((total_network_time / total_response_time) * 100)
-                buffer_times_per_alternative_sum.append((total_buffer_time / total_response_time) * 100)
-                total_processing_time = total_response_time - (total_network_time + total_buffer_time)
-                processing_times_per_alternative_sum.append((total_processing_time / total_response_time) * 100)
+                    network_times_per_alternative_sum.append((total_network_time / total_response_time) * 100)
+                    buffer_times_per_alternative_sum.append((total_buffer_time / total_response_time) * 100)
+                    total_processing_time = total_response_time - (total_network_time + total_buffer_time)
+                    processing_times_per_alternative_sum.append((total_processing_time / total_response_time) * 100)
 
-            labels = [ names_converter(simulation_name, split_policies = True) for simulation_name in response_times_per_alternative.keys() ]
-            y = np.arange(len(labels))
+                labels = [ names_converter(simulation_name, split_policies = True) for simulation_name in response_times_per_alternative.keys() ]
+                y = np.arange(len(labels))
 
-            axs[i].barh(y, processing_times_per_alternative_sum, bar_width, label = 'Processing')
-            axs[i].barh(y, network_times_per_alternative_sum, bar_width, left = processing_times_per_alternative_sum, label = 'Transferring')
-            axs[i].barh(y, buffer_times_per_alternative_sum, bar_width, left = np.array(processing_times_per_alternative_sum) + np.array(network_times_per_alternative_sum), label = 'Waiting')
-            axs[i].set_yticks(y)
-            axs[i].set_yticklabels(labels)
-            axs[i].set_title(f'Request {req_type}')
-            axs[i].legend(loc = 'center left', bbox_to_anchor = (1.05, 0.5))
-            axs[i].set_xlabel('Time spent in status, %')
-
-            i += 1
+                ax.barh(y, processing_times_per_alternative_sum, bar_width, label = 'Processing')
+                ax.barh(y, network_times_per_alternative_sum, bar_width, left = processing_times_per_alternative_sum, label = 'Transferring')
+                ax.barh(y, buffer_times_per_alternative_sum, bar_width, left = np.array(processing_times_per_alternative_sum) + np.array(network_times_per_alternative_sum), label = 'Waiting')
+                ax.set_yticks(y)
+                ax.set_yticklabels(labels)
+                ax.set_title(f'Request {req_type}')
+                ax.legend(loc = 'center left', bbox_to_anchor = (1.05, 0.5))
+                ax.set_xlabel('Time spent in status, %')
 
     @classmethod
     def _internal_post_processing(cls : type, region_name : str, figures_dir : str = None):

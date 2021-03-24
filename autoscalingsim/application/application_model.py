@@ -76,7 +76,7 @@ class ApplicationModel:
         self.services = dict()
         self._utilization = dict()
         self._node_groups_registry = NodeGroupsRegistry()
-        self.application_model_conf = ApplicationModelConfiguration(configs_contents_table[conf_keys.CONF_APPLICATION_MODEL_KEY], simulation_conf['simulation_step'])
+        self.application_model_conf = ApplicationModelConfiguration(configs_contents_table[conf_keys.CONF_APPLICATION_MODEL_KEY])
         self.state_reader = StateReader(application_structure = self.application_model_conf.structure)
 
         self.load_model = LoadModel(simulation_conf['simulation_step'], simulation_conf['starting_time'], configs_contents_table[conf_keys.CONF_LOAD_MODEL_KEY], self.application_model_conf.reqs_processing_infos)

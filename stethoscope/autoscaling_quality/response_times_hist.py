@@ -1,5 +1,6 @@
 import os
 import math
+import numpy as np
 import matplotlib.ticker as ticker
 
 from matplotlib import pyplot as plt
@@ -45,15 +46,14 @@ class ResponseTimesHistogram:
                 plt.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
 
                 if not isinstance(axs, Iterable):
-                    axs = [axs]
+                    axs = np.asarray([axs])
 
-                i = 0
-                for req_type, response_times in response_times_per_request_type.items():
-                    # TODO: '<' not supported between instances of 'dict' and 'float'
-                    axs[i].hist(response_times, bins = bins_cnt)
-                    axs[i].title.set_text(req_type)
-                    axs[i].xaxis.set_major_formatter(ticker.StrMethodFormatter("{x:.0f}"))
-                    i += 1
+                for ax in axs.flatten():
+                    for req_type, response_times in response_times_per_request_type.items():
+                        # TODO: '<' not supported between instances of 'dict' and 'float'
+                        ax.hist(response_times, bins = bins_cnt)
+                        ax.title.set_text(req_type)
+                        ax.xaxis.set_major_formatter(ticker.StrMethodFormatter("{x:.0f}"))
 
                 plt.xlabel('Response time, ms')
                 plt.ylabel('Completed requests')

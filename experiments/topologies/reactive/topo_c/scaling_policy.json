@@ -1,8 +1,8 @@
 {
   "policy": {
     "sync_period": {
-      "value": 30,
-      "unit": "s"
+      "value": 1,
+      "unit": "m"
     },
     "warm_up": {
       "value": 120,
@@ -27,7 +27,7 @@
                       "name": "ratio",
                       "target": {
                         "metric_name": "vCPU",
-                        "value": 0.3
+                        "value": 0.1
                       },
                       "adjustment_heuristic_conf": {
                         "name": "rescale",
@@ -113,7 +113,7 @@
                             "value": 30,
                             "unit": "s"
                           },
-                          "horizon_in_steps": 1
+                          "horizon_in_steps": 2
                       }
                   }
               }

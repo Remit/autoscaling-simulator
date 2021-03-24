@@ -35,7 +35,7 @@ class FulfilledDroppedBarchart:
         for region_name, load_regionalized_per_sim in load_regionalized_aggregated.items():
             fig, axs = plt.subplots(1, len(set(req_types)), figsize = (4, 3), sharey = True)
             if not isinstance(axs, collections.Iterable):
-                axs = [axs]
+                axs = np.asarray([axs])
 
             response_times_regionalized_per_sim = response_times_regionalized_aggregated[region_name] if region_name in response_times_regionalized_aggregated else dict()
             cls._internal_plot(axs, load_regionalized_per_sim, response_times_regionalized_per_sim, bar_width, names_converter = names_converter)
@@ -44,42 +44,40 @@ class FulfilledDroppedBarchart:
     @classmethod
     def _internal_plot(cls : type, axs, load_ts_per_request_type : dict, response_times_per_request_type : dict, bar_width : float, names_converter = None):
 
-        i = 0
-        for req_type, gen_requests_per_simulation in load_ts_per_request_type.items():
+        for ax in axs.flatten():
+            for req_type, gen_requests_per_simulation in load_ts_per_request_type.items():
 
-            succeeded_reqs = list()
-            failed_reqs = list()
+                succeeded_reqs = list()
+                failed_reqs = list()
 
-            for simulation_name, generated_reqs_cnt in gen_requests_per_simulation.items():
-                fulfilled_cnts_per_sim = response_times_per_request_type[req_type] if req_type in response_times_per_request_type else dict()
-                fulfilled_cnt = fulfilled_cnts_per_sim[simulation_name] if simulation_name in fulfilled_cnts_per_sim else 0
-                failed_cnt = generated_reqs_cnt - fulfilled_cnt
-                succeeded_reqs.append((fulfilled_cnt / generated_reqs_cnt) * 100)
-                failed_reqs.append((failed_cnt / generated_reqs_cnt) * 100)
+                for simulation_name, generated_reqs_cnt in gen_requests_per_simulation.items():
+                    fulfilled_cnts_per_sim = response_times_per_request_type[req_type] if req_type in response_times_per_request_type else dict()
+                    fulfilled_cnt = fulfilled_cnts_per_sim[simulation_name] if simulation_name in fulfilled_cnts_per_sim else 0
+                    failed_cnt = generated_reqs_cnt - fulfilled_cnt
+                    succeeded_reqs.append((fulfilled_cnt / generated_reqs_cnt) * 100)
+                    failed_reqs.append((failed_cnt / generated_reqs_cnt) * 100)
 
-            zipped = zip(succeeded_reqs, failed_reqs, gen_requests_per_simulation.keys())
-            zipped_sorted = sorted(zipped, key = lambda t: t[1], reverse = True)
+                zipped = zip(succeeded_reqs, failed_reqs, gen_requests_per_simulation.keys())
+                zipped_sorted = sorted(zipped, key = lambda t: t[1], reverse = True)
 
-            succeeded_reqs_sorted = [ zipped_val[0] for zipped_val in zipped_sorted ]
-            failed_reqs_sorted = [ zipped_val[1] for zipped_val in zipped_sorted ]
-            simulation_names_sorted = [ zipped_val[2] for zipped_val in zipped_sorted ]
+                succeeded_reqs_sorted = [ zipped_val[0] for zipped_val in zipped_sorted ]
+                failed_reqs_sorted = [ zipped_val[1] for zipped_val in zipped_sorted ]
+                simulation_names_sorted = [ zipped_val[2] for zipped_val in zipped_sorted ]
 
-            labels = [ names_converter(simulation_name, split_policies = True) for simulation_name in simulation_names_sorted ]
-            y = np.arange(len(labels))
+                labels = [ names_converter(simulation_name, split_policies = True) for simulation_name in simulation_names_sorted ]
+                y = np.arange(len(labels))
 
-            axs[i].barh(y, succeeded_reqs_sorted, bar_width, label = 'Fulfilled')
-            axs[i].barh(y, failed_reqs_sorted, bar_width, left = succeeded_reqs_sorted, label = 'Failed')
-            axs[i].set_yticks(y)
-            axs[i].set_yticklabels(labels)
-            axs[i].set_title(f'Request {req_type}')
-            axs[i].legend(loc = 'center left', bbox_to_anchor = (1.05, 0.5))
-            axs[i].set_xlabel('Requests in the category, %')
+                ax.barh(y, succeeded_reqs_sorted, bar_width, label = 'Fulfilled')
+                ax.barh(y, failed_reqs_sorted, bar_width, left = succeeded_reqs_sorted, label = 'Failed')
+                ax.set_yticks(y)
+                ax.set_yticklabels(labels)
+                ax.set_title(f'Request {req_type}')
+                ax.legend(loc = 'center left', bbox_to_anchor = (1.05, 0.5))
+                ax.set_xlabel('Requests in the category, %')
 
-            font = {'color':  'black', 'weight': 'normal', 'size': 10}
-            for idx, succeeded_reqs_pct in enumerate(succeeded_reqs_sorted):
-                axs[i].text(succeeded_reqs_pct + 0.2, idx, f'{round(succeeded_reqs_pct, 2)}%', va = 'center', fontdict = font)
-
-            i += 1
+                font = {'color':  'black', 'weight': 'normal', 'size': 10}
+                for idx, succeeded_reqs_pct in enumerate(succeeded_reqs_sorted):
+                    ax.text(succeeded_reqs_pct + 0.2, idx, f'{round(succeeded_reqs_pct, 2)}%', va = 'center', fontdict = font)
 
     @classmethod
     def _internal_post_processing(cls : type, region_name : str, figures_dir : str = None):

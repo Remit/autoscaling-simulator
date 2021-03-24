@@ -1,6 +1,7 @@
 import os
 import math
 import pandas as pd
+import numpy as np
 
 from matplotlib import pyplot as plt
 from matplotlib.ticker import MaxNLocator
@@ -45,13 +46,13 @@ class NodesUsageLineGraph:
                                         figsize = (cols_cnt * 4, rows_cnt * 4))
 
                 max_desired_count = 1
-                i = 0
+
                 if not isinstance(axs, Iterable):
-                    axs = [axs]
+                    axs = np.asarray([axs])
 
-                for ax in axs:
-
-                    node_type = node_types[i]
+                axs_f = axs.flatten()[:len(node_types)]
+                for node_type, ax in zip(node_types, axs_f):
+                    
                     desired_ts = desired_node_count[node_type][PlatformModel.timestamps_key]
                     desired_count = desired_node_count[node_type][PlatformModel.node_count_key]
                     max_desired_count = max(max_desired_count, max(desired_count))
@@ -74,8 +75,6 @@ class NodesUsageLineGraph:
                     ax.yaxis.set_major_locator(MaxNLocator(integer=True))
                     ax.legend(loc = 'upper center', ncol = 2)
                     ax.tick_params('x', labelrotation = 70)
-
-                    i += 1
 
                 if not figures_dir is None:
                     figure_path = os.path.join(figures_dir, plotting_constants.filename_format.format(region_name, cls.FILENAME))

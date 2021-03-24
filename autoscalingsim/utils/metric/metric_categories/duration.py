@@ -29,6 +29,7 @@ class Duration(MetricCategory):
         df.value = [ cls(val) for val in df.value ]
         return df
 
-    def __init__(self, value : int = 0, unit : str = 'ms'):
+    def __init__(self, value : int = 0, unit : str = None):
 
-        self._value = pd.Timedelta(value, unit = unit).total_seconds() * 1000
+        unit_internal = unit if not unit is None else 'ms'
+        self._value = pd.Timedelta(value, unit = unit_internal).total_seconds() * 1000
