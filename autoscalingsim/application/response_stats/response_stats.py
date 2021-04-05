@@ -21,6 +21,7 @@ class ResponseStats:
 
         for stats in self.stats.values():
             stats.add_request(cur_timestamp, req)
+            #print("got response")
 
     def joint_untimed_stats(self, stats_kind : str):
 

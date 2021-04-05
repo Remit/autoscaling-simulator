@@ -3,6 +3,7 @@ import numpy as np
 import collections
 from copy import deepcopy
 
+from autoscalingsim.infrastructure_platform.node_information.system_resource_usage import SystemResourceUsage
 from .metric.metric_categories.numeric import Numeric
 from .metric.metric_categories.size import Size
 from .error_check import ErrorChecker
@@ -260,16 +261,21 @@ class ResourceRequirements:
 
         return self.__mul__(factor)
 
-    def how_many_nodes_needed(self, node_info : 'NodeInfo', service_inst_cnt : int, vCPU_sharing_coef : int = 1):
+    def how_many_nodes_needed(self, node_info : 'NodeInfo', service_inst_cnt : int, service_inst_res_usage):
 
-        res_estimate = max(np.floor(self._vCPU.mean / (node_info._vCPU * vCPU_sharing_coef)),
-                           np.floor(self._memory.mean / node_info._memory),
-                           np.floor(self._disk.mean / node_info._disk),
-                           np.floor(self._network_bandwidth.mean / node_info._network_bandwidth))
+        res_estimate_total = max(np.ceil(self._vCPU.mean / (node_info._vCPU * SystemResourceUsage.MAX_ALLOWED_VCPU_SHARING_FACTOR)),
+                                 np.ceil(self._memory.mean / node_info._memory),
+                                 np.ceil(self._disk.mean / node_info._disk),
+                                 np.ceil(self._network_bandwidth.mean / node_info._network_bandwidth))
 
-        service_instances_estimate = np.ceil(service_inst_cnt / (node_info._vCPU * vCPU_sharing_coef).value)
+        res_estimate_service_only = max(min(np.ceil(service_inst_res_usage._vCPU.mean / node_info._vCPU * SystemResourceUsage.MAX_ALLOWED_VCPU_SHARING_FACTOR * SystemResourceUsage.MAX_ALLOWED_SYSTEM_RESOURCE_USAGE_BY_SERVICES),
+                                            np.ceil(service_inst_res_usage._memory.mean / node_info._memory * SystemResourceUsage.MAX_ALLOWED_SYSTEM_RESOURCE_USAGE_BY_SERVICES),
+                                            np.ceil(service_inst_res_usage._disk.mean / node_info._disk * SystemResourceUsage.MAX_ALLOWED_SYSTEM_RESOURCE_USAGE_BY_SERVICES),
+                                            np.ceil(service_inst_res_usage._network_bandwidth.mean / node_info._network_bandwidth * SystemResourceUsage.MAX_ALLOWED_SYSTEM_RESOURCE_USAGE_BY_SERVICES)), 1)
 
-        return int(max(res_estimate, service_instances_estimate))
+        #service_instances_estimate = np.ceil(service_inst_cnt / (node_info._vCPU * SystemResourceUsage.MAX_ALLOWED_VCPU_SHARING_FACTOR).value)
+
+        return int(max(res_estimate_total, res_estimate_service_only))
 
     def __repr__(self):
 

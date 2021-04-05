@@ -39,12 +39,12 @@ class DeploymentGenerator:
             res_required = service_inst_cnt * services_reqs[service_name] + load_magnitude * reqs_fraction_expected_to_serve * res_req_joint
             for node_type, node_info in providers_configs[provider_name]:
                 if node_info.fits_service_instance(services_reqs[service_name]):
-                    options[service_name].append({'node_type': node_type, 'cnt': res_required.how_many_nodes_needed(node_info, service_inst_cnt, SystemResourceUsage.MAX_ALLOWED_VCPU_SHARING_FACTOR)})
+                    options[service_name].append({'node_type': node_type, 'cnt': res_required.how_many_nodes_needed(node_info, service_inst_cnt, services_reqs[service_name])})
 
         depl_output = list()
         for service_name, options_list in options.items():
             selected_option = options_list[np.random.randint(len(options_list))]
             depl_output.append({'service_name': service_name,
-                                'deployment': {region_name: {'init_aspects': {'count': estimated_count_of_service_instances_needed_per_second[service_name]}, 'platform': {'provider': provider_name, 'node_type': selected_option['node_type'], 'count': selected_option['cnt']}} for region_name in regions}})
+                                'deployment': {region_name: {'init_aspects': {'count': max(estimated_count_of_service_instances_needed_per_second[service_name], 1)}, 'platform': {'provider': provider_name, 'node_type': selected_option['node_type'], 'count': max(selected_option['cnt'], 1)}} for region_name in regions}})
 
         print(json.dumps(depl_output))

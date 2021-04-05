@@ -13,7 +13,7 @@
     },
     "starting_time": "2020-09-17T10:00:00",
     "simulation_step": {
-      "value": 50,
+      "value": 100,
       "unit": "ms"
     },
     "time_to_simulate": {
