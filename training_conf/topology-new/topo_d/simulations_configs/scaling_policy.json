@@ -30,7 +30,7 @@
                                 "name": "ratio",
                                 "target": {
                                   "metric_name": "vCPU",
-                                  "value": 0.2
+                                  "value": 0.15
                                 },
                                 "adjustment_heuristic_conf": {
                                   "name": "rescale",
