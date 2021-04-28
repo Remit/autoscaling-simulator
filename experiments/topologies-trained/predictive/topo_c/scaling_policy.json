@@ -1,0 +1,192 @@
+{
+  "policy": {
+    "sync_period": {
+      "value": 30,
+      "unit": "s"
+    },
+    "warm_up": {
+      "value": 120,
+      "unit": "s"
+    }
+  },
+  "application": {
+    "services": [
+      {
+        "service_name": "default",
+        "scaling_effect_aggregation_rule_name": "maxScale",
+        "scaled_aspect_name": "count",
+        "metrics_groups": [
+              {
+                  "name": "group1",
+                  "priority": 1,
+                  "initial_max_limit": 100,
+                  "initial_min_limit": 1,
+                  "desired_aspect_value_calculator_conf": {
+                        "category": "learning",
+                        "config": {
+                            "fallback_calculator": {
+                              "category": "rule",
+                              "config": {
+                                "name": "ratio",
+                                "target": {
+                                  "metric_name": "vCPU",
+                                  "value": 0.15
+                                },
+                                "adjustment_heuristic_conf": {
+                                  "name": "rescale",
+                                  "scaling_factor": 1.5
+                                }
+                              }
+                            },
+                            "model": {
+                                "name": "neural_net",
+                                "kind": "online",
+                                "model_root_folder": "/home/ubuntu/autoscaling-simulator/results_thesis/mapping-models/topologies-SMALL/in_use/topo_c",
+                                "model_file_name": "dav_model.mdl"
+                            },
+                            "performance_metric": {
+                                "metric_source_name": "response_stats",
+                                "metric_name": "response_time",
+                                "submetric_name": "*",
+                                "metric_type": "duration",
+                                "threshold": {
+                                    "value": 100,
+                                    "unit": "ms"
+                                }
+                            },
+                            "model_quality_metric": {
+                                "name": "scaled_error",
+                                "threshold": 0.15
+                            },
+                            "minibatch_size": 10,
+                            "optimizer_config": {
+                                "method": "trust-constr",
+                                "jac": "2-point",
+                                "hess": "SR1",
+                                "verbose": 0,
+                                "maxiter": 100,
+                                "xtol": 0.1,
+                                "initial_tr_radius": 10
+                            }
+                        }
+                    },
+                  "stabilizer_conf": {
+                    "name": "maxStabilizer",
+                    "config": {
+                      "resolution": {
+                        "value": 1,
+                        "unit": "m"
+                      }
+                    }
+                  },
+                  "metrics": [
+                    {
+                      "metric_source_name": "Load",
+                      "metric_name": "load",
+                      "submetric_name": "*",
+                      "metric_params": {
+                        "sampling_interval": {
+                          "value": 1,
+                          "unit": "s"
+                        }
+                      },
+                      "values_aggregator_conf": {
+                        "name": "sumAggregator",
+                        "config": {
+                          "resolution": {
+                            "value": 1,
+                            "unit": "m"
+                          }
+                        }
+                      },
+                      "forecaster_conf": {
+                            "name": "arima",
+                            "dir_with_pretrained_models": "/home/ubuntu/autoscaling-simulator/trained_models/forecasting/topologies-experiment/load/arima/topo_c",
+                            "do_not_adjust_model": true,
+                            "forecast_frequency": {
+                              "value": 1,
+                              "unit": "m"
+                            },
+                            "history_data_buffer_size": {
+                              "value": 10,
+                              "unit": "m"
+                            },
+                            "fit_model_when_history_amount_reached": {
+                              "value": 30,
+                              "unit": "s"
+                            },
+                            "horizon_in_steps": 2
+                      }
+                    },
+                    {
+                        "metric_source_name": "Service",
+                        "metric_name": "memory",
+                        "values_aggregator_conf": {
+                          "name": "medianAggregator",
+                          "config": {
+                            "resolution": {
+                              "value": 30,
+                              "unit": "s"
+                            }
+                          }
+                        },
+                        "forecaster_conf": {
+                              "name": "reactive",
+                              "forecast_frequency": {
+                                "value": 1,
+                                "unit": "m"
+                              },
+                              "history_data_buffer_size": {
+                                "value": 10,
+                                "unit": "m"
+                              },
+                              "fit_model_when_history_amount_reached": {
+                                "value": 30,
+                                "unit": "s"
+                              },
+                              "horizon_in_steps": 2
+                          }
+                    },
+                    {
+                        "metric_source_name": "Service",
+                        "metric_name": "vCPU",
+                        "values_aggregator_conf": {
+                          "name": "quantileAggregator",
+                          "config": {
+                            "resolution": {
+                              "value": 30,
+                              "unit": "s"
+                            },
+                            "quantile": 0.5
+                          }
+                        },
+                        "forecaster_conf": {
+                              "name": "reactive",
+                              "forecast_frequency": {
+                                "value": 1,
+                                "unit": "m"
+                              },
+                              "history_data_buffer_size": {
+                                "value": 10,
+                                "unit": "m"
+                              },
+                              "fit_model_when_history_amount_reached": {
+                                "value": 30,
+                                "unit": "s"
+                              },
+                              "horizon_in_steps": 2
+                          }
+                    }
+                  ],
+                  "default_metric_config" : {
+                    "values_filter_conf": {
+                      "name": "defaultNA",
+                      "config": { "default_value": 0 }
+                    }
+                  }
+              }
+        ]
+      }
+    ]
+  }
+}
