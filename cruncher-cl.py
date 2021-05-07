@@ -4,6 +4,7 @@ from cruncher.cruncher import Cruncher
 
 # Sample command line execution:
 # python3.6 cruncher-cl.py --confdir "cruncher_conf/experiment_metrics_step_up/"
+# comment: on my laptop it needs to be invoked with python without version at the end
 
 parser = argparse.ArgumentParser(description = 'Running the experiments for alternative configurations.')
 

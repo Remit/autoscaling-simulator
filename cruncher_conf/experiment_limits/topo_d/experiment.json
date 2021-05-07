@@ -3,7 +3,7 @@
     "regime": "alternative_policies",
     "repetitions_count_per_simulation": 2,
     "keep_evaluated_configs": false,
-    "results_folder": "/home/ubuntu/experiments/limits/topo_d",
+    "results_folder": "D:/AutoscalingSim/autoscaling-simulator/results_thesis/limits/merged/topo_d",
     "regime_config": {
       "unchanged_configs_folder": "constant_configs",
       "alternatives_folder": "alternatives"
